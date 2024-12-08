@@ -11,12 +11,11 @@ from shiboken6 import wrapInstance
 import sys
 import random
 import importlib
-import os.path
+import os
 
 
-from Jmvs_database_rig_tool.user_interface import auto_char_rig
-
-importlib.reload(auto_char_rig)
+from user_interface.char_ui import char_rig
+importlib.reload(char_rig)
 
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
@@ -45,7 +44,7 @@ class ToolBox(QtWidgets.QWidget):
 
     def auto_rig_btn_func(self):
         # when the button is clicked, load the ui
-        auto_char_rig.char_main()
+        char_rig.char_main()
         print("toolBox click button auto rig")
 
 def tl_bx_main():

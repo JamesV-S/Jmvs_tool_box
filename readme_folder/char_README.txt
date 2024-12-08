@@ -9,4 +9,5 @@ main.run_tool_box()
 '''
 
 Got the json's to work,
-make database struture & get data in that
+made kson's data feed into database's
+> need to make the unique_id from database_schema work: #NameError: name 'unique_id' is not defined

@@ -47,6 +47,7 @@
         "rig_type": {
             "options": ["FK", "IK", "IKFK"],
             "default": "FK"
-        }
+        },
+        "size": 1
     }
 }
