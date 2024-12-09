@@ -1,13 +1,9 @@
-# Jmvs_database_rig_tool
+# Path: Jmvs_tool_box\\config
+# json files that store module data are inspired by 
+python files written by Will Dyer: 
+https://github.com/WillDyer/maya_modular_rigging/blob/main/systems/modules/biped_arm.py
 
 
-'''
-import importlib
-from Jmvs_database_rig_tool import main
-importlib.reload(main)
-main.run_tool_box()
-'''
 
-Got the json's to work,
-made kson's data feed into database's
-> need to make the unique_id from database_schema work: #NameError: name 'unique_id' is not defined
+
+
