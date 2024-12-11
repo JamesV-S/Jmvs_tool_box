@@ -1,13 +1,9 @@
 
 import os
-import sys
-
-
 
 def create_directory(*args):
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir) # jumps up a level like '..' by removing the last component of the path!
-    
     
     dir_path = os.path.join(parent_dir, *args)
         
@@ -31,5 +27,5 @@ def create_file(dir_path, file_name, content=''):
         
 
 if __name__ == "__main__":
-    create_directory("new_folder", "sub_folder")
+    create_directory("new_folder_001", "sub_folder_001")
     # create_file("new_folder", "sub_folder")

@@ -1,18 +1,8 @@
 
 import os
-import sys
 
 def hello_world_content():
-    statement = "constant":{"space_swap": [["world", "COG", "shoulder", "custom"], 
-                        ["world", "wrist"], ["world", "clavicle"], 
-                        ["world", "spine"]],
-        "ik_settings":{
-            "start_joint": "shoulder",
-            "end_joint": "wrist", 
-            "pv_joint": "elbow",
-            "top_joint": "clavicle"
-        }
-    }
+    statement = "Hello world"
     return statement
 
 
@@ -53,6 +43,6 @@ def create_file(dir_path, file_name, content=''):
         
 
 if __name__ == "__main__":
-    dir_path = create_directory("new_folder", "sub_folder")
+    dir_path = create_directory("new_folder_002", "sub_folder_002")
     file_content = hello_world_content()
-    create_file(dir_path, "example.json", file_content)
+    create_file(dir_path, "example_file.txt", file_content)
