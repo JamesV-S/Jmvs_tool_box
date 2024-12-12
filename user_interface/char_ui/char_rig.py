@@ -56,6 +56,7 @@ class CharRigging(QtWidgets.QWidget):
         side = "_L"
         self.orientation = "xyz"
 
+
     def gather_JSON_data(self, json_data):
         print(f"CharRigging click button auto rig, {self.JSON_list}, data = {json_data}")
         # data for the guide's poisition (pos & rot) / constant data (spaceswap)

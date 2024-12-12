@@ -12,3 +12,4 @@ if __name__ == "__main__":
     greet()
 
 # to run this: `python greet.py Lilirose`
+# this doesn't work, i get the odd error that python donesn't exist.

@@ -34,8 +34,7 @@ class ToolBox(QtWidgets.QWidget):
         
         # placeholder for ui button
         auto_rig_button = 1
-        if auto_rig_button: 
-            
+        if auto_rig_button:
             self.auto_rig_btn_func()
         
     def UI(self):
@@ -43,7 +42,7 @@ class ToolBox(QtWidgets.QWidget):
         pass
 
     def auto_rig_btn_func(self):
-        # when the button is clicked, load the ui
+        # when the button is clicked, load the char_ui!
         char_rig.char_main()
         print("toolBox click button auto rig")
 

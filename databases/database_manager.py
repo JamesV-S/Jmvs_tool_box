@@ -1,4 +1,4 @@
-# This  
+# This is for the database operations like (create, read, update, delete)
 
 import sqlite3
 
