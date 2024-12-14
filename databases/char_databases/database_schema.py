@@ -41,7 +41,7 @@ importlib.reload(database_manager)
 
 def add_table(conn): 
     sql_cr_table_state = [
-       """CREATE TABLE IF NOT EXISTS details (
+       """CREATE TABLE IF NOT EXISTS modules (
            db_id INTEGER PRIMARY KEY,
            unique_id INT,
            module_name text NOT NULL,
@@ -65,7 +65,7 @@ def add_table(conn):
 
 def update_db(conn, table, values):
     cursor = conn.cursor()
-    if table == 'details':
+    if table == 'modules':
         sql = f""" INSERT INTO {table} (unique_id, module_name, side) VALUES (?, ?, ?)"""
         cursor.execute(sql, values)
     elif table == 'user_settings':
@@ -84,7 +84,7 @@ def get_unique_id(conn, table):
 
 def cr_database(mdl_name, side, user_setting_dict): # , 
     # DB_bipedArm
-    # within that I want a table details & user_settings
+    # within that I want a table modules & user_settings
     db_name = f'DB_{mdl_name}.db'
     try:
         with sqlite3.connect(db_name) as conn:
@@ -93,16 +93,16 @@ def cr_database(mdl_name, side, user_setting_dict): # ,
             print(f"module {mdl_name}{side} has connected to database {db_name}")
             
             global unique_id
-            unique_id = get_unique_id(conn, 'details')
+            unique_id = get_unique_id(conn, 'modules')
             rig_options = ', '.join(user_setting_dict['rig_type']['options'])
             #-----
             # check whether the module's columns already exists, if so dont create the row!
-            rows = database_manager.query_all_rows(conn, 'details', 'unique_id', 'module_name', 'side')
+            rows = database_manager.query_all_rows(conn, 'modules', 'unique_id', 'module_name', 'side')
             # checking whethr the values from the module exist: 
             exists = any(row == (unique_id, mdl_name, side) for row in rows)
             if not exists: 
                 print("no dullicates")
-                update_db(conn, "details", (unique_id, mdl_name, side))
+                update_db(conn, "modules", (unique_id, mdl_name, side))
                 update_db(conn, "user_settings", (unique_id, u_s_dict['mirror_rig'], u_s_dict['stretch'], rig_options, u_s_dict['rig_type']['default'], u_s_dict['size']))
             else:    
                 print(f'Duplicate exists: {unique_id, mdl_name, side}, not adding it!')

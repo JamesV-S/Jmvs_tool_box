@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # to create a simple txt file
     dir_path = create_directory("Jmvs_tool_box", "top_folder_003", "subfolder_003") # (dir_location, *args)
     file_content = string_dir_content()
-    create_file(dir_path, "text_file.txt", file_content) # automatically places the new file in the last folder!
+    create_file(dir_path, "Created_text_file.txt", file_content) # automatically places the new file in the last folder!
 
     # to create a simple .py file
     ''' need to figure out how to convert to a string and put it in a predefined variable '''
@@ -119,4 +119,4 @@ if __name__ == "__main__":
     # get specific folder from dir_path & get the json content
     specific_abstracted_dir_path = get_specific_path_from_dir(dir_path, "top_folder_003")
     json_file_content = json_dir_content()
-    create_file(specific_abstracted_dir_path, "json_file.json", json_file_content)
+    create_file(specific_abstracted_dir_path, "Created_json_file.json", json_file_content)
