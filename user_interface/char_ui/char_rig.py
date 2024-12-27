@@ -14,9 +14,9 @@ import importlib
 import os.path
 import json
 
-from databases.char_databases import database_schema
+from databases.char_databases import database_schema_002
 
-importlib.reload(database_schema)
+importlib.reload(database_schema_002)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndw = OpenMayaUI.MQtUtil.mainWindow()
@@ -80,8 +80,8 @@ class CharRigging(QtWidgets.QWidget):
         side = '_L'
         u_s_dict = self.gather_JSON_data(self.json_data)[2]
         print(f"mdl_name = {side}")
-        database_schema.cr_database(self.json_data['mdl_name'], side, u_s_dict) 
-        unique_id = database_schema.return_unique_id()
+        database_schema = database_schema_002.CreateDatabase(self.json_data['mdl_name'], side, u_s_dict) 
+        unique_id = database_schema.get_unique_id()
         print(f"unique_id == {unique_id} for {self.json_data['mdl_name']}_{side}")
         # import and call the database maker 'database_schema'
 

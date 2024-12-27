@@ -7,10 +7,8 @@ import importlib
 import sys
 import os
 
-
 ''''''
 # for running in VSCODE!
-
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
     try:
@@ -75,11 +73,29 @@ def update_db(conn, table, values):
     conn.commit()
 
 
-def get_unique_id(conn, table):
+'''dict keeps track of the last used unique_id for each mdl passed'''
+unique_id_tracker = {} 
+
+def query_uniqueID_tracker(conn):
     cursor = conn.cursor()
-    cursor.execute(f"SELECT MAX(unique_id) FROM {table}")
-    max_id = cursor.fetchone()[0]
-    return (max_id + 1) if max_id is not None else 1
+    cursor.execute(f"SELECT module_name, side, MAX(unique_id) FROM modules GROUP BY module_name, side")
+    rows = cursor.fetchall()
+    for row in rows:
+        mdl_name, side, max_id = row
+        unique_id_tracker[(mdl_name, side)] = max_id
+
+'''function updates the next unique_id for a given combination. '''
+    # global so the dict can keep track over multiple calls, to generate new unique_ids as expected
+def get_unique_id_sequence(mdl_name, side):
+    
+    key = (mdl_name, side)
+    if key not in unique_id_tracker:
+        print(f">> `unique_id` existing database is empty:{unique_id_tracker}, so set to 0")
+        unique_id_tracker[key] = 0
+    else:
+        print(f">> `unique_id` dict from existing database = {unique_id_tracker}, adding +1")
+        unique_id_tracker[key] += 1
+    return unique_id_tracker[key]
 
 
 def cr_database(mdl_name, side, user_setting_dict): # , 
@@ -91,34 +107,24 @@ def cr_database(mdl_name, side, user_setting_dict): # ,
             # interasct with datsabase
             add_table(conn)
             print(f"module {mdl_name}{side} has connected to database {db_name}")
-            
-            global unique_id
-            unique_id = get_unique_id(conn, 'modules')
+
+            ''' query the database for the current max `unique_id` for each `mdl_name` & `side`'''
+            query_uniqueID_tracker(conn) # BEFORE processing new data.
+            unique_id = get_unique_id_sequence(mdl_name, side)
+
+            update_db(conn, "modules", (unique_id, mdl_name, side))
             rig_options = ', '.join(user_setting_dict['rig_type']['options'])
-            #-----
-            # check whether the module's columns already exists, if so dont create the row!
-            rows = database_manager.query_all_rows(conn, 'modules', 'unique_id', 'module_name', 'side')
-            # checking whethr the values from the module exist: 
-            exists = any(row == (unique_id, mdl_name, side) for row in rows)
-            if not exists: 
-                print("no dullicates")
-                update_db(conn, "modules", (unique_id, mdl_name, side))
-                update_db(conn, "user_settings", (unique_id, u_s_dict['mirror_rig'], u_s_dict['stretch'], rig_options, u_s_dict['rig_type']['default'], u_s_dict['size']))
-            else:    
-                print(f'Duplicate exists: {unique_id, mdl_name, side}, not adding it!')
-            #-----          
+            update_db(conn, "user_settings", (unique_id, u_s_dict['mirror_rig'], u_s_dict['stretch'], 
+                                                  rig_options, u_s_dict['rig_type']['default'], u_s_dict['size']))
+                  
     except sqlite3.Error as e:
         print(e)
 
 
-def return_unique_id():
-    return unique_id
-
-
 u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
-cr_database("bipedArm", "_R", u_s_dict) # NEED unique_id == 1
-cr_database("bipedArm", "_L", u_s_dict) # NEED unique_id == 1
-cr_database("bipedArm", "_R", u_s_dict) # NEED unique_id == 2
-cr_database("bipedArm", "_L", u_s_dict) # NEED unique_id == 2
-print(u_s_dict['mirror_rig'], u_s_dict['stretch'], u_s_dict['rig_type']['options'], u_s_dict['rig_type']['default'], u_s_dict['size'])
-            
+cr_database("bipedLeg", "_R", u_s_dict)
+
+def return_unique_id():
+    pass 
+    '''return unique_id'''
+
