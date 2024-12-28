@@ -4,14 +4,14 @@ import importlib
 import sys
 import os
 
-''''''
+'''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
     try:
         target_index = current_dir.split(os.sep).index(target_folder_name)
         levels = len(current_dir.split(os.sep) ) -target_index -1
-        print(f"Number of levels to go up: {levels}")
+        print(f"THE Number of levels to go up: {levels}")
     except ValueError:
         raise ValueError(f"Target folder '{target_folder_name}' not found in path.")
     return levels
@@ -28,7 +28,7 @@ target_dir = go_up_path_levels(current_dir, levels)
 project_root = os.path.join(current_dir, '..', '..')  # Adjust path as necessary
 print(f"target_dir : {target_dir}, project_root: {project_root}")
 sys.path.append(os.path.abspath(target_dir))
-''''''
+'''
 
 from databases import database_manager
 importlib.reload(database_manager)
@@ -118,9 +118,10 @@ class CreateDatabase():
         return self.unique_id_tracker[key]
     
 
-    def get_unique_id(self):
-        return self.unique_id
     
+
+'''
 CreateDatabase("bipedArm", "_R", u_s_dict)
 CreateDatabase("bipedArm", "_L", u_s_dict)
 CreateDatabase("bipedArm", "_L", u_s_dict)
+'''

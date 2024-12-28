@@ -2,9 +2,10 @@
 import importlib
 import sys
 import os
+print("Is it UPDATING???")
 
-import toolBox
-importlib.reload(toolBox)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+print(f"current_dir == {current_dir}")
 
 
 def does_directory_exist(directory):
@@ -29,24 +30,34 @@ def updating_paths():
     add_path = os.path.join(current_dir)
     add_to_sys_path(add_path)
     os.environ['MAYA_SCRIPT_PATH'] = current_dir + os.pathsep + os.environ.get('MAYA_SCRIPT_PATH', '')
-
-    # custom directory's I need adding to path
-    char_db_dir = os.path.join(os.path.dirname(os.path.normpath(__file__)), 
-                               'databases')
-    char_ui_dir = os.path.join(os.path.dirname(os.path.normpath(__file__)), 
-                               'user_interface', 'char_ui')
-
-    # check if the custom dir exist: 
-    if does_directory_exist(char_db_dir):
-        add_to_sys_path(char_db_dir)
+    custom_dir_list = []
     
-    if does_directory_exist(char_ui_dir):
-        add_to_sys_path(char_ui_dir)
+    # ----------------------------------------
+    # custom directory's I need adding to path
+    db_dir = os.path.join(os.path.dirname(os.path.normpath(__file__)), 
+                               'databases')
+    custom_dir_list.append(db_dir)
+    
+    # these dir share same path, so it's quicker to do this
+    ui_list = ['char_ui', 'vehicle_ui', 'geoDB_ui', 'other_ui']
+    for folder in ui_list:
+        ui_dir = os.path.join(os.path.dirname(os.path.normpath(__file__)), 
+                                'user_interface', folder)
+        custom_dir_list.append(ui_dir)
+    
+    # check if the custom dir exist:
+    for directory in custom_dir_list:
+        if does_directory_exist(directory):
+            add_to_sys_path(directory)
 
 
 def run_tool_box():
     updating_paths()
-    toolBox.tl_bx_main()
-    print("run toolBox")
+    
+    import toolBox
+    importlib.reload(toolBox)
+    toolBox.tool_box_main()
+
+    
     
 
