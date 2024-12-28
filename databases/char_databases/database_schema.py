@@ -7,7 +7,7 @@ import importlib
 import sys
 import os
 
-''''''
+'''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
@@ -31,7 +31,7 @@ target_dir = go_up_path_levels(current_dir, levels)
 project_root = os.path.join(current_dir, '..', '..')  # Adjust path as necessary
 print(f"target_dir : {target_dir}, project_root: {project_root}")
 sys.path.append(os.path.abspath(target_dir))
-''''''
+'''
 
 from databases import database_manager
 importlib.reload(database_manager)
@@ -87,7 +87,6 @@ def query_uniqueID_tracker(conn):
 '''function updates the next unique_id for a given combination. '''
     # global so the dict can keep track over multiple calls, to generate new unique_ids as expected
 def get_unique_id_sequence(mdl_name, side):
-    
     key = (mdl_name, side)
     if key not in unique_id_tracker:
         print(f">> `unique_id` existing database is empty:{unique_id_tracker}, so set to 0")

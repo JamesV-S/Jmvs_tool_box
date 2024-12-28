@@ -1,5 +1,5 @@
-# This is for the database operations like (create, read, update, delete)
 
+# This is for the database operations like (create, read, update, delete)
 import sqlite3
 
 def query_all_rows(conn, table, *args):
