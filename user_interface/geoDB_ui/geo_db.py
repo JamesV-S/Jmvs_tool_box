@@ -36,6 +36,26 @@ class GeoDatabase(QtWidgets.QWidget):
         delete_existing_ui(ui_object_name)
         self.setObjectName(ui_object_name)
 
+        self.setStyleSheet("""
+            QWidget {
+                background-color:#4f7b7f;
+                color: #333;
+                font-size: 12px;
+            }
+            QPushButton {
+                background-color: #ccc;
+                border: 1px solid #888;
+                border-radius: 5px;
+                padding: 10px;
+            }
+            QPushButton:hover {
+                background-color: #ddd;
+            }
+            QLabel {
+                font-weight: bold;
+        """)
+
+
         # Set flags & dimensions
         self.setParent(main_window)
         self.setWindowFlags(Qt.Window)
