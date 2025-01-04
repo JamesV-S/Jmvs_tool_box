@@ -1,6 +1,8 @@
-# Jmvs_tool_box
+# Jmvs_tool_box\\char_rig
 
-Got the json's to work,
-made json's data feed into database's
-
-> In maya, need to make the unique_id from database_schema work: #NameError: name 'unique_id' is not defined
+>> Can now succesfully pass data to database and guides in my scene.
+Next: 
+- add all neccesarry JSON modules
+- pass data to database
+- pass database info to the guides
+- pass any updates to the blueprint editor to the database and guides with an update blueprint button. 

@@ -46,7 +46,8 @@
             "options":["FK", "IK", "IKFK"],
             "default": "FK"
         },
-        "size": 1
+        "size": 1, 
+        "side": ["L", "R"]
         
     }
 }

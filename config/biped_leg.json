@@ -1,8 +1,8 @@
 
 {
-    "module_name": "bipedLeg",
+    "mdl_name": "bipedLeg",
     "names": ["hip", "knee", "ankle", "ball", "toe"],
-    "guide_XR":{
+    "placement":{
         "system_pos_xyz": {
         "hip": [16.036325454711914, 147.7965545654297, 0.051486290991306305],
         "knee": [20.133201599121104, 82.05242919921866, -0.4505884051322898],
@@ -49,6 +49,8 @@
             "options": ["FK", "IK", "IKFK"],
             "default": "FK"
         },
-        "size": 1
+        "size": 1, 
+        "side": ["L", "R"]
+        
     }
 }

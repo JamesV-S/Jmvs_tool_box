@@ -69,34 +69,25 @@ class CharRigging(QtWidgets.QWidget):
 
         # gather the existing files in 'config' and create a list of the files
         # Placeholder: 
-        self.JSON_list = ['biped_arm.json']# , 'biped_leg.json'] # 
-        json_dict = {} # json is a dictionary,so just go gather it. 
+        self.JSON_list = ['biped_arm.json', 'biped_leg.json']# , 'biped_leg.json'] # 
+        self.json_dict = {} # json is a dictionary,so just go gather it. 
         for json_file in self.JSON_list:
             # configer the JSON file
             json_path = os.path.join(current_dir, "..", "..", "config", json_file)
             with open(json_path, 'r') as file:
                 # load the json data
                 self.json_data = json.load(file)
-                json_dict[json_file] = self.json_data
-        
-        '''
-        # placeholder for ui button
-        cr_JSON_db_btn = 0
-        if cr_JSON_db_btn:
-            pass
-            # self.cr_JSON_database()
-        '''
+                self.json_dict[json_file] = self.json_data
         
         self.UI()
         # ui connections:
         # TAB 1 - Module editor
-        
+        self.add_blueprint_btn.clicked.connect(self.add_blueprint)
 
     def UI(self):
         # build the button's for this ui here
         # parts of the ui:
-        global side
-        side = "_L"
+        
         self.orientation = "xyz"
 
         main_Vlayout = QtWidgets.QVBoxLayout(self)
@@ -120,48 +111,82 @@ class CharRigging(QtWidgets.QWidget):
         db_h_layout.addWidget(db_Qlabel)
         db_editor_Vlayout.addLayout(db_h_layout)
     
+        # ---------------------------------------------------------------------
         # module editor
-
         def module_editor_ui(mdl_name, side_items):
             mdl_h_layout = QtWidgets.QHBoxLayout()
             
             mdl_checkBox = QtWidgets.QCheckBox()
-            mdl_name = QtWidgets.QLabel(mdl_name)
+            mdl_name_label = QtWidgets.QLabel(mdl_name)
             mdl_iterations = QtWidgets.QSpinBox()
             mdl_iterations.setMinimum(1)
-
-            mdl_side = QtWidgets.QComboBox()
-            mdl_side.addItems(side_items)
+            mdl_iterations.setDisabled(False)
             
             mdl_h_layout.addWidget(mdl_checkBox)
-            mdl_h_layout.addWidget(mdl_name)
+            mdl_h_layout.addWidget(mdl_name_label)
             mdl_h_layout.addWidget(mdl_iterations)
-            mdl_h_layout.addWidget(mdl_side)
-
+            
+            mdl_side = None
+            if side_items != "None":
+                mdl_side = QtWidgets.QComboBox()
+                mdl_side.addItems(side_items)
+                mdl_side.setDisabled(False) 
+                mdl_h_layout.addWidget(mdl_side)
+            
             module_editor_Vlayout.addLayout(mdl_h_layout)
+
+            return mdl_checkBox, mdl_iterations, mdl_side
         
+        ''' method of unpacking nested dict struture 'self.json_dict' 
+        containing each JSON files's content under its filename as a key.
+        Step 1 - dictionary & items
+            `.items()` method that returns a view object that displays a list
+            of the dict's key-value tuple pairs(step 2)
+            
+        Step 2 - unpacking, using 'filename' + 'data' is tuple unpacking
+        for each itemreturned by step 1, is a tuple containing a key(filename) 
+        and its corresponding value(data).
+        
+        Step 3 - Loop execution
+        thru each iteratipon, filename(key), and data(value) which is the 
+        associated dictionary.  '''
+
+        # get mdl_name and side data for each module
         try:
-            print(self.json_data['mdl_name'])
             mdl_list = []
-            #for dict in self.json_data:
-            #    mdl_name = dict['mdl_name']
-            #    mdl_list.append(mdl_name)
-            #print(mdl_list)
+            side_list = []
+            for filename, data in self.json_dict.items():
+                # `.get()` used to access dict values, without keyerror if not 
+                # like we get with `[]`
+                mdl_name = data.get('mdl_name', 'no module name, there should be')
+                # .get a nested value within a dict; empty '{}' means no error if 'user_settings' is missing.
+                mdl_side = data.get('user_settings', {}).get('side', ['No side in mdl'])
+                if mdl_name:
+                    mdl_list.append(mdl_name)
+                    side_list.append(mdl_side)
+            print(mdl_list)
+            print(side_list)
         except KeyError as e:
             print(f"{e} is not a key in {self.json_data}")
-        module_editor_ui("bipedArm", ["L", "R"])
         
-        # sets the buttons, need to gather the existing JSON's for the name
-        # Need to return the buttons for connection: `self.button_02.clicked.connect(self.second_btn_func)`
-            # the buttons create the settings for building the database & blueprint in the scene!
-        # Need to 
+        # Create the ui components & store it in a dict
+        self.mdl_editor_ui_dict = {}
+        for mdl, sides in zip(mdl_list, side_list):
+            mdl_editor_buttons = module_editor_ui(mdl, sides)
+            self.mdl_editor_ui_dict[mdl] = mdl_editor_buttons
 
+        print(f"self.mdl_editor_ui_dict = {self.mdl_editor_ui_dict}")
 
+        
+        # ---------------------------------------------------------------------
         # Updating modules and database
         update_Qlabel = QtWidgets.QLabel("update")
-        bottom_Vlayout.addWidget(update_Qlabel)
-       
+        # bottom_Vlayout.addWidget(update_Qlabel)
 
+        self.add_blueprint_btn = QtWidgets.QPushButton("Add module")
+        bottom_Vlayout.addWidget(self.add_blueprint_btn)
+
+       
     def gather_JSON_data(self, json_data):
         print(f"CharRigging click button auto rig, {self.JSON_list}, data = {json_data}")
         # data for the guide's poisition (pos & rot) / constant data (spaceswap)
@@ -175,21 +200,35 @@ class CharRigging(QtWidgets.QWidget):
         return placement_dict, constant_dict, user_settings_dict
     
 
+    def cr_JSON_database(self):
+            # print(f"database data to add: {self.gather_JSON_data(self.json_data)[2]}")
+            self.u_s_dict = self.gather_JSON_data(self.json_data)[2]
+            # print(f"mdl_name = {side}")
+            database_schema = database_schema_002.CreateDatabase(self.json_data['mdl_name'], side, u_s_dict) 
+            
+            # unique_id = database_schema.get_unique_id()
+            # print(f"unique_id == {unique_id} for {self.json_data['mdl_name']}_{side}")
+            # import and call the database maker 'database_schema'
+
+
     def cr_JSON_guides(self):
         # Should read the database
         pass
 
+    
+    def add_blueprint(self):
+        # connect signals for module editor buttons
+        for mdl, (checkBox, iterations, side) in self.mdl_editor_ui_dict.items():
+            if checkBox.isChecked(): # checkbox is the master 
+                # access the input from iterations and side
+                iterations_value = iterations.value()
+                side_value = side.currentText() if side else None
+                print(f"Adding blueprint for {mdl}: Iterations={iterations_value}, Side={side_value}")
+        
+        #self.cr_JSON_database()
 
-    def cr_JSON_database(self):
-        # print(f"database data to add: {self.gather_JSON_data(self.json_data)[2]}")
-        side = '_L'
-        self.u_s_dict = self.gather_JSON_data(self.json_data)[2]
-        print(f"mdl_name = {side}")
-        database_schema = database_schema_002.CreateDatabase(self.json_data['mdl_name'], side, u_s_dict) 
-        # unique_id = database_schema.get_unique_id()
-        # print(f"unique_id == {unique_id} for {self.json_data['mdl_name']}_{side}")
-        # import and call the database maker 'database_schema'
-
+        # Should read the database
+        #self.cr_JSON_guides()
 
 def char_main():
     app = QtWidgets.QApplication.instance()
