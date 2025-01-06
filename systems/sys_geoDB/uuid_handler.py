@@ -12,8 +12,9 @@ def return_uuid_dict_from_geo(obj_sel):
             uuid_dict[name] = uuid
         else:
             print(f"Geo `{name}` doesn't exist")
+    print(f"geo: {uuid_dict}")
     return uuid_dict
-#return_uuid_dict_from_geo(["geo_upperarm", "geo_lowerarm", "geo_hand"])
+# return_uuid_dict_from_geo(["geo_upperarm", "geo_lowerarm", "geo_hand"])
 
 
 def return_uuid_dict_from_joint(jnts_sel):
@@ -24,8 +25,9 @@ def return_uuid_dict_from_joint(jnts_sel):
             uuid_dict[name] = uuid
         else:
             print(f"joint `{name}` doesn't exist")
+    print(f"jnt: {uuid_dict}")
     return uuid_dict
-# return_uuid_dict_from_joint(["jnt_skn_0_shoulder_L", "jnt_skn_0_elbow_L", "jnt_skn_0_wrist_L"])
+return_uuid_dict_from_joint(["jnt_skn_0_shoulder_L", "jnt_skn_0_elbow_L", "jnt_skn_0_wrist_L"])
 
 
 # return a uuid list
@@ -47,7 +49,7 @@ def return_uuid_list_from_geo(obj_sel):
 ''' Such updates will be passed to the chosen Database's correct row!!! '''
 # from the dictionary, ignore the key and select find the uuid in the scene, 
 # read the name and update the key of the name if there's a difference
-def fetch_recorded_uuid_geo(uuid_geo_dict):
+def update_recorded_uuid_geo(uuid_geo_dict):
     updated_dict = {}
     for previous_name, uuid in uuid_geo_dict.items():
         # if the uuid exists in the scene
@@ -67,10 +69,10 @@ def fetch_recorded_uuid_geo(uuid_geo_dict):
 geo_dict = {'geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
             'geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
             'geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'}
-# updated_geo_dict = fetch_recorded_uuid_geo(geo_dict)
+# updated_geo_dict = update_recorded_uuid_geo(geo_dict)
 
 
-def fetch_recorded_uuid_joint(uuid_jnt_dict):
+def update_recorded_uuid_joint(uuid_jnt_dict):
     updated_dict = {}
     for previous_name, uuid in uuid_jnt_dict.items():
         # if the uuid exists in the scene
@@ -89,7 +91,7 @@ def fetch_recorded_uuid_joint(uuid_jnt_dict):
 joint_dict = {'jnt_skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
               'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
               'jnt_skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}
-# updated_jnt_dict = fetch_recorded_uuid_joint(joint_dict)
+# updated_jnt_dict = update_recorded_uuid_joint(joint_dict)
 
 #------------------------------------------------------------------------------
 # from 2 dictionary's combine into a single one
@@ -109,13 +111,13 @@ def combine_2_dict_into_1(jnt_dict, geo_dict):
 
 # UPDATE W/ NEW SELECTED GEO
 ''' pretend this dict below is an old version '''
-old_geo_dict = {
+prev_geo_dict = {
     'geo_example_001': 'J77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
     'geo_example_002': 'LW2ND64F-40XC-FAB7-A329-C28F2LS224EA', 
     'geo_example_003': 'H05CC29-40CB-2004-0C9C-6294JD435CF8'
     }
 
-def update_geo_uuid(current_geo_uuid_dict):
+def replace_geo_uuid(current_geo_uuid_dict):
     print(f"before update: {current_geo_uuid_dict}")
     new_geo_sel = cmds.ls(sl=1, type="transform")
     
@@ -129,15 +131,15 @@ def update_geo_uuid(current_geo_uuid_dict):
     print(f"after updated dict: `{current_geo_uuid_dict}`")
     return current_geo_uuid_dict
     
-# update_geo_uuid(old_geo_dict)
+# replace_geo_uuid(prev_geo_dict)
 
 # UPDATE W/ NEW SELECTED JOINTS!
-old_jnt_dict = {
+prev_jnt_dict = {
     'jnt_example_001': 'J77BA8E3-74GF-2121-CFEA-88AD3F446242', 
     'jnt_example_002': 'LW2ND64F-40XC-FAB7-A329-C28F2LS224EA', 
     'jnt_example_003': 'H05CC29-40CB-2004-0C9C-6294JD435CF8'
     }
-def update_geo_uuid(current_jnt_uuid_dict):
+def replace_jnt_uuid(current_jnt_uuid_dict):
     print(f"before update: {current_jnt_uuid_dict}")
     new_jnt_sel = cmds.ls(sl=1, type="joint")
     
@@ -151,6 +153,6 @@ def update_geo_uuid(current_jnt_uuid_dict):
     print(f"after updated dict: `{current_jnt_uuid_dict}`")
     return current_jnt_uuid_dict
     
-update_geo_uuid(old_jnt_dict)
+# replace_jnt_uuid(prev_jnt_dict)
 
 #------------------------------------------------------------------------------

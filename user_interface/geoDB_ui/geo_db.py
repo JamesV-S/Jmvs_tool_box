@@ -19,6 +19,9 @@ import sys
 import importlib
 import os.path
 
+from databases.geo_databases import database_schema_001
+importlib.reload(database_schema_001)
+
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
@@ -71,34 +74,32 @@ class GeoDatabase(QtWidgets.QWidget):
         
         #self.geoDB_label = QtWidgets.QLabel("GeoDB_WIP")
         #main_layout.addWidget(self.geoDB_label)
-        main_layout = QtWidgets.QVBoxLayout(self)
+        main_Vlayout = QtWidgets.QVBoxLayout(self)
 
-        h_layout = QtWidgets.QHBoxLayout()
+        # 4 layouts within the main_Vlayout
+
+        # 2: Tab layout Database selector
+        ''' I want this to work a lot like the "layer" tab in ngskinTools! with this tab on the left  '''
+        example_database_list = ["DB_geo_mech", "DB_geo_arm", "DB_geo_other"]
+        # create layer ui for this and put into this layout:
+        db_selector_layout = QtWidgets.QVBoxLayout()
+        # this button will create a new database. 
+        cr_database_btn = QtWidgets.QPushButton("+")
+
+        # 1: Tab layout Database visualisation
+        ''' I want this to work a lot like the "influences" tab in ngskinTools! with this tab on the right next to the `db_selector_layout` '''
+        db_list_layout = QtWidgets.QVBoxLayout()
         
-        
-        btn_1 = QtWidgets.QPushButton("Button 1")
-        btn_2 = QtWidgets.QPushButton("Button 2")
-        btn_list = [btn_1, btn_2]
-        
-        for buttons in btn_list:
-            buttons.setFixedSize(50, 50)
-            buttons.setMinimumSize(40, 40)
-            buttons.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-        h_layout.addWidget(btn_1)
-        h_layout.addWidget(btn_2)
+        # 3: tab layout for buttons that add joints or geometry to the database
 
-        grid_layout = QtWidgets.QGridLayout()
-        grid_layout.addWidget(QtWidgets.QPushButton("Grid Button 1"), 0, 0)
-        grid_layout.addWidget(QtWidgets.QPushButton("Grid Button 2"), 0, 1)
 
-        main_layout.addLayout(h_layout)
-        main_layout.addLayout(grid_layout)
 
-        # Add more widgets to the main layout if necessary. 
-        # main_layout.addWidget(QtWidgets.QLabel("Additional Widget"))
-        
-        self.setLayout(main_layout)
+
+        self.setLayout(main_Vlayout)
+    
+    def create_database(self):
+        pass
 
 def geoDB_main():
     app = QtWidgets.QApplication.instance()

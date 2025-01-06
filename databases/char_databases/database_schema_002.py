@@ -4,7 +4,7 @@ import importlib
 import sys
 import os
 
-'''
+''''''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
@@ -28,7 +28,7 @@ target_dir = go_up_path_levels(current_dir, levels)
 project_root = os.path.join(current_dir, '..', '..')  # Adjust path as necessary
 print(f"target_dir : {target_dir}, project_root: {project_root}")
 sys.path.append(os.path.abspath(target_dir))
-'''
+''''''
 
 from databases import database_manager
 importlib.reload(database_manager)
@@ -118,10 +118,6 @@ class CreateDatabase():
         return self.unique_id_tracker[key]
     
 
-    
-
-'''
 CreateDatabase("bipedArm", "_R", u_s_dict)
 CreateDatabase("bipedArm", "_L", u_s_dict)
 CreateDatabase("bipedArm", "_L", u_s_dict)
-'''
