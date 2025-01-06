@@ -119,18 +119,18 @@ class ToolBox(QtWidgets.QWidget):
         self.UI()
         
         self.char_button.clicked.connect(self.char_func)
-        self.vehcile_button.clicked.connect(self.vehicle_func)
+        self.vehicle_button.clicked.connect(self.vehicle_func)
         self.geoDB_button.clicked.connect(self.geo_func)
         self.other_button.clicked.connect(self.other_func)
 
         
     def UI(self):
         self.char_button = QtWidgets.QPushButton("Char_tool")
-        self.vehcile_button = QtWidgets.QPushButton("Vehicle_tool")
+        self.vehicle_button = QtWidgets.QPushButton("Vehicle_tool")
         self.geoDB_button = QtWidgets.QPushButton("geometryDB_tool")
         self.other_button = QtWidgets.QPushButton("other_tool")
         
-        btn_list = [self.char_button, self.vehcile_button, self.geoDB_button, self.other_button]
+        btn_list = [self.char_button, self.vehicle_button, self.geoDB_button, self.other_button]
         
         for buttons in btn_list:
             buttons.setFixedSize(125, 125)
@@ -143,7 +143,7 @@ class ToolBox(QtWidgets.QWidget):
         Call the main function of the class when I want to initialisee the 
         ui outside of ToolBox Menu (right clcik function!)
         # self.char_button.clicked.connect(lambda: self.load_ui(CharRigging))
-        self.vehcile_button.clicked.connect(lambda: self.load_ui(VehicleRigging))
+        self.vehicle_button.clicked.connect(lambda: self.load_ui(VehicleRigging))
         self.geoDB_button.clicked.connect(lambda: self.load_ui(GeoDatabase))
         self.other_button.clicked.connect(lambda: self.load_ui(OtherTool))
         '''
@@ -153,7 +153,7 @@ class ToolBox(QtWidgets.QWidget):
         
         # add the widget!
         self.grid_layout.addWidget(self.char_button, 0, 0)
-        self.grid_layout.addWidget(self.vehcile_button, 0, 1)
+        self.grid_layout.addWidget(self.vehicle_button, 0, 1)
         self.grid_layout.addWidget(self.geoDB_button, 1, 0)
         self.grid_layout.addWidget(self.other_button, 1, 1)
 
