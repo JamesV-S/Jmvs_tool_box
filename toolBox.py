@@ -190,7 +190,7 @@ class ToolBox(QtWidgets.QWidget):
 
     def other_func(self):
         print("loading other ui")
-        other_tool.other_main()
+        other_tool.geoDB_main()
 
     # Not in use
     '''

@@ -1,0 +1,160 @@
+
+/*
+QPushButton#button_01 {
+    color:azure ;
+    background-color: black;
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 10px;
+    border-color: gold;
+    font: bold 14px;
+    min-width: 10em;
+    padding: 6px;
+}
+
+QPushButton#button_02 {
+    color:azure ;
+    background-color: blue;
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 10px;
+    border-color: orange;
+    font: bold 14px;
+    min-width: 10em;
+    padding: 6px;
+}
+*/
+/*
+QPushButton[specialButton="true"] {
+    background-image: url(C:/Docs/maya/scripts/Maya_Python_Qt_UIs/images/star_wars_space_background.jpg);
+    background-size:50px 50px;
+    border-style:double;
+    border-width: 2px;
+    border-radius: 10px;
+    border-color: gold;
+    font: bold 14px;
+    min-width: 10em;
+    padding: 6px;
+}
+
+
+*/
+
+* {
+    background-color:rgb(92, 81, 117);
+    color: rgba(20, 220, 153, 0);
+}
+
+
+QPushButton[specialButton="true"]:hover {
+    color: azure
+}
+
+QPushButton {
+    color:rgb(225, 225, 225) ;
+    background-color: rgb(19, 16, 43);
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 10px;
+    border-color: rgb(237, 237, 237);
+    font: bold 14px;
+    min-width: 5em;
+    padding: 3px;
+}
+
+QLabel {
+    color:rgb(232, 228, 255) ;
+    background-color: rgb(19, 16, 43);
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 2px;
+    /*border-color: crimson;*/
+    font: bold 14px;
+    min-width: 10em;
+    padding: 6px;
+}
+
+QTreeView {
+    color:rgb(239, 239, 239) ;
+    background-color: rgb(34, 30, 60);
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 5px;
+    /*border-color: crimson;*/
+    font: bold 14px;
+    min-width: 10em;
+    padding: 6px;
+}
+
+QCheckBox {
+    spacing: 5px;
+    color:rgb(126, 13, 13)
+}
+
+QCheckBox::indicator {
+    width: 13px;
+    height: 13px;
+    color:rgb(20, 220, 153);
+}
+
+QHeaderView::sectio {
+    background-color: #000000;
+    color: #fff;
+    padding: 3px;
+    border-radius: 4px;
+}
+
+QTreeView#treeView::item:selected:active{
+    /*; border-radius: 5px;*/
+    background-color:rgb(56, 0, 0); /*darkolivegreen*/
+    color:white;
+    
+}
+
+QTreeView#treeView {
+    color: rgb(0, 19, 88);
+    border-radius: 5px;
+    padding:5px;
+    border-color: crimson;
+}
+
+QComboBox {
+    border: none;
+    background-color: rgb(19, 16, 43);
+    border-bottom: rgb(255, 226, 63);
+}
+
+QGroupBox {
+    color:rgb(44, 3, 3);
+    background-color: rgb(255, 226, 63);
+    
+    /*border-radius: 1px;*/
+}
+
+
+/*Scroll Barss!!!!*/
+QScrollBar:vertical {
+    width: 10px;
+}
+QScrollBar:horizontal {
+    height: 10px;
+}
+
+/*style of a scroll bar!*/
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal {
+    background: #666;
+    border-radius: 5px;
+    min-height: 20px;
+}
+
+QToolTip {
+    background-color: rgba(0, 0, 0, 0.733);
+    color:white;
+    font-family:'sans-serif'; /*'Lucida Grande' ,, Tahoma, Geneva, Verdana, sans-serif, 'ource Code Pro',  'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif*/
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px;
+    border: 1px solid #ffff;
+    border-radius: 10px; 
+}

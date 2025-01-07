@@ -71,7 +71,7 @@ class CreateDatabase():
         conn.commit()
 
 
-# CreateDatabase("geo_arm")
+CreateDatabase("geo_arm")
 
 #------------------------------------------------------------------------------
 
@@ -143,9 +143,9 @@ class UpdateDatabase():
             sql = f""" INSERT INTO {table} (joint_name, joint_uuid, geo_name, geo_uuid) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
         conn.commit()
-#UpdateDatabase(f'DB_"geo_arm".db', oneJNT_for_multiGEO_uuid_combined_dict)
-#UpdateDatabase(f'DB_"geo_arm".db', multiJNT_for_oneGEO_uuid_combined_dict)
-#UpdateDatabase(f'DB_"geo_arm".db', oneJNT_for_oneGEO_uuid_combined_dict)
+UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_multiGEO_uuid_combined_dict)
+UpdateDatabase(f'DB_geo_arm.db', multiJNT_for_oneGEO_uuid_combined_dict)
+UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_oneGEO_uuid_combined_dict)
 
 
 #------------------------------------------------------------------------------
@@ -224,7 +224,7 @@ class RetrieveAllUUIDs():
             print(f"sqlite3.Error: {e}")
         return all_dicts
     
-RetrieveAllUUIDs('DB_geo_arm.db')
+# RetrieveAllUUIDs('DB_geo_arm.db')
 # Output: 
 ''' THIS IS WORKING VERY NICELY!
 {
