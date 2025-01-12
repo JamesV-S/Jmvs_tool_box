@@ -106,7 +106,7 @@ oneJNT_for_oneGEO_uuid_combined_dict = {
 
 class UpdateDatabase():
     def __init__(self, database_name, db_uuid_dict):
-        db_name = database_name # f'DB_{database_name}.db'
+        db_name = database_name
         
         # get lists from the neseted dict
         jnt_uuid_dict = db_uuid_dict['joint_UUID_dict']
@@ -143,13 +143,9 @@ class UpdateDatabase():
             sql = f""" INSERT INTO {table} (joint_name, joint_uuid, geo_name, geo_uuid) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
         conn.commit()
-UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_multiGEO_uuid_combined_dict)
-UpdateDatabase(f'DB_geo_arm.db', multiJNT_for_oneGEO_uuid_combined_dict)
-UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_oneGEO_uuid_combined_dict)
-
 
 #------------------------------------------------------------------------------
-# from a specific row, call the 
+# from a specific relationship 
 class Retrieve_UUID_Database_from_row():
     def __init__(self, database_name, row_id ):
         db_name = database_name # f'DB_{database_name}.db'
@@ -164,7 +160,7 @@ class Retrieve_UUID_Database_from_row():
 
     def get_dict_from_db_row(self, conn, table, row_id):
         cursor = conn.cursor()
-        # dictated by a specified row! aka this is the row/skinn relationship I have selected in the ui that I want to bind or unbind!
+        # dictated by a specified row! aka this is the row/skinn relationship
         query_param_state = f'SELECT joint_name, joint_uuid, geo_name, geo_uuid FROM {table} WHERE db_row_id=?'
         try:
             cursor.execute(query_param_state, (row_id,))
@@ -190,8 +186,8 @@ class Retrieve_UUID_Database_from_row():
         except sqlite3.Error as e:
             print(f"sqlite3.Error: {e}")
         return None
+    
 
-# Retrieve_UUID_Database_from_row(f'DB_geo_arm.db', 3)
 
 class RetrieveAllUUIDs():
     def __init__(self, database_name ):
@@ -224,7 +220,7 @@ class RetrieveAllUUIDs():
             print(f"sqlite3.Error: {e}")
         return all_dicts
     
-# RetrieveAllUUIDs('DB_geo_arm.db')
+
 # Output: 
 ''' THIS IS WORKING VERY NICELY!
 {
@@ -260,3 +256,10 @@ class RetrieveAllUUIDs():
 '''
 
 
+
+
+
+
+UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_multiGEO_uuid_combined_dict)
+UpdateDatabase(f'DB_geo_arm.db', multiJNT_for_oneGEO_uuid_combined_dict)
+UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_oneGEO_uuid_combined_dict)

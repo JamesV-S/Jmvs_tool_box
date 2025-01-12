@@ -31,7 +31,6 @@ def delete_existing_ui(ui_name):
         cmds.deleteUI(ui_name, window=True)
 
 
-
 class GeoDatabase(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(GeoDatabase, self).__init__(parent)
@@ -92,19 +91,20 @@ class GeoDatabase(QtWidgets.QWidget):
             }
         
 
-        main_Vlayout = QtWidgets.QVBoxLayout(self)
-        # 3 horizontal layouts
-        top_parent_Hlayout = QtWidgets.QHBoxLayout() # 1
-        mid_parent_Hlayout = QtWidgets.QHBoxLayout() # 2
-        bott_parent_Hlayout = QtWidgets.QHBoxLayout() # 3
+        main_VLayout = QtWidgets.QVBoxLayout(self)
+        main_VLayout.setObjectName("main_Layout")
+        # 3 horizontal Layouts
+        top_parent_HLayout = QtWidgets.QHBoxLayout() # 1
+        mid_parent_HLayout = QtWidgets.QHBoxLayout() # 2
+        bott_parent_HLayout = QtWidgets.QHBoxLayout() # 3
 
-        main_Vlayout.addLayout(top_parent_Hlayout)
-        main_Vlayout.addLayout(mid_parent_Hlayout)
-        main_Vlayout.addLayout(bott_parent_Hlayout)
+        main_VLayout.addLayout(top_parent_HLayout)
+        main_VLayout.addLayout(mid_parent_HLayout)
+        main_VLayout.addLayout(bott_parent_HLayout)
     
         #----------------------------------------------------------------------
         # 1
-        #--------
+        #----------------------------------------------------------------------
         # data from database to visualise.
         
         # initialise models for each treeview
@@ -120,6 +120,12 @@ class GeoDatabase(QtWidgets.QWidget):
         self.geo_tree_view = QtWidgets.QTreeView(self)
         self.geo_tree_view.setObjectName("geo_treeview")
         self.geo_tree_view.setModel(self.geo_model)
+        
+        self.joint_tree_view.setObjectName("joint_tree_view")
+        self.geo_tree_view.setObjectName("geo_tree_view")
+
+        header = self.geo_tree_view.header()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
         # set the size of the two treesizess
         for tree_view in [self.joint_tree_view, self.geo_tree_view]:
@@ -129,52 +135,193 @@ class GeoDatabase(QtWidgets.QWidget):
         # Connect the selection change on joint tree to effect geo tree. 
         self.joint_tree_view.selectionModel().selectionChanged.connect(self.highlight_corresponding_geo)
 
-        # add the 2 tree views to the tree layout. 
-        tree_H_layout = QtWidgets.QHBoxLayout()
-        tree_H_layout.addWidget(self.joint_tree_view)
-        tree_H_layout.addWidget(self.geo_tree_view)
-        top_parent_Hlayout.addLayout(tree_H_layout)
+        # add the 2 tree views to the tree Layout. 
+        tree_H_Layout = QtWidgets.QHBoxLayout()
+        tree_H_Layout.addWidget(self.joint_tree_view)
+        tree_H_Layout.addWidget(self.geo_tree_view)
+        top_parent_HLayout.addLayout(tree_H_Layout)
         
+        #----------------------------------------------------------------------
+        # The Setting to the right of the Tree
+        layV_TOP_R = QtWidgets.QVBoxLayout()
+        #layV_TOP_R.setContentsMargins(0, 30, 0, 0)
+        #layV_TOP_R.setSpacing(40)
+        
+        # -- Horizontal Spacer --
+        layH_Spacer_0 = QtWidgets.QHBoxLayout()
+        # Add the spacer QWidget
+        spacerH_0 = QtWidgets.QWidget()
+        spacerH_0.setFixedSize(350,10)
+        spacerH_0.setObjectName("Spacer")
+        layH_Spacer_0.addWidget(spacerH_0)
+        layV_TOP_R.addLayout(layH_Spacer_0)
+        layH_Spacer_0.setContentsMargins(0, 15, 0, 0)
+
         #---------------------
-        dropDown_db = QtWidgets.QComboBox()
-        dropDown_db.addItems(["DB_geo_arm.db", "DB_geo_mech.db", "DB_geo_cyborgMax.db"])
+        # Add new Button & Export options
+        layV_Add_DB = QtWidgets.QVBoxLayout()
         
-        # skinning_grid_layout for skinning buttons
+        # -- Add New Database --
+        layH_Add_DB_btn = QtWidgets.QHBoxLayout()
+        layH_Add_DB_btn.setContentsMargins(100, 0, 0, 0)
+
+        radioBtn_Add_new_DB = QtWidgets.QRadioButton("Add New Database")
+        layH_Add_DB_btn.addWidget(radioBtn_Add_new_DB)
+        
+        # -- Export Options --
+        layH_exportOptions_DB_btn = QtWidgets.QHBoxLayout()
+        Btn_exportOptions = QtWidgets.QPushButton("+")
+        Lbl_exportOptions = QtWidgets.QLabel("Export Options")
+        layH_exportOptions_DB_btn.addWidget(Btn_exportOptions)
+        layH_exportOptions_DB_btn.addWidget(Lbl_exportOptions)
+        Lbl_exportOptions.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        Lbl_exportOptions.setFixedSize(150, 30)
+        
+        ''''''
+        # -- Horizontal Spacer --
+        layH_Spacer_01 = QtWidgets.QHBoxLayout()
+        # Add the spacer QWidget
+        spacerH_01 = QtWidgets.QWidget()
+        spacerH_01.setFixedSize(350,10)
+        spacerH_01.setObjectName("Spacer")
+        #spacerH_01 = QtWidgets.QSpacerItem(60, 15, QtWidgets.QSizePolicy.Maximum, 
+        #                                   QtWidgets.QSizePolicy.Minimum)
+        layH_Spacer_01.addWidget(spacerH_01)
+        layH_Spacer_01.setContentsMargins(0, 15, 0, 0)
+        ''''''
+
+        # add this sections H_Layout to parent V_Layout
+        layV_Add_DB.addLayout(layH_Add_DB_btn)
+        layV_Add_DB.addLayout(layH_exportOptions_DB_btn)
+        layV_Add_DB.addLayout(layH_Spacer_01)
+
+        layV_TOP_R.addLayout(layV_Add_DB)
+
+        #---------------------
+        # Database dropDownBox Layout
+        layV_dropDown_DB = QtWidgets.QVBoxLayout()
+
+        # -- Database Dropdown TITLE --
+        layH_ddBox_Lbl = QtWidgets.QHBoxLayout()
+        ddBox_Lbl = QtWidgets.QLabel("Available Databases'")
+        layH_ddBox_Lbl.addWidget(ddBox_Lbl)
+        ddBox_Lbl.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        ddBox_Lbl.setFixedSize(150, 30)
+
+        # -- Database Dropdown -- 
+        layH_ddBox = QtWidgets.QHBoxLayout()
+        database_ddBox = QtWidgets.QComboBox()
+        #                        (BElOW) TEMPORARY LIST (BElOW)
+        database_ddBox.addItems(["DB_geo_arm.db", "DB_geo_mech.db", "DB_geo_cyborgMax.db"])
+        layH_ddBox.addWidget(database_ddBox)
+
+        # -- Horizontal Spacer --
+        layH_Spacer_02 = QtWidgets.QHBoxLayout()
+        # Add the spacer QWidget
+        spacerH_02 = QtWidgets.QWidget()
+        spacerH_02.setFixedSize(350,10)
+        spacerH_02.setObjectName("Spacer")
+        layH_Spacer_02.addWidget(spacerH_02)
+        layH_Spacer_02.setContentsMargins(0, 15, 0, 0)
+
+        layV_dropDown_DB.addLayout(layH_ddBox_Lbl)
+        layV_dropDown_DB.addLayout(layH_ddBox)
+        layV_dropDown_DB.addLayout(layH_Spacer_02)
+
+        layV_TOP_R.addLayout(layV_dropDown_DB)
+
+        #---------------------
+        # Skinning Buttons Layout
+        skinning_grid_Layout = QtWidgets.QGridLayout()
+        skinning_grid_Layout.setHorizontalSpacing(-1000)
+
+        # -- Buttons --
         bind_skn_btn = QtWidgets.QPushButton("Bind Skin")
         unbind_skn_btn = QtWidgets.QPushButton("Unbind Skin")
-        skinning_grid_layout = QtWidgets.QGridLayout()
-        skinning_grid_layout.setHorizontalSpacing(-1000)
-        skinning_grid_layout.addWidget(bind_skn_btn, 0,0)
-        skinning_grid_layout.addWidget(unbind_skn_btn, 0, 1)
+        bind_all = QtWidgets.QPushButton("Bind ALL")
+        unbind_all = QtWidgets.QPushButton("Unbind ALL")
+        skinning_grid_Layout.addWidget(bind_skn_btn, 0,0)
+        skinning_grid_Layout.addWidget(unbind_skn_btn, 0, 1)
+        skinning_grid_Layout.addWidget(bind_all, 1,0)
+        skinning_grid_Layout.addWidget(unbind_all, 1, 1)
+    
+        # add drop down db selector & skinning grid to `layV_TOP_R`
+        layV_TOP_R.addLayout(skinning_grid_Layout)
+
+        # -- Horizontal Spacer --
+        layH_Spacer_03 = QtWidgets.QHBoxLayout()
+        # Add the spacer QWidget
+        spacerH_03 = QtWidgets.QWidget()
+        spacerH_03.setFixedSize(350,10)
+        spacerH_03.setObjectName("Spacer")
+        layH_Spacer_03.addWidget(spacerH_03)
+        layV_TOP_R.addLayout(layH_Spacer_03)
+        layH_Spacer_03.setContentsMargins(0, 15, 0, 0)
         
-        # set layout options too
-        db_selector_skinnging_V_layout = QtWidgets.QVBoxLayout()
-        db_selector_skinnging_V_layout.setContentsMargins(0, 30, 0, 0)
-        db_selector_skinnging_V_layout.setSpacing(40)
-        # add drop down db selector & skinning grid to `db_selector_skinnging_V_layout`
-        db_selector_skinnging_V_layout.addWidget(dropDown_db)
-        db_selector_skinnging_V_layout.addLayout(skinning_grid_layout)
-        top_parent_Hlayout.addLayout(db_selector_skinnging_V_layout)
+        #---------------------
+        # Delete Database Layout
+        layH_delete_DB = QtWidgets.QHBoxLayout()
+
+        # -- Delete Label --
+        deleteDB_Lbl = QtWidgets.QLabel("Delete Databases'")
+        layH_delete_DB.addWidget(deleteDB_Lbl)
+
+        # -- Delete Button --
+        layH_deleteDB_Btn = QtWidgets.QPushButton("(/)")
+        layH_delete_DB.addWidget(layH_deleteDB_Btn)
+
+        # -------- Add All Widgets to Main Layout through its child --------
+        top_parent_HLayout.addLayout(layV_TOP_R)
+
+        # ---- TOOL TIPS ----
+        bind_skn_btn.setToolTip("Bind Geo to Joint SELECTION")
+        unbind_skn_btn.setToolTip("Bind Geo to Joint SELECTION")
+        bind_all.setToolTip("Bind ALL Geo to Joint")
+        unbind_all.setToolTip("Unbind ALL Geo to Joint")
+
+        # ---- STYLE SETTINGS ----
+        special_true = [bind_skn_btn, unbind_skn_btn, bind_all, unbind_all]
+        special_false = []
+        
+        for item in special_true:
+            item.setProperty("specialButton_Skin", True)
+        for item in special_false:
+            item.setProperty("specialButton_Skin", False)
 
         #----------------------------------------------------------------------
         # 2: update GEO & JOINT
+        #----------------------------------------------------------------------
         upd_rletionship_btn = QtWidgets.QPushButton("Update Relationship")
         add_jnt_btn = QtWidgets.QPushButton("Add JOINT")
         add_geo_btn = QtWidgets.QPushButton("Add GEO")
         
-        mid_parent_Hlayout.addWidget(upd_rletionship_btn)
-        mid_parent_Hlayout.addWidget(add_jnt_btn)
-        mid_parent_Hlayout.addWidget(add_geo_btn)
+        add_geo_btn.setProperty("specialButton_add", True)
+        add_jnt_btn.setProperty("specialButton_add", True)
+
+        mid_parent_HLayout.addWidget(upd_rletionship_btn)
+        mid_parent_HLayout.addWidget(add_jnt_btn)
+        mid_parent_HLayout.addWidget(add_geo_btn)
+
         #----------------------------------------------------------------------
         # 3 replacing JOINT & GEO of selection!
+        #----------------------------------------------------------------------
+
         rpl_jnt_btn = QtWidgets.QPushButton("Replace JOINT")
         rpl_geo_btn = QtWidgets.QPushButton("Replace GEOMETRY")
         
-        bott_parent_Hlayout.addWidget(rpl_jnt_btn)
-        bott_parent_Hlayout.addWidget(rpl_geo_btn)
+        rpl_jnt_btn.setProperty("specialButton_rpl", True)
+        rpl_geo_btn.setProperty("specialButton_rpl", True)
+
+        bott_parent_HLayout.addWidget(rpl_jnt_btn)
+        bott_parent_HLayout.addWidget(rpl_geo_btn)
         
         #----------------------------------------------------------------------
-        self.setLayout(main_Vlayout)
+        self.setLayout(main_VLayout)
+    
+
+    def UI_exporting_database(self):
+        # create the ui for the database exporter
+        pass
     
 
     def highlight_corresponding_geo(self, selected, deselected):
@@ -292,6 +439,9 @@ class GeoDatabase(QtWidgets.QWidget):
 
     def create_database(self):
         database_schema_001.CreateDatabase(mdl_name="geo_mech")
+
+
+
 
 def geoDB_main():
     app = QtWidgets.QApplication.instance()

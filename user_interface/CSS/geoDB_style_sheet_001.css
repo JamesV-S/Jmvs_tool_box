@@ -1,65 +1,41 @@
-
 /*
-QPushButton#button_01 {
-    color:azure ;
-    background-color: black;
-    border-style: outset;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: gold;
-    font: bold 14px;
-    min-width: 10em;
-    padding: 6px;
-}
-
-QPushButton#button_02 {
-    color:azure ;
-    background-color: blue;
-    border-style: outset;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: orange;
-    font: bold 14px;
-    min-width: 10em;
-    padding: 6px;
+QWidget {
+    background-color: rgb(30, 30, 30); 
 }
 */
-/*
-QPushButton[specialButton="true"] {
-    background-image: url(C:/Docs/maya/scripts/Maya_Python_Qt_UIs/images/star_wars_space_background.jpg);
-    background-size:50px 50px;
-    border-style:double;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: gold;
-    font: bold 14px;
-    min-width: 10em;
-    padding: 6px;
-}
 
-
-*/
-
-* {
-    background-color:rgb(92, 81, 117);
-    color: rgba(20, 220, 153, 0);
-}
-
-
-QPushButton[specialButton="true"]:hover {
-    color: azure
+QWidget {
+    background-color: rgb(45, 45, 67);
 }
 
 QPushButton {
-    color:rgb(225, 225, 225) ;
     background-color: rgb(19, 16, 43);
-    border-style: outset;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: rgb(237, 237, 237);
-    font: bold 14px;
-    min-width: 5em;
-    padding: 3px;
+    border-bottom: rgb(237, 237, 237);
+    border-right: rgb(237, 237, 237);
+    color: rgb(225, 225, 225);
+    border-bottom-style: solid ;
+    border-right-style: solid ;
+    border-width: 2.5px;
+    border-radius: 0px;
+    font-family:'Source Code Pro';
+    font: medium 8px;
+    min-width: 8em;
+    padding: 8px;
+    font-size: larger;
+}
+
+QPushButton[specialButton_add="true"]:hover,
+QPushButton[specialButton_rpl="true"]:hover {
+    color: azure;
+}
+
+QPushButton[specialButton_Skin="true"]:hover {
+    color: azure;
+    border-width: 2.5px;
+    background-size: 50%;
+    background-position: left 20px top 20px;
+    background-color: black;
+    border-color: rgb(105, 28, 28);
 }
 
 QLabel {
@@ -75,53 +51,73 @@ QLabel {
 }
 
 QTreeView {
-    color:rgb(239, 239, 239) ;
+    color: rgb(239, 239, 239);
     background-color: rgb(34, 30, 60);
-    border-style: outset;
+    border-style: double;
     border-width: 2px;
     border-radius: 5px;
-    /*border-color: crimson;*/
-    font: bold 14px;
+    border-color: rgb(5, 0, 42);
+    font: medium 8px;
     min-width: 10em;
-    padding: 6px;
+    padding: 15px;
 }
 
-QCheckBox {
-    spacing: 5px;
-    color:rgb(126, 13, 13)
-}
-
-QCheckBox::indicator {
-    width: 13px;
-    height: 13px;
-    color:rgb(20, 220, 153);
-}
-
-QHeaderView::sectio {
-    background-color: #000000;
-    color: #fff;
+QHeaderView::selection {
+    background-color: #d20000;
+    color: #0d00ff;
     padding: 3px;
-    border-radius: 4px;
+    border-radius: 0px;
 }
 
-QTreeView#treeView::item:selected:active{
-    /*; border-radius: 5px;*/
-    background-color:rgb(56, 0, 0); /*darkolivegreen*/
-    color:white;
-    
+QTreeView#joint_tree_view {
+    color: rgb(255, 255, 255);
+    background-color: rgb(48, 0, 0);
+    border-color: rgb(5, 0, 42);
 }
 
-QTreeView#treeView {
-    color: rgb(0, 19, 88);
+QTreeView#geo_tree_view {
+    color: rgb(239, 239, 239);
+    background-color: rgb(20, 18, 35);
+    border-style: double;
+    border-width: 2px;
     border-radius: 5px;
-    padding:5px;
-    border-color: crimson;
+    border-color: rgb(5, 0, 42);
+    font: medium 8px;
+    min-width: 10em;
+    padding: 15px;
+}
+
+QTreeView#joint_tree_view::item:selected:active{
+    color:white;
+    background-color: black;
+    border-color:rgb(105, 28, 28)  
+}
+
+QTreeView#geo_tree_view::item:selected:active{
+    /*; border-radius: 5px;*/
+    color:white;
+    background-color: black;
+    border-width: 2.5px;
+    border-color:rgb(105, 28, 28)
+}
+
+QWidget#main_layout {
+    color: CRIMSON;
+}
+
+QWidget#Spacer {
+    background-color: rgb(100, 100, 100);
+    border-style: solid;
+    border-radius: 6px;
+    border-width: 2px;
+    border-color: rgb(27, 7, 7)
 }
 
 QComboBox {
     border: none;
     background-color: rgb(19, 16, 43);
-    border-bottom: rgb(255, 226, 63);
+    border-bottom: 2px solid rgb(255, 255, 255); /* Adjusted contrast */
+    color: rgb(225, 225, 225);
 }
 
 QGroupBox {
@@ -130,7 +126,6 @@ QGroupBox {
     
     /*border-radius: 1px;*/
 }
-
 
 /*Scroll Barss!!!!*/
 QScrollBar:vertical {
@@ -144,17 +139,16 @@ QScrollBar:horizontal {
 QScrollBar::handle:vertical,
 QScrollBar::handle:horizontal {
     background: #666;
-    border-radius: 5px;
+    border-radius: 0px;
     min-height: 20px;
 }
 
 QToolTip {
     background-color: rgba(0, 0, 0, 0.733);
     color:white;
-    font-family:'sans-serif'; /*'Lucida Grande' ,, Tahoma, Geneva, Verdana, sans-serif, 'ource Code Pro',  'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif*/
+    font-family:'Lucida Sans Unicode'; /*'Lucida Grande' ,, Tahoma, Geneva, Verdana, sans-serif, 'ource Code Pro',  'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif*/
     font-size: 12px;
     font-weight: bold;
     padding: 4px;
-    border: 1px solid #ffff;
     border-radius: 10px; 
 }

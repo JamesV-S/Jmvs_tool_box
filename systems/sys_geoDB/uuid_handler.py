@@ -1,7 +1,6 @@
 
 import maya.cmds as cmds
 
-#------------------------------------------------------------------------------
 # return a uuid dict
 def return_uuid_dict_from_geo(obj_sel):
     # put the uuids into dict. Use `uuid=True` flag in `cmds.ls()`
@@ -14,7 +13,6 @@ def return_uuid_dict_from_geo(obj_sel):
             print(f"Geo `{name}` doesn't exist")
     print(f"geo: {uuid_dict}")
     return uuid_dict
-# return_uuid_dict_from_geo(["geo_upperarm", "geo_lowerarm", "geo_hand"])
 
 
 def return_uuid_dict_from_joint(jnts_sel):
@@ -27,7 +25,6 @@ def return_uuid_dict_from_joint(jnts_sel):
             print(f"joint `{name}` doesn't exist")
     print(f"jnt: {uuid_dict}")
     return uuid_dict
-return_uuid_dict_from_joint(["jnt_skn_0_shoulder_L", "jnt_skn_0_elbow_L", "jnt_skn_0_wrist_L"])
 
 
 # return a uuid list
@@ -42,7 +39,14 @@ def return_uuid_list_from_geo(obj_sel):
             print(f"Geo `{name}` doesn't exist")
     print(f"list {uuid_list}")
     return uuid_list
-#return_uuid_list_from_geo(["geo_upperarm", "geo_lowerarm", "geo_hand"])
+
+
+
+
+
+
+
+
 
 #------------------------------------------------------------------------------
 # UPDATES THE GEO & JOINT NAME of existing UUID dict.

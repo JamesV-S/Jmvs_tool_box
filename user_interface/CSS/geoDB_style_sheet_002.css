@@ -1,0 +1,64 @@
+QWidget {
+    background-color: rgb(30, 30, 30); /* Main window background */
+}
+
+QPushButton {
+    background-color: rgb(19, 16, 43);
+    border-bottom: rgb(237, 237, 237);
+    border-right: rgb(237, 237, 237);
+    color: rgb(225, 225, 225);
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 0px;
+    font: medium 8px;
+    min-width: 8em;
+    padding: 8px;
+    font-size: larger;
+}
+
+QPushButton[specialButton_add="true"]:hover,
+QPushButton[specialButton_rpl="true"]:hover {
+    color: azure;
+}
+
+QPushButton[specialButton_Skin="true"]:hover {
+    color: azure;
+    border-width: 2.5px;
+    background-size: 50%;
+    background-position: left 20px top 20px;
+    background-color: black;
+    border-color: rgb(105, 28, 28);
+}
+
+QComboBox {
+    border: none;
+    background-color: rgb(19, 16, 43);
+    border-bottom: 2px solid rgb(255, 255, 255); /* Adjusted contrast */
+    color: rgb(225, 225, 225);
+}
+
+QTreeView {
+    color: rgb(239, 239, 239);
+    background-color: rgb(34, 30, 60);
+    border-style: double;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: rgb(255, 255, 255);
+    font: medium 8px;
+    min-width: 10em;
+    padding: 15px;
+}
+
+QTreeView#joint_tree_view,
+QTreeView#geo_tree_view {
+    padding: 5px;
+    border-color: rgb(5, 0, 42);
+}
+
+QTreeView#joint_tree_view::item:selected:active,
+QTreeView#geo_tree_view::item:selected:active {
+    color: white;
+    background-color: black;
+    border-width: 2.5px;
+    border-color: rgb(105, 28, 28);
+}
