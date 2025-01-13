@@ -3,13 +3,13 @@ import maya.cmds as cmds
 from maya import OpenMayaUI
 
 try:
-    from PySide6 import QtCore, QtWidgets, QtGui
+    from PySide6 import QtCore, QtWidgets, QtGui, QtUiTools
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QIcon, QStandardItemModel, QStandardItem
     from PySide6.QtWidgets import (QWidget)
     from shiboken6 import wrapInstance
 except ModuleNotFoundError:
-    from PySide2 import QtCore, QtWidgets, QtGui
+    from PySide2 import QtCore, QtWidgets, QtGui, QtUiTools
     from PySide2.QtCore import Qt
     from PySide2.QtGui import QIcon
     from PySide2.QtWidgets import (QWidget)
@@ -54,6 +54,8 @@ class GeoDatabase(QtWidgets.QWidget):
         self.setStyleSheet(stylesheet)
 
         self.UI()
+        self.UI_connect_signals()
+
         geo_arm_db_select = 1
         if geo_arm_db_select:
             self.databse_selection_change()
@@ -105,7 +107,7 @@ class GeoDatabase(QtWidgets.QWidget):
         #----------------------------------------------------------------------
         # 1
         #----------------------------------------------------------------------
-        # data from database to visualise.
+        # ---- TREEVIEW data from database to visualise. ----
         
         # initialise models for each treeview
         self.joint_model = QtGui.QStandardItemModel()
@@ -165,19 +167,20 @@ class GeoDatabase(QtWidgets.QWidget):
         layH_Add_DB_btn = QtWidgets.QHBoxLayout()
         layH_Add_DB_btn.setContentsMargins(100, 0, 0, 0)
 
-        radioBtn_Add_new_DB = QtWidgets.QRadioButton("Add New Database")
-        layH_Add_DB_btn.addWidget(radioBtn_Add_new_DB)
+        self.radioBtn_Add_new_DB = QtWidgets.QRadioButton("Add New Database")
+        layH_Add_DB_btn.addWidget(self.radioBtn_Add_new_DB)
         
         # -- Export Options --
         layH_exportOptions_DB_btn = QtWidgets.QHBoxLayout()
-        Btn_exportOptions = QtWidgets.QPushButton("+")
-        Lbl_exportOptions = QtWidgets.QLabel("Export Options")
-        layH_exportOptions_DB_btn.addWidget(Btn_exportOptions)
-        layH_exportOptions_DB_btn.addWidget(Lbl_exportOptions)
-        Lbl_exportOptions.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        Lbl_exportOptions.setFixedSize(150, 30)
+        self.btn_exportOptions = QtWidgets.QPushButton("+")
+        self.Lbl_exportOptions = QtWidgets.QLabel("Export Options")
+        self.btn_exportOptions.setEnabled(False)
+        self.Lbl_exportOptions.setEnabled(False)
+        layH_exportOptions_DB_btn.addWidget(self.btn_exportOptions)
+        layH_exportOptions_DB_btn.addWidget(self.Lbl_exportOptions)
+        self.Lbl_exportOptions.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self.Lbl_exportOptions.setFixedSize(150, 30)
         
-        ''''''
         # -- Horizontal Spacer --
         layH_Spacer_01 = QtWidgets.QHBoxLayout()
         # Add the spacer QWidget
@@ -188,7 +191,6 @@ class GeoDatabase(QtWidgets.QWidget):
         #                                   QtWidgets.QSizePolicy.Minimum)
         layH_Spacer_01.addWidget(spacerH_01)
         layH_Spacer_01.setContentsMargins(0, 15, 0, 0)
-        ''''''
 
         # add this sections H_Layout to parent V_Layout
         layV_Add_DB.addLayout(layH_Add_DB_btn)
@@ -261,14 +263,18 @@ class GeoDatabase(QtWidgets.QWidget):
         #---------------------
         # Delete Database Layout
         layH_delete_DB = QtWidgets.QHBoxLayout()
-
-        # -- Delete Label --
-        deleteDB_Lbl = QtWidgets.QLabel("Delete Databases'")
-        layH_delete_DB.addWidget(deleteDB_Lbl)
-
+        
         # -- Delete Button --
         layH_deleteDB_Btn = QtWidgets.QPushButton("(/)")
         layH_delete_DB.addWidget(layH_deleteDB_Btn)
+
+        # -- Delete Label --
+        deleteDB_Lbl = QtWidgets.QLabel("Delete Databases'")
+        deleteDB_Lbl.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        deleteDB_Lbl.setFixedSize(150, 30)
+        layH_delete_DB.addWidget(deleteDB_Lbl)
+
+        layV_TOP_R.addLayout(layH_delete_DB)
 
         # -------- Add All Widgets to Main Layout through its child --------
         top_parent_HLayout.addLayout(layV_TOP_R)
@@ -318,12 +324,52 @@ class GeoDatabase(QtWidgets.QWidget):
         #----------------------------------------------------------------------
         self.setLayout(main_VLayout)
     
+    
+    def UI_connect_signals(self):
+        #----------------------------------------------------------------------
+        # 1 - Connections
+        #----------------------------------------------------------------------
+        # -------- Tree views --------
 
-    def UI_exporting_database(self):
-        # create the ui for the database exporter
+        # -------- Options to the right of treer --------
+        # -- Add Database options --
+        self.radioBtn_Add_new_DB.clicked.connect(self.sigFunc_addNewDB_radioBtn)
+        self.btn_exportOptions.clicked.connect(self.sigFunc_exportOptions_btn)
+
+
+
+        # -- Available databse options --
+
+        # -- Skinning options --
+
+        # -- Delete database options --
+
         pass
+
+
+    ########## UI SIGNAL FUNCTOINS ##########
+    # -------- Tree views --------
+    # -- Add Database options --
+    def sigFunc_addNewDB_radioBtn(self):
+        self.val_addDB_radioBtn = self.radioBtn_Add_new_DB.isChecked()
+        if self.val_addDB_radioBtn:
+            print("radio button clicked ON")
+            self.btn_exportOptions.setEnabled(True)
+            self.Lbl_exportOptions.setEnabled(True)
+        else:
+            print("radio button clicked OFF")
+            self.btn_exportOptions.setEnabled(False)
+            self.Lbl_exportOptions.setEnabled(False)
     
 
+    def sigFunc_exportOptions_btn(self):
+        try:
+            print(f"Export options clicked!")
+        except Exception as e:
+            print(f"Export button encounted an error: {e}")
+
+
+    ########## TREE VIEW FUNCTOINS ##########
     def highlight_corresponding_geo(self, selected, deselected):
         # Clear previous selection
         self.geo_tree_view.selectionModel().clearSelection()
@@ -425,6 +471,7 @@ class GeoDatabase(QtWidgets.QWidget):
                 geo_item = QtGui.QStandardItem(geo_name)
                 geo_tree_parent_item.appendRow(geo_item)
 
+
     def databse_selection_change(self):
         current_db = "DB_geo_arm.db"# self.dropDown_db.currentText()
         if current_db == "DB_geo_arm.db":
@@ -437,6 +484,20 @@ class GeoDatabase(QtWidgets.QWidget):
         elif current_db == "DB_geo_cyborgMax.db":
             self.populate_tree_views(self.oneJNT_for_multiGEO_combined_dict)
 
+
+    ########## EXPORT UI ##########
+    def UI_exporting_database(self):
+        # create the ui for the database exporter
+        pass
+
+
+    def exporting_database_func(self):
+        # load the ui
+        print("export options button clicked, loading ui")
+        self.export_ui = QtUiTools.QUiLoader().load()
+
+
+    ########## DATABASE FUNCTOINS ##########
     def create_database(self):
         database_schema_001.CreateDatabase(mdl_name="geo_mech")
 
