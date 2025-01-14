@@ -17,10 +17,17 @@ except ModuleNotFoundError:
 
 import sys
 import importlib
-import os.path
+import os
 
 from databases.geo_databases import database_schema_001
+from user_interface.geoDB_ui import export_db
+from systems import (
+    os_cr_custom_directory
+)
+
 importlib.reload(database_schema_001)
+importlib.reload(export_db)
+importlib.reload(os_cr_custom_directory)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -53,6 +60,29 @@ class GeoDatabase(QtWidgets.QWidget):
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
 
+        # gather available database file names & pass to the ComboBox
+        self.directory_list = [os_cr_custom_directory.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        '''
+        self.directory_list = [
+            "C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\databases\\geo_databases", 
+            "C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\databases"
+            ]
+        '''
+        self.db_files = []
+        for directory in self.directory_list:
+            if os.path.exists(directory):
+                for db_file_name in os.listdir(directory):
+                    if db_file_name.endswith('.db'):
+                        self.db_files.append(db_file_name)
+        '''
+        self.available_db_path = "C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\databases\\geo_databases" # retrieve this dynamically with the ui
+        other_available_path = "C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\databases"
+        self.db_files = []# ["James", "Lilirose", "Lis", "Claudia"]
+        for db_file_name in os.listdir(self.available_db_path):
+            if db_file_name.endswith('.db'):
+                self.db_files.append(db_file_name)
+        '''
+
         self.UI()
         self.UI_connect_signals()
 
@@ -60,9 +90,42 @@ class GeoDatabase(QtWidgets.QWidget):
         if geo_arm_db_select:
             self.databse_selection_change()
 
-        
+
+    def update_database_ComboBox(self):
+        print(f"UPDATING DB COMBO BOX WITH NEW database!")
+        self.db_files_update = []
+        for directory in self.directory_list:
+            if os.path.exists(directory):
+                for db_file_name in os.listdir(directory):
+                    if db_file_name.endswith('.db'):
+                        self.db_files_update.append(db_file_name)
+        self.database_comboBox.clear()
+        self.database_comboBox.addItems(self.db_files_update)
+        self.database_comboBox.setPlaceholderText("Updated Databases Added")
+        '''
+        items_to_add_DBcomboBox_update = []
+        for db_file_name in os.listdir(self.available_db_path):
+            items_to_add_DBcomboBox_update.append(db_file_name)
+        # filter out items in the folder except database files
+        filtered_list = [item for item in items_to_add_DBcomboBox_update if item.endswith('.db')]
+        self.database_comboBox.clear()
+        self.database_comboBox.addItems(filtered_list)
+        '''
+        '''
+        print(f"original_db_list = `{self.db_files}`")
+        print(f"updated_db_list = `{self.db_files}`")
+        # determine the difference between the list on the ui vs the updated list of databases in the directory
+        updated_db_list = list(set(filtered_list) - set(self.db_files))
+        self.database_comboBox.addItems(updated_db_list)
+        '''
+
+    
+    def get_database_directory(self, user_dir):
+        # from the user input, use the data, if radio button was called 
+        pass
+
+
     def UI(self):
-        
         self.oneJNT_for_multiGEO_combined_dict = {
             'joint_UUID_dict': {'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134'}, 
             'geometry_UUID_dict': {'geo_1': '946C0344-4B43-4E3E-E610-33AEFC6A76D2', 
@@ -164,22 +227,13 @@ class GeoDatabase(QtWidgets.QWidget):
         layV_Add_DB = QtWidgets.QVBoxLayout()
         
         # -- Add New Database --
-        layH_Add_DB_btn = QtWidgets.QHBoxLayout()
-        layH_Add_DB_btn.setContentsMargins(100, 0, 0, 0)
-
-        self.radioBtn_Add_new_DB = QtWidgets.QRadioButton("Add New Database")
-        layH_Add_DB_btn.addWidget(self.radioBtn_Add_new_DB)
-        
-        # -- Export Options --
-        layH_exportOptions_DB_btn = QtWidgets.QHBoxLayout()
-        self.btn_exportOptions = QtWidgets.QPushButton("+")
-        self.Lbl_exportOptions = QtWidgets.QLabel("Export Options")
-        self.btn_exportOptions.setEnabled(False)
-        self.Lbl_exportOptions.setEnabled(False)
-        layH_exportOptions_DB_btn.addWidget(self.btn_exportOptions)
-        layH_exportOptions_DB_btn.addWidget(self.Lbl_exportOptions)
-        self.Lbl_exportOptions.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        self.Lbl_exportOptions.setFixedSize(150, 30)
+        layH_Add_New_DB = QtWidgets.QHBoxLayout()
+        self.Add_new_DB_radioBtn = QtWidgets.QRadioButton("Add New Database | Options:")
+        layH_Add_New_DB.addWidget(self.Add_new_DB_radioBtn)
+        # -- Export Options button to call ui --
+        self.exportOptions_btn = QtWidgets.QPushButton("+")
+        self.exportOptions_btn.setEnabled(False)
+        layH_Add_New_DB.addWidget(self.exportOptions_btn)
         
         # -- Horizontal Spacer --
         layH_Spacer_01 = QtWidgets.QHBoxLayout()
@@ -192,9 +246,7 @@ class GeoDatabase(QtWidgets.QWidget):
         layH_Spacer_01.addWidget(spacerH_01)
         layH_Spacer_01.setContentsMargins(0, 15, 0, 0)
 
-        # add this sections H_Layout to parent V_Layout
-        layV_Add_DB.addLayout(layH_Add_DB_btn)
-        layV_Add_DB.addLayout(layH_exportOptions_DB_btn)
+        layV_Add_DB.addLayout(layH_Add_New_DB)
         layV_Add_DB.addLayout(layH_Spacer_01)
 
         layV_TOP_R.addLayout(layV_Add_DB)
@@ -203,19 +255,33 @@ class GeoDatabase(QtWidgets.QWidget):
         # Database dropDownBox Layout
         layV_dropDown_DB = QtWidgets.QVBoxLayout()
 
-        # -- Database Dropdown TITLE --
-        layH_ddBox_Lbl = QtWidgets.QHBoxLayout()
-        ddBox_Lbl = QtWidgets.QLabel("Available Databases'")
-        layH_ddBox_Lbl.addWidget(ddBox_Lbl)
-        ddBox_Lbl.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        ddBox_Lbl.setFixedSize(150, 30)
+        # -- Databases path (add path's to location's the tool searches) -- 
+        layH_Available_DB_path = QtWidgets.QHBoxLayout()
+        #self.presetPath_checkBox = QtWidgets.QCheckBox("PRESET | Jmvs_ToolBox | DB | Folder")
+        #self.presetPath_checkBox.setChecked(True)
+        self.db_folder_path_btn = QtWidgets.QPushButton("Add DB Folder Path")
+        self.db_folder_path_btn.setObjectName("folderPath_text")
 
-        # -- Database Dropdown -- 
-        layH_ddBox = QtWidgets.QHBoxLayout()
-        database_ddBox = QtWidgets.QComboBox()
-        #                        (BElOW) TEMPORARY LIST (BElOW)
-        database_ddBox.addItems(["DB_geo_arm.db", "DB_geo_mech.db", "DB_geo_cyborgMax.db"])
-        layH_ddBox.addWidget(database_ddBox)
+        layH_Available_DB_path.addWidget(self.db_folder_path_btn)
+        #layH_Available_DB_path.addWidget(self.presetPath_checkBox)
+        
+        layH_comboBox = QtWidgets.QHBoxLayout()
+        self.database_comboBox = QtWidgets.QComboBox()
+        self.database_comboBox.addItems(self.db_files)
+        self.database_comboBox.setPlaceholderText("^Add Databases^")
+        self.database_comboBox.model().sort(-1)
+        # editing features of a QComboBox
+        # self.database_comboBox.setMaxVisibleItems(1) # if 2, only 2 items at a time are shown, & adds a scrollbar
+        ''' Lesson:
+        #self.database_comboBox.setEditable(True) # user can type their own details
+        self.database_comboBox.setCurrentIndex(0)# Set defualt selected item by index
+        self.database_comboBox.insertItem(3, "George") # insert an item at a specific locaion
+        #self.database_comboBox.removeItem(4) # Remove an item from by index (deleting db)
+        #self.database_comboBox.clear()# clear all items from the ComboBox
+        self.index_1 = self.database_comboBox.findText("Lis")# return the idex of a spceific item by text
+        '''
+
+        layH_comboBox.addWidget(self.database_comboBox)
 
         # -- Horizontal Spacer --
         layH_Spacer_02 = QtWidgets.QHBoxLayout()
@@ -226,8 +292,9 @@ class GeoDatabase(QtWidgets.QWidget):
         layH_Spacer_02.addWidget(spacerH_02)
         layH_Spacer_02.setContentsMargins(0, 15, 0, 0)
 
-        layV_dropDown_DB.addLayout(layH_ddBox_Lbl)
-        layV_dropDown_DB.addLayout(layH_ddBox)
+        # layV_dropDown_DB.addLayout(layH_comboBox_Lbl)
+        layV_dropDown_DB.addLayout(layH_Available_DB_path)
+        layV_dropDown_DB.addLayout(layH_comboBox)
         layV_dropDown_DB.addLayout(layH_Spacer_02)
 
         layV_TOP_R.addLayout(layV_dropDown_DB)
@@ -265,15 +332,16 @@ class GeoDatabase(QtWidgets.QWidget):
         layH_delete_DB = QtWidgets.QHBoxLayout()
         
         # -- Delete Button --
-        layH_deleteDB_Btn = QtWidgets.QPushButton("(/)")
-        layH_delete_DB.addWidget(layH_deleteDB_Btn)
+        self.deleteDB_Btn = QtWidgets.QPushButton("(/)")
+        self.deleteDB_Btn.setEnabled(False)
 
         # -- Delete Label --
-        deleteDB_Lbl = QtWidgets.QLabel("Delete Databases'")
-        deleteDB_Lbl.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        deleteDB_Lbl.setFixedSize(150, 30)
-        layH_delete_DB.addWidget(deleteDB_Lbl)
-
+        self.deleteDB_checkBox = QtWidgets.QCheckBox("Delete Databases:")
+        self.deleteDB_checkBox.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self.deleteDB_checkBox.setFixedSize(125, 30)
+        
+        layH_delete_DB.addWidget(self.deleteDB_checkBox)
+        layH_delete_DB.addWidget(self.deleteDB_Btn)
         layV_TOP_R.addLayout(layH_delete_DB)
 
         # -------- Add All Widgets to Main Layout through its child --------
@@ -314,60 +382,82 @@ class GeoDatabase(QtWidgets.QWidget):
 
         rpl_jnt_btn = QtWidgets.QPushButton("Replace JOINT")
         rpl_geo_btn = QtWidgets.QPushButton("Replace GEOMETRY")
+        remove_relationship = QtWidgets.QPushButton("REMOVE Row/Relationship")
         
         rpl_jnt_btn.setProperty("specialButton_rpl", True)
         rpl_geo_btn.setProperty("specialButton_rpl", True)
 
         bott_parent_HLayout.addWidget(rpl_jnt_btn)
         bott_parent_HLayout.addWidget(rpl_geo_btn)
+        bott_parent_HLayout.addWidget(remove_relationship)
         
         #----------------------------------------------------------------------
         self.setLayout(main_VLayout)
     
     
     def UI_connect_signals(self):
-        #----------------------------------------------------------------------
-        # 1 - Connections
-        #----------------------------------------------------------------------
+        ########## UI CONNECTIONS : 1 : ##########
         # -------- Tree views --------
 
         # -------- Options to the right of treer --------
         # -- Add Database options --
-        self.radioBtn_Add_new_DB.clicked.connect(self.sigFunc_addNewDB_radioBtn)
-        self.btn_exportOptions.clicked.connect(self.sigFunc_exportOptions_btn)
+        self.Add_new_DB_radioBtn.clicked.connect(self.sigFunc_addNewDB_radioBtn)
+        self.exportOptions_btn.clicked.connect(self.sigFunc_exportOptions_btn)
 
-
-
-        # -- Available databse options --
+        # -- Available database options --
+        self.db_folder_path_btn.clicked.connect(self.sigFunc_dbFolderPath_btn)
+        self.database_comboBox.currentIndexChanged.connect(self.sigFunc_database_comboBox)
 
         # -- Skinning options --
 
         # -- Delete database options --
-
-        pass
+        self.deleteDB_checkBox.stateChanged.connect(self.sigFunc_deleteDB_checkBox)
 
 
     ########## UI SIGNAL FUNCTOINS ##########
     # -------- Tree views --------
     # -- Add Database options --
     def sigFunc_addNewDB_radioBtn(self):
-        self.val_addDB_radioBtn = self.radioBtn_Add_new_DB.isChecked()
+        self.val_addDB_radioBtn = self.Add_new_DB_radioBtn.isChecked()
         if self.val_addDB_radioBtn:
             print("radio button clicked ON")
-            self.btn_exportOptions.setEnabled(True)
-            self.Lbl_exportOptions.setEnabled(True)
+            self.exportOptions_btn.setEnabled(True)
         else:
             print("radio button clicked OFF")
-            self.btn_exportOptions.setEnabled(False)
-            self.Lbl_exportOptions.setEnabled(False)
+            self.exportOptions_btn.setEnabled(False)
     
 
     def sigFunc_exportOptions_btn(self):
         try:
-            print(f"Export options clicked!")
+            ui = export_db.export_DB_main()
+            # connect the signal to the update db combobox function
+            ui.databaseCreated.connect(self.update_database_ComboBox)
         except Exception as e:
             print(f"Export button encounted an error: {e}")
 
+    # -- available databases --
+    def sigFunc_dbFolderPath_btn(self):
+        # below is the chosen path by the user
+        directory = QtWidgets.QFileDialog.getExistingDirectory(
+            self, "Select Directory", os_cr_custom_directory.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
+        self.directory_list.append(directory)
+        self.update_database_ComboBox()
+
+
+    def sigFunc_database_comboBox(self, index):
+        self.val_database_comboBox = self.database_comboBox.itemText(index)
+        self.current_text = self.database_comboBox.currentText()
+        print(f"db_comboBox current text = `{self.current_text}`")
+        return self.val_database_comboBox
+
+
+    # -- Delete DB --
+    def sigFunc_deleteDB_checkBox(self):
+        self.val_deleteDB_checkBox = self.deleteDB_checkBox.isChecked()
+        if self.val_deleteDB_checkBox:
+            self.deleteDB_Btn.setEnabled(True)
+        else:
+            self.deleteDB_Btn.setEnabled(False)
 
     ########## TREE VIEW FUNCTOINS ##########
     def highlight_corresponding_geo(self, selected, deselected):

@@ -4,7 +4,7 @@ import importlib
 import sys
 import os
 
-''''''
+'''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
@@ -28,7 +28,7 @@ target_dir = go_up_path_levels(current_dir, levels)
 project_root = os.path.join(current_dir, '..', '..')  # Adjust path as necessary
 print(f"target_dir : {target_dir}, project_root: {project_root}")
 sys.path.append(os.path.abspath(target_dir))
-''''''
+'''
 
 from databases import database_manager
 importlib.reload(database_manager)
@@ -39,16 +39,23 @@ importlib.reload(database_manager)
 # store the dict in a database!
 
 class CreateDatabase():
-    def __init__(self, name):
-        db_name = f'DB_{name}.db'
+    def __init__(self, name, directory):
+        db_directory = os.path.expanduser(directory)
+        os.makedirs(db_directory, exist_ok=1)
+        # db_name must include the entire path too!
+        db_name = os.path.join(db_directory, f'DB_{name}.db') # f'DB_{name}.db'
+        print(f"db_name = `{db_name}`")
+        
         try:
             with sqlite3.connect(db_name) as conn:
                 # interasct with datsabase
+                print(f"Connection to database {db_name} opened successfully")
                 self.add_table(conn)
                 print(f"name `{name}` has connected to database {db_name}")
-                
         except sqlite3.Error as e:
-            print(e)
+            print(f"Create GEO Database error: {e}")
+        finally:
+            print(f"Connection to database {db_name} closed")
     ''' 
     """CREATE TABLE IF NOT EXISTS db_name (
         db_row_id INTEGER PRIMARY KEY,
@@ -70,8 +77,7 @@ class CreateDatabase():
             cursor.execute(state)
         conn.commit()
 
-
-CreateDatabase("geo_arm")
+#CreateDatabase("geo_TEST_002")
 
 #------------------------------------------------------------------------------
 
@@ -253,13 +259,7 @@ class RetrieveAllUUIDs():
 }
 }`
 
-'''
-
-
-
-
-
-
 UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_multiGEO_uuid_combined_dict)
 UpdateDatabase(f'DB_geo_arm.db', multiJNT_for_oneGEO_uuid_combined_dict)
 UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_oneGEO_uuid_combined_dict)
+'''

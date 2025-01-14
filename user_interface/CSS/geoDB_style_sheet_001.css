@@ -56,6 +56,18 @@ QPushButton:pressed {
      /* Maintain background position if used */
 }
 
+QPushButton#folderPath_text{
+    color:rgb(241, 255, 238) ;
+    background-color: rgba(46, 0, 0, 0.375);
+    font: 800 ;
+    min-width: 12em;
+    max-height: 1.5em;
+}
+
+QPushButton#folderPath_btn{
+    max-width: 0.5px;
+}
+
 /*
 QPushButton:disabled {
     background-color: rgba(19, 16, 43, 0.5); 
@@ -96,7 +108,7 @@ QLabel[DB_export_UI_02="true"]{
 
 /*------------------------------ QTEXTEDIT ------------------------------*/
 
-QTextEdit[DB_export_UI_01="true"]{
+QLineEdit[DB_export_UI_01="true"]{
     color:rgb(241, 255, 238) ;
     background-color: rgba(46, 0, 0, 0.375);
     font: 800 ;
