@@ -23,9 +23,9 @@ from databases.geo_databases import database_schema_001
 importlib.reload(database_schema_001)
 
 from systems import (
-    os_cr_custom_directory
+    os_custom_directory_utils
 )
-importlib.reload(os_cr_custom_directory)
+importlib.reload(os_custom_directory_utils)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -165,7 +165,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
             self.folderPath_text.setText("...\\Jmvs_ToolBox\\databases\\geo_databases")
             self.folderPath_text.setEnabled(False)
             # gather the directory rather than just writing it. 
-            self.directory = os_cr_custom_directory.create_directory("Jmvs_tool_box", "databases", "geo_databases")
+            self.directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")
             print(f"database directory PRESET: {self.directory}")
             # self.directory = "C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases"
         else:
@@ -178,7 +178,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
         # Open a directory picker dialog
         if not self.val_presetPath_radioBtn:
             self.directory = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory", os_cr_custom_directory.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
+            self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
         if self.directory:
             self.folderPath_text.setText(self.directory)
             print(f"Selected Directory: {self.directory}")

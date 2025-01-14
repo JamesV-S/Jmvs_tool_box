@@ -19,15 +19,23 @@ import sys
 import importlib
 import os
 
+from databases import database_manager
 from databases.geo_databases import database_schema_001
 from user_interface.geoDB_ui import export_db
 from systems import (
-    os_cr_custom_directory
+    os_custom_directory_utils,
+    utils
+)
+from systems.sys_geoDB import (
+    uuid_handler
 )
 
+importlib.reload(database_manager)
 importlib.reload(database_schema_001)
 importlib.reload(export_db)
-importlib.reload(os_cr_custom_directory)
+importlib.reload(os_custom_directory_utils)
+importlib.reload(utils)
+importlib.reload(uuid_handler)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -61,7 +69,7 @@ class GeoDatabase(QtWidgets.QWidget):
         self.setStyleSheet(stylesheet)
 
         # gather available database file names & pass to the ComboBox
-        self.directory_list = [os_cr_custom_directory.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         '''
         self.directory_list = [
             "C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\databases\\geo_databases", 
@@ -85,10 +93,6 @@ class GeoDatabase(QtWidgets.QWidget):
 
         self.UI()
         self.UI_connect_signals()
-
-        geo_arm_db_select = 1
-        if geo_arm_db_select:
-            self.databse_selection_change()
 
 
     def update_database_ComboBox(self):
@@ -365,16 +369,20 @@ class GeoDatabase(QtWidgets.QWidget):
         #----------------------------------------------------------------------
         # 2: update GEO & JOINT
         #----------------------------------------------------------------------
-        upd_rletionship_btn = QtWidgets.QPushButton("Update Relationship")
-        add_jnt_btn = QtWidgets.QPushButton("Add JOINT")
-        add_geo_btn = QtWidgets.QPushButton("Add GEO")
+        self.new_relationship_checkBox = QtWidgets.QCheckBox("New Relationship +")
+        self.new_relationship_checkBox.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self.new_relationship_checkBox.setFixedSize(125, 30)
+        self.add_jnt_btn = QtWidgets.QPushButton("Add JOINT")
+        self.add_jnt_btn.setEnabled(False)
+        self.add_geo_btn = QtWidgets.QPushButton("Add GEO")
+        self.add_geo_btn.setEnabled(True)
         
-        add_geo_btn.setProperty("specialButton_add", True)
-        add_jnt_btn.setProperty("specialButton_add", True)
+        self.add_geo_btn.setProperty("specialButton_add", True)
+        self.add_jnt_btn.setProperty("specialButton_add", True)
 
-        mid_parent_HLayout.addWidget(upd_rletionship_btn)
-        mid_parent_HLayout.addWidget(add_jnt_btn)
-        mid_parent_HLayout.addWidget(add_geo_btn)
+        mid_parent_HLayout.addWidget(self.new_relationship_checkBox)
+        mid_parent_HLayout.addWidget(self.add_jnt_btn)
+        mid_parent_HLayout.addWidget(self.add_geo_btn)
 
         #----------------------------------------------------------------------
         # 3 replacing JOINT & GEO of selection!
@@ -412,6 +420,11 @@ class GeoDatabase(QtWidgets.QWidget):
 
         # -- Delete database options --
         self.deleteDB_checkBox.stateChanged.connect(self.sigFunc_deleteDB_checkBox)
+        ########## UI CONNECTIONS : 2 : ##########
+        # -- add JOINT/GEO & update relationship btns --
+        self.new_relationship_checkBox.stateChanged.connect(self.sigFunc_new_relationship_checkBox)
+        self.add_jnt_btn.clicked.connect(self.sigFunc_add_joint_to_db_btn)
+        self.add_geo_btn.clicked.connect(self.sigFunc_add_geo_to_db_btn)
 
 
     ########## UI SIGNAL FUNCTOINS ##########
@@ -439,17 +452,17 @@ class GeoDatabase(QtWidgets.QWidget):
     def sigFunc_dbFolderPath_btn(self):
         # below is the chosen path by the user
         directory = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory", os_cr_custom_directory.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
+            self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
         self.directory_list.append(directory)
         self.update_database_ComboBox()
 
 
     def sigFunc_database_comboBox(self, index):
         self.val_database_comboBox = self.database_comboBox.itemText(index)
-        self.current_text = self.database_comboBox.currentText()
-        print(f"db_comboBox current text = `{self.current_text}`")
+        self.active_db = self.database_comboBox.currentText()
+        #print(f"db_comboBox current text = `{self.active_db}`")
+        self.visualise_active_databse()
         return self.val_database_comboBox
-
 
     # -- Delete DB --
     def sigFunc_deleteDB_checkBox(self):
@@ -459,61 +472,142 @@ class GeoDatabase(QtWidgets.QWidget):
         else:
             self.deleteDB_Btn.setEnabled(False)
 
-    ########## TREE VIEW FUNCTOINS ##########
-    def highlight_corresponding_geo(self, selected, deselected):
-        # Clear previous selection
-        self.geo_tree_view.selectionModel().clearSelection()
 
-        # Get the selected joint item
-        for index in selected.indexes():
-            joint_name = index.data()
+    # -- Add JOINT/GEO buttons --
+    def sigFunc_add_joint_to_db_btn(self):
+        self.add_geo_btn.setEnabled(True)
+        print(f"add_joint_to_db_btn cicked")
+        selection = cmds.ls(sl=1, type="joint")
+        if selection:
+            jnt_uuid_dict = uuid_handler.return_uuid_dict_from_joint(selection)
+            print(f"jnt_uuid_dict  == {jnt_uuid_dict}")
+        else:
+            print("No JOINT selected!")
+        
+        '''
+        conditions: 
+        A - create a neew row? OR add to existing row, what dictates this?
+        A = add to NEW row IF self.val_new_relationship_checkBox == True
             
-            # Logic to be changed!
-            # Based on the current dictionary, find the corresponding geo item
-            current_db = "DB_geo_arm.db" # self.dropDown_db.currentText()
-            if current_db == "DB_geo_arm.db":
-                active_dict = self.oneJNT_for_oneGEO_uuid_combined_dict
-            elif current_db == "DB_geo_mech.db":
-                active_dict = self.multiJNT_for_oneGEO_uuid_combined_dict
-            elif current_db == "DB_geo_cyborgMax.db":
-                active_dict = self.oneJNT_for_multiGEO_combined_dict
-            else:
-                return
+            add to existing row IF self.val_new_relationship_checkBox == False
+            > how do I know which row to add to?
+        
+        B = call `visualise_active_databse()` function so the ui treeview is updated live
+        ''' 
+        # output: jnt_uuid_dict  == 
+        # {'jnt_skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F'}
+        try:
+            if self.val_new_relationship_checkBox:# create new row on database
+                # must gather the jnt_name & uuid from the ui selection!
+                database_schema_001.UpdateJointDatabase(self.active_db, jnt_uuid_dict, self.active_db_dir)
+            else: # add_to existing row
+                pass
+        except Exception as e:
+            print(f"add_joint_to_db_btn ERROR: {e}")
+        
+    
+    def sigFunc_add_geo_to_db_btn(self):
+        print(f"add_geo_to_db_btn cicked")
+        self.new_relationship_checkBox.setChecked(False)
+        # cancel the operation if joints are selected!
+        joint_selection = cmds.ls(sl=1, type="joint")
+        if joint_selection:
+            print("Operation canceled: Joints are selected!")
+            return  
+        selection = cmds.ls(sl=1, type="transform")
+        if selection:
+            geo_uuid_dict = uuid_handler.return_uuid_dict_from_geo(selection)
+        try:
+            print(f"geo_uuid_dict  == {geo_uuid_dict}")
+        except Exception as e:
+            print(f"add_joint_to_db_btn ERROR: {e}")
+        # geo_uuid_dict  == {
+        # 'geo_sphere_shldr_0': 'E1B664E3-4A0E-6AFA-F4AD-F2A5048CD5A6', 
+        # 'geo_sphere_shldr_1': '45BCB083-4C20-827E-BF4E-11B42AAEDA90'
+        # }
 
-            # Find the corresponding geo item for the selected joint
-            geo_dict = active_dict['geometry_UUID_dict']
-            joint_dict = active_dict['joint_UUID_dict']
+        # A - when can the geo be added? 
+        # A = once the joint had been selected in the treeview Ui 
+            # OR
+            # new relationship has been created, the joint from this is it's partner
+        # B - The Joint either selected in treeview OR partner relationship(dictated by `self.val_new_relationship_checkBox`), 
+            # needs its row queried so geo can be added to the right one!
+        '''
+        if self.val_new_relationship_checkBox:# create new row on database
+            # must gather the jnt_name & uuid from the ui selection!
+            database_schema_001.UpdateGeoDatabase(self.active_db, geo_uuid_dict, self.active_db_dir)
+        else: # add_to existing row
+            pass
+        '''
 
-            if joint_name in joint_dict:
-                if len(joint_dict) == 1 and len(geo_dict) > 1:
-                    # One joint, multiple geos
-                    for geo_name in geo_dict.keys():
-                        geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
-                        if geo_item:
-                            geo_index = self.geo_model.indexFromItem(geo_item[0])
-                            self.geo_tree_view.selectionModel().select(
-                                geo_index, QtCore.QItemSelectionModel.Select
-                            )
 
-                elif len(joint_dict) > 1 and len(geo_dict) == 1:
-                    # Multiple joints, one geo
-                    geo_name = next(iter(geo_dict))
-                    geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
-                    if geo_item:
-                        geo_index = self.geo_model.indexFromItem(geo_item[0])
-                        self.geo_tree_view.selectionModel().select(
-                            geo_index, QtCore.QItemSelectionModel.Select
-                        )
+    def sigFunc_new_relationship_checkBox(self):
+        print(f"new_relationship_checkBox is checked cicked")
+        self.val_new_relationship_checkBox = self.new_relationship_checkBox.isChecked()
+        if self.val_new_relationship_checkBox:
+            self.add_jnt_btn.setEnabled(True)
+            self.add_geo_btn.setEnabled(False)
+        else:
+            self.add_jnt_btn.setEnabled(False)
+            self.add_geo_btn.setEnabled(True)
 
-                elif len(joint_dict) == len(geo_dict):
-                    # One-to-one joint and geometry
-                    geo_name = list(geo_dict.keys())[list(joint_dict.keys()).index(joint_name)]
-                    geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
-                    if geo_item:
-                        geo_index = self.geo_model.indexFromItem(geo_item[0])
-                        self.geo_tree_view.selectionModel().select(
-                            geo_index, QtCore.QItemSelectionModel.Select
-                        )
+    #--------------------------------------------------------------------------
+    ########## TREE VIEW FUNCTOINS ##########
+    def visualise_active_databse(self):
+        print(f"the active database is: {self.active_db}")
+
+        # gather the active database's directory
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        levels = os_custom_directory_utils.determine_levels_to_target(current_dir, "Jmvs_tool_box")
+        root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
+        try:
+            self.active_db_dir = utils.find_directory(self.active_db, root_dir)
+            print(f"Directory of `{self.active_db}` is:  `{self.active_db_dir}`")
+        except FileNotFoundError as e:
+            print(f"active db file '{self.active_db}' not found cus of this error: {e}")
+
+        # Get dictionary of all the data from db
+        uuid_retrieval = database_schema_001.RetrieveAllUUIDs(self.active_db, self.active_db_dir)
+        combined_dict = uuid_retrieval.get_combined_dict()
+        print(f"active db's combinded dict = `{combined_dict}` retrieved from `{self.active_db}")
+        
+        # clear the modules everytime the active db is switched
+        self.joint_model.clear()
+        self.geo_model.clear()
+        for key, values in combined_dict.items():
+            self.populate_tree_views(values)
+
+        '''
+        {
+        1: {
+        'joint_UUID_dict': 
+            {'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134'}, 
+        'geometry_UUID_dict': 
+            {'geo_1': '946C0344-4B43-4E3E-E610-33AEFC6A76D2', 
+            'geo_2': 'BC1BBC88-49E0-705C-3B5E-89B24C670722', 
+            'geo_3': '2AD65DAA-4F33-E185-634E-B7A81D073E31'
+            }
+        },
+        2: {
+        'joint_UUID_dict': 
+            {'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
+            'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
+            'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
+        'geometry_UUID_dict': 
+            {'geo_4': 'BB3DD158-422F-3966-C861-7C8E8FA7F144'}
+        }, 
+        3: {
+        'joint_UUID_dict': 
+            {'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
+            'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
+            'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
+        'geometry_UUID_dict': 
+            {'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
+            'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
+            'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'}
+        }
+        }`
+        '''
 
 
     def populate_tree_views(self, data_dict):
@@ -561,36 +655,70 @@ class GeoDatabase(QtWidgets.QWidget):
                 geo_item = QtGui.QStandardItem(geo_name)
                 geo_tree_parent_item.appendRow(geo_item)
 
+        
+    def highlight_corresponding_geo(self, selected, deselected):
+        # Clear previous selection
+        self.geo_tree_view.selectionModel().clearSelection()
 
-    def databse_selection_change(self):
-        current_db = "DB_geo_arm.db"# self.dropDown_db.currentText()
-        if current_db == "DB_geo_arm.db":
-            self.populate_tree_views(self.oneJNT_for_oneGEO_uuid_combined_dict)
-            self.populate_tree_views(self.oneJNT_for_multiGEO_combined_dict)
-            self.populate_tree_views(self.multiJNT_for_oneGEO_uuid_combined_dict)
-            pass
-        elif current_db == "DB_geo_mech.db":
-            self.populate_tree_views(self.multiJNT_for_oneGEO_uuid_combined_dict)
-        elif current_db == "DB_geo_cyborgMax.db":
-            self.populate_tree_views(self.oneJNT_for_multiGEO_combined_dict)
+        # Get the selected joint item
+        for index in selected.indexes():
+            joint_name = index.data()
+            
+            # Logic to be changed!
+            # Based on the current dictionary, find the corresponding geo item
+            current_db = "DB_geo_arm.db" # self.dropDown_db.currentText()
+            if current_db == "DB_geo_arm.db":
+                active_dict = self.oneJNT_for_oneGEO_uuid_combined_dict
+            elif current_db == "DB_geo_mech.db":
+                active_dict = self.multiJNT_for_oneGEO_uuid_combined_dict
+            elif current_db == "DB_geo_cyborgMax.db":
+                active_dict = self.oneJNT_for_multiGEO_combined_dict
+            else:
+                return
+            
 
+            # Find the corresponding geo item for the selected joint
+            geo_dict = active_dict['geometry_UUID_dict']
+            joint_dict = active_dict['joint_UUID_dict']
 
-    ########## EXPORT UI ##########
-    def UI_exporting_database(self):
-        # create the ui for the database exporter
+            if joint_name in joint_dict:
+                if len(joint_dict) == 1 and len(geo_dict) > 1:
+                    # One joint, multiple geos
+                    for geo_name in geo_dict.keys():
+                        geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
+                        if geo_item:
+                            geo_index = self.geo_model.indexFromItem(geo_item[0])
+                            self.geo_tree_view.selectionModel().select(
+                                geo_index, QtCore.QItemSelectionModel.Select
+                            )
+
+                elif len(joint_dict) > 1 and len(geo_dict) == 1:
+                    # Multiple joints, one geo
+                    geo_name = next(iter(geo_dict))
+                    geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
+                    if geo_item:
+                        geo_index = self.geo_model.indexFromItem(geo_item[0])
+                        self.geo_tree_view.selectionModel().select(
+                            geo_index, QtCore.QItemSelectionModel.Select
+                        )
+
+                elif len(joint_dict) == len(geo_dict):
+                    # One-to-one joint and geometry
+                    geo_name = list(geo_dict.keys())[list(joint_dict.keys()).index(joint_name)]
+                    geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
+                    if geo_item:
+                        geo_index = self.geo_model.indexFromItem(geo_item[0])
+                        self.geo_tree_view.selectionModel().select(
+                            geo_index, QtCore.QItemSelectionModel.Select
+                        )    
+
+    ########## ADD JOINT/GEO FUNCTOINS ##########
+    def add_joint_to_db(self):
         pass
-
-
-    def exporting_database_func(self):
-        # load the ui
-        print("export options button clicked, loading ui")
-        self.export_ui = QtUiTools.QUiLoader().load()
-
-
-    ########## DATABASE FUNCTOINS ##########
-    def create_database(self):
-        database_schema_001.CreateDatabase(mdl_name="geo_mech")
-
+    
+    
+    def add_geo_to_db(self):
+        pass
 
 
 
