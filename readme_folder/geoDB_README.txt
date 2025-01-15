@@ -10,20 +10,25 @@ working & the treeview show the chosen one!
 Achieved: 
 ->  new relationship checkbox works well
 -> Add Joint button works in tandem with new relationship. 
-
-NEXT:
-> Adding jnts & geo to active
-    Next: 
-    -> `Add Geo button` needs to work in tandem with `new relationship`, and: 
+> Adding jnts & geo to active db
+->-> `Add Geo button` needs to work in tandem with `new relationship`, and: 
     # A - when can the geo be added? 
             # A = once the joint had been selected in the treeview Ui 
                 # OR
                 # new relationship has been created, the joint from this is it's partner
-            # B - The Joint either selected in treeview OR partner relationship(dictated by `self.val_new_relationship_checkBox`), 
-                # needs its row queried so geo can be added to the right one! 
 
-> Replace jnt/geo on selected row in treeview
-> Remove Row from treeview & database button!
->> Skinning from treeView/database
+NEXT:
+>B - add geo selected in scene to the row of the Joint selected in the treeview.
+>>> Skinning 'ALL' from treeView/database buttons, (doesn't interact with treeView visually), 
+    gathers combined dictionary's from them for skinning functions
+>>> Skinning 'spcific' from treeView/database buttons, (interacts with treeView selection!), 
+    gathers combined dictionary's from them for skinning functions
+>> Change the way the treeviews are displayed. 
+    - joint_A(in jnt treeview) > corresponding geo parented under 
+    joint_A(in geo treeview) even if it's one to one relationship. 
+    - Will help user readablity.  
+
 > delete database, stop it being locked by Maya - (Don't need for submission!)
+> Replace jnt/geo on selected row in treeview - (Don't need for submission!)
+> Remove Row from treeview & database button! - (Don't need for submission!)
 

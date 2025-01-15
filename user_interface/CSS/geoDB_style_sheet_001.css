@@ -32,11 +32,6 @@ QPushButton {
     font-size: larger;
 }
 
-/*QPushButton[specialButton_add="true"]:hover,
-QPushButton[specialButton_rpl="true"]:hover {
-    color: azure;
-}*/
-
 QPushButton:hover {
     color: azure;
     border-width: 2.5px;
@@ -44,6 +39,15 @@ QPushButton:hover {
     background-position: left 20px top 20px;
     background-color: black;
     border-color: rgb(105, 28, 28);
+}
+
+QPushButton[geoButtons="true"]:hover {
+    color: azure;
+    border-width: 2.5px;
+    background-size: 50%;
+    background-position: left 20px top 20px;
+    background-color: black;
+    border-color: rgb(35, 34, 41);
 }
 
 QPushButton:pressed {
@@ -54,6 +58,16 @@ QPushButton:pressed {
     border-style: solid; /* Ensure border style remains solid */
     background-size: 50%; /* Keep the background size if you have a specific style */
      /* Maintain background position if used */
+}
+
+QPushButton[geoButtons="true"]:pressed{
+    background-color: rgb(137, 137, 137);
+    color: rgb(2, 2, 2); 
+    border-color: rgb(105, 28, 28);
+    border-width: 2.5px; 
+    border-style: solid; 
+    background-size: 50%; 
+
 }
 
 QPushButton#folderPath_text{
@@ -144,7 +158,7 @@ QTreeView#joint_tree_view {
 
 QTreeView#geo_tree_view {
     color: rgb(239, 239, 239);
-    background-color: rgb(20, 18, 35);
+    background-color: rgb(35, 34, 41);
     border-style: double;
     border-width: 2px;
     border-radius: 5px;

@@ -22,6 +22,21 @@ def query_all_rows(conn, table, *args):
         print(e)
 
 
+def query_row_from_item(conn, table, item):
+    cursor = conn.cursor()
+    try:
+        # to cr a comma-seperated string for the sql query 
+        sql = f'SELECT * FROM {table}'
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        for row in rows:
+            print(f"querying all rows, returning a tuple: {row}")
+            # use row[2] to print all row's `arg3` & no longer in a tuple!
+        return rows
+    except sqlite3.Error as e:
+        print(e)
+
+
 def query_number_of_rows(conn, table, *args):
     cursor = conn.cursor()
     try:
@@ -97,5 +112,7 @@ def delete_row_by_id(db_name, row_id):
 
 # Example usage
 #db_name = r'C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases\DB_DB_geo_arm.db'
-row_id_to_delete = 5  # Replace with the actual db_row_id you want to delete
-delete_row_by_id(db_name, row_id_to_delete)
+row_id_to_delete = 1  # Replace with the actual db_row_id you want to delete
+#for x in range(1):
+#    delete_row_by_id(db_name, x)
+delete_row_by_id(db_name, 4)

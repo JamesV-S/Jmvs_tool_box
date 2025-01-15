@@ -137,7 +137,6 @@ class UpdateDatabase():
 
         try:
             with sqlite3.connect(db_name) as conn:
-                #for (jnt_name, jnt_uuid), (geo_name, geo_uuid) in zip(jnt_uuid_list, geo_uuid_list):
                 self.update_db(conn, 'uuid_data', (jnt_names, jnt_uuids, 
                                 geo_names, geo_uuids))
     
@@ -174,10 +173,9 @@ class UpdateJointDatabase():
 
         try:
             with sqlite3.connect(db_name) as conn:
-                for jnt_name, jnt_uuid in zip(jnt_name_list, jnt_uuid_list):
-                    self.update_db(conn, 'uuid_data', (jnt_names, jnt_uuids))
-    
+                self.new_row_id = self.update_db(conn, 'uuid_data', (jnt_names, jnt_uuids))
                 print(f"data has been scuccesfully inserted into `{db_name}`")
+                # return self.new_row_id
         except sqlite3.Error as e:
             print(f"Update Joint Database error is: {e}")
         
@@ -188,10 +186,14 @@ class UpdateJointDatabase():
             sql = """INSERT INTO uuid_data (joint_name, joint_uuid, geo_name, geo_uuid) VALUES (?, ?, NULL, NULL)"""
             cursor.execute(sql, values)
         conn.commit()
+        return cursor.lastrowid
+
+    def get_new_row(self):
+        return self.new_row_id
 
 
 class UpdateGeoDatabase():
-    def __init__(self, database_name, geo_uuid_dict, directory):
+    def __init__(self, db_row_id, database_name, geo_uuid_dict, directory):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         # db_name must include the entire path too!
@@ -208,18 +210,35 @@ class UpdateGeoDatabase():
 
         try:
             with sqlite3.connect(db_name) as conn:
-                #for (jnt_name, jnt_uuid), (geo_name, geo_uuid) in zip(jnt_uuid_list, geo_uuid_list):
-                self.update_db(conn, 'uuid_data', (geo_names, geo_uuids))
+                self.update_db(conn, 'uuid_data', geo_names, geo_uuids, db_row_id)
                 print(f"data has been scuccesfully inserted into `{db_name}`")
         except sqlite3.Error as e:
             print(f"Update Geometry Database error is: {e}")
         
 
-    def update_db(self, conn, table, values):
+    def update_db(self, conn, table, geo_names, geo_uuids, db_row_id):
         cursor = conn.cursor()
         if table == 'uuid_data':
-            sql = """INSERT INTO uuid_data (joint_name, joint_uuid, geo_name, geo_uuid) VALUES (NULL, NULL, ?, ?)"""
-            cursor.execute(sql, values)
+            sql = """UPDATE uuid_data SET geo_name = ?, geo_uuid = ? WHERE db_row_id = ?"""
+            
+            try: 
+                # CHECK the UPDATE sql with items with row db_row_id:
+                cursor.execute(f"SELECT * FROM uuid_data WHERE db_row_id = ?", (db_row_id,))
+                if cursor.fetchone() is None:
+                    print(f"No task found with db_row_id: `{db_row_id}`.")
+                
+                # Execute the UPDATE statement
+                cursor.execute(sql, (geo_names, geo_uuids, db_row_id))
+                conn.commit()
+                if cursor.rowcount == 0:
+                    print(f"No uuid_data found with db_row_id: `{db_row_id}`.")
+                else:
+                     print(f"uuid_data found with db_row_id: `{db_row_id}`.")
+
+
+            except sqlite3.Error as e:
+                print(f"No '{table}' found with row `{db_row_id}`")
+
         conn.commit()
 
 #------------------------------------------------------------------------------
@@ -278,12 +297,12 @@ class RetrieveAllUUIDs():
         os.makedirs(db_directory, exist_ok=1)
         # db_name must include the entire path too!
         db_name = os.path.join(db_directory, database_name) # f'DB_{name}.db'
-        print(f"Retrieving UUID dict from db// db_naem: {db_name}")
+        # print(f"Retrieving UUID dict from db// db_naem: {db_name}")
         try:
             with sqlite3.connect(db_name) as conn:
                 # interasct with datsabase
                 self.combined_dict = self.get_ALL_dict_from_db(conn, 'uuid_data')
-                print(f"retrieved `{self.combined_dict}` in row ALL rows from: `{db_name}`")
+                # rint(f"retrieved `{self.combined_dict}` in row ALL rows from: `{db_name}`")
                 
         except sqlite3.Error as e:
             print(f"Retrieving UUID dict from db// ERROR: {e}")
@@ -295,6 +314,13 @@ class RetrieveAllUUIDs():
         try:
             for row in cursor.execute(query_param_state):
                 row_id, jnt_names, jnt_uuids, geo_names, geo_uuids = row
+
+                # Handle NULL values by using an empty string if None
+                #jnt_names = jnt_names or ''
+                #jnt_uuids = jnt_uuids or ''
+                geo_names = geo_names or ''
+                geo_uuids = geo_uuids or ''
+
                 jnt_uuid_dict = {name: uuid for name, uuid in zip(jnt_names.split(', '), jnt_uuids.split(', '))}
                 geo_uuid_dict = {name: uuid for name, uuid in zip(geo_names.split(', '), geo_uuids.split(', '))}
                 
