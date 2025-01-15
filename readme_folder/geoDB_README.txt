@@ -33,8 +33,3 @@ NEXT:
 > delete database, stop it being locked by Maya - (Don't need for submission!)
 > Replace jnt/geo on selected row in treeview - (Don't need for submission!)
 > Remove Row from treeview & database button! - (Don't need for submission!)
-
-order:
-- add buttons for each treeview(+label headers), that select the object in the 
-scene that's selected in the respective treeview, ignoring its name, selecting its uuid 
-
