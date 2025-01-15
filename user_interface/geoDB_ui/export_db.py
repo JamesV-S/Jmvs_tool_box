@@ -116,7 +116,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
         # -- Spacer --
         layH_spacer = QtWidgets.QHBoxLayout()
         spacerH = QtWidgets.QWidget()
-        spacerH.setFixedSize(410,10)
+        spacerH.setFixedSize(420,10)
         spacerH.setObjectName("Spacer")
         layH_spacer.addWidget(spacerH)
         main_Vlayout.addLayout(layH_spacer)
@@ -188,7 +188,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
     def layV_SPACER_func(self):
         layV_spacer = QtWidgets.QHBoxLayout()
         spacer = QtWidgets.QWidget()
-        spacer.setFixedSize(110,10)
+        spacer.setFixedSize(100,10)
         spacer.setObjectName("Spacer")
         layV_spacer.addWidget(spacer)
 

@@ -47,7 +47,7 @@ QPushButton[geoButtons="true"]:hover {
     background-size: 50%;
     background-position: left 20px top 20px;
     background-color: black;
-    border-color: rgb(35, 34, 41);
+    border-color: rgb(18, 3, 103);
 }
 
 QPushButton:pressed {
@@ -67,7 +67,6 @@ QPushButton[geoButtons="true"]:pressed{
     border-width: 2.5px; 
     border-style: solid; 
     background-size: 50%; 
-
 }
 
 QPushButton#folderPath_text{
@@ -80,6 +79,17 @@ QPushButton#folderPath_text{
 
 QPushButton#folderPath_btn{
     max-width: 0.5px;
+}
+
+QPushButton[bind_style="true"]:hover{
+    background-color: black;
+    border-color: rgb(54, 90, 50);
+
+}
+
+QPushButton[unbind_style="true"]:hover{
+    background-color: black;
+    border-color: rgb(180, 0, 0);
 }
 
 /*
@@ -102,6 +112,33 @@ QLabel {
     padding: 6px;
 }
 */
+
+QLabel#jointTree_lbl{
+    color:rgb(239, 239, 239);
+    background-color: rgba(48, 0, 0, 0.5);
+    font: 800;
+    border-style: double;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: rgb(5, 0, 42);
+    min-width: 3.8em;
+    max-height: 1em;
+    padding: 6px;
+}
+
+QLabel#geoTree_lbl{
+    color:rgb(239, 239, 239) ; /**/
+    background-color: rgba(35, 34, 41, 0.5);
+    font: 800;
+    border-style: double;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: rgb(5, 0, 42);
+    min-width: 3.8em;
+    max-height: 1em;
+    padding: 6px;
+}
+
 
 QLabel[DB_export_UI_01="true"]{
     color:rgb(241, 255, 238) ;

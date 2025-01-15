@@ -27,7 +27,9 @@ from systems import (
     utils
 )
 from systems.sys_geoDB import (
-    uuid_handler
+    uuid_handler, 
+    bind_skin,
+    unbind_skin
 )
 
 importlib.reload(database_manager)
@@ -82,6 +84,7 @@ class GeoDatabase(QtWidgets.QWidget):
         self.active_db = self.database_comboBox.currentText()
         self.visualise_active_db()
 
+
     def update_database_ComboBox(self):
         print(f"UPDATING DB COMBO BOX WITH NEW database!")
         self.db_files_update = []
@@ -93,11 +96,6 @@ class GeoDatabase(QtWidgets.QWidget):
         self.database_comboBox.clear()
         self.database_comboBox.addItems(self.db_files_update)
         self.database_comboBox.setPlaceholderText("Updated Databases Added")
-
-    
-    def get_database_directory(self, user_dir):
-        # from the user input, use the data, if radio button was called 
-        pass
 
 
     def UI(self):
@@ -117,13 +115,12 @@ class GeoDatabase(QtWidgets.QWidget):
         #----------------------------------------------------------------------
         # ---- TREEVIEW data from database to visualise. ----
         
-        # initialise models for each treeview
+        # -- initialise models for each treeview --
         self.joint_model = QtGui.QStandardItemModel()
         self.joint_model.setColumnCount(1)
         self.geo_model = QtGui.QStandardItemModel()
         self.geo_model.setHeaderData(0, QtCore.Qt.Horizontal, "Geometry UUID")
 
-    
         self.joint_tree_view = QtWidgets.QTreeView(self)
         self.joint_tree_view.setObjectName("joint_treeview")
         self.joint_tree_view.setModel(self.joint_model)
@@ -135,6 +132,7 @@ class GeoDatabase(QtWidgets.QWidget):
         self.joint_tree_view.setObjectName("joint_tree_view")
         self.geo_tree_view.setObjectName("geo_tree_view")
 
+        # -- treeView settings --
         header = self.geo_tree_view.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
 
@@ -155,13 +153,32 @@ class GeoDatabase(QtWidgets.QWidget):
         '''
     
         # Connect the selection change on joint tree to effect geo tree. 
-        self.joint_tree_view.selectionModel().selectionChanged.connect(self.highlight_coresponding_tree_data)
-        self.joint_tree_view.selectionModel().selectionChanged.connect(self.on_selection_changed)
+        self.joint_tree_view.selectionModel().selectionChanged.connect(self.signal_to_geo_tree_highlight)
+        self.joint_tree_view.selectionModel().selectionChanged.connect(self.ui_joint_selects_scene_joint)
+        self.geo_tree_view.selectionModel().selectionChanged.connect(self.ui_geo_selects_scene_geo)
         
-        # add the 2 tree views to the tree Layout. 
+        # -- Label tree views --
+        joint_treeV_label_tree_layout = QtWidgets.QVBoxLayout()
+        geo_treeV_label_tree_layout = QtWidgets.QVBoxLayout()
+        
+        jointTree_lbl = QtWidgets.QLabel("Joint UUIDs")
+        geoTree_lbl = QtWidgets.QLabel("Geometry UUIDs")
+        jointTree_lbl.setObjectName("jointTree_lbl")
+        geoTree_lbl.setObjectName("geoTree_lbl")
+
+        joint_treeV_label_tree_layout.addWidget(jointTree_lbl)
+        geo_treeV_label_tree_layout.addWidget(geoTree_lbl)
+
+        # -- add the 2 tree views to the tree Layout --
         tree_H_Layout = QtWidgets.QHBoxLayout()
-        tree_H_Layout.addWidget(self.joint_tree_view)
-        tree_H_Layout.addWidget(self.geo_tree_view)
+        
+        joint_treeV_label_tree_layout.addWidget(self.joint_tree_view)
+        geo_treeV_label_tree_layout.addWidget(self.geo_tree_view)
+
+        tree_H_Layout.addLayout(joint_treeV_label_tree_layout)
+        tree_H_Layout.addLayout(geo_treeV_label_tree_layout)
+        
+        
         top_parent_HLayout.addLayout(tree_H_Layout)
         
         #----------------------------------------------------------------------
@@ -263,14 +280,14 @@ class GeoDatabase(QtWidgets.QWidget):
         skinning_grid_Layout.setHorizontalSpacing(-1000)
 
         # -- Buttons --
-        bind_skn_btn = QtWidgets.QPushButton("Bind Skin")
-        unbind_skn_btn = QtWidgets.QPushButton("Unbind Skin")
-        bind_all = QtWidgets.QPushButton("Bind ALL")
-        unbind_all = QtWidgets.QPushButton("Unbind ALL")
-        skinning_grid_Layout.addWidget(bind_skn_btn, 0,0)
-        skinning_grid_Layout.addWidget(unbind_skn_btn, 0, 1)
-        skinning_grid_Layout.addWidget(bind_all, 1,0)
-        skinning_grid_Layout.addWidget(unbind_all, 1, 1)
+        self.bind_skn_btn = QtWidgets.QPushButton("Bind Skin")
+        self.unbind_skn_btn = QtWidgets.QPushButton("Unbind Skin")
+        self.bind_all_btn = QtWidgets.QPushButton("Bind ALL")
+        self.unbind_all_btn = QtWidgets.QPushButton("Unbind ALL")
+        skinning_grid_Layout.addWidget(self.bind_skn_btn, 0,0)
+        skinning_grid_Layout.addWidget(self.unbind_skn_btn, 0, 1)
+        skinning_grid_Layout.addWidget(self.bind_all_btn, 1,0)
+        skinning_grid_Layout.addWidget(self.unbind_all_btn, 1, 1)
     
         # add drop down db selector & skinning grid to `layV_TOP_R`
         layV_TOP_R.addLayout(skinning_grid_Layout)
@@ -306,20 +323,19 @@ class GeoDatabase(QtWidgets.QWidget):
         top_parent_HLayout.addLayout(layV_TOP_R)
 
         # ---- TOOL TIPS ----
-        bind_skn_btn.setToolTip("Bind Geo to Joint SELECTION")
-        unbind_skn_btn.setToolTip("Bind Geo to Joint SELECTION")
-        bind_all.setToolTip("Bind ALL Geo to Joint")
-        unbind_all.setToolTip("Unbind ALL Geo to Joint")
+        self.bind_skn_btn.setToolTip("Bind Geo to Joint SELECTION")
+        self.unbind_skn_btn.setToolTip("Unind Geo to Joint SELECTION")
+        self.bind_all_btn.setToolTip("Bind ALL Geo to Joint")
+        self.unbind_all_btn.setToolTip("Unbind ALL Geo to Joint")
 
         # ---- STYLE SETTINGS ----
-        special_true = [bind_skn_btn, unbind_skn_btn, bind_all, unbind_all]
-        special_false = []
+        bind_style = [self.bind_skn_btn, self.bind_all_btn, ]
+        unbind_style = [self.unbind_skn_btn, self.unbind_all_btn]
         
-        for item in special_true:
-            item.setProperty("specialButton_Skin", True)
-        for item in special_false:
-            item.setProperty("specialButton_Skin", False)
-
+        for bind_item, unbind_item in zip(bind_style, unbind_style):
+            bind_item.setProperty("bind_style", True)
+            unbind_item.setProperty("unbind_style", True)
+        
         #----------------------------------------------------------------------
         # 2: update GEO & JOINT
         #----------------------------------------------------------------------
@@ -369,6 +385,10 @@ class GeoDatabase(QtWidgets.QWidget):
         self.database_comboBox.currentIndexChanged.connect(self.sigFunc_database_comboBox)
 
         # -- Skinning options --
+        self.bind_skn_btn.clicked.connect(self.sigFunc_bind_skn_btn)
+        self.unbind_skn_btn.clicked.connect(self.sigFunc_unbind_skn_btn)
+        self.bind_all_btn.clicked.connect(self.sigFunc_bind_all_btn)
+        self.unbind_all_btn.clicked.connect(self.sigFunc_unbind_all_btn)
 
         # -- Delete database options --
         self.deleteDB_checkBox.stateChanged.connect(self.sigFunc_deleteDB_checkBox)
@@ -377,7 +397,6 @@ class GeoDatabase(QtWidgets.QWidget):
         self.new_relationship_checkBox.stateChanged.connect(self.sigFunc_new_relationship_checkBox)
         self.add_jnt_btn.clicked.connect(self.sigFunc_add_joint_to_db_btn)
         self.add_geo_btn.clicked.connect(self.sigFunc_add_geo_to_db_btn)
-
 
     ########## UI SIGNAL FUNCTOINS ##########
     # -------- Tree views --------
@@ -415,6 +434,95 @@ class GeoDatabase(QtWidgets.QWidget):
         #print(f"db_comboBox current text = `{self.active_db}`")
         self.visualise_active_db()
         return self.val_database_comboBox
+    
+    
+    # -- skinning --
+    def sigFunc_bind_skn_btn(self):
+        print(f"bind_skn_btn clicked!")
+        result = self.get_selected_joint_index()
+        if result:
+            row_index, joint_uuid = result
+            print(f"the row index in treeView is :: {row_index} & joint_uuid of selected item in treeView = {joint_uuid}")
+            # get a dictionary from a specific row (`row_index`) from the active_database `self.active_db`
+            retrieved_row = database_schema_001.Retrieve_UUID_Database_from_row(
+                database_name=self.active_db, row_id=row_index+1, directory=self.active_db_dir
+                )
+            combined_dict_from_row = retrieved_row.get_retrtieved_combined_dict()
+            print(f"combined_dict_from_row == {combined_dict_from_row}")
+            bind_skin.bind_skin_from_combined_dict(combined_dict_from_row)
+        else:
+            print(f"No item in joint treeview selected")
+        
+        
+    def sigFunc_unbind_skn_btn(self):
+        print(f"unbind_skn_btn clicked!")
+        result = self.get_selected_joint_index()
+        if result:
+            row_index, joint_uuid = result
+            print(f"the row index in treeView is :: {row_index} & joint_uuid of selected item in treeView = {joint_uuid}")
+            # get a dictionary from a specific row (`row_index`) from the active_database `self.active_db`
+            retrieved_row = database_schema_001.Retrieve_UUID_Database_from_row(
+                database_name=self.active_db, row_id=row_index+1, directory=self.active_db_dir
+                )
+            combined_dict_from_row = retrieved_row.get_retrtieved_combined_dict()
+            print(f"combined_dict_from_row == {combined_dict_from_row}")
+            
+            # Concerned only with the geometry dict!
+            unbind_skin.unbindSkin_by_uuid_dict(combined_dict_from_row['geometry_UUID_dict'])
+        else:
+            print(f"No item in joint treeview selected")
+
+
+    def sigFunc_bind_all_btn(self):
+        print(f"bind_all_btn clicked!")
+        all_combined_dicts = self.gather_active_database_combined_dict()
+        print(f"all_combined_dicts = {all_combined_dicts}")
+        for key, values in all_combined_dicts.items():
+            bind_skin.bind_skin_from_combined_dict(combined_dict=values)
+
+
+    def sigFunc_unbind_all_btn(self):
+        print(f"unbind_all_btn clicked!")
+        all_combined_dicts = self.gather_active_database_combined_dict()
+        # Get all geo UUID dicts and put in a list to iterate over afrer
+        geometry_dicts = []
+        for dict_entry in all_combined_dicts.values():
+            geometry_dicts.append(dict_entry["geometry_UUID_dict"])
+        # Iterate over the geo dict list
+        for geo_uuid_dict in geometry_dicts:
+            unbind_skin.unbindSkin_by_uuid_dict(geo_uuid_dict)
+        '''
+        UNBIND_ALL::all_combined_dicts == 
+        {
+            1: {
+            'joint_UUID_dict': {
+                'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134'}, 
+            'geometry_UUID_dict': {
+                'geo_1': '946C0344-4B43-4E3E-E610-33AEFC6A76D2', 
+                'geo_2': 'BC1BBC88-49E0-705C-3B5E-89B24C670722', 
+                'geo_3': '2AD65DAA-4F33-E185-634E-B7A81D073E31'}
+            }, 
+            2: {
+            'joint_UUID_dict': {
+                'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
+                'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
+                'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
+            'geometry_UUID_dict': {
+                'geo_4': 'BB3DD158-422F-3966-C861-7C8E8FA7F144'}
+            }, 
+            3: {
+            'joint_UUID_dict': {
+                'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
+                'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
+                'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
+            'geometry_UUID_dict': {
+                'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
+                'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
+                'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'}
+            }
+        }
+
+        '''
 
     # -- Delete DB --
     def sigFunc_deleteDB_checkBox(self):
@@ -423,7 +531,6 @@ class GeoDatabase(QtWidgets.QWidget):
             self.deleteDB_Btn.setEnabled(True)
         else:
             self.deleteDB_Btn.setEnabled(False)
-
 
     # -- Add JOINT/GEO buttons --
     def sigFunc_add_joint_to_db_btn(self):
@@ -500,7 +607,6 @@ class GeoDatabase(QtWidgets.QWidget):
             self.add_jnt_btn.setEnabled(False)
             self.add_geo_btn.setEnabled(True)
 
-
     #--------------------------------------------------------------------------
     ########## TREE VIEW FUNCTOINS ##########
     def gather_active_database_combined_dict(self):
@@ -519,50 +625,21 @@ class GeoDatabase(QtWidgets.QWidget):
             uuid_retrieval = database_schema_001.RetrieveAllUUIDs(
                 self.active_db, self.active_db_dir
                 )
-            combined_dict = uuid_retrieval.get_combined_dict()
-            return combined_dict
+            try:
+                combined_dict = uuid_retrieval.get_combined_dict()
+                return combined_dict
+            except Exception as e:
+                print(f"If you just created a new db, ignore this error, if not: {e}")
     
-
+    # by calling the 'populate tree view' i can update the treeview live as operations happen
     def visualise_active_db(self):
         print(f"the active database is: {self.active_db}")
         combined_dict = self.gather_active_database_combined_dict()
         # clear the modules everytime the active db is switched
         self.joint_model.clear()
         self.geo_model.clear()
-        for key, values in combined_dict.items():
-            # self.populate_tree_views(values)
-            self.populate_tree_views(values)
-        '''
-        {
-        1: {
-        'joint_UUID_dict': 
-            {'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134'}, 
-        'geometry_UUID_dict': 
-            {'geo_1': '946C0344-4B43-4E3E-E610-33AEFC6A76D2', 
-            'geo_2': 'BC1BBC88-49E0-705C-3B5E-89B24C670722', 
-            'geo_3': '2AD65DAA-4F33-E185-634E-B7A81D073E31'
-            }
-        },
-        2: {
-        'joint_UUID_dict': 
-            {'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-            'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-            'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
-        'geometry_UUID_dict': 
-            {'geo_4': 'BB3DD158-422F-3966-C861-7C8E8FA7F144'}
-        }, 
-        3: {
-        'joint_UUID_dict': 
-            {'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-            'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-            'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
-        'geometry_UUID_dict': 
-            {'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
-            'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
-            'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'}
-        }
-        }`
-        '''
+        #for key, values in combined_dict.items():
+        self.populate_tree_views(combined_dict)
 
 
     def populate_tree_views(self, data_dict):
@@ -572,52 +649,34 @@ class GeoDatabase(QtWidgets.QWidget):
         jnt_tree_parent_item = self.joint_model.invisibleRootItem()
         geo_tree_parent_item = self.geo_model.invisibleRootItem()
 
-        joint_dict = data_dict['joint_UUID_dict']
-        geo_dict = data_dict['geometry_UUID_dict']
+        #joint_dict = data_dict['joint_UUID_dict']
+        #geo_dict = data_dict['geometry_UUID_dict']
+        try:
+            for index, dict_entry in data_dict.items():
+                joint_dict = dict_entry['joint_UUID_dict']
+                geo_dict = dict_entry['geometry_UUID_dict']
 
-        # Determine the type of dictionary
-        if len(joint_dict) == 1 and len(geo_dict) > 1:
-            # One joint, multiple geometries
-            for joint_name, joint_uuid in joint_dict.items():
-                joint_item = QtGui.QStandardItem(joint_name)
-                jnt_tree_parent_item.appendRow(joint_item)
-                # Store the UUID's from TreeView as Data
-                joint_item.setData(joint_uuid, QtCore.Qt.UserRole) # store jnt UUID
+                # create a parent item for the relationship
+                joint_relationship_item = QtGui.QStandardItem(f"joint_relatonship_{index}")
+                geo_relationship_item = QtGui.QStandardItem(f"geo_relatonship_{index}")
 
-                geo_parent_item = QtGui.QStandardItem(joint_name)
-                geo_tree_parent_item.appendRow(geo_parent_item)
+                # append the relationship item to both tree views
+                jnt_tree_parent_item.appendRow(joint_relationship_item)
+                geo_tree_parent_item.appendRow(geo_relationship_item)
+
+                # populate the joint treeview
+                for joint_name, joint_uuid in joint_dict.items():
+                    joint_item = QtGui.QStandardItem(joint_name)
+                    joint_relationship_item.appendRow(joint_item)
+                    joint_item.setData(joint_uuid, QtCore.Qt.UserRole) # store jnt UUID
+
                 for geo_name, geo_uuid in geo_dict.items():
                     geo_item = QtGui.QStandardItem(geo_name)
-                    geo_parent_item.appendRow(geo_item)
-                    geo_item.setData(geo_uuid, QtCore.Qt.UserRole) # store geo UUID
-
-
-        elif len(joint_dict) > 1 and len(geo_dict) == 1:
-            # Multiple joints, one geometry
-            geo_name = next(iter(geo_dict))
-            geo_item = QtGui.QStandardItem(geo_name)
-            geo_tree_parent_item.appendRow(geo_item)
-            geo_item.setData(geo_dict[geo_name], QtCore.Qt.UserRole) # store geo UUID
-
-            joint_parent_item = QtGui.QStandardItem(geo_name)
-            jnt_tree_parent_item.appendRow(joint_parent_item)
-            for joint_name, joint_uuid in joint_dict.items():
-                joint_item = QtGui.QStandardItem(joint_name)
-                joint_parent_item.appendRow(joint_item)
-                joint_item.setData(joint_uuid, QtCore.Qt.UserRole) # store jnt UUID
-
-        elif len(joint_dict) == len(geo_dict):
-            # One-to-one joint and geometry
-            for joint_name, joint_uuid in joint_dict.items():
-                joint_item = QtGui.QStandardItem(joint_name)
-                jnt_tree_parent_item.appendRow(joint_item)
-                joint_item.setData(joint_uuid, QtCore.Qt.UserRole) # store jnt UUID
-
-                geo_name = list(geo_dict.keys())[list(joint_dict.keys()).index(joint_name)]
-                geo_item = QtGui.QStandardItem(geo_name)
-                geo_tree_parent_item.appendRow(geo_item)
-                geo_item.setData(geo_dict[geo_name], QtCore.Qt.UserRole) # store geo UUID
-
+                    geo_relationship_item.appendRow(geo_item)
+                    geo_item.setData(geo_uuid, QtCore.Qt.UserRole) # store jnt UUID
+        except Exception as e:
+                print(f"If you just created a new db, ignore this error, if not: {e}")
+            
 
     def toggle_uuid_visibility(self, visible):
         # toggle visibility of UUID's, 'toggle_uuids_visibility' function
@@ -632,73 +691,111 @@ class GeoDatabase(QtWidgets.QWidget):
         else:
             joint_item.setText(joint_item.text().split(' ')[0])
 
-
-    def on_selection_changed(self):
-        # Selection handling, retrieve the UUID on selection, using a selection 
-        # model when a joint is selected!
-        selected_indexes = self.joint_tree_view.selectionModel().selectedIndexes()
-        for index in selected_indexes:
-            joint_item = self.joint_model.itemFromIndex(index)
-            self.selcted_joint_uuid = joint_item.data(QtCore.Qt.UserRole)
-            print(f"**** selected Joint UUID: {self.selcted_joint_uuid}")
-            # use joint_uuid to query my data such as findiong it's row in database!
-        # self.toggle_uuid_visibility(True)
-
+    
+    def signal_to_geo_tree_highlight(self):
+        # this will change to highlight corresponding relationship parent
+        selection_model = self.joint_tree_view.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
         
-    def highlight_coresponding_tree_data(self, selected, deselected):
-        self.geo_tree_view.selectionModel().clearSelection()
-        combined_dict = self.gather_active_database_combined_dict()
-
-        # Get the selected joint item
-        for index in selected.indexes():
-            joint_name = index.data()
+        # same logic as the `get_selected_joint_index()` function
+        if selected_indexes:
+            selected_index = selected_indexes[0]
+            geo_relationship_name = f"geo_relatonship_{selected_index.row() + 1}"
+            # find the relationship item in the geo tree view & highlight it
+            geo_indexes = self.geo_model.findItems(geo_relationship_name, QtCore.Qt.MatchExactly)
             
-            # iterate over each dict entry of the active dict (combined dict)
-            for dict in combined_dict.values():
-                joint_dict = dict['joint_UUID_dict']
-                geo_dict = dict['geometry_UUID_dict']
+            if geo_indexes:
+                geo_item = geo_indexes[0]
+                self.geo_tree_view.expand(geo_item.index())
+                self.geo_tree_view.setCurrentIndex(geo_item.index())
 
-            if joint_name in joint_dict:
-                if len(joint_dict) == 1 and len(geo_dict) > 1:
-                    # One joint, multiple geos
-                    for geo_name in geo_dict.keys():
-                        geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
-                        if geo_item:
-                            geo_index = self.geo_model.indexFromItem(geo_item[0])
-                            self.geo_tree_view.selectionModel().select(
-                                geo_index, QtCore.QItemSelectionModel.Select
-                            )
-
-                elif len(joint_dict) > 1 and len(geo_dict) == 1:
-                    # Multiple joints, one geo
-                    geo_name = next(iter(geo_dict))
-                    geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
-                    if geo_item:
-                        geo_index = self.geo_model.indexFromItem(geo_item[0])
-                        self.geo_tree_view.selectionModel().select(
-                            geo_index, QtCore.QItemSelectionModel.Select
-                        )
-
-                elif len(joint_dict) == len(geo_dict):
-                    # One-to-one joint and geometry
-                    geo_name = list(geo_dict.keys())[list(joint_dict.keys()).index(joint_name)]
-                    geo_item = self.geo_model.findItems(geo_name, QtCore.Qt.MatchExactly)
-                    if geo_item:
-                        geo_index = self.geo_model.indexFromItem(geo_item[0])
-                        self.geo_tree_view.selectionModel().select(
-                            geo_index, QtCore.QItemSelectionModel.Select
-                        )
-                # use break after finding the corresponding dict entry
+    
+    def ui_geo_selects_scene_geo(self):
+        geo_uuid = self.retrive_geo_uuid_of_selection()
+        print(f"From treeView selection geo_uuid = {geo_uuid}")
+        # select the geo in the scene. 
+        all_objects = cmds.ls(dag=1, long=1, type="transform")
+        found_obj = None
+        for obj in all_objects: # loop thru the objs and check their uuid
+            obj_uuid = cmds.ls(obj, uuid=1)
+            if obj_uuid and obj_uuid[0] == geo_uuid:
+                found_obj = obj
                 break
+        # if found, select it
+        if found_obj:
+            cmds.select(found_obj)
+            print(f"selected object: {found_obj}")
+        else:
+            print("No object matches that given geo_uuid")
 
-    ########## ADD JOINT/GEO FUNCTOINS ##########
-    def add_joint_to_db(self):
-        pass
+    
+    def ui_joint_selects_scene_joint(self):
+        joint_uuid = self.retrive_joint_uuid_of_selection()
+        print(f"From treeView selection joint_uuid = {joint_uuid}")
+        # select the joint in the scene. 
+        all_objects = cmds.ls(dag=1, long=1, type="transform")
+        found_obj = None
+        for obj in all_objects: # loop thru the objs and check their uuid
+            obj_uuid = cmds.ls(obj, uuid=1)
+            if obj_uuid and obj_uuid[0] == joint_uuid:
+                found_obj = obj
+                break
+        # if found, select it
+        if found_obj:
+            cmds.select(found_obj)
+            print(f"selected object: {found_obj}")
+        else:
+            print("No object matches that given geo_uuid")
+
+
+    def retrive_geo_uuid_of_selection(self):
+        # get the selection of the geo tree view
+        selection_model = self.geo_tree_view.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+
+        # if a relationship was selected
+        if selected_indexes:
+            # could edit to select multiple within the relationship parent
+            selected_index = selected_indexes[0]
+            geo_item = self.geo_model.itemFromIndex(selected_index)
+            geo_uuid = geo_item.data(QtCore.Qt.UserRole)
+            return geo_uuid
     
     
-    def add_geo_to_db(self):
-        pass
+    def retrive_joint_uuid_of_selection(self):
+        # gets the uuid of the selected joint tree
+        selection_model = self.joint_tree_view.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
 
+        # if a relationship was selected
+        if selected_indexes:
+            # could edit to select multiple within the relationship parent
+            selected_index = selected_indexes[0]
+            joint_item = self.joint_model.itemFromIndex(selected_index)
+            joint_uuid = joint_item.data(QtCore.Qt.UserRole)
+
+            return joint_uuid
+            # use joint_uuid to query my data such as findiong it's row in database!
+
+    #--------------------------------------------------------------------------
+    ########## SKINNING FUNCTOINS ##########
+    def get_selected_joint_index(self):
+        # get selection model of all items in the joint treeView
+        selection_model = self.joint_tree_view.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+
+        # is there an item selected?
+        if selected_indexes:
+            # for the time being get the first selected index (I could change this to handle multiple selections)
+            selected_index = selected_indexes[0]
+            # get row number of the selected index
+            row_index = selected_index.row()
+
+            # is it possible to retrieve the uuid of the selected object?
+            joint_item = self.joint_model.itemFromIndex(selected_index)
+            joint_uuid = joint_item.data(QtCore.Qt.UserRole)
+
+            return row_index, joint_uuid
 
 
 def geoDB_main():

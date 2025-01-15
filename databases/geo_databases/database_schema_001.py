@@ -250,17 +250,16 @@ class Retrieve_UUID_Database_from_row():
         # db_name must include the entire path too!
         db_name = os.path.join(db_directory, database_name) # f'DB_{name}.db'
 
-        db_name = database_name # database_name
         try:
             with sqlite3.connect(db_name) as conn:
                 # interasct with datsabase
-                combined_dict = self.get_dict_from_db_row(conn, 'uuid_data', row_id)
-                print(f"retrieved `{combined_dict}` in row `{row_id}` from db: `{db_name}`")
+                self.combined_dict = self.dict_from_db_row(conn, 'uuid_data', row_id)
+                print(f"retrieved `{self.combined_dict}` in row `{row_id}` from db: `{db_name}`")
                 
         except sqlite3.Error as e:
             print(e)
 
-    def get_dict_from_db_row(self, conn, table, row_id):
+    def dict_from_db_row(self, conn, table, row_id):
         cursor = conn.cursor()
         # dictated by a specified row! aka this is the row/skinn relationship
         query_param_state = f'SELECT joint_name, joint_uuid, geo_name, geo_uuid FROM {table} WHERE db_row_id=?'
@@ -289,7 +288,8 @@ class Retrieve_UUID_Database_from_row():
             print(f"sqlite3.Error: {e}")
         return None
     
-
+    def get_retrtieved_combined_dict(self):
+        return self.combined_dict
 
 class RetrieveAllUUIDs():
     def __init__(self, database_name, directory):
@@ -300,10 +300,9 @@ class RetrieveAllUUIDs():
         # print(f"Retrieving UUID dict from db// db_naem: {db_name}")
         try:
             with sqlite3.connect(db_name) as conn:
-                # interasct with datsabase
+                # interact with datsabase
                 self.combined_dict = self.get_ALL_dict_from_db(conn, 'uuid_data')
-                # rint(f"retrieved `{self.combined_dict}` in row ALL rows from: `{db_name}`")
-                
+            
         except sqlite3.Error as e:
             print(f"Retrieving UUID dict from db// ERROR: {e}")
 

@@ -16,19 +16,25 @@ Achieved:
             # A = once the joint had been selected in the treeview Ui 
                 # OR
                 # new relationship has been created, the joint from this is it's partner
-
-NEXT:
->B - add geo selected in scene to the row of the Joint selected in the treeview.
+- skiining buttons working
 >>> Skinning 'ALL' from treeView/database buttons, (doesn't interact with treeView visually), 
     gathers combined dictionary's from them for skinning functions
 >>> Skinning 'spcific' from treeView/database buttons, (interacts with treeView selection!), 
     gathers combined dictionary's from them for skinning functions
+- change how treeview row's work
+
+NEXT:
 >> Change the way the treeviews are displayed. 
     - joint_A(in jnt treeview) > corresponding geo parented under 
     joint_A(in geo treeview) even if it's one to one relationship. 
-    - Will help user readablity.  
+    - Will help user readablity. 
+> Add geo selected in scene to the row of the Joint selected in the treeview.
 
 > delete database, stop it being locked by Maya - (Don't need for submission!)
 > Replace jnt/geo on selected row in treeview - (Don't need for submission!)
 > Remove Row from treeview & database button! - (Don't need for submission!)
+
+order:
+- add buttons for each treeview(+label headers), that select the object in the 
+scene that's selected in the respective treeview, ignoring its name, selecting its uuid 
 

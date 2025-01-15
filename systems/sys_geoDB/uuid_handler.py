@@ -41,13 +41,6 @@ def return_uuid_list_from_geo(obj_sel):
     return uuid_list
 
 
-
-
-
-
-
-
-
 #------------------------------------------------------------------------------
 # UPDATES THE GEO & JOINT NAME of existing UUID dict.
 ''' Such updates will be passed to the chosen Database's correct row!!! '''

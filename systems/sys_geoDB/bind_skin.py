@@ -1,6 +1,6 @@
 
 import maya.cmds as cmds
-
+'''
 oneJNT_for_multiGEO_combined_dict = {
     'joint_UUID_dict': {'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134'}, 
     'geometry_UUID_dict': {'geo_1': '946C0344-4B43-4E3E-E610-33AEFC6A76D2', 
@@ -33,8 +33,10 @@ oneJNT_for_oneGEO_combined_dict = {
 bind_skin_from_combined_dict(oneJNT_for_multiGEO_combined_dict)
 bind_skin_from_combined_dict(multiJNT_for_oneGEO_combined_dict)
 bind_skin_from_combined_dict(oneJNT_for_oneGEO_combined_dict)
+'''
 
 # bind from 2 nested dictionary's
+'''
 combined_dict = {
     'joint_UUID_dict': {
         'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
@@ -47,7 +49,7 @@ combined_dict = {
         'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'
         }
     }
-''' 
+ 
 def old_bind_skin_from_combined_dict(combined_dict):
     # unpack the nested dict
     jnt_uuid_dict = combined_dict["joint_UUID_dict"]
@@ -90,10 +92,11 @@ def old_bind_skin_from_combined_dict(combined_dict):
     if all_bound:
         print(f"All bind joints r already skinned to the geometry with skincluster")
 '''
-#old_bind_skin_from_combined_dict(combined_dict)
+
 #------------------------------------------------------------------------------
 
 # bind from 2 seperate dicts
+'''
 jnt_uuid_dict = {
         'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
         'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
@@ -103,15 +106,17 @@ jnt_uuid_dict = {
 geo_uuid_dict = {'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
             'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
             'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'}
-
+'''
 #------------------------------------------------------------------------------
 # this function is the meat of skin binding, handling errors and pre existing skinclusters!
 def bind_joints_to_geos(jnt_list, geo_list):
     all_bound = True
     for geo in geo_list:   
         skn_clus = cmds.ls(cmds.listHistory(geo), type='skinCluster')
+        print(f"skin_cluster")
         try: # # handle attempting to bind a jnts that's alr influencing the geo
             if skn_clus:
+                print(f"ZZ SkinCluster is True")
                 existing_jnt_influence = cmds.skinCluster( skn_clus[0], q=1, inf=1 )
                 for jnt in jnt_list:
                     if jnt not in existing_jnt_influence:
@@ -186,7 +191,6 @@ def bind_skin_from_2_dicts(jnt_uuid_dict, geo_uuid_dict):
     if all_bound:
         print(f"All bind joints r already skinned to the geometry with skincluster")
     '''
-# bind_skin_from_2_dicts(jnt_uuid_dict, geo_uuid_dict)
 
 #------------------------------------------------------------------------------
 def bind_skin_from_combined_dict(combined_dict):
@@ -205,7 +209,7 @@ def bind_skin_from_combined_dict(combined_dict):
         if geo:
             geo_list.append(geo[0])
 
-    # determine the bining strategy!!!
+    # determine the binding strategy!!!
     if len(jnt_list) == len(geo_list):
         # One-to-one corresponding between joints and geos
         for jnt, geo in zip(jnt_list, geo_list):
