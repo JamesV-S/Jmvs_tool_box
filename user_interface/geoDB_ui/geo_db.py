@@ -78,9 +78,10 @@ class GeoDatabase(QtWidgets.QWidget):
                 for db_file_name in os.listdir(directory):
                     if db_file_name.endswith('.db'):
                         self.db_files.append(db_file_name)
-
+        
         self.UI()
         self.UI_connect_signals()
+        self.val_new_relationship_checkBox = 0
         self.active_db = self.database_comboBox.currentText()
         self.visualise_active_db()
 
@@ -154,7 +155,7 @@ class GeoDatabase(QtWidgets.QWidget):
     
         # Connect the selection change on joint tree to effect geo tree. 
         self.joint_tree_view.selectionModel().selectionChanged.connect(self.signal_to_geo_tree_highlight)
-        self.joint_tree_view.selectionModel().selectionChanged.connect(self.ui_joint_selects_scene_joint)
+        # self.joint_tree_view.selectionModel().selectionChanged.connect(self.ui_joint_selects_scene_joint)
         self.geo_tree_view.selectionModel().selectionChanged.connect(self.ui_geo_selects_scene_geo)
         
         # -- Label tree views --
@@ -177,7 +178,6 @@ class GeoDatabase(QtWidgets.QWidget):
 
         tree_H_Layout.addLayout(joint_treeV_label_tree_layout)
         tree_H_Layout.addLayout(geo_treeV_label_tree_layout)
-        
         
         top_parent_HLayout.addLayout(tree_H_Layout)
         
@@ -355,17 +355,17 @@ class GeoDatabase(QtWidgets.QWidget):
         # 3 replacing JOINT & GEO of selection!
         #----------------------------------------------------------------------
 
-        rpl_jnt_btn = QtWidgets.QPushButton("Replace JOINT")
-        rpl_geo_btn = QtWidgets.QPushButton("Replace GEOMETRY")
-        remove_relationship = QtWidgets.QPushButton("REMOVE Row/Relationship")
+        self.rmv_jnt_btn = QtWidgets.QPushButton("Remove JOINT")
+        self.rmv_geo_btn = QtWidgets.QPushButton("Remove GEOMETRY")
+        self.remove_relationship = QtWidgets.QPushButton("REMOVE Row/Relationship")
 
-        special_true = [self.add_geo_btn, rpl_geo_btn]  
+        special_true = [self.add_geo_btn, self.rmv_geo_btn]  
         for item in special_true:
             item.setProperty("geoButtons", True)
 
-        bott_parent_HLayout.addWidget(rpl_jnt_btn)
-        bott_parent_HLayout.addWidget(rpl_geo_btn)
-        bott_parent_HLayout.addWidget(remove_relationship)
+        bott_parent_HLayout.addWidget(self.rmv_jnt_btn)
+        bott_parent_HLayout.addWidget(self.rmv_geo_btn)
+        bott_parent_HLayout.addWidget(self.remove_relationship)
         
         #----------------------------------------------------------------------
         self.setLayout(main_VLayout)
@@ -397,6 +397,10 @@ class GeoDatabase(QtWidgets.QWidget):
         self.new_relationship_checkBox.stateChanged.connect(self.sigFunc_new_relationship_checkBox)
         self.add_jnt_btn.clicked.connect(self.sigFunc_add_joint_to_db_btn)
         self.add_geo_btn.clicked.connect(self.sigFunc_add_geo_to_db_btn)
+
+        # -- Remove JOINT/GEO --
+        self.rmv_jnt_btn.clicked.connect(self.sigFunc_rmv_jnt_btn)
+        self.rmv_geo_btn.clicked.connect(self.sigFunc_rmv_geo_btn)
 
     ########## UI SIGNAL FUNCTOINS ##########
     # -------- Tree views --------
@@ -439,7 +443,7 @@ class GeoDatabase(QtWidgets.QWidget):
     # -- skinning --
     def sigFunc_bind_skn_btn(self):
         print(f"bind_skn_btn clicked!")
-        result = self.get_selected_joint_index()
+        result = self.get_sel_jnt_index_and_uuid()
         if result:
             row_index, joint_uuid = result
             print(f"the row index in treeView is :: {row_index} & joint_uuid of selected item in treeView = {joint_uuid}")
@@ -456,7 +460,7 @@ class GeoDatabase(QtWidgets.QWidget):
         
     def sigFunc_unbind_skn_btn(self):
         print(f"unbind_skn_btn clicked!")
-        result = self.get_selected_joint_index()
+        result = self.get_sel_jnt_index_and_uuid()
         if result:
             row_index, joint_uuid = result
             print(f"the row index in treeView is :: {row_index} & joint_uuid of selected item in treeView = {joint_uuid}")
@@ -585,18 +589,31 @@ class GeoDatabase(QtWidgets.QWidget):
                     geo_uuid_dict, self.active_db_dir
                     )
                 self.visualise_active_db()
-            else: # once the joint had been selected in the treeview Ui 
+            else: # once the joint had been selected in the treeview Ui
                 print(f"Adding GEO to existing row!")
-                # add_to existing row from selection!
-                # which row is selected? 
-                # selected Joint UUID: F0E55702-46CF-4131-30FB-BDBC0E16AAC9
-                # return possible row it is in! (a joint may be in multiple rows!)
-                # add
+                result = self.get_sel_jnt_index_and_uuid()
+                if result:
+                    row_index, joint_uuid = result
+                    print(f"joint selected in treeView = {joint_uuid}")
+                    print(f"joint row_index in treeView = {row_index}")
+                    # from uuid, return row
+                    '''
+                    retrieved_row = database_schema_001.Retrieve_UUID_Database_from_row(
+                    database_name=self.active_db, row_id=row_index+1, directory=self.active_db_dir
+                    )
+                    '''
+                    # add geo 
+                    database_schema_001.UpdateGeoDatabase(
+                        row_index+1, self.active_db, geo_uuid_dict, self.active_db_dir
+                        )
+                    self.visualise_active_db()
+                else:
+                    print(f"add geo to existing: error selecting existing joint")
         except Exception as e:
             print(f"add_geo_to_db_btn ERROR: {e}")
         self.new_relationship_checkBox.setChecked(False)
-        
-
+    
+       
     def sigFunc_new_relationship_checkBox(self):
         print(f"new_relationship_checkBox is checked cicked")
         self.val_new_relationship_checkBox = self.new_relationship_checkBox.isChecked()
@@ -606,6 +623,26 @@ class GeoDatabase(QtWidgets.QWidget):
         else:
             self.add_jnt_btn.setEnabled(False)
             self.add_geo_btn.setEnabled(True)
+
+
+    # -- Remove JOINT/GEO buttons --
+    def sigFunc_rmv_jnt_btn(self):
+        pass
+
+
+    def sigFunc_rmv_geo_btn(self):
+        print(f"sigFunc_rmv_jnt_btn cicked")
+        # cancel the operation if joints are selected!
+        result = self.get_geo_name_and_uuid_TreeSel()
+        if result:
+            geo_name, geo_uuid = result
+            print(f"geo_name = {geo_name} & geo_uuid = {geo_uuid}")
+            database_schema_001.RemoveSpecificGEOfromDB(
+                self.active_db, self.active_db_dir, geo_name, geo_uuid
+                )
+            self.visualise_active_db()
+        else:
+            print(f"in trying to REMOVE GEO, getting name & uuid failed.")
 
     #--------------------------------------------------------------------------
     ########## TREE VIEW FUNCTOINS ##########
@@ -697,7 +734,6 @@ class GeoDatabase(QtWidgets.QWidget):
         selection_model = self.joint_tree_view.selectionModel()
         selected_indexes = selection_model.selectedIndexes()
         
-        # same logic as the `get_selected_joint_index()` function
         if selected_indexes:
             selected_index = selected_indexes[0]
             geo_relationship_name = f"geo_relatonship_{selected_index.row() + 1}"
@@ -779,7 +815,7 @@ class GeoDatabase(QtWidgets.QWidget):
 
     #--------------------------------------------------------------------------
     ########## SKINNING FUNCTOINS ##########
-    def get_selected_joint_index(self):
+    def get_sel_jnt_index_and_uuid(self):
         # get selection model of all items in the joint treeView
         selection_model = self.joint_tree_view.selectionModel()
         selected_indexes = selection_model.selectedIndexes()
@@ -796,6 +832,23 @@ class GeoDatabase(QtWidgets.QWidget):
             joint_uuid = joint_item.data(QtCore.Qt.UserRole)
 
             return row_index, joint_uuid
+
+
+    def get_geo_name_and_uuid_TreeSel(self):
+        # get selection model of all items in the joint treeView
+        selection_model = self.geo_tree_view.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+
+        # is there an item selected?
+        if selected_indexes:
+            # for the time being get the first selected index (I could change this to handle multiple selections)
+            selected_index = selected_indexes[0]
+            geo_item = self.geo_model.itemFromIndex(selected_index)
+            # is it possible to retrieve the uuid of the selected object?
+            geom_name = geo_item.text()
+            geo_uuid = geo_item.data(QtCore.Qt.UserRole)
+
+            return geom_name, geo_uuid
 
 
 def geoDB_main():

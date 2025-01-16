@@ -219,22 +219,30 @@ class UpdateGeoDatabase():
     def update_db(self, conn, table, geo_names, geo_uuids, db_row_id):
         cursor = conn.cursor()
         if table == 'uuid_data':
-            sql = """UPDATE uuid_data SET geo_name = ?, geo_uuid = ? WHERE db_row_id = ?"""
             
             try: 
                 # CHECK the UPDATE sql with items with row db_row_id:
-                cursor.execute(f"SELECT * FROM uuid_data WHERE db_row_id = ?", (db_row_id,))
-                if cursor.fetchone() is None:
+                cursor.execute(f"SELECT geo_name, geo_uuid FROM uuid_data WHERE db_row_id = ?", 
+                               (db_row_id,))
+                row = cursor.fetchone()
+                if row is None:
                     print(f"No task found with db_row_id: `{db_row_id}`.")
+                # retrieve existing geo data beforte adding to it to avoid overwriting! 
+                existing_geo_names, existing_geo_uuids = row
+                if existing_geo_names:
+                    geo_names = existing_geo_names + ', ' + geo_names
+                if existing_geo_uuids:
+                    geo_uuids = existing_geo_uuids + ', ' + geo_uuids
                 
                 # Execute the UPDATE statement
+                sql = """UPDATE uuid_data SET geo_name = ?, geo_uuid = ? WHERE db_row_id = ?"""
                 cursor.execute(sql, (geo_names, geo_uuids, db_row_id))
                 conn.commit()
+
                 if cursor.rowcount == 0:
                     print(f"No uuid_data found with db_row_id: `{db_row_id}`.")
                 else:
                      print(f"uuid_data found with db_row_id: `{db_row_id}`.")
-
 
             except sqlite3.Error as e:
                 print(f"No '{table}' found with row `{db_row_id}`")
@@ -374,3 +382,61 @@ UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_multiGEO_uuid_combined_dict)
 UpdateDatabase(f'DB_geo_arm.db', multiJNT_for_oneGEO_uuid_combined_dict)
 UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_oneGEO_uuid_combined_dict)
 '''
+
+#------------------------------------------------------------------------------
+
+class RemoveSpecificGEOfromDB():
+    def __init__(self, database_name, directory, geo_name, geo_uuid):
+        db_directory = os.path.expanduser(directory)
+        os.makedirs(db_directory, exist_ok=1)
+        db_name = os.path.join(db_directory, database_name)
+
+        try:
+            with sqlite3.connect(db_name) as conn:
+                self.remove_geo_data(conn, geo_name, geo_uuid)
+                print(f"Data with geo_name `{geo_name}` & geo_uuid `{geo_uuid}` has been deleted from db: {db_name}")
+        except sqlite3.Error as e:
+            print(f"Delete GEO Database error: {e}")
+
+    # the issue with this i realse after is it deletes the whole row
+    '''
+    def delete_data(self, conn, geo_name, geo_uuid):
+        cursor = conn.cursor()
+        try:
+            sql = " DELETE FROM uuid_data WHERE geo_name = ? AND geo_uuid = ?"
+            cursor.execute(sql, (f"%{geo_name}%", f"%{geo_uuid}%"))
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error deleting GEO data: {e}")
+    '''
+
+    
+    def remove_geo_data(self, conn, geo_name, geo_uuid):
+        cursor = conn.cursor()
+        # use 'LIKE' for specific entries within the tables column
+        try:
+            print(f"&&&&&&&&& > trying to REMOVE data")
+            sql = "SELECT geo_name, geo_uuid FROM uuid_data WHERE geo_name LIKE ? AND geo_uuid LIKE ?"
+            cursor.execute(sql, (f"%{geo_name}%", f"%{geo_uuid}%"))
+            conn.commit()
+            # confirmation msg to user
+            row = cursor.fetchone()
+            if row:
+                # get existing geo & uuid names: 
+                existing_geo_names, existing_geo_uuids = row
+                updated_geo_names = ', '.join([name for name in existing_geo_names.split(', ') if name != geo_name])
+                updated_geo_uuids = ', '.join([uuid for uuid in existing_geo_uuids.split(', ') if uuid != geo_uuid])
+                
+                sql_update = "UPDATE uuid_data SET geo_name = ?, geo_uuid = ? WHERE geo_name LIKE ? AND geo_uuid LIKE ?"
+                cursor.execute( sql_update, (updated_geo_names, updated_geo_uuids, f"%{geo_name}%", f"%{geo_uuid}%"))
+                conn.commit()
+
+                if cursor.rowcount == 0:
+                    print("no matching record found to update.")
+                else:
+                    print(f"Updated {cursor.rowcount} record(s) by removing the specified data.")
+            else:
+                print(f"No matching record found.")
+
+        except sqlite3.Error as e:
+            print(f"Error removing GEO data: {e}")
