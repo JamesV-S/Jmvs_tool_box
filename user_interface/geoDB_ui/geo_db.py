@@ -439,7 +439,6 @@ class GeoDatabase(QtWidgets.QWidget):
         self.visualise_active_db()
         return self.val_database_comboBox
     
-    
     # -- skinning --
     def sigFunc_bind_skn_btn(self):
         print(f"bind_skn_btn clicked!")

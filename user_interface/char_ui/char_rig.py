@@ -63,6 +63,14 @@ class CharRigging(QtWidgets.QWidget):
         self.setWindowTitle(ui_window_name)
         self.resize(400, 550)
         
+        # style
+        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                                       "..", "CSS", "char_style_sheet_001.css")
+        print(stylesheet_path)
+        with open(stylesheet_path, "r") as file:
+            stylesheet = file.read()
+        self.setStyleSheet(stylesheet)
+        
         # button functions
         # ----------------------------------        
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -79,41 +87,77 @@ class CharRigging(QtWidgets.QWidget):
                 self.json_data = json.load(file)
                 self.json_dict[json_file] = self.json_data
         
-        self.UI()
-        # ui connections:
-        # TAB 1 - Module editor
-        self.add_blueprint_btn.clicked.connect(self.add_blueprint)
-
-    def UI(self):
-        # build the button's for this ui here
-        # parts of the ui:
-        
+        # TAB 1 = Modules
         self.orientation = "xyz"
+        self.UI_modules()
+        self.UI_tab1_connect_signals()
+        # ui connections:
+        
 
+    def UI_modules(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
+        main_Vlayout.setObjectName("main_Layout")
+        
+        top_Hlayout = QtWidgets.QHBoxLayout() # db_vis & mdl_choose
+        bottom_Vlayout = QtWidgets.QVBoxLayout() # add_blueprint & updating db
 
-        # tab 1 modules
-        top_Hlayout = QtWidgets.QHBoxLayout()
-        bottom_Vlayout = QtWidgets.QVBoxLayout()
-
-        db_editor_Vlayout = QtWidgets.QVBoxLayout()
-        module_editor_Vlayout = QtWidgets.QVBoxLayout()
-
-        top_Hlayout.addLayout(db_editor_Vlayout)
-        top_Hlayout.addLayout(module_editor_Vlayout)
         main_Vlayout.addLayout(top_Hlayout)
         main_Vlayout.addLayout(bottom_Vlayout)
 
-        # database editor
-        db_h_layout = QtWidgets.QHBoxLayout()
+        #----------------------------------------------------------------------
+        # ---- database editor ----
+        layV_module_Tree = QtWidgets.QVBoxLayout()
         
-        db_Qlabel = QtWidgets.QLabel("database_BipedArm")
-        db_h_layout.addWidget(db_Qlabel)
-        db_editor_Vlayout.addLayout(db_h_layout)
-    
-        # ---------------------------------------------------------------------
-        # module editor
-        def module_editor_ui(mdl_name, side_items):
+        self.tree_view_name_lbl = QtWidgets.QLabel("Database: `Rig Name`")
+        
+        self.mdl_tree_model = QtGui.QStandardItemModel()
+        self.mdl_tree_model.setColumnCount(1)
+
+        self.mdl_tree_view = QtWidgets.QTreeView(self)
+        self.mdl_tree_view.setModel(self.mdl_tree_model)
+        self.mdl_tree_view.setObjectName("mdl_treeview")
+
+        layV_module_Tree.addWidget(self.tree_view_name_lbl)
+        layV_module_Tree.addWidget(self.mdl_tree_view)
+        
+        # -- treeView settings --
+        header = self.mdl_tree_view.header()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.mdl_tree_view.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Maximum)
+        self.mdl_tree_view.setMinimumSize(150, 200)
+        self.mdl_tree_view.setHeaderHidden(True)
+        self.mdl_tree_view.setAnimated(True)
+        self.mdl_tree_view.setUniformRowHeights(True)
+        self.mdl_tree_view.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
+
+        top_Hlayout.addLayout(layV_module_Tree)
+
+        #----------------------------------------------------------------------
+        # ---- choose modules ----        
+        layV_choose_mdl_ancestor = QtWidgets.QVBoxLayout()
+        #layV_choose_mdl_ancestor.setContentsMargins(40, 0, 0, 40)
+        #layV_choose_mdl_ancestor.setSpacing()
+        
+        # -- Available RIG --
+        layV_available_rig = QtWidgets.QVBoxLayout()
+        # layV_available_rig.setContentsMargins(0, 0, 0, 0)
+
+        available_rig_lbl = QtWidgets.QLabel("Available RIG:")
+        available_rig_lbl.setFixedSize(200,20)
+        self.available_rig_comboBox = QtWidgets.QComboBox()
+        self.available_rig_comboBox.setFixedSize(200,30)
+        # searches the necessary folder that stores database!
+        self.available_rig_comboBox.addItems(["Male_rig", "Female_rig"])
+        self.available_rig_comboBox.setPlaceholderText("plaaceholder_text")
+
+        layV_available_rig.addWidget(available_rig_lbl)
+        layV_available_rig.addWidget(self.available_rig_comboBox)
+        layV_choose_mdl_ancestor.addLayout(layV_available_rig)
+
+        # -- Add module editor --
+        layV_add_mdl_layout = QtWidgets.QVBoxLayout()
+
+        def module_choose_ui(mdl_name, side_items):
             mdl_h_layout = QtWidgets.QHBoxLayout()
             
             mdl_checkBox = QtWidgets.QCheckBox()
@@ -133,7 +177,7 @@ class CharRigging(QtWidgets.QWidget):
                 mdl_side.setDisabled(False) 
                 mdl_h_layout.addWidget(mdl_side)
             
-            module_editor_Vlayout.addLayout(mdl_h_layout)
+            layV_add_mdl_layout.addLayout(mdl_h_layout)
 
             return mdl_checkBox, mdl_iterations, mdl_side
         
@@ -170,23 +214,113 @@ class CharRigging(QtWidgets.QWidget):
             print(f"{e} is not a key in {self.json_data}")
         
         # Create the ui components & store it in a dict
-        self.mdl_editor_ui_dict = {}
+        ''' Signal Functions are handled here! '''
+        self.mdl_choose_ui_dict = {}
         for mdl, sides in zip(mdl_list, side_list):
-            mdl_editor_buttons = module_editor_ui(mdl, sides)
-            self.mdl_editor_ui_dict[mdl] = mdl_editor_buttons
-
-        print(f"self.mdl_editor_ui_dict = {self.mdl_editor_ui_dict}")
-
+            mdl_choose_buttons = module_choose_ui(mdl, sides)
+            self.mdl_choose_ui_dict[mdl] = mdl_choose_buttons
+        print(f"self.mdl_choose_ui_dict = {self.mdl_choose_ui_dict}")
         
+        layV_choose_mdl_ancestor.addLayout(layV_add_mdl_layout)
+
+        # -- Pusblish module additions --
+        layH_publish_mdl_additons = QtWidgets.QHBoxLayout()
+
+        # self.publish_lbl = QtWidgets.QLabel("Publish:")
+        self.publish_btn = QtWidgets.QPushButton("Publish Module Additions")
+        layH_publish_mdl_additons.addWidget(self.publish_btn)
+
+        layV_choose_mdl_ancestor.addLayout(layH_publish_mdl_additons)
+
+        top_Hlayout.addLayout(layV_choose_mdl_ancestor)
+
+        #----------------------------------------------------------------------
+        # -- Selected mdl operations --
+        # self.layGRP_mdl_operations = QtWidgets.QGroupBox("GroupBoxTitle_001", self)
+        #font = QtGui.QFont("Times New Roman",  12)
+        #font.setBold(True)
+        #self.layGRP_mdl_operations.setFont(font)
+        layV_mdl_operations_ancestor = QtWidgets.QVBoxLayout()
+        mdl_data_lbl = QtWidgets.QLabel("Module Data")
+
+        # -- current_mdl_operations --
+        layV_current_MO_parent = QtWidgets.QVBoxLayout()
+        cmo_lbl = QtWidgets.QLabel("Current")
+        
+        layH_current_mdl_operations = QtWidgets.QHBoxLayout()
+        self.cmo_rigType_lbl = QtWidgets.QLabel("Rig Type: _ _ _")
+        self.cmo_mirrorMdl_lbl = QtWidgets.QLabel("Mirror Mdl: _ _ _")
+        self.cmo_stretch_lbl = QtWidgets.QLabel("Stretch: _ _ _")
+        self.cmo_twist_lbl = QtWidgets.QLabel("Twist: _ _ _")
+        for cmd_widget in [self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]:
+            layH_current_mdl_operations.addWidget(cmd_widget)
+
+        layV_current_MO_parent.addWidget(cmo_lbl)
+        layV_current_MO_parent.addLayout(layH_current_mdl_operations)
+        
+        # -- update_mdl_operations --
+        layV_update_MO_parent = QtWidgets.QVBoxLayout()
+        umo_lbl = QtWidgets.QLabel("Update")
+
+        layH_update_mdl_operations = QtWidgets.QHBoxLayout()
+        umo_rigType_lbl = QtWidgets.QLabel("Rig Type:")
+        self.umo_rigType_comboBox = QtWidgets.QComboBox()
+        self.umo_rigType_comboBox.addItems(["FK", "IK", "IKFK"])
+        self.umo_mirrorMdl_checkBox = QtWidgets.QCheckBox("Mirror Mdl")
+        self.umo_stretch_checkBox = QtWidgets.QCheckBox("Stretch")
+        self.umo_twist_checkBox = QtWidgets.QCheckBox("Twist")
+        for umd_widget in [self.umo_rigType_comboBox, self.umo_mirrorMdl_checkBox, self.umo_stretch_checkBox, self.umo_twist_checkBox]:
+            layH_update_mdl_operations.addWidget(umd_widget)
+        
+        layV_update_MO_parent.addWidget(umo_lbl)
+        layV_update_MO_parent.addLayout(layH_update_mdl_operations)
+
+        self.update_btn = QtWidgets.QPushButton("Update Module Data")
+        
+        layV_mdl_operations_ancestor.addWidget(mdl_data_lbl)
+        layV_mdl_operations_ancestor.addLayout(layV_current_MO_parent)
+        layV_mdl_operations_ancestor.addLayout(layV_update_MO_parent)
+        layV_mdl_operations_ancestor.addWidget(self.update_btn)
+        
+        bottom_Vlayout.addLayout(layV_mdl_operations_ancestor)
+
         # ---------------------------------------------------------------------
         # Updating modules and database
-        update_Qlabel = QtWidgets.QLabel("update")
-        # bottom_Vlayout.addWidget(update_Qlabel)
+        layV_deleteAdd_mdl_ancestor = QtWidgets.QVBoxLayout()
+        
+        # -- delete mdl btns --
+        layH_mdl_delete = QtWidgets.QHBoxLayout()
+        self.delete_mdl_btn = QtWidgets.QPushButton("Remove module") # selected mdl
+        self.delete_blueprint_btn = QtWidgets.QPushButton("Delete Blueprint") # entire blueprint
+        layH_mdl_delete.addWidget(self.delete_mdl_btn)
+        layH_mdl_delete.addWidget(self.delete_blueprint_btn)
+        
+        # -- add mdl btns --
+        layH_mdl_add = QtWidgets.QHBoxLayout()
+        self.add_mdl_btn = QtWidgets.QPushButton("Add module") # selected mdl
+        self.add_blueprint_btn = QtWidgets.QPushButton("Create Blueprint") # add entire blueprint(deletes old and remakes it)
+        layH_mdl_add.addWidget(self.add_mdl_btn)
+        layH_mdl_add.addWidget(self.add_blueprint_btn)
 
-        self.add_blueprint_btn = QtWidgets.QPushButton("Add module")
-        bottom_Vlayout.addWidget(self.add_blueprint_btn)
+        layV_deleteAdd_mdl_ancestor.addLayout(layH_mdl_delete)
+        layV_deleteAdd_mdl_ancestor.addLayout(layH_mdl_add)
 
-       
+        bottom_Vlayout.addLayout(layV_deleteAdd_mdl_ancestor)
+
+        # ---------------------------------------------------------------------
+        self.setLayout(main_Vlayout)
+
+
+    def UI_tab1_connect_signals(self):
+        # -- visualise database --
+        
+        # -- choose blueprint --
+
+        # -- add blueprints --
+        self.add_blueprint_btn.clicked.connect(self.add_blueprint)
+    
+    
+    # ---- JSON data functions ----
     def gather_JSON_data(self, json_data):
         print(f"CharRigging click button auto rig, {self.JSON_list}, data = {json_data}")
         # data for the guide's poisition (pos & rot) / constant data (spaceswap)
@@ -215,10 +349,10 @@ class CharRigging(QtWidgets.QWidget):
         # Should read the database
         pass
 
-    
+    # ---- add blueprint ----
     def add_blueprint(self):
         # connect signals for module editor buttons
-        for mdl, (checkBox, iterations, side) in self.mdl_editor_ui_dict.items():
+        for mdl, (checkBox, iterations, side) in self.mdl_choose_ui_dict.items():
             if checkBox.isChecked(): # checkbox is the master 
                 # access the input from iterations and side
                 iterations_value = iterations.value()
