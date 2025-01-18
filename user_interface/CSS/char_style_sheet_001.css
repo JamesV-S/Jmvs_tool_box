@@ -170,7 +170,7 @@ QLineEdit[DB_export_UI_01="true"]{
 /*------------------------------ QTREEVIEW ------------------------------*/
 QTreeView {
     color: rgb(239, 239, 239);
-    background-color: rgb(208, 207, 212);
+    background-color: rgb(44, 44, 45);
     border-style: double;
     border-width: 2px;
     border-radius: 5px;

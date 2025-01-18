@@ -1,10 +1,11 @@
 
 import sqlite3
+import json
 import importlib
 import sys
 import os
 
-''''''
+'''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
@@ -28,18 +29,21 @@ target_dir = go_up_path_levels(current_dir, levels)
 project_root = os.path.join(current_dir, '..', '..')  # Adjust path as necessary
 print(f"target_dir : {target_dir}, project_root: {project_root}")
 sys.path.append(os.path.abspath(target_dir))
-''''''
+'''
 
 from databases import database_manager
 importlib.reload(database_manager)
 
 # Temporary, this is already gathered automarically from the JSON
-u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
+# u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
 
 
 class CreateDatabase():
-    def __init__(self, mdl_name, side, user_setting_dict):
-        db_name = f'DB_{mdl_name}.db'
+    def __init__(self, directory, mdl_name, side, placement_dict, user_settings_dict, controls_dict):
+        db_directory = os.path.expanduser(directory)
+        os.makedirs(db_directory, exist_ok=1)
+        db_name = os.path.join(db_directory, f'DB_{mdl_name}.db')
+
         self.unique_id_tracker = {}
         try:
             with sqlite3.connect(db_name) as conn:
@@ -50,11 +54,18 @@ class CreateDatabase():
                 ''' query the database for the current max `unique_id` for each `mdl_name` & `side`'''
                 self.query_uniqueID_tracker(conn) # BEFORE processing new data.
                 self.unique_id = self.get_unique_id_sequence(mdl_name, side)
-
+                
+                # update the tables!
+                # table modules
                 self.update_db(conn, "modules", (self.unique_id, mdl_name, side))
-                rig_options = ', '.join(user_setting_dict['rig_type']['options'])
-                self.update_db(conn, "user_settings", (self.unique_id, u_s_dict['mirror_rig'], u_s_dict['stretch'], 
-                                                    rig_options, u_s_dict['rig_type']['default'], u_s_dict['size']))
+                # table user_settings
+                rig_options = ', '.join(user_settings_dict['rig_type']['options'])
+                self.update_db(conn, "user_settings", (self.unique_id, user_settings_dict['mirror_rig'], user_settings_dict['stretch'], 
+                                                    rig_options, user_settings_dict['rig_type']['default'], user_settings_dict['size']))
+                # table placement
+                self.update_db(conn, "placement", (self.unique_id, placement_dict['system_pos'], placement_dict['system_rot_xyz'], placement_dict['system_rot_yzx']))
+                # module controls
+                self.update_db(conn, "controls", (self.unique_id, controls_dict['FK_ctrls'], controls_dict['IK_ctrls']))
                     
         except sqlite3.Error as e:
             print(e)
@@ -68,6 +79,13 @@ class CreateDatabase():
             module_name text NOT NULL,
             side text NOT NULL
         );""",
+        """CREATE TABLE IF NOT EXISTS placement (
+            db_id INTEGER PRIMARY KEY,
+            unique_id INT,
+            system_pos TEXT,
+            system_rot_xyz TEXT,
+            system_rot_yzx TEXT
+        );""",
         """CREATE TABLE IF NOT EXISTS user_settings (
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
@@ -76,6 +94,12 @@ class CreateDatabase():
             rig_options TEXT,
             rig_default TEXT, 
             size INT
+        );""",
+        """CREATE TABLE IF NOT EXISTS controls (
+            db_id INTEGER PRIMARY KEY,
+            unique_id INT,
+            FK_ctrls TEXT,
+            IK_ctrls TEXT 
         );"""
         ]
         cursor = conn.cursor()
@@ -89,9 +113,19 @@ class CreateDatabase():
         if table == 'modules':
             sql = f""" INSERT INTO {table} (unique_id, module_name, side) VALUES (?, ?, ?)"""
             cursor.execute(sql, values)
+        elif table == 'placement':
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]))
+            sql = f""" INSERT INTO {table} (unique_id, system_pos, system_rot_xyz, 
+                system_rot_yzx) VALUES (?, ?, ?, ?)"""
+            cursor.execute(sql, values)
         elif table == 'user_settings':
             sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, 
                 rig_options, rig_default, size) VALUES (?, ?, ?, ?, ?, ?)"""
+            cursor.execute(sql, values)
+        elif table == 'controls':
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]))
+            sql = f""" INSERT INTO {table} (unique_id, FK_ctrls, IK_ctrls) 
+                VALUES (?, ?, ?)"""
             cursor.execute(sql, values)
         conn.commit()
 
@@ -117,7 +151,45 @@ class CreateDatabase():
             self.unique_id_tracker[key] += 1
         return self.unique_id_tracker[key]
     
+'''
+clavicle_Xyz TEXT,
+shoulder_Xyz TEXT,
+elbow_Xyz TEXT,
+wrist_Xyz TEXT,
+'''
 
-CreateDatabase("bipedArm", "_R", u_s_dict)
-CreateDatabase("bipedArm", "_L", u_s_dict)
-CreateDatabase("bipedArm", "_L", u_s_dict)
+class retrieveModulesData():
+    def __init__(self, directory, database_name):
+        self.mdl_populate_tree_dict = {}
+        db_directory = os.path.expanduser(directory)
+        os.makedirs(db_directory, exist_ok=1)
+        # db_name must include the entire path too!
+        db_name = os.path.join(db_directory, database_name)
+
+        try:
+            with sqlite3.connect(db_name) as conn:
+                self.mdl_populate_tree_dict = self.dict_from_table(
+                    conn, 'modules', database_name
+                    )
+                #return self.mdl_populate_tree_dict
+        except sqlite3.Error as e:
+            print(e)
+
+    def dict_from_table(self, conn, table, database_name):
+        # return a dict where each key is the database_name & each value is tuple of (unique_id & side)
+        cursor = conn.cursor()
+        query_param_state = f"SELECT unique_id, side FROM {table}"
+        try:
+            cursor.execute(query_param_state)
+            rows = cursor.fetchall()
+            print(f"rows = {rows}")
+            mdl_populate_tree_dict = {database_name: []}
+            if rows:
+                for row in rows:
+                    unique_id, side = row[0], row[1]
+                    mdl_populate_tree_dict[database_name].append((unique_id, side))
+            return mdl_populate_tree_dict
+
+        except sqlite3.Error as e:
+            print(f"sqlite3.Error: {e}")
+            return {}

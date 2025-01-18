@@ -1,0 +1,39 @@
+{
+    "mdl_name": "root",
+    "names": ["root", "COG"],
+    "placement": {
+        "system_pos": {
+            "root": [0, 0, 0],
+            "COG": [0, 150, 0]
+        },
+        "system_rot_xyz": {
+            "root": [0, 0, 0],
+            "COG": [0, 0, 0]
+        },
+        "system_rot_yzx": {
+            "root": [0, 0, 0],
+            "COG": [0, 0, 0]
+        }
+    },
+    "constant": {
+        "space_swap": [],
+        "ik_settings": {}
+    },
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": false,
+        "rig_type": {
+            "options": ["FK"],
+            "default": "FK"
+        },
+        "size": 1,
+        "side": ["None"]
+    },
+    "controls": {
+        "FK_ctrls": {
+            "fk_root": "circle",
+            "fk_COG": "circle"
+        },
+        "IK_ctrls": {}
+    }
+}

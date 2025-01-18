@@ -1,0 +1,63 @@
+
+{
+    "mdl_name": "spine",
+    "names": ["spine_1", "spine_2", "spine_3", "spine_4", "spine_5"],
+    "placement": {
+        "system_pos": {
+            "spine_1": [0.0, 150.0, 0.0],
+            "spine_2": [-1.0302985026792348e-14, 165.3182830810547, 2.138536453247061],
+            "spine_3": [-2.3043808310802754e-14, 185.50926208496094, 2.8292100429534632],
+            "spine_4": [-3.3364796818449844e-14, 204.27308654785156, -0.3802546262741595],
+            "spine_5": [-5.1020985278054485e-14, 237.46397399902344, -8.25034904479989]
+        },
+        "system_rot_xyz": {
+            "spine_1": [0.0, -7.947513469078512, 90.00000000000001],
+            "spine_2": [-1.9890093469260345e-16, -1.959155005957633, 90.00000000000001],
+            "spine_3": [0.0, 9.706246313394262, 90.00000000000001],
+            "spine_4": [-8.171859705486283e-16, 13.339396285991443, 90.0],
+            "spine_5": [-7.814945266275812e-14, -9.271752801444176, 89.99999999999991]
+        },
+        "system_rot_yzx": {
+            "spine_1": [7.667038985618099, 0.0, 0.0],
+            "spine_2": [1.880673240761548, 0.0, 0.0],
+            "spine_3": [-9.496334372767544, 0.0, 0.0],
+            "spine_4": [-13.212290179161894, 0.0, 0.0],
+            "spine_5": [9.331941466846782, 0.0, 0.0]
+        }
+    },
+    "constant": {
+        "space_swap": [],
+        "ik_settings": {
+            "start_joint": "spine_1",
+            "end_joint": "spine_5",
+            "pv_joint": null,
+            "world_orientation": true
+        }
+    },
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": false,
+        "rig_type": {
+            "options": ["FK", "IK", "IKFK"],
+            "default": "FK"
+        },
+        "size": 1,
+        "side": ["None"]
+    },
+    "controls": {
+        "FK_ctrls": {
+            "fk_spine_1": "circle",
+            "fk_spine_2": "circle",
+            "fk_spine_3": "circle",
+            "fk_spine_4": "circle",
+            "fk_spine_5": "circle"
+        },
+        "IK_ctrls": {
+            "ik_spine_1": "cube",
+            "ik_spine_2": null,
+            "ik_spine_3": "cube",
+            "ik_spine_4": null,
+            "ik_spine_5": "cube"
+        }
+    }
+}

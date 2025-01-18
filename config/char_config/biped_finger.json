@@ -1,0 +1,62 @@
+
+{
+    "mdl_name": "Finger",
+    "names": ["bipedPhalProximal", "bipedPhalMiddle", "bipedPhalDistal", "bipedPhalDEnd"],
+    "placement": {
+        "system_pos": {
+            "bipedPhalProximal": [80.61004637463462, 151.7215423583185, 24.099996037467385],
+            "bipedPhalMiddle": [84.45979996338392, 145.8773481500665, 28.318845156262494],
+            "bipedPhalDistal": [87.13240797932576, 141.82014294780598, 31.24768974670393],
+            "bipedPhalDEnd": [89.18559525612636, 138.70326159035977, 33.49772656951928]
+        },
+        "system_rot_xyz": {
+            "bipedPhalProximal": [5.910977623767589, -31.083474503917564, -56.62585344811804],
+            "bipedPhalMiddle": [5.910977623767589, -31.083474503917564, -56.62585344811804],
+            "bipedPhalDistal": [5.910977623767589, -31.08347450391755, -56.62585344811804],
+            "bipedPhalDEnd": [5.910977623767589, -31.08347450391755, -56.62585344811804]
+        },
+        "system_rot_yzx": {
+            "bipedPhalProximal": [50.95891725101831, -56.98582204849474, 153.9365525662274],
+            "bipedPhalMiddle": [50.95891725101831, -56.98582204849474, 153.9365525662274],
+            "bipedPhalDistal": [50.95891725101831, -56.98582204849474, 153.9365525662274],
+            "bipedPhalDEnd": [50.95891725101831, -56.98582204849474, 153.9365525662274]
+        }
+    },
+    "constant": {
+        "space_swap": [["world", "COG", "wrist", "custom"],
+                        ["world", "bipedPhalDEnd"],
+                        ["world", "bipedPhalProximal"],
+                        ["world", "wirst"]],
+        "ik_settings": {
+            "start_joint": "bipedPhalProximal",
+            "end_joint": "bipedPhalDistal",
+            "pv_joint": "bipedPhalMiddle",
+            "world_orientation": false,
+            "last_joint": "bipedPhalDEnd"
+        }
+    },
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": true,
+        "rig_type": {
+            "options": ["FK", "IK", "IKFK"],
+            "default": "FK"
+        },
+        "size": 0.15,
+        "side": ["L", "R"]
+    },
+    "controls": {
+        "FK_ctrls": {
+            "fk_bipedPhalProximal": "circle",
+            "fk_bipedPhalMiddle": "circle",
+            "fk_bipedPhalDistal": "circle",
+            "fk_bipedPhalDEnd": "circle"
+        },
+        "IK_ctrls": {
+            "ik_bipedPhalProximal": "cube",
+            "ik_bipedPhalMiddle": "pv",
+            "ik_bipedPhalDistal": "cube",
+            "ik_bipedPhalDEnd": "cube"
+        }
+    }
+}
