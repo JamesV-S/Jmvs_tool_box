@@ -18,12 +18,18 @@ except ModuleNotFoundError:
 import sys
 import random
 import importlib
-import os.path
+import os
 import json
 
 from databases.char_databases import database_schema_002
+from systems import (
+    os_custom_directory_utils,
+    utils
+)
 
 importlib.reload(database_schema_002)
+importlib.reload(os_custom_directory_utils)
+importlib.reload(utils)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -73,24 +79,29 @@ class CharRigging(QtWidgets.QWidget):
         
         # button functions
         # ----------------------------------        
-        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.current_dir = os.path.dirname(os.path.abspath(__file__))
 
         # gather the existing files in 'config' and create a list of the files
         # Placeholder: 
-        self.JSON_list = ['biped_arm.json', 'biped_leg.json']# , 'biped_leg.json'] # 
-        self.json_dict = {} # json is a dictionary,so just go gather it. 
-        for json_file in self.JSON_list:
-            # configer the JSON file
-            json_path = os.path.join(current_dir, "..", "..", "config", json_file)
-            with open(json_path, 'r') as file:
-                # load the json data
-                self.json_data = json.load(file)
-                self.json_dict[json_file] = self.json_data
+        
         
         # TAB 1 = Modules
         self.orientation = "xyz"
+        
+
+        # derive the `self.json_all_mdl_list` from the config folder!
+        #self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
+        self.json_dict = self.get_modules_json_dict()
+        
         self.UI_modules()
         self.UI_tab1_connect_signals()
+
+        # -- paramaters --
+        # What's the syntax for rig database folders?
+        self.db_rig_location = "db_rig_storage"
+        self.name_of_DB_mdl_file = None # `DB_mdl_bipedArm.db`
+        name_of_rig_fld = self.get_available_DB_rig_folders(self.db_rig_location)
+        self.populate_available_rig(name_of_rig_fld)
         # ui connections:
         
 
@@ -147,8 +158,7 @@ class CharRigging(QtWidgets.QWidget):
         self.available_rig_comboBox = QtWidgets.QComboBox()
         self.available_rig_comboBox.setFixedSize(200,30)
         # searches the necessary folder that stores database!
-        self.available_rig_comboBox.addItems(["Male_rig", "Female_rig"])
-        self.available_rig_comboBox.setPlaceholderText("plaaceholder_text")
+        #self.available_rig_comboBox.addItems(["Male_rig", "Female_rig"])
 
         layV_available_rig.addWidget(available_rig_lbl)
         layV_available_rig.addWidget(self.available_rig_comboBox)
@@ -182,7 +192,7 @@ class CharRigging(QtWidgets.QWidget):
             return mdl_checkBox, mdl_iterations, mdl_side
         
         ''' method of unpacking nested dict struture 'self.json_dict' 
-        containing each JSON files's content under its filename as a key.
+        containing each json files's content under its filename as a key.
         Step 1 - dictionary & items
             `.items()` method that returns a view object that displays a list
             of the dict's key-value tuple pairs(step 2)
@@ -313,16 +323,77 @@ class CharRigging(QtWidgets.QWidget):
 
     def UI_tab1_connect_signals(self):
         # -- visualise database --
-        
+        self.publish_btn.clicked.connect(self.sigfunc_publish_btn)
         # -- choose blueprint --
 
         # -- add blueprints --
         self.add_blueprint_btn.clicked.connect(self.add_blueprint)
     
+    ########## UI SIGNAL FUNCTOINS ##########
+    # ---- siFunc Choose modules functions ----
+    def sigfunc_publish_btn(self):
+        print(f"sigfunc_publish_btn clicked")
+
+    # -------------------------------------------------------------------------
+    # ---- Choose modules functions ----
+    # -- DB Rig folder functions --
+    def get_available_DB_rig_folders(self, location):
+            name_of_rig_fld = []
+            self.rig_db_storage_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
+            if os.path.exists(self.rig_db_storage_dir):
+                print(f"Dir does exist: {self.rig_db_storage_dir}")
+                for db_rig_folder in os.listdir(self.rig_db_storage_dir):
+                    if db_rig_folder.startswith("DB_jmvs_"):
+                        name_of_rig_fld.append(db_rig_folder)
+                        print(f"RIG Folder(s): {db_rig_folder}")
+                    elif not db_rig_folder.startswith("DB_jmvs_"):
+                        print(f"NOT a rig folder: {db_rig_folder}")
+            else:
+                print(f"Dir doesn't exist: {self.rig_db_storage_dir}")
+            return name_of_rig_fld
+
+
+    def populate_available_rig(self, name_of_rig_fld):
+        # `name_of_rig_fld` will populate the ComboBox
+        # IF no(None) ^folder^ in `self.db_rig_location`, print(f"No rig name folder found in {self.db_rig_location}, please create one.")
+        print(f"`self.name_of_rig_fld` :: {name_of_rig_fld}")
+        if name_of_rig_fld:
+            print(f"Rig folder name found in {self.db_rig_location}, populating available rig option.")
+            self.available_rig_comboBox.addItems(name_of_rig_fld)
+        elif name_of_rig_fld == None:
+            self.available_rig_comboBox.setPlaceholderText("No rig database folders")
+            print(f"No rig folder name 'DB_jmvs_char*_rig' found in {self.db_rig_location}, please create one.")
+
+    # -- mdl JSON functions --
+    def get_modules_json_dict(self):
+        # derive the `self.json_all_mdl_list` from the config folder!
+        # self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
+        json_mdl_list = []
+        json_config_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "config", "char_config")
+        if os.path.exists(json_config_dir):
+            for mdl_config_file in os.listdir(json_config_dir):
+                if mdl_config_file.endswith('.json'):
+                    json_mdl_list.append(mdl_config_file)
+        
+        # This dictionary contains nested dict of all possible json modules in `char_config` folder
+        json_dict = {}
+        for json_file in json_mdl_list:
+            # configer the json file
+            json_path = os.path.join(json_config_dir, json_file)
+            with open(json_path, 'r') as file:
+                # load the json data
+                self.json_data = json.load(file)
+                json_dict[json_file] = self.json_data
+        return json_dict
+
     
-    # ---- JSON data functions ----
-    def gather_JSON_data(self, json_data):
-        print(f"CharRigging click button auto rig, {self.JSON_list}, data = {json_data}")
+    def publish_mdl_database_to_chosen_rig(self):
+        self.cr_json_database()
+
+
+    # ---- json data functions ----
+    def gather_json_data(self, json_data):
+        print(f"CharRigging click button auto rig, {self.json_all_mdl_list}, data = {json_data}")
         # data for the guide's poisition (pos & rot) / constant data (spaceswap)
         # user_settings > to pass to the database!
         try:
@@ -330,25 +401,26 @@ class CharRigging(QtWidgets.QWidget):
             constant_dict = self.json_data['constant']
             user_settings_dict = self.json_data['user_settings']
         except KeyError as e:
-            print(f"{e} is not a key in {self.JSON_list[0]}")
+            print(f"{e} is not a key in {self.json_all_mdl_list[0]}")
         return placement_dict, constant_dict, user_settings_dict
     
 
-    def cr_JSON_database(self):
-            # print(f"database data to add: {self.gather_JSON_data(self.json_data)[2]}")
-            self.u_s_dict = self.gather_JSON_data(self.json_data)[2]
+    def cr_json_database(self):
+            # print(f"database data to add: {self.gather_json_data(self.json_data)[2]}")
+            self.u_s_dict = self.gather_json_data(self.json_data)[2]
             # print(f"mdl_name = {side}")
-            database_schema = database_schema_002.CreateDatabase(self.json_data['mdl_name'], side, u_s_dict) 
+            database_schema = database_schema_002.CreateDatabase(self.json_data['mdl_name'], side, self.u_s_dict) 
             
             # unique_id = database_schema.get_unique_id()
             # print(f"unique_id == {unique_id} for {self.json_data['mdl_name']}_{side}")
             # import and call the database maker 'database_schema'
 
 
-    def cr_JSON_guides(self):
+    def cr_json_guides(self):
         # Should read the database
         pass
 
+    
     # ---- add blueprint ----
     def add_blueprint(self):
         # connect signals for module editor buttons
@@ -358,11 +430,9 @@ class CharRigging(QtWidgets.QWidget):
                 iterations_value = iterations.value()
                 side_value = side.currentText() if side else None
                 print(f"Adding blueprint for {mdl}: Iterations={iterations_value}, Side={side_value}")
-        
-        #self.cr_JSON_database()
 
         # Should read the database
-        #self.cr_JSON_guides()
+        #self.cr_json_guides()
 
 def char_main():
     app = QtWidgets.QApplication.instance()
