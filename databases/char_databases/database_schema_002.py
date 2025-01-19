@@ -49,7 +49,7 @@ class CreateDatabase():
             with sqlite3.connect(db_name) as conn:
                 # interasct with datsabase
                 self.add_table(conn)
-                print(f"module {mdl_name}{side} has connected to database {db_name}")
+                print(f"module {mdl_name}_{side} has connected to database {db_name}")
 
                 ''' query the database for the current max `unique_id` for each `mdl_name` & `side`'''
                 self.query_uniqueID_tracker(conn) # BEFORE processing new data.
@@ -63,7 +63,7 @@ class CreateDatabase():
                 self.update_db(conn, "user_settings", (self.unique_id, user_settings_dict['mirror_rig'], user_settings_dict['stretch'], 
                                                     rig_options, user_settings_dict['rig_type']['default'], user_settings_dict['size']))
                 # table placement
-                self.update_db(conn, "placement", (self.unique_id, placement_dict['system_pos'], placement_dict['system_rot_xyz'], placement_dict['system_rot_yzx']))
+                self.update_db(conn, "placement", (self.unique_id, placement_dict['component_pos'], placement_dict['system_rot_xyz'], placement_dict['system_rot_yzx']))
                 # module controls
                 self.update_db(conn, "controls", (self.unique_id, controls_dict['FK_ctrls'], controls_dict['IK_ctrls']))
                     
@@ -82,7 +82,7 @@ class CreateDatabase():
         """CREATE TABLE IF NOT EXISTS placement (
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
-            system_pos TEXT,
+            component_pos TEXT,
             system_rot_xyz TEXT,
             system_rot_yzx TEXT
         );""",
@@ -115,7 +115,7 @@ class CreateDatabase():
             cursor.execute(sql, values)
         elif table == 'placement':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]))
-            sql = f""" INSERT INTO {table} (unique_id, system_pos, system_rot_xyz, 
+            sql = f""" INSERT INTO {table} (unique_id, component_pos, system_rot_xyz, 
                 system_rot_yzx) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'user_settings':

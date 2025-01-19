@@ -1,9 +1,9 @@
 
 {
-    "mdl_name": "Finger",
+    "mdl_name": "finger",
     "names": ["bipedPhalProximal", "bipedPhalMiddle", "bipedPhalDistal", "bipedPhalDEnd"],
     "placement": {
-        "system_pos": {
+        "component_pos": {
             "bipedPhalProximal": [80.61004637463462, 151.7215423583185, 24.099996037467385],
             "bipedPhalMiddle": [84.45979996338392, 145.8773481500665, 28.318845156262494],
             "bipedPhalDistal": [87.13240797932576, 141.82014294780598, 31.24768974670393],

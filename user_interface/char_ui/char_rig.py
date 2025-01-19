@@ -26,10 +26,14 @@ from systems import (
     os_custom_directory_utils,
     utils
 )
+from systems.sys_char_rig import (
+    cr_guides
+)
 
 importlib.reload(database_schema_002)
 importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
+importlib.reload(cr_guides)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -111,10 +115,14 @@ class CharRigging(QtWidgets.QWidget):
         
         self.mdl_tree_model = QtGui.QStandardItemModel()
         self.mdl_tree_model.setColumnCount(1)
+        
 
         self.mdl_tree_view = QtWidgets.QTreeView(self)
         self.mdl_tree_view.setModel(self.mdl_tree_model)
         self.mdl_tree_view.setObjectName("mdl_treeview")
+
+        # set selection mode to multiSelection
+        self.mdl_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
 
         layV_module_Tree.addWidget(self.tree_view_name_lbl)
         layV_module_Tree.addWidget(self.mdl_tree_view)
@@ -347,7 +355,8 @@ class CharRigging(QtWidgets.QWidget):
         
         self.publish_btn.clicked.connect(self.sigfunc_publish_btn)
         # -- add blueprints --
-        self.add_blueprint_btn.clicked.connect(self.add_blueprint)
+        self.add_mdl_btn.clicked.connect(self.sigfunc_add_module)
+        self.add_blueprint_btn.clicked.connect(self.sigfunc_add_blueprint)
     
     ########## UI SIGNAL FUNCTOINS ##########
     # ------------ siFunc TREEVIEW functions ------------
@@ -393,8 +402,6 @@ class CharRigging(QtWidgets.QWidget):
             mdl_iteration.setMaximum(1)
         self.val_mdl_iteration = mdl_iteration.value()
         
-
-        
         # add the remaining iteration widget signal
         self.user_module_data[mdl_name]["mdl_iteration"] = self.val_mdl_iteration
 
@@ -427,6 +434,39 @@ class CharRigging(QtWidgets.QWidget):
             self.visualise_active_db()
         
     
+    # ---- add blueprint ----
+    def sigfunc_add_module(self):
+        print(f"What is mdl_choose_ui_dict? == {self.mdl_choose_ui_dict}") # output = {}
+        # select the component(red) in the 
+        # this dict comes from gathering data from active databases in active rig folder!
+        example_component_dict = {
+            "module_name":"bipedArm", 
+            "unique_id":0,
+            "side":"L", 
+            "component_pos":{
+                'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
+                'shoulder': [28.9705319404602, 230.650634765625, 2.762230157852166], 
+                'elbow': [53.69795846939088, 197.98831176757807, 6.61050152778626], 
+                'wrist': [76.10134363174441, 169.30845642089832, 30.106774568557817]
+                }
+            }
+        cr_guides.CreateXfmGuides(example_component_dict)
+        
+        
+
+
+    def sigfunc_add_blueprint(self):
+        # connect signals for module editor buttons
+        for mdl, (checkBox, iterations, side) in self.mdl_choose_ui_dict.items():
+            if checkBox.isChecked(): # checkbox is the master 
+                # access the input from iterations and side
+                iterations_value = iterations.value()
+                side_value = side.currentText() if side else None
+                print(f"Adding blueprint for {mdl}: Iterations={iterations_value}, Side={side_value}")
+
+        # Should read the database
+        #self.cr_json_guides()
+
     # -------------------------------------------------------------------------
     # ---- TreeView functions ----
     def visualise_active_db(self):
@@ -533,43 +573,86 @@ class CharRigging(QtWidgets.QWidget):
             json_path = os.path.join(json_config_dir, json_file)
             with open(json_path, 'r') as file:
                 # load the json data
-                self.json_data = json.load(file)
-                json_dict[json_file] = self.json_data
+                json_data = json.load(file)
+                json_dict[json_file] = json_data
         return json_dict        
 
     
-    # ---- json data functions ----
-    def gather_json_data(self): # DON'T NEED THIS, just keep to go back to
-        # data for the guide's poisition (pos & rot) / constant data (spaceswap)
-        # user_settings > to pass to the database!
-        try:
-            placement_dict = self.json_data['placement']
-            constant_dict = self.json_data['constant']
-            user_settings_dict = self.json_data['user_settings']
-        except KeyError as e:
-            print(f"{e} is not a key in {self.json_all_mdl_list[0]}")
-        return placement_dict, constant_dict, user_settings_dict
-    
-
+    # ---- json data functions ----  
     def cr_mdl_json_database(self, mdl_name, checkBox, iterations, side): # handles a single module at a time
-            placement_dict = self.json_data['placement']
-            user_settings_dict = self.json_data['user_settings']
-            controls_dict = self.json_data['controls']
+            print(f"OIIIIIIIIIIIIIII self.json_data  == {self.json_dict}, `mdl_name` = {mdl_name}")
+            #controls_dict = self.json_dict['controls']
+            placement_dict = {}
+            user_settings_dict = {}
+            controls_dict = {}
+            for key, values in self.json_dict.items():
+                if key == f"{mdl_name}.json":
+                    placement_dict =  values['placement']
+                    user_settings_dict =  values['user_settings']
+                    controls_dict =  values['controls']
+            '''
+            {'bipedArm.json': 
+                {
+                'mdl_name': 'bipedArm', 
+                'names': ['clavicle', 'shoulder', 'elbow', 'wrist'], 
+                'placement': {
+                            'component_pos': {'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
+                                            'shoulder': [25.234529495239258, 225.57975769042972, -12.279715538024915], 
+                                            'elbow': [49.96195602416994, 192.91743469238278, -8.43144416809082], 
+                                            'wrist': [72.36534118652347, 164.23757934570304, 15.064828872680739]}, 
+                            'system_rot_xyz': {'clavicle': [-7.698626118758961, 34.531672095102785, -13.412947865931349], 
+                                            'shoulder': [7.042431639335459, -5.366417614476926, -52.87199475566795], 
+                                            'elbow': [3.4123575630188263, -32.847391136978814, -52.004681579832734], 
+                                            'wrist': [3.4123575630188263, -32.847391136978814, -52.004681579832734]}, 
+                            'system_rot_yzx': {'clavicle': [-101.01687892466634, -54.72478122395497, 0.0], 
+                                            'shoulder': [38.44191942754821, -81.34821938773749, 179.00497225409262], 
+                                            'elbow': [84.72265733457102, -56.99499092973047, 134.2807120402011], 
+                                            'wrist': [84.72265733457102, -56.99499092973047, 134.2807120402011]}
+                            }, 
+                'constant': {
+                            'space_swap': 
+                                        [['world', 'COG', 'shoulder', 'custom'], ['world', 'wrist'], ['world', 'clavicle'], ['world', 'spine']], 
+                            'ik_settings': 
+                                        {'start_joint': 'shoulder', 'end_joint': 'wrist', 'pv_joint': 'elbow', 'top_joint': 'clavicle'}
+                            }, 
+                'user_settings': {
+                                'mirror_rig': False, 'stretch': False, 
+                                'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 
+                                'size': 1, 'side': ['L', 'R']
+                                }, 
+                'controls': {
+                            'FK_ctrls': 
+                                    {'fk_clavicle': 'circle', 'fk_shoulder': 'circle', 'fk_elbow': 'circle', 'fk_wrist': 'circle'}, 
+                            'IK_ctrls': 
+                                    {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
+                            }
+                },
+            'bipedLeg.json': {'mdl_name': 'bipedLeg', 'names': ['hip', 'knee', 'ankle', 'ball', 'toe'], 'placement': {'component_pos': {'hip': [16.036325454711914, 147.7965545654297, 0.051486290991306305], 'knee': [20.133201599121104, 82.05242919921866, -0.4505884051322898], 'ankle': [24.197132110595703, 12.625909805297809, -3.493209123611452], 'ball': [24.084232330322262, -1.2434497875801753e-14, 17.988098144531257], 'toe': [24.084232330322276, -1.1379786002407858e-14, 29.18881988525391]}, 'system_rot_xyz': {'hip': [-0.206856730062026, 0.4367008200374581, -86.43419733389054], 'knee': [-0.20685673006202596, 0.43670082003745814, -86.43419733389054], 'ankle': [0.5942622188475634, -59.55357811140123, -90.0], 'ball': [-89.85408725528224, -89.99999999999997, 0.0], 'toe': [-89.85408725528225, -89.99999999999997, 0.0]}, 'system_rot_yzx': {'hip': [-0.43670082003745525, 0.0, -176.43419733389047], 'knee': [-2.5051019515754724, 0.0035324430433216728, -176.434], 'ankle': [59.55357811140115, 0.0, 180.0], 'ball': [89.99999999999993, 1.8636062586700292e-16, -180.0], 'toe': [89.99999999999996, -1.2424041724466862e-17, -180.0]}}, 'constant': {'space_swap': [['world', 'COG', 'hip', 'custom'], ['world', 'ankle'], ['world', 'spine_0']], 'ik_settings': {'start_joint': 'hip', 'end_joint': 'ankle', 'pv_joint': 'knee'}}, 'user_settings': {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1, 'side': ['L', 'R']}, 'controls': {'FK_ctrls': {'fk_hip': 'circle', 'fk_knee': 'circle', 'fk_ankle': 'circle', 'fk_ball': 'circle', 'fk_toe': 'circle'}, 'IK_ctrls': {'ik_hip': 'cube', 'ik_knee': 'pv', 'ik_ankle': 'cube', 'ik_ball': 'None', 'ik_toe': 'None'}}}, 
+            }
+            'finger.json': {'mdl_name': 'Finger', 'names': ['bipedPhalProximal', 'bipedPhalMiddle', 'bipedPhalDistal', 'bipedPhalDEnd'], 'placement': {'component_pos': {'bipedPhalProximal': [80.61004637463462, 151.7215423583185, 24.099996037467385], 'bipedPhalMiddle': [84.45979996338392, 145.8773481500665, 28.318845156262494], 'bipedPhalDistal': [87.13240797932576, 141.82014294780598, 31.24768974670393], 'bipedPhalDEnd': [89.18559525612636, 138.70326159035977, 33.49772656951928]}, 'system_rot_xyz': {'bipedPhalProximal': [5.910977623767589, -31.083474503917564, -56.62585344811804], 'bipedPhalMiddle': [5.910977623767589, -31.083474503917564, -56.62585344811804], 'bipedPhalDistal': [5.910977623767589, -31.08347450391755, -56.62585344811804], 'bipedPhalDEnd': [5.910977623767589, -31.08347450391755, -56.62585344811804]}, 'system_rot_yzx': {'bipedPhalProximal': [50.95891725101831, -56.98582204849474, 153.9365525662274], 'bipedPhalMiddle': [50.95891725101831, -56.98582204849474, 153.9365525662274], 'bipedPhalDistal': [50.95891725101831, -56.98582204849474, 153.9365525662274], 'bipedPhalDEnd': [50.95891725101831, -56.98582204849474, 153.9365525662274]}}, 'constant': {'space_swap': [['world', 'COG', 'wrist', 'custom'], ['world', 'bipedPhalDEnd'], ['world', 'bipedPhalProximal'], ['world', 'wirst']], 'ik_settings': {'start_joint': 'bipedPhalProximal', 'end_joint': 'bipedPhalDistal', 'pv_joint': 'bipedPhalMiddle', 'world_orientation': False, 'last_joint': 'bipedPhalDEnd'}}, 'user_settings': {'mirror_rig': False, 'stretch': True, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 0.15, 'side': ['L', 'R']}, 'controls': {'FK_ctrls': {'fk_bipedPhalProximal': 'circle', 'fk_bipedPhalMiddle': 'circle', 'fk_bipedPhalDistal': 'circle', 'fk_bipedPhalDEnd': 'circle'}, 'IK_ctrls': {'ik_bipedPhalProximal': 'cube', 'ik_bipedPhalMiddle': 'pv', 'ik_bipedPhalDistal': 'cube', 'ik_bipedPhalDEnd': 'cube'}}}, 
+            
+            'root.json': {'mdl_name': 'root', 'names': ['root', 'COG'], 'placement': {'component_pos': {'root': [0, 0, 0], 'COG': [0, 150, 0]}, 'system_rot_xyz': {'root': [0, 0, 0], 'COG': [0, 0, 0]}, 'system_rot_yzx': {'root': [0, 0, 0], 'COG': [0, 0, 0]}}, 'constant': {'space_swap': [], 'ik_settings': {}}, 'user_settings': {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK'], 'default': 'FK'}, 'size': 1, 'side': ['None']}, 'controls': {'FK_ctrls': {'fk_root': 'circle', 'fk_COG': 'circle'}, 'IK_ctrls': {}}}, 
+            
+            'spine.json': {'mdl_name': 'spine', 'names': ['spine_1', 'spine_2', 'spine_3', 'spine_4', 'spine_5'], 'placement': {'component_pos': {'spine_1': [0.0, 150.0, 0.0], 'spine_2': [-1.0302985026792348e-14, 165.3182830810547, 2.138536453247061], 'spine_3': [-2.3043808310802754e-14, 185.50926208496094, 2.8292100429534632], 'spine_4': [-3.3364796818449844e-14, 204.27308654785156, -0.3802546262741595], 'spine_5': [-5.1020985278054485e-14, 237.46397399902344, -8.25034904479989]}, 'system_rot_xyz': {'spine_1': [0.0, -7.947513469078512, 90.00000000000001], 'spine_2': [-1.9890093469260345e-16, -1.959155005957633, 90.00000000000001], 'spine_3': [0.0, 9.706246313394262, 90.00000000000001], 'spine_4': [-8.171859705486283e-16, 13.339396285991443, 90.0], 'spine_5': [-7.814945266275812e-14, -9.271752801444176, 89.99999999999991]}, 'system_rot_yzx': {'spine_1': [7.667038985618099, 0.0, 0.0], 'spine_2': [1.880673240761548, 0.0, 0.0], 'spine_3': [-9.496334372767544, 0.0, 0.0], 'spine_4': [-13.212290179161894, 0.0, 0.0], 'spine_5': [9.331941466846782, 0.0, 0.0]}}, 'constant': {'space_swap': [], 'ik_settings': {'start_joint': 'spine_1', 'end_joint': 'spine_5', 'pv_joint': None, 'world_orientation': True}}, 'user_settings': {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1, 'side': ['None']}, 'controls': {'FK_ctrls': {'fk_spine_1': 'circle', 'fk_spine_2': 'circle', 'fk_spine_3': 'circle', 'fk_spine_4': 'circle', 'fk_spine_5': 'circle'}, 'IK_ctrls': {'ik_spine_1': 'cube', 'ik_spine_2': None, 'ik_spine_3': 'cube', 'ik_spine_4': None, 'ik_spine_5': 'cube'}}}}
+            '''
+            ''''''
             print(f"placement_dict >> {placement_dict}")
+            print(f"user_settings_dict >> {user_settings_dict}")
             print(f"controls_dict >> {controls_dict}")
-            mdl_directory = os.path.join(self.rig_db_storage_dir, self.val_availableRigComboBox) 
+            mdl_directory = os.path.join(self.rig_db_storage_dir, self.val_availableRigComboBox)
             # update to need a directory!
             if checkBox:
                 for db in range(iterations):
                     database_schema = database_schema_002.CreateDatabase(
                         mdl_directory, mdl_name, side, 
                         placement_dict, user_settings_dict, controls_dict)
-                    
+                
                 # unique_id = database_schema.get_unique_id()
                 # print(f"unique_id == {unique_id} for {mdl_name}_{side}")
                 # import and call the database maker 'database_schema'
             else:
                 print(f"Not required module database creation for {mdl_name}")
+            ''''''
             
 
     def cr_json_guides(self):
@@ -577,18 +660,7 @@ class CharRigging(QtWidgets.QWidget):
         pass
 
     
-    # ---- add blueprint ----
-    def add_blueprint(self):
-        # connect signals for module editor buttons
-        for mdl, (checkBox, iterations, side) in self.mdl_choose_ui_dict.items():
-            if checkBox.isChecked(): # checkbox is the master 
-                # access the input from iterations and side
-                iterations_value = iterations.value()
-                side_value = side.currentText() if side else None
-                print(f"Adding blueprint for {mdl}: Iterations={iterations_value}, Side={side_value}")
-
-        # Should read the database
-        #self.cr_json_guides()
+    
 
 def char_main():
     app = QtWidgets.QApplication.instance()
