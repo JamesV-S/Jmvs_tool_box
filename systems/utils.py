@@ -99,7 +99,7 @@ def select_set_displayType(name, checkBox, reference):
 def get_selection_trans_dict(selection):    
     translation_pos = {}
     for sel in selection:
-        trans_ls = cmds.getAttr(f"{sel}.translate")[0] 
+        trans_ls = cmds.xform(sel, q=1, translation=1, worldSpace=1) 
         translation_pos[sel] = list(trans_ls)
     
     return translation_pos

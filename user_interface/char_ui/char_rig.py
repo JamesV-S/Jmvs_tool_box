@@ -591,7 +591,6 @@ class CharRigging(QtWidgets.QWidget):
         
         component_selection = self.get_all_component_name_in_TreeView()
         self.func_createXfmGuides(component_selection)
-        
 
 
     # ---- Template Components! ----
@@ -923,7 +922,6 @@ class CharRigging(QtWidgets.QWidget):
         return module_item_list
         
 
-
     def retrieve_component_dict_from_nameSel(self, module_selection_name):
         # mdl_spine_0 : mdl_MODULE*_uniqueID*_side*
         # split the name 
@@ -933,7 +931,7 @@ class CharRigging(QtWidgets.QWidget):
         try: # handle if it has no side
             side = split_names[2]
         except Exception:
-            side = "" #use M to represent middle (but doesn't show up in scene)
+            side = "L" #use M to represent middle (but doesn't show up in scene)
             # Or whatever it needs to be in the database! 
         print(f"split_names: module = {module}, unique_id = {unique_id}, side = {side}")
         
@@ -949,6 +947,7 @@ class CharRigging(QtWidgets.QWidget):
         mdl_component_dict = retrieve_mdl_component_dict.return_mdl_component_dict()
         print(f"mdl_component_dict = {mdl_component_dict}")
         return mdl_component_dict
+
 
 def char_main():
     app = QtWidgets.QApplication.instance()

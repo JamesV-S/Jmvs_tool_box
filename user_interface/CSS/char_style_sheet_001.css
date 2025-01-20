@@ -1,11 +1,11 @@
 
 /*------------------------------ QENTIREWIDGET ------------------------------*/
 QWidget {
-    background-color: rgb(67, 45, 67);
+    background-color: rgb(25, 23, 39); /*rgb(19, 16, 43)*/
 }
 
 QWidget:disabled {
-    background-color: rgba(50, 50, 50, 0.5); /* Dimmed background */
+    background-color: rgba(50, 50, 50, 0.5); /* Dimmed background  */ 
     color: rgba(200, 200, 200, 0.5); /* Dimmed text color */
     border: 1px solid rgba(100, 100, 100, 0.5); /* Optional: dimmed border */
 }
@@ -17,7 +17,7 @@ QWidget {
 
 /*------------------------------ QPUSHBUTTON ------------------------------*/
 QPushButton {
-    background-color: rgb(19, 16, 43);
+    background-color: rgb(67, 45, 67); /*rgb(67, 45, 67)*/
     border-bottom: rgb(237, 237, 237);
     border-right: rgb(237, 237, 237);
     color: rgb(225, 225, 225);

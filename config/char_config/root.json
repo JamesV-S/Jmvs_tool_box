@@ -27,7 +27,7 @@
             "default": "FK"
         },
         "size": 1,
-        "side": ["None"]
+        "side": "M"
     },
     "controls": {
         "FK_ctrls": {

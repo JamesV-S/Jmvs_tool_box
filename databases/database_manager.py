@@ -89,7 +89,8 @@ def modify_schema(db_name):
         print(f"Error modifying schema: {e}")
 
 # Example usage
-db_name = 'C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases\DB_geo_arm.db'
+db_name = 'C:\Docs\maya\scripts\Jmvs_tool_box\databases\char_databases\db_rig_storage\DB_jmvs_cartoonMale_rig\DB_bipedArm.db'
+        #  C:\Docs\maya\scripts\Jmvs_tool_box\databases\char_databases\db_rig_storage\DB_jmvs_cartoonMale_rig\DB_bipedArm
 #modify_schema(db_name)
 
 def delete_row_by_id(db_name, row_id):
@@ -98,13 +99,13 @@ def delete_row_by_id(db_name, row_id):
             cursor = conn.cursor()
             
             # Step 1: Delete the row with the specified db_row_id
-            cursor.execute("DELETE FROM uuid_data WHERE db_row_id = ?", (row_id,))
+            cursor.execute("DELETE FROM uuid_data WHERE db_id = ?", (row_id,))
             
             # Step 2: Commit the changes
             conn.commit()
 
             if cursor.rowcount > 0:
-                print(f"Row with db_row_id {row_id} deleted successfully.")
+                print(f"Row with db_id {row_id} deleted successfully.")
             else:
                 print(f"No row found with db_row_id {row_id}.")
     except sqlite3.Error as e:
@@ -112,7 +113,7 @@ def delete_row_by_id(db_name, row_id):
 
 # Example usage
 #db_name = r'C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases\DB_DB_geo_arm.db'
-row_id_to_delete = 1  # Replace with the actual db_row_id you want to delete
+row_id_to_delete = 3  # Replace with the actual db_row_id you want to delete
 #for x in range(1):
 #    delete_row_by_id(db_name, x)
-delete_row_by_id(db_name, 4)
+delete_row_by_id(db_name, 3)
