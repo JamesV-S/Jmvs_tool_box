@@ -335,6 +335,73 @@ class CharRigging(QtWidgets.QWidget):
         bottom_Vlayout.addLayout(layV_deleteAdd_mdl_ancestor)
 
         # ---------------------------------------------------------------------
+        # ---- component editing ----
+        layH_componentEditing_ancestor = QtWidgets.QHBoxLayout()
+        
+        # -- Template Display -- 
+        self.grp_boxTempDisp = QtWidgets.QGroupBox("Template Display", self)
+        
+        layV_tempDisp = QtWidgets.QVBoxLayout()
+        
+        self.guide_template_checkBox = QtWidgets.QCheckBox("Guides")
+        self.controls_template_checkBox = QtWidgets.QCheckBox("Controls")
+        self.ddj_template_checkBox = QtWidgets.QCheckBox("Deform Diagnostics")
+        layV_tempDisp.addWidget(self.guide_template_checkBox)
+        layV_tempDisp.addWidget(self.controls_template_checkBox)
+        layV_tempDisp.addWidget(self.ddj_template_checkBox)
+
+        # set checkBox by default
+        self.controls_template_checkBox.setChecked(True)
+        self.ddj_template_checkBox.setChecked(True)
+
+        # - template gid buttons - 
+        layGrid_tempDisp = QtWidgets.QGridLayout()
+        self.temp_Toggle_btn = QtWidgets.QPushButton("Toggle")
+        self.temp_Isolate_btn = QtWidgets.QPushButton("Isolate")
+        self.temp_All_btn = QtWidgets.QPushButton("Template All")
+        self.temp_AllVis_btn = QtWidgets.QPushButton("All Visible")
+
+
+        layGrid_tempDisp.addWidget(self.temp_Toggle_btn, 0, 0)
+        layGrid_tempDisp.addWidget(self.temp_Isolate_btn, 0, 1)
+        layGrid_tempDisp.addWidget(self.temp_All_btn, 1, 0)
+        layGrid_tempDisp.addWidget(self.temp_AllVis_btn, 1, 1)
+
+        layV_tempDisp.addLayout(layGrid_tempDisp)
+
+        # layV_tempDisp.addLayout(layGrid_tempDisp)
+        
+        # -- Lock/Unlock --
+        self.grp_boxLU = QtWidgets.QGroupBox("Lock/Unlock", self)
+        
+        layV_LU = QtWidgets.QVBoxLayout()
+        
+        self.compnent_checkBox = QtWidgets.QCheckBox("Component")
+        self.inputComp_checkBox = QtWidgets.QCheckBox("Input Components")
+        self.OutputComp = QtWidgets.QCheckBox("Output Components")
+        layV_LU.addWidget(self.compnent_checkBox)
+        layV_LU.addWidget(self.inputComp_checkBox)
+        layV_LU.addWidget(self.OutputComp)
+
+        # - lock gid buttons - 
+        layGrid_LU = QtWidgets.QGridLayout()
+        self.lock_btn = QtWidgets.QPushButton("Lock")
+        self.unlock_btn = QtWidgets.QPushButton("Unlock")
+
+        layGrid_LU.addWidget(self.lock_btn, 0, 0)
+        layGrid_LU.addWidget(self.unlock_btn, 0, 1)
+
+        layV_LU.addLayout(layGrid_LU)
+        
+        self.grp_boxTempDisp.setLayout(layV_tempDisp)
+        layH_componentEditing_ancestor.addWidget(self.grp_boxTempDisp)
+        
+        self.grp_boxLU.setLayout(layV_LU)
+        layH_componentEditing_ancestor.addWidget(self.grp_boxLU)
+
+        bottom_Vlayout.addLayout(layH_componentEditing_ancestor)
+        
+        # ---------------------------------------------------------------------
         self.setLayout(main_Vlayout)
 
 
@@ -357,7 +424,14 @@ class CharRigging(QtWidgets.QWidget):
         # -- add blueprints --
         self.add_mdl_btn.clicked.connect(self.sigfunc_add_module)
         self.add_blueprint_btn.clicked.connect(self.sigfunc_add_blueprint)
-    
+
+        # ------------ component editing ------------
+        # ---- Template Display ----
+        self.guide_template_checkBox.stateChanged.connect(self.sigFunc_guide_template_checkBox)
+        self.controls_template_checkBox.stateChanged.connect(self.sigFunc_controls_template_checkBox)
+        self.ddj_template_checkBox.stateChanged.connect(self.sigFunc_ddj_template_checkBox)
+        
+        
     ########## UI SIGNAL FUNCTOINS ##########
     # ------------ siFunc TREEVIEW functions ------------
             
@@ -448,13 +522,17 @@ class CharRigging(QtWidgets.QWidget):
                 'shoulder': [28.9705319404602, 230.650634765625, 2.762230157852166], 
                 'elbow': [53.69795846939088, 197.98831176757807, 6.61050152778626], 
                 'wrist': [76.10134363174441, 169.30845642089832, 30.106774568557817]
-                }
+                },
+            "controls":{
+                        'FK_ctrls': 
+                                {'fk_clavicle': 'circle', 'fk_shoulder': 'circle', 'fk_elbow': 'circle', 'fk_wrist': 'circle'}, 
+                        'IK_ctrls': 
+                                {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
+                        }
             }
         cr_guides.CreateXfmGuides(example_component_dict)
         
         
-
-
     def sigfunc_add_blueprint(self):
         # connect signals for module editor buttons
         for mdl, (checkBox, iterations, side) in self.mdl_choose_ui_dict.items():
@@ -466,6 +544,23 @@ class CharRigging(QtWidgets.QWidget):
 
         # Should read the database
         #self.cr_json_guides()
+
+
+    # ---- Template Components! ----
+    def sigFunc_guide_template_checkBox(self):
+        self.val_guide_template_checkBox = self.guide_template_checkBox.isChecked()
+        utils.select_set_displayType("xfm_guide_*", self.val_guide_template_checkBox)
+
+
+    def sigFunc_controls_template_checkBox(self):
+        self.val_controls_template_checkBox = self.controls_template_checkBox.isChecked()
+        utils.select_set_displayType("ctrl_*", self.val_controls_template_checkBox)
+
+
+    def sigFunc_ddj_template_checkBox(self):
+        self.val_ddj_template_checkBox = self.ddj_template_checkBox.isChecked()
+        utils.select_set_displayType("ddj_*", self.val_ddj_template_checkBox)
+
 
     # -------------------------------------------------------------------------
     # ---- TreeView functions ----
@@ -635,7 +730,7 @@ class CharRigging(QtWidgets.QWidget):
             
             'spine.json': {'mdl_name': 'spine', 'names': ['spine_1', 'spine_2', 'spine_3', 'spine_4', 'spine_5'], 'placement': {'component_pos': {'spine_1': [0.0, 150.0, 0.0], 'spine_2': [-1.0302985026792348e-14, 165.3182830810547, 2.138536453247061], 'spine_3': [-2.3043808310802754e-14, 185.50926208496094, 2.8292100429534632], 'spine_4': [-3.3364796818449844e-14, 204.27308654785156, -0.3802546262741595], 'spine_5': [-5.1020985278054485e-14, 237.46397399902344, -8.25034904479989]}, 'system_rot_xyz': {'spine_1': [0.0, -7.947513469078512, 90.00000000000001], 'spine_2': [-1.9890093469260345e-16, -1.959155005957633, 90.00000000000001], 'spine_3': [0.0, 9.706246313394262, 90.00000000000001], 'spine_4': [-8.171859705486283e-16, 13.339396285991443, 90.0], 'spine_5': [-7.814945266275812e-14, -9.271752801444176, 89.99999999999991]}, 'system_rot_yzx': {'spine_1': [7.667038985618099, 0.0, 0.0], 'spine_2': [1.880673240761548, 0.0, 0.0], 'spine_3': [-9.496334372767544, 0.0, 0.0], 'spine_4': [-13.212290179161894, 0.0, 0.0], 'spine_5': [9.331941466846782, 0.0, 0.0]}}, 'constant': {'space_swap': [], 'ik_settings': {'start_joint': 'spine_1', 'end_joint': 'spine_5', 'pv_joint': None, 'world_orientation': True}}, 'user_settings': {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1, 'side': ['None']}, 'controls': {'FK_ctrls': {'fk_spine_1': 'circle', 'fk_spine_2': 'circle', 'fk_spine_3': 'circle', 'fk_spine_4': 'circle', 'fk_spine_5': 'circle'}, 'IK_ctrls': {'ik_spine_1': 'cube', 'ik_spine_2': None, 'ik_spine_3': 'cube', 'ik_spine_4': None, 'ik_spine_5': 'cube'}}}}
             '''
-            ''''''
+            
             print(f"placement_dict >> {placement_dict}")
             print(f"user_settings_dict >> {user_settings_dict}")
             print(f"controls_dict >> {controls_dict}")
@@ -652,7 +747,6 @@ class CharRigging(QtWidgets.QWidget):
                 # import and call the database maker 'database_schema'
             else:
                 print(f"Not required module database creation for {mdl_name}")
-            ''''''
             
 
     def cr_json_guides(self):

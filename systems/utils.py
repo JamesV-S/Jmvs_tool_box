@@ -25,13 +25,13 @@ def connect_guide(start_guide, end_guide):
         cmds.pointConstraint(end_guide, joint_2, n=f"pointCon_end_{start_guide.replace('xfm_guide_', '')}", w=1)
 
         curve_name = f"cv_{start_guide.replace('xfm_', '')}"
-        connect_curve = cmds.curve(d=1, n=curve_name, p=[jnt_1_xform, jnt_2_xform])
+        cmds.curve(d=1, n=curve_name, p=[jnt_1_xform, jnt_2_xform])
         cmds.setAttr(f"{curve_name}.overrideEnabled", 1)
         cmds.setAttr(f"{curve_name}.overrideDisplayType", 2)
         
-        if not cmds.objExists("grp_omponent_misc"):
-            cmds.group(curve_name, joint_1, n=f"grp_omponent_misc")
-        cmds.parent(curve_name, joint_1, "grp_omponent_misc")
+        if not cmds.objExists("grp_component_misc"):
+            cmds.group(n=f"grp_component_misc", em=1)
+        cmds.parent(curve_name, joint_1, "grp_component_misc")
 
         # cluster the curve
         start_cluster = cmds.cluster(f"{curve_name}.cv[0]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv0")
@@ -56,6 +56,19 @@ def connect_guide(start_guide, end_guide):
         
         # hiddenInOutliner
 
+
+def select_set_displayType(name, checkBox):
+        cmds.select(name)
+        objects = cmds.ls(sl=1, type="transform")
+        if checkBox:
+            for obj in objects:
+                cmds.setAttr(f"{obj}.overrideEnabled", 1)
+                cmds.setAttr(f"{obj}.overrideDisplayType", 1)
+        else:
+            for obj in objects:
+                cmds.setAttr(f"{obj}.overrideEnabled", 1)
+                cmds.setAttr(f"{obj}.overrideDisplayType", 0)
+        cmds.select(cl=1)
 
 
 def get_selection_trans_rots_dictionary():
@@ -102,34 +115,6 @@ def set_transformations(translation_dict, rotation_dict):
         print(f"Set the trans & rot values for '{obj}' ")
 
 # set_transformations(system_pos, system_rot)
-
-''' DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE
-def guide_curve_connector(first_jnt, second_jnt):
-    print(f"GUIDE CONNECTOR: {first_jnt}")
-    
-    fst_point_loc = cmds.xform(first_jnt ,q=1, ws=1, rp=1)
-    scnd_point_loc =  cmds.xform(second_jnt ,q=1, ws=1, rp=1)
-
-    curve_name = f"crv_{first_jnt}"
-    cmds.curve(d=1, p=[fst_point_loc, scnd_point_loc], n=curve_name)
-
-    cluster_1 = cmds.cluster(f"{curve_name}.cv[0]", n=f"cluster_crv_{first_jnt}_cv0")
-    cluster_2 = cmds.cluster(f" {curve_name}.cv[1]", n=f"cluster_crv_{second_jnt}_cv0")
-
-    cmds.parent(cluster_1, first_jnt)
-    cmds.parent(cluster_2, second_jnt)
-    print("Going to hid clusters & template the connector")
-    
-    for x in cmds.ls(typ="cluster"):
-        cmds.hide(f"{x}Handle")
-        cmds.setAttr(f"{x}Handle.hiddenInOutliner", True)
-            
-    cmds.setAttr(f"{curve_name}.template", 1)
-    cmds.select(cl=1)
-
-    return curve_name
-    DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE DELETE
- '''
 
 def colour_guide_custom_shape(custom_crv):
     # Firstly, from the 'custom_crv' select all shapes in it & set their overrideEnabled!

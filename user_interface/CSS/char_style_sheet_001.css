@@ -243,13 +243,14 @@ QWidget#Spacer {
 
 
 /*------------------------------ QGROUPBOX ------------------------------*/
-
+/*
 QGroupBox {
     color:rgb(44, 3, 3);
     background-color: rgb(255, 226, 63);
     
-    /*border-radius: 1px;*/
+    border-radius: 1px;
 }
+*/
 
 /*------------------------------ QSCROLLBAR ------------------------------*/
 
