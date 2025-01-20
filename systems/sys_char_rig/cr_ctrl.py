@@ -74,7 +74,13 @@ class CreateControl():
                                             "imp_cog_002.abc")
             imported_guide = cmds.file(guide_import_dir, i=1, 
                                        ns="imp_cog_002", rnn=1)
-            ctrl = cmds.rename(imported_guide[0], ctrl_name)          
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)
+        elif ctrl_type == "root":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_root_octagon.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_root_octagon", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)        
         else:
             # create locator
             ctrl = cmds.spaceLocator(n=ctrl_name)

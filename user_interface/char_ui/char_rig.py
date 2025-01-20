@@ -95,7 +95,7 @@ class CharRigging(QtWidgets.QWidget):
         self.populate_available_rig(name_of_rig_fld)
         
         self.visualise_active_db()
-        
+        # self.load_rig_group()
 
     def UI_modules(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
@@ -136,6 +136,14 @@ class CharRigging(QtWidgets.QWidget):
         self.mdl_tree_view.setAnimated(True)
         self.mdl_tree_view.setUniformRowHeights(True)
         self.mdl_tree_view.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
+
+        # update mdl with new positions!
+        self.rpl_live_component = QtWidgets.QPushButton("Replace live Component")
+        layV_module_Tree.addWidget(self.rpl_live_component)
+        layV_module_Tree.setSpacing(5)
+        # from selection in treeView, just uses name to select the
+
+        
 
         top_Hlayout.addLayout(layV_module_Tree)
 
@@ -407,7 +415,7 @@ class CharRigging(QtWidgets.QWidget):
 
     def UI_tab1_connect_signals(self):
         # -- visualise database --
-        
+        self.rpl_live_component.clicked.connect(self.sigFunc_rpl_live_component)
 
         # ------------ choose modules ------------
         self.available_rig_comboBox.currentIndexChanged.connect(self.sigFunc_availableRigComboBox)
@@ -434,7 +442,13 @@ class CharRigging(QtWidgets.QWidget):
         
     ########## UI SIGNAL FUNCTOINS ##########
     # ------------ siFunc TREEVIEW functions ------------
-            
+    def sigFunc_rpl_live_component(self):
+        # print selection in ui:
+        component_selection = self.get_component_name_TreeSel()
+        for component in component_selection:
+            self.record_component_change(component)
+
+    
     # ------------ siFunc Choose modules functions ------------
     def sigFunc_availableRigComboBox(self):
         self.val_availableRigComboBox = self.available_rig_comboBox.currentText()
@@ -452,10 +466,14 @@ class CharRigging(QtWidgets.QWidget):
         # store the data! 
         # - set `mdl_name` as the keyy
         # - add checkbox & add temp value & string for remaining signals
+        if mdl_name == 'spine':
+            letter = "M"
+        else:
+            letter = "L"
         self.user_module_data[mdl_name] = {
             "mdl_checkBox": self.val_mdl_checkBox,
             "mdl_iteration": self.user_module_data.get(mdl_name, {}).get('iteration', 1),
-            "mdl_side": self.user_module_data.get(mdl_name, {}).get('side', 'L'),
+            "mdl_side": self.user_module_data.get(mdl_name, {}).get('side', letter)
         }
 
         if self.val_mdl_checkBox: # Enable other widgets where neccesary
@@ -487,10 +505,10 @@ class CharRigging(QtWidgets.QWidget):
         self.val_mdl_name = mdl_name
 
         # add the remaining iteration widget signal
-        if self.val_mdl_side == "None":
-            self.user_module_data[mdl_name]["mdl_side"] = ""
-        else:
-            self.user_module_data[mdl_name]["mdl_side"] = self.val_mdl_side
+        #if self.val_mdl_side == "None":
+        #    self.user_module_data[mdl_name]["mdl_side"] = ""
+        #else:
+        self.user_module_data[mdl_name]["mdl_side"] = self.val_mdl_side
 
         print(f"MDL::{self.val_mdl_name} &  self.val_mdl_checkBox::{self.val_mdl_side}")
     
@@ -500,16 +518,42 @@ class CharRigging(QtWidgets.QWidget):
         for mdl, signals in self.user_module_data.items():
             #print(f"MDL::{mdl} & signals::{signals}")
             print(f"MDL::{mdl} & checkbox::{signals['mdl_checkBox']}, iteration::{signals['mdl_iteration']}, side::{signals['mdl_side']}")
-            '''
-            MDL::bipedArm & checkbox::True, iteration::1, side::L
-            MDL::bipedLeg & checkbox::True, iteration::1, side::L
-            '''
             self.cr_mdl_json_database(mdl, signals['mdl_checkBox'], signals['mdl_iteration'], signals['mdl_side'])
             self.visualise_active_db()
         
     
     # ---- add blueprint ----
+    def func_createXfmGuides(self, component_selection):
+            for selection in component_selection:
+                parts = selection.split('_')
+                if "root" in selection:
+                    obj_name = f"*_{parts[1]}"
+                else:
+                    obj_name = f"*_{parts[1]}_*_{parts[2]}_{parts[3]}"
+                if cmds.objExists(obj_name):
+                    exists = 1
+                else:
+                    exists = 0
+                    mdl_component_dict = self.retrieve_component_dict_from_nameSel(selection)
+                    print(f"RETURNED DICT = {mdl_component_dict}")
+                    cr_guides.CreateXfmGuides(mdl_component_dict)
+            
+            if not exists:
+                # parent the blueprints to hierarchy rig group properly
+                try:
+                    cmds.parent("grp_component_misc", "grp_components")
+                    cmds.parent("grp_ctrl_components", "grp_controls")
+                except Exception as e:
+                    print(f"parenting error: `grp_component_misc`, `grp_ctrl_components` to `grp_components` = {e}")
+            else:
+                print(f"component already exists in the scene: {selection}")
+            self.controls_template_checkBox.setChecked(False)
+            self.ddj_template_checkBox.setChecked(False)
+            self.controls_template_checkBox.setChecked(True)
+            self.ddj_template_checkBox.setChecked(True)
+
     def sigfunc_add_module(self):
+        self.load_rig_group()
         print(f"What is mdl_choose_ui_dict? == {self.mdl_choose_ui_dict}") # output = {}
         # select the component(red) in the 
         # this dict comes from gathering data from active databases in active rig folder!
@@ -530,10 +574,13 @@ class CharRigging(QtWidgets.QWidget):
                                 {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
                         }
             }
-        cr_guides.CreateXfmGuides(example_component_dict)
+        component_selection = self.get_component_name_TreeSel()
+        print(f"YAAAAAH component_selection = {component_selection[0]}")
+        self.func_createXfmGuides(component_selection)
         
         
     def sigfunc_add_blueprint(self):
+        self.load_rig_group()
         # connect signals for module editor buttons
         for mdl, (checkBox, iterations, side) in self.mdl_choose_ui_dict.items():
             if checkBox.isChecked(): # checkbox is the master 
@@ -541,29 +588,117 @@ class CharRigging(QtWidgets.QWidget):
                 iterations_value = iterations.value()
                 side_value = side.currentText() if side else None
                 print(f"Adding blueprint for {mdl}: Iterations={iterations_value}, Side={side_value}")
-
-        # Should read the database
-        #self.cr_json_guides()
+        
+        component_selection = self.get_all_component_name_in_TreeView()
+        self.func_createXfmGuides(component_selection)
+        
 
 
     # ---- Template Components! ----
     def sigFunc_guide_template_checkBox(self):
         self.val_guide_template_checkBox = self.guide_template_checkBox.isChecked()
-        utils.select_set_displayType("xfm_guide_*", self.val_guide_template_checkBox)
+        utils.select_set_displayType("xfm_guide_*", self.val_guide_template_checkBox, False)
 
 
     def sigFunc_controls_template_checkBox(self):
         self.val_controls_template_checkBox = self.controls_template_checkBox.isChecked()
-        utils.select_set_displayType("ctrl_*", self.val_controls_template_checkBox)
+        utils.select_set_displayType("ctrl_*", self.val_controls_template_checkBox, False)
 
 
     def sigFunc_ddj_template_checkBox(self):
         self.val_ddj_template_checkBox = self.ddj_template_checkBox.isChecked()
-        utils.select_set_displayType("ddj_*", self.val_ddj_template_checkBox)
+        utils.select_set_displayType("ddj_*", self.val_ddj_template_checkBox, False)
 
 
     # -------------------------------------------------------------------------
+    def load_rig_group(self):
+        # rig_syntax "jmvs_char*_rig" - DB_jmvs_cyborg_rig
+        rig_name = self.val_availableRigComboBox.replace("DB_", "")
+        if not cmds.objExists(rig_name):
+            try:
+                utils.create_rig_group(rig_name)
+            except Exception as e:
+                print(e)
+        else:
+            print(f"rig_group `{rig_name}` already exists in the scene")
+        
+
     # ---- TreeView functions ----
+    def record_component_change(self, component_selection):
+        split_names = component_selection.split('_')[1:] #ignore 'mdl' prefix
+        module = split_names[0]
+        unique_id = split_names[1]
+        try: # handle if it has no side
+            side = split_names[2]
+        except Exception:
+            side = "" #use M to represent middle (but doesn't show up in scene)
+            # Or whatever it needs to be in the database! 
+        print(f"split_names: module = {module}, unique_id = {unique_id}, side = {side}")
+
+        print(f"xfm_guide_{module}_*_{unique_id}_{side}")
+        #xfm_guide_bipedArm_*       _0_L
+        #xfm_guide_bipedArm_clavicle_0_L
+        try:
+            cmds.select(f"xfm_guide_{module}_*_{unique_id}_{side}")
+            guides = cmds.ls(sl=1, type="transform")
+            # gather the positions of the selected
+            new_component_pos_dict = utils.get_selection_trans_dict(guides)
+            print("new_component_pos: ", new_component_pos_dict)
+            ''' got this dict `B` from selection in treeView '''
+            ''' if ^ = {} cancel the operation below. '''
+            ''' get this dict `A` from the correct row in the right db '''
+            ''' compare `B` to `A`, find the same name 'clavicle', ect, and put the new values in it.
+            existing_dict = {"clavicle": [3.9705319404602006, 230.650634765625, 2.762230157852166], 
+                            "shoulder": [28.9705319404602, 230.650634765625, 2.762230157852166], 
+                            "elbow": [53.69795846939088, 197.98831176757807, 6.61050152778626], 
+                            "wrist": [76.10134363174441, 169.30845642089832, 30.106774568557817]}
+            new_component_dict = {'xfm_guide_bipedArm_clavicle_1_L': [25.049898363762455, 204.1387801815746, -2.857316447507074], 
+                                'xfm_guide_bipedArm_elbow_1_L': [70.33014844879014, 157.89611765717723, -0.18116092381059445], 
+                                'xfm_guide_bipedArm_shoulder_1_L': [56.725387670640785, 201.32910223127163, -2.2466948070622976], 
+                                'xfm_guide_bipedArm_wrist_1_L': [86.67905337480897, 123.32819468000687, 12.801031162275592]}
+            
+            for key in existing_dict.keys():
+                for new_key, new_value in new_component_dict.items():
+                    if key in new_key:
+                        existing_dict[key] = new_value
+                        break
+            print(f"Updated `existing_dict` : {existing_dict}")
+
+            #{'clavicle': [25.049898363762455, 204.1387801815746, -2.857316447507074], 
+            # 'shoulder': [56.725387670640785, 201.32910223127163, -2.2466948070622976],
+            # 'elbow': [70.33014844879014, 157.89611765717723, -0.18116092381059445], 
+            # 'wrist': [86.67905337480897, 123.32819468000687, 12.801031162275592]}
+            '''
+            rig_folder_name = self.val_availableRigComboBox
+            print(f"rig_folder_name = {rig_folder_name}")
+            rig_db_directory = os_custom_directory_utils.create_directory(
+                "Jmvs_tool_box", "databases", "char_databases", 
+                self.db_rig_location, rig_folder_name
+                )
+            retrieved_exisiting_dict = database_schema_002.retrieveSpecificPlacementPOSData(
+                rig_db_directory, module, unique_id, side
+                )
+            existing_pos_dict = retrieved_exisiting_dict.return_existing_pos_dict()
+            print(f"existing_pos_dict = {existing_pos_dict}")
+
+            updated_existing_pos_dict = {}
+            for key in existing_pos_dict.keys():
+                for new_key, new_value in new_component_pos_dict.items():
+                    if key in new_key:
+                        updated_existing_pos_dict[key] = new_value
+                        break
+            print(f"Updated `existing_dict` : {updated_existing_pos_dict}")
+            ''' with new dict, update the database! '''
+            database_schema_002.updateSpecificPlacementPOSData(
+                rig_db_directory, module, unique_id, side, updated_existing_pos_dict
+                )
+
+        except Exception as e:
+            print(f"No component exists in the scene of '{component_selection}'")
+            print(f"error: {e}")
+        
+        
+
     def visualise_active_db(self):
         # get directory of current chosen rig folder!
         rig_folder_name = self.val_availableRigComboBox
@@ -612,7 +747,10 @@ class CharRigging(QtWidgets.QWidget):
                     db_item = QtGui.QStandardItem(f"{db_base_name}") # Orange
 
                     for unique_id, side in rows:
-                        item_name = f"mdl_{db_base_name}_{unique_id}_{side}"
+                        if "root" in db_base_name:
+                            item_name = f"mdl_{db_base_name}_{unique_id}"
+                        else:
+                            item_name = f"mdl_{db_base_name}_{unique_id}_{side}"
                         mdl_item = QtGui.QStandardItem(item_name)
                         db_item.appendRow(mdl_item)
                         
@@ -676,7 +814,7 @@ class CharRigging(QtWidgets.QWidget):
     # ---- json data functions ----  
     def cr_mdl_json_database(self, mdl_name, checkBox, iterations, side): # handles a single module at a time
             print(f"OIIIIIIIIIIIIIII self.json_data  == {self.json_dict}, `mdl_name` = {mdl_name}")
-            #controls_dict = self.json_dict['controls']
+                        
             placement_dict = {}
             user_settings_dict = {}
             controls_dict = {}
@@ -748,13 +886,69 @@ class CharRigging(QtWidgets.QWidget):
             else:
                 print(f"Not required module database creation for {mdl_name}")
             
+    # -- gather data from treeView --
+    def get_component_name_TreeSel(self):
+        # get selection model of all items in the treeView
+        selection_model = self.mdl_tree_view.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
 
-    def cr_json_guides(self):
-        # Should read the database
-        pass
+        # is there an item to be selected?
+        if selected_indexes:
+            multi_selection = selected_indexes
+            module_item = []
+            module_selection_list = []
+            for index in multi_selection:
+                item = self.mdl_tree_model.itemFromIndex(index)
+                name = item.text()
+                print(f"Name in for loop = {name}")
+                module_item.append(item)
+                module_selection_list.append(name)
+            print(f"treeview selection list: {module_selection_list}")
+            return module_selection_list
+        
+    def get_all_component_name_in_TreeView(self):
+        # get selection model of all items in the treeView
+        module_item_list = []
+        def go_thru_items(parent_item):
+            # collect items by goiun thru the tree 
+            for row in range(parent_item.rowCount()):
+                child_item = parent_item.child(row)
+                # check it's the right item
+                if child_item.text().startswith("mdl_"):
+                    module_item_list.append(child_item.text())
+                go_thru_items(child_item)
+        root_item = self.mdl_tree_model.invisibleRootItem()
+        go_thru_items(root_item)
+        print(f"All items with 'mdl' in treeView = {module_item_list}")
+        return module_item_list
+        
 
-    
-    
+
+    def retrieve_component_dict_from_nameSel(self, module_selection_name):
+        # mdl_spine_0 : mdl_MODULE*_uniqueID*_side*
+        # split the name 
+        split_names = module_selection_name.split('_')[1:] #ignore 'mdl' prefix
+        module = split_names[0]
+        unique_id = split_names[1]
+        try: # handle if it has no side
+            side = split_names[2]
+        except Exception:
+            side = "" #use M to represent middle (but doesn't show up in scene)
+            # Or whatever it needs to be in the database! 
+        print(f"split_names: module = {module}, unique_id = {unique_id}, side = {side}")
+        
+        # gather dict from database!
+        rig_folder_name = self.val_availableRigComboBox
+        print(f"rig_folder_name = {rig_folder_name}")
+        rig_db_directory = os_custom_directory_utils.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, rig_folder_name
+            )
+        print(f"rig_db_directory = {rig_db_directory}")
+        retrieve_mdl_component_dict = database_schema_002.retrieveSpecificComponentdata(rig_db_directory, module, unique_id, side)
+        mdl_component_dict = retrieve_mdl_component_dict.return_mdl_component_dict()
+        print(f"mdl_component_dict = {mdl_component_dict}")
+        return mdl_component_dict
 
 def char_main():
     app = QtWidgets.QApplication.instance()

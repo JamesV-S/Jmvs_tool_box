@@ -31,8 +31,8 @@
     },
     "controls": {
         "FK_ctrls": {
-            "fk_root": "circle",
-            "fk_COG": "circle"
+            "root": "root",
+            "COG": "cog"
         },
         "IK_ctrls": {}
     }

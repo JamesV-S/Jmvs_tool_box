@@ -55,10 +55,27 @@ class CreateXfmGuides():
         guides = []
         for key, pos in component_pos.items():
             imported_guide = cmds.file(guide_import_dir, i=1, ns="component_guide", rnn=1)
-            guide_name = f"xfm_guide_{module_name}_{key}_{unique_id}_{side}"
+            if module_name == "root":
+                if cmds.objExists(f"xfm_guide_{module_name}"):
+                    guide_name = f"xfm_guide_COG"
+                else:
+                    guide_name = f"xfm_guide_{module_name}"
+            else:
+                guide_name = f"xfm_guide_{module_name}_{key}_{unique_id}_{side}"
             guides.append(cmds.rename(imported_guide[0], guide_name))
             cmds.xform(guide_name, translation=pos, worldSpace=1)
-        
+
+        if side == "R":
+            temp_grp = cmds.group(n=f"temp_grp_{module_name}_{unique_id}_{side}", em=1)
+            for guide in guides:
+                cmds.parent(guide, temp_grp)
+            cmds.setAttr(f"{temp_grp}.scaleX", -1)
+            for guide in guides:
+                cmds.parent(guide, w=1)
+                cmds.makeIdentity(guide, t=0, r=1, s=1)
+            cmds.delete(temp_grp)
+            cmds.select(cl=1)
+
         # lock & hide scale & visibilty 
         for x in range(len(guides)):
             cmds.setAttr(f"{guides[x]}.sx", lock=1, keyable=0, channelBox=0)
@@ -75,22 +92,9 @@ class CreateXfmGuides():
                 utils.connect_guide(guides[x], guides[x+1])
             except:
                 pass
-        
-        # NOT PERMANANT reference the joints! > make UI control this!
-        '''
-        cmds.select("ddj_*")
-        ddj = cmds.ls(selection=True)
-        print(ddj)
-        for x in ddj:
-            cmds.setAttr(f"{x}.overrideEnabled", 1)
-            cmds.setAttr(f"{x}.overrideDisplayType", 1)
-        cmds.select(cl=1)
-        '''
-
 
         print(f"imported_guide = {imported_guide[0]}")
         
-
         # create controls ontop
         # have a function that given the name of the control, creates it!
         ctrl_name_list = []
@@ -98,8 +102,10 @@ class CreateXfmGuides():
         fk_ctrl_list = []
         for ctrl_type, ctrl_dict in component_ctrls.items():
                 for ctrl_name, ctrl_shape in ctrl_dict.items():
-                    
-                    whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}" # ctrl_fk_clavicle_0_L
+                    if module_name == "root":
+                        whole_ctrl_name = f"ctrl_{ctrl_name}"
+                    else:
+                        whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}" # ctrl_fk_clavicle_0_L
                     ctrl_name_list.append(whole_ctrl_name)
                     import_ctrl = cr_ctrl.CreateControl(type=ctrl_shape, name=whole_ctrl_name)
                     ctrl = import_ctrl.retrun_ctrl()
@@ -109,9 +115,14 @@ class CreateXfmGuides():
                     # cmds.makeIdentity(ctrl, a=1, t=0, r=0, s=1, n=0, pn=1)
 
                     # match the ctrl to the appropriate guide!
-                    ctrl_suffix = f"{ctrl_name[3:]}_{unique_id}_{side}"
+                    if module_name == "root":
+                        ctrl_suffix = ctrl_name
+                        print(f"ROOT mdl ctrl_suffix = {ctrl_suffix}")
+                    else:
+                        ctrl_suffix = f"{ctrl_name[3:]}_{unique_id}_{side}"
                     for guide in guides:
                         if guide.endswith(ctrl_suffix):
+                            print(f"XFORM CTRL: {ctrl}")
                             guide_pos = cmds.xform(guide, q=1, t=1, worldSpace=1)
                             cmds.xform(ctrl, t=guide_pos, worldSpace=1)
                             print(f"ctrl to guide: {ctrl} > {guide}")
@@ -121,6 +132,7 @@ class CreateXfmGuides():
                     cmds.group(ctrl, n=f"gd_{whole_ctrl_name}")
                     ctrl_grp_list.append(f"gd_{whole_ctrl_name}")
                     # point constrain the groups to the guides to follow
+                    # if not module_name == "root":
                     for guide in guides:
                         if guide.endswith(ctrl_suffix):
                             print(f"HERE: gd_{whole_ctrl_name}", guide)
@@ -141,36 +153,50 @@ class CreateXfmGuides():
         print(f"ctrl_name_list = {ctrl_name_list}")
         print(f"fk ctrl_name_list = {fk_ctrl_list}")
         print(f"guides list = {guides}")
-        try:
-            # aim constraint the 
-            for x in range(len(fk_ctrl_list)):
-                print(f"orient constrain {fk_ctrl_list[:-1][x]}, {guides[x+1]}")
-                cmds.aimConstraint(guides[x+1], f"gd_{fk_ctrl_list[:-1][x]}", n=f"pAim_{guides[x+1]}")
-        except:
-            pass
-        # match end ctrl's grp to parent ctrl orientation.
-        cmds.matchTransform(f"gd_{fk_ctrl_list[-1]}", fk_ctrl_list[-2], pos=0, rot=1, scl=0)
-        cmds.orientConstraint(fk_ctrl_list[-2], f"gd_{fk_ctrl_list[-1]}")
-        print(f"MATCH orientation gd_{fk_ctrl_list[-1]} TO:", fk_ctrl_list[-2])
+        if not module_name == "root":
+            try:
+                # aim constraint the groups of ctrls to guides so fk controls keep correct positions!
+                for x in range(len(fk_ctrl_list)):
+                    print(f"aim constrain {fk_ctrl_list[:-1][x]}, {guides[x+1]}")
+                    cmds.aimConstraint(guides[x+1], f"gd_{fk_ctrl_list[:-1][x]}", n=f"pAim_{guides[x+1]}")
+            except:
+                pass
+            # match end ctrl's grp to parent ctrl orientation.
+            cmds.matchTransform(f"gd_{fk_ctrl_list[-1]}", fk_ctrl_list[-2], pos=0, rot=1, scl=0)
+            cmds.orientConstraint(fk_ctrl_list[-2], f"gd_{fk_ctrl_list[-1]}")
+            print(f"MATCH orientation gd_{fk_ctrl_list[-1]} TO:", fk_ctrl_list[-2])
 
         # colour
         for x in range(len(ctrl_name_list)):
-            if side == "L":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
-            elif side == "R":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
-            elif side == "":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
+            if not module_name == "root":
+                if side == "L":
+                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
+                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
+                elif side == "R":
+                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
+                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
+                elif side == "M":
+                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
+                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
+        if module_name == "root":
+            pass # > do this at system 
+            #utils.colour_root_control(fk_ctrl_list[0])
+            #utils.colour_COG_control(fk_ctrl_list[1])
+            
+            
         
         # group ctrls
-        grp_name = f"{module_name}_grp_component_ctrl_{side}"
+        master_group = f"grp_ctrl_components"
+        grp_name = f"ctrl_{module_name}_grp_component_{side}"
         if not cmds.objExists(grp_name):
             cmds.group(n=grp_name, em=1)
+        if not cmds.objExists(master_group):
+            cmds.group(n=master_group, em=1)
         cmds.parent(ctrl_grp_list, grp_name)
+        cmds.parent(grp_name, master_group)
         cmds.select(cl=1)
+        
+        
         
             
 

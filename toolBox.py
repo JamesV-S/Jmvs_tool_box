@@ -41,10 +41,10 @@ class ToolBox(QtWidgets.QWidget):
     def __init__(self, *args, **kwargs):
         super(ToolBox, self).__init__(*args, **kwargs)
         version = "001"
-        ui_object_name = f"JmvsToolBox_{version}"
+        self.ui_object_name = f"JmvsToolBox_{version}"
         ui_window_name = f"Jmvs_ToolBox_{version}"
-        delete_existing_ui(ui_object_name)
-        self.setObjectName(ui_object_name)
+        delete_existing_ui(self.ui_object_name)
+        self.setObjectName(self.ui_object_name)
         ''' Doesn't work
         # ---------------------------------
         # Create a frameless window
@@ -176,21 +176,25 @@ class ToolBox(QtWidgets.QWidget):
     def char_func(self):
         print("loading character ui")
         char_rig.char_main()
+        delete_existing_ui(self.ui_object_name)
 
     
     def vehicle_func(self):
         print("loading vehicle ui")
         vehicle_rig.vehicle_main()
+        delete_existing_ui(self.ui_object_name)
 
 
     def geo_func(self):
         print("loading geo ui")
         geo_db.geoDB_main()
+        delete_existing_ui(self.ui_object_name)
     
 
     def other_func(self):
         print("loading other ui")
         other_tool.geoDB_main()
+        delete_existing_ui(self.ui_object_name)
 
     # Not in use
     '''

@@ -9,6 +9,28 @@ def find_directory(db_name, root_directory):
             raise FileNotFoundError(f"Database '{db_name}' not found starting from '{root_directory}'.")
 
 
+def create_rig_group(name):
+    hi_name_list = [name, 'grp_controls', 'grp_geo', 
+                'grp_skeleton', 'DO_NOT_TOUCH', 'grp_rig_systems', 
+                'grp_blendshapes', 'grp_components', 'grp_misc'
+                ]
+    def create_group_hierarchy(the_range=range(len(hi_name_list))):
+        hi_list = []
+        for i in the_range:
+            grp = cmds.group(em=1, n=hi_name_list[i])
+            hi_list.append(grp)        
+        return hi_list
+    grp_list = create_group_hierarchy()
+    # parent 'grp_controls', 'rig_buffer', 'grp_geo', 'grp_skeleton', 'DO_NOT_TOUCH' to 'JMVS_rig'
+    cmds.parent(grp_list[1:5], grp_list[0])
+        # parent 'grp_rig_systems', 'grp_blendshapes', 'grp_components', 'grp_misc' to 'DO_NOT_TOUCH'
+    cmds.parent(grp_list[5:10], grp_list[4])
+
+    cmds.select(cl=1)
+
+    
+
+
 def connect_guide(start_guide, end_guide):
         cmds.select(cl=1)
         joint_1 = cmds.joint(n=f"ddj_start_{start_guide.replace('xfm_guide_', '')}")
@@ -57,18 +79,30 @@ def connect_guide(start_guide, end_guide):
         # hiddenInOutliner
 
 
-def select_set_displayType(name, checkBox):
+def select_set_displayType(name, checkBox, reference):
         cmds.select(name)
         objects = cmds.ls(sl=1, type="transform")
         if checkBox:
             for obj in objects:
                 cmds.setAttr(f"{obj}.overrideEnabled", 1)
-                cmds.setAttr(f"{obj}.overrideDisplayType", 1)
+                if reference:
+                    cmds.setAttr(f"{obj}.overrideDisplayType", 2)
+                else:
+                    cmds.setAttr(f"{obj}.overrideDisplayType", 1)
         else:
             for obj in objects:
                 cmds.setAttr(f"{obj}.overrideEnabled", 1)
                 cmds.setAttr(f"{obj}.overrideDisplayType", 0)
         cmds.select(cl=1)
+
+
+def get_selection_trans_dict(selection):    
+    translation_pos = {}
+    for sel in selection:
+        trans_ls = cmds.getAttr(f"{sel}.translate")[0] 
+        translation_pos[sel] = list(trans_ls)
+    
+    return translation_pos
 
 
 def get_selection_trans_rots_dictionary():
@@ -146,7 +180,7 @@ def colour_guide_custom_shape(custom_crv):
 # colour_custom_shape("crv_custom_guide")
 
 def colour_COG_control(custom_crv):
-    
+    print(f"Colour_cog = {custom_crv}")
     # Firstly, from the 'custom_crv' select all shapes in it & set their overrideEnabled!
     shape_list = cmds.listRelatives(custom_crv, shapes=1)
     for shape in shape_list:
