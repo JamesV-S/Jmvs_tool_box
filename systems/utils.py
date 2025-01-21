@@ -1,6 +1,7 @@
 
 import maya.cmds as cmds
 import os
+import re
 
 def find_directory(db_name, root_directory):
             for dirpath, dirnames, filenames in os.walk(root_directory):
@@ -27,8 +28,6 @@ def create_rig_group(name):
     cmds.parent(grp_list[5:10], grp_list[4])
 
     cmds.select(cl=1)
-
-    
 
 
 def connect_guide(start_guide, end_guide):
@@ -290,4 +289,87 @@ def custom_enum_attr(ctrl, enm_lng_nm, CtrlEnmOptions):
             print(f"{target}.{enm_lng_nm}")
             cmds.setAttr( f"{target}.{enm_lng_nm}", e=1, k=1 )
 #custom_enum_attr( "James", "Thuki:Arron:Harv")
+
+def constrain_2_items(output_item, input_item, con_type, values):
+    parent_prefix = "pCon"
+    point_prefix = "pointCon"
+
+    translate_axes = ["X", "Y", "Z"]
+
+    skip_translate = []
+    # roate automatically skipped
+    skip_rotate = ["x", "y", "z"]
+
+    if values != "all": # Apply rotates if 'all' is specified
+        for axis in translate_axes:
+            if axis not in values:
+                skip_translate.append(axis.lower())
+    else: skip_rotate = [] 
+
+    if con_type == "parent":
+        constraint_name = f"{parent_prefix}_{input_item}"
+    elif con_type == "point":
+        constraint_name = f"{point_prefix}_{input_item}"
+
+    # Check for existing constraints of the same type and delete them if so
+    existing_constraints = cmds.listRelatives(input_item, type='constraint', allDescendents=False) or []
+    
+    for constraint in existing_constraints:
+        if cmds.objectType(constraint) == 'parentConstraint' and con_type == 'parent':
+            cmds.delete(constraint)
+        elif cmds.objectType(constraint) == 'pointConstraint' and con_type == 'point':
+            cmds.delete(constraint)
+    
+    # cr the new constraint !
+    if con_type == "parent":
+        cmds.parentConstraint(
+            output_item, input_item, n=constraint_name, mo=1,
+            skipTranslate=skip_translate, skipRotate=skip_rotate
+        )
+
+    elif con_type == "point":
+        cmds.pointConstraint(
+            output_item, input_item, n=constraint_name, mo=1,
+            skip=skip_translate
+        )
+
+# necessary order:
+# constrain_2_items("output", "input", "point", ["X", "Z"])
+# constrain_2_items("output", "input", "parent", ["Y"])
+
+# constrain_2_items("output", "input", "parent", 'all')
+    
+def unlocked_component(self):
+    # guide > parentOperation > guideGROUP
+    if "bipedLeg":
+        print("bipedLeg unlocked configuration")
+        if cmds.objExists("spine_module"):
+            pass
+            # spine1 >PointConAll> hip
+        # Hip >PointConAll> knee
+        # knee > Nothing
+        if cmds.objExists("root_module"):
+            pass
+            # root >ParentCon_Y_> ankle
+            # root >PointtConAll> foot
+        # foot >PointConX_Z> ankle
+        # foot >ParentConAll> ball
+        # foot >ParentConAll> toe
+    elif "bipedArm":
+        print("bipedArm unlocked configuration")
+        if cmds.objExists("spine_module"):
+            pass
+            # spine4 >ParentConAll> clavicle
+            # spine4 >ParentConAll> shoulder
+    elif "root":
+        print("root unlocked configuration")
+        # root >PointtConAll> cog
+    elif "spine":
+        print("spine unlocked configuration")
+        # cog >ParentConAll> spine1
+        # spine1 >ParentConAll> spine2
+        # spine2 >ParentConAll> spine3
+        # spine3 >ParentConAll> spine4
+        # spine4 >ParentConAll> spine5
+    
 

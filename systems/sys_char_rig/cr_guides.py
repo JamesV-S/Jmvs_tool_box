@@ -55,10 +55,11 @@ class CreateXfmGuides():
         guides = []
         for key, pos in component_pos.items():
             imported_guide = cmds.file(guide_import_dir, i=1, ns="component_guide", rnn=1)
+            # esyablish guides, check for root module that acts differently
             if module_name == "root":
                 if cmds.objExists(f"xfm_guide_{module_name}"):
-                    guide_name = f"xfm_guide_COG"
-                else:
+                    guide_name = f"xfm_guide_COG" # cog guide
+                else: # root guide
                     guide_name = f"xfm_guide_{module_name}"
             else:
                 guide_name = f"xfm_guide_{module_name}_{key}_{unique_id}_{side}"
@@ -93,8 +94,25 @@ class CreateXfmGuides():
             except:
                 pass
 
-        print(f"imported_guide = {imported_guide[0]}")
+        # ankle has extra guide helper for positioning    
+        if module_name == "bipedLeg":
+            leg_imp_ctrl = cr_ctrl.CreateControl(type="bvSquare", name=f"xfm_guide_{module_name}_foot_{unique_id}_{side}")
+            ankle_helper_ctrl = leg_imp_ctrl.retrun_ctrl()
+            cmds.matchTransform(ankle_helper_ctrl, guides[2], pos=1, scl=0, rot=0)
+            cmds.setAttr(f"{ankle_helper_ctrl}.translateY", 0)
+            guides.append(ankle_helper_ctrl)
         
+        guide_grp_list = []
+        # group every Guide
+        for guide in guides:
+            offset_grp = cmds.group(n=f"offset_{guide}", em=1)
+            print(f"{offset_grp} < {guide}")
+            cmds.matchTransform(offset_grp, guide, pos=1, scl=0, rot=0)
+            cmds.parent(guide, offset_grp)
+            guide_grp_list.append(offset_grp)
+
+        print(f"imported_guide = {imported_guide[0]}")
+        ''''''
         # create controls ontop
         # have a function that given the name of the control, creates it!
         ctrl_name_list = []
@@ -183,8 +201,6 @@ class CreateXfmGuides():
             #utils.colour_root_control(fk_ctrl_list[0])
             #utils.colour_COG_control(fk_ctrl_list[1])
             
-            
-        
         # group ctrls
         master_group = f"grp_ctrl_components"
         grp_name = f"ctrl_{module_name}_grp_component_{side}"
@@ -195,6 +211,21 @@ class CreateXfmGuides():
         cmds.parent(ctrl_grp_list, grp_name)
         cmds.parent(grp_name, master_group)
         cmds.select(cl=1)
+
+        # group guides 
+        gd_master_group = f"grp_xfm_components"
+        if module_name == "root": 
+            gd_component_grp_name = f"xfm_grp_{module_name}_component_{unique_id}_M"
+        else:
+            gd_component_grp_name = f"xfm_grp_{module_name}_component_{unique_id}_{side}"
+        if not cmds.objExists(gd_component_grp_name):
+            cmds.group(n=gd_component_grp_name, em=1)
+        if not cmds.objExists(gd_master_group):
+            cmds.group(n=gd_master_group, em=1)
+        cmds.parent(guide_grp_list, gd_component_grp_name)
+        cmds.parent(gd_component_grp_name, gd_master_group)
+        cmds.select(cl=1)
+        ''''''
         
         
         

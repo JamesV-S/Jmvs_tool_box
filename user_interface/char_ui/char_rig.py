@@ -27,13 +27,15 @@ from systems import (
     utils
 )
 from systems.sys_char_rig import (
-    cr_guides
+    cr_guides, 
+    cr_ctrl
 )
 
 importlib.reload(database_schema_002)
 importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
 importlib.reload(cr_guides)
+importlib.reload(cr_ctrl)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -438,7 +440,9 @@ class CharRigging(QtWidgets.QWidget):
         self.guide_template_checkBox.stateChanged.connect(self.sigFunc_guide_template_checkBox)
         self.controls_template_checkBox.stateChanged.connect(self.sigFunc_controls_template_checkBox)
         self.ddj_template_checkBox.stateChanged.connect(self.sigFunc_ddj_template_checkBox)
-        
+        # ---- Lock/Unlock ----
+        self.lock_btn.clicked.connect(self.sigFunc_lock_btn)
+        self.unlock_btn.clicked.connect(self.sigFunc_unlock_btn)
         
     ########## UI SIGNAL FUNCTOINS ##########
     # ------------ siFunc TREEVIEW functions ------------
@@ -552,6 +556,7 @@ class CharRigging(QtWidgets.QWidget):
             self.controls_template_checkBox.setChecked(True)
             self.ddj_template_checkBox.setChecked(True)
 
+
     def sigfunc_add_module(self):
         self.load_rig_group()
         print(f"What is mdl_choose_ui_dict? == {self.mdl_choose_ui_dict}") # output = {}
@@ -577,6 +582,8 @@ class CharRigging(QtWidgets.QWidget):
         component_selection = self.get_component_name_TreeSel()
         print(f"YAAAAAH component_selection = {component_selection[0]}")
         self.func_createXfmGuides(component_selection)
+
+        self.func_unlocked_all()
         
         
     def sigfunc_add_blueprint(self):
@@ -591,6 +598,8 @@ class CharRigging(QtWidgets.QWidget):
         
         component_selection = self.get_all_component_name_in_TreeView()
         self.func_createXfmGuides(component_selection)
+
+        self.func_unlocked_all()
 
 
     # ---- Template Components! ----
@@ -607,7 +616,232 @@ class CharRigging(QtWidgets.QWidget):
     def sigFunc_ddj_template_checkBox(self):
         self.val_ddj_template_checkBox = self.ddj_template_checkBox.isChecked()
         utils.select_set_displayType("ddj_*", self.val_ddj_template_checkBox, False)
+    
+    # --- Unlocked component configuration ---
+    def sigFunc_lock_btn(self):
+        component_selection = self.get_component_name_TreeSel()
+        # treeSel = ["mdl_bipedArm_0_L"]
+        for component in component_selection:
+            # delete any constraints on the component's guides
+            # offset_xfm_guide_bipedArm_clavicle_0_L
+            # bipedArm_*_0_L
+            if "mdl_root_0" in component:
+                component = "mdl_root_0_M"
+            parts = component.split('_')[1:] # bipedArm, 0, L
+            mdl = parts[0] # bipedArm
+            uID = parts[1] # 0
+            side = parts[2] # L
+            
+            # create the box:
+            if not cmds.objExists(f"cg_{mdl}_{uID}_{side}"):
+                cube_imp_ctrl = cr_ctrl.CreateControl(type="cube", name=f"cg_{mdl}_{uID}_{side}")
+                cube_locked_comp = cube_imp_ctrl.retrun_ctrl()
+            else: cube_locked_comp = f"cg_{mdl}_{uID}_{side}"
+            cmds.select(cl=1)
 
+            if "mdl_root_0_M" in component:
+                sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
+            else:
+                sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
+            cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
+            comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
+            print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
+            # get constraint & delete it!
+            for grpXfm in comp_grpXfm_ls:
+                if cmds.objExists(grpXfm):
+                    print(f"grpXfm = {grpXfm}")
+                    constraints = cmds.listRelatives(grpXfm, type='constraint', ad=0)
+                    if constraints:
+                        for con in constraints:
+                            print(f"constraint : : {con}")
+                            cmds.delete(con)
+                    # constrain grps to cage!
+                    utils.constrain_2_items(cube_locked_comp, grpXfm, "parent", "all")  
+
+    def sigFunc_unlock_btn(self):
+        component_selection = self.get_component_name_TreeSel()
+        # treeSel = ["mdl_bipedArm_0_L"]
+        for component in component_selection:
+            # delete any constraints on the component's guides
+            # offset_xfm_guide_bipedArm_clavicle_0_L
+            # bipedArm_*_0_L
+            if "mdl_root_0" in component:
+                component = "mdl_root_0_M"
+            parts = component.split('_')[1:] # bipedArm, 0, L
+            mdl = parts[0] # bipedArm
+            uID = parts[1] # 0
+            side = parts[2] # L
+            
+            if "mdl_root_0_M" in component:
+                sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
+            else:
+                sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
+            cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
+            comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
+            print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
+            # get constraint & delete it!
+            for grpXfm in comp_grpXfm_ls:
+                if cmds.objExists(grpXfm):
+                    print(f"grpXfm = {grpXfm}")
+                    constraints = cmds.listRelatives(grpXfm, type='constraint', ad=0)
+                    if constraints:
+                        for con in constraints:
+                            print(f"constraint : : {con}")
+                            cmds.delete(con)
+            # add the normal following constraints!
+            print(f"Comp_for selectionUNLOCK = {component}")
+            # NORM = xfm_grp_bipedLeg_component_0_L
+            # new = mdl_bipedLeg_0_L
+            if "mdl_root_0" in component:
+                unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_M"
+            else: unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_{side}" 
+            self.constrain_guides_from_comp(unlock_rdy_component) 
+        
+            
+            
+
+    def delete_xfm_temp_constraints(self):
+        try:
+            cmds.select("pointCon_xfm_guide_*", "pCon_xfm_guide_*")
+            #xfm_con = cmds.ls(sl=1, type="constraint")
+            #print(f"SUIIIIIIIIIIIIIIIIII > xfm con = {xfm_con}")
+            cmds.delete()
+        except Exception as e:
+            print(f"deleting xfm constraints Exception: {e}")
+
+
+    def func_unlocked_all(self):
+        # establish components present in the scene!
+        possible_comp_groups = "xfm_grp_*_component_*"
+        cmds.select(possible_comp_groups)
+        xfm_ancestorGrp = cmds.ls(sl=1, type="transform")
+        # xfm_ancestorGrp = ['xfm_grp_bipedArm_component_0_L', 'xfm_grp_bipedLeg_component_0_L', 'xfm_grp_root_component_0_M', 'xfm_grp_spine_component_0_M'] 
+        print(f"xfm_ancestorGrp = {xfm_ancestorGrp}")
+        for component in xfm_ancestorGrp:
+            self.constrain_guides_from_comp(component)
+    
+    
+    def constrain_guides_from_comp(self, component):
+        # guide > parentOperation > guideGROUP(constrained)
+        print(f"NNNNNNNNNORMAL UNLOCK component = {component}")
+        spine_output_mdl = "spine"
+        parts = component.split('_')[2:]
+        print(f"PARTS == {parts}")
+        working_comp_unique_id = parts[2]
+        working_comp_side =  parts[3]
+        grpXfm = "offset_xfm_guide"
+        xfm = "xfm_guide"
+        if "bipedLeg" in component:
+            print("bipedLeg unlocked configuration")
+            if cmds.objExists("xfm_grp_spine_component_*_M"):
+                cmds.select("xfm_grp_spine_component_*_M")
+                leg_output_comp = cmds.ls(sl=1, type="transform")[0] # handles only 1 spine for time being
+                print(f"output_comp = {leg_output_comp}") # xfm_grp_spine_component_0_M
+                leg_spine_input_name = f"offset_xfm_guide_bipedLeg_hip_{working_comp_unique_id}_{working_comp_side}"
+                leg_output_mdl = "spine"
+                leg_output_uID = leg_output_comp.split('_')[4:][0]
+                leg_output_side = leg_output_comp.split('_')[4:][-1]
+                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_spine1_{leg_output_uID}_{leg_output_side}"
+                # spine1 >PointConAll> hip 
+                utils.constrain_2_items(leg_spine_output_name, leg_spine_input_name, "point", "all")
+            else: print("spine component not in scene")
+            # Hip >PointConAll> knee
+            utils.constrain_2_items(
+                f"{xfm}_bipedLeg_hip_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_bipedLeg_knee_{working_comp_unique_id}_{working_comp_side}", 
+                "point", "all")
+            # knee > Nothing
+            # foot >PointConX_Z> ankle
+            utils.constrain_2_items(
+                f"{xfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_bipedLeg_ankle_{working_comp_unique_id}_{working_comp_side}", 
+                "point", ["X", "Z"])
+            # foot >ParentConAll> ball
+            utils.constrain_2_items(
+                f"{xfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_bipedLeg_ball_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", "all")
+            # foot >ParentConAll> toe
+            utils.constrain_2_items(
+                f"{xfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_bipedLeg_toe_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", "all")
+            if cmds.objExists("xfm_grp_root_component_*_M"):
+                # root >ParentCon_Y_> ankle
+                # offset_xfm_guide_root
+                utils.constrain_2_items(
+                f"{xfm}_root",
+                f"{grpXfm}_bipedLeg_ankle_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", ["Y"])
+                # root >PointtConAll> foot
+                utils.constrain_2_items(
+                f"{xfm}_root",
+                f"{grpXfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
+                "point", "all")
+        elif "bipedArm" in component:
+            print("bipedArm unlocked configuration")
+            if cmds.objExists("xfm_grp_spine_component_*_M"):
+                print("Arm, spine IS component in scene")
+                cmds.select("xfm_grp_spine_component_*_M")
+                arm_output_comp = cmds.ls(sl=1, type="transform")[0] # handles only 1 spine for time being
+                print(f"output_comp = {arm_output_comp}") # xfm_grp_spine_component_0_M
+                arm_output_uID = arm_output_comp.split('_')[4:][0]
+                arm_output_side = arm_output_comp.split('_')[4:][-1]
+                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_spine4_{arm_output_uID}_{arm_output_side}"
+                # spine4 >ParentConAll> clavicle
+                clavicle_input_name = f"offset_xfm_guide_bipedArm_clavicle_{working_comp_unique_id}_{working_comp_side}"
+                utils.constrain_2_items(arm_spine_output_name, clavicle_input_name, 
+                                        "parent", "all")
+                # spine4 >ParentConAll> shoulder
+                shoulder_input_name = f"offset_xfm_guide_bipedArm_shoulder_{working_comp_unique_id}_{working_comp_side}"
+                utils.constrain_2_items(arm_spine_output_name, shoulder_input_name, 
+                                        "parent", "all")
+                if cmds.objExists("xfm_grp_root_component_*_M"):
+                    # root >ParentCon_Y_> ankle
+                    utils.constrain_2_items(
+                    f"{xfm}_root",
+                    f"{grpXfm}_bipedArm_elbow_{working_comp_unique_id}_{working_comp_side}", 
+                    "point", "all")
+                    # root >PointtConAll> foot
+                    utils.constrain_2_items(
+                    f"{xfm}_root",
+                    f"{grpXfm}_bipedArm_wrist_{working_comp_unique_id}_{working_comp_side}", 
+                    "point", "all")
+        elif "root" in component:
+            print("root unlocked configuration")
+            # root >PointtConAll> COG
+            utils.constrain_2_items(
+                f"{xfm}_root",
+                f"{grpXfm}_COG", 
+                "parent", "all")
+        elif "spine" in component:
+            print("spine unlocked configuration")
+            if cmds.objExists("xfm_grp_root_component_*_M"):
+                # cog >ParentConAll> spine1
+                utils.constrain_2_items(
+                f"{xfm}_COG",
+                f"{grpXfm}_{spine_output_mdl}_spine1_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", "all")
+            # spine1 >ParentConAll> spine2
+            utils.constrain_2_items(
+                f"{xfm}_{spine_output_mdl}_spine1_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_spine2_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", "all")
+            # spine2 >ParentConAll> spine3
+            utils.constrain_2_items(
+                f"{xfm}_{spine_output_mdl}_spine2_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_spine3_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", "all")
+            # spine3 >ParentConAll> spine4
+            utils.constrain_2_items(
+                f"{xfm}_{spine_output_mdl}_spine3_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_spine4_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", "all")
+            # spine4 >ParentConAll> spine5
+            utils.constrain_2_items(
+                f"{xfm}_{spine_output_mdl}_spine4_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_spine5_{working_comp_unique_id}_{working_comp_side}", 
+                "parent", "all")
 
     # -------------------------------------------------------------------------
     def load_rig_group(self):
@@ -647,26 +881,6 @@ class CharRigging(QtWidgets.QWidget):
             ''' if ^ = {} cancel the operation below. '''
             ''' get this dict `A` from the correct row in the right db '''
             ''' compare `B` to `A`, find the same name 'clavicle', ect, and put the new values in it.
-            existing_dict = {"clavicle": [3.9705319404602006, 230.650634765625, 2.762230157852166], 
-                            "shoulder": [28.9705319404602, 230.650634765625, 2.762230157852166], 
-                            "elbow": [53.69795846939088, 197.98831176757807, 6.61050152778626], 
-                            "wrist": [76.10134363174441, 169.30845642089832, 30.106774568557817]}
-            new_component_dict = {'xfm_guide_bipedArm_clavicle_1_L': [25.049898363762455, 204.1387801815746, -2.857316447507074], 
-                                'xfm_guide_bipedArm_elbow_1_L': [70.33014844879014, 157.89611765717723, -0.18116092381059445], 
-                                'xfm_guide_bipedArm_shoulder_1_L': [56.725387670640785, 201.32910223127163, -2.2466948070622976], 
-                                'xfm_guide_bipedArm_wrist_1_L': [86.67905337480897, 123.32819468000687, 12.801031162275592]}
-            
-            for key in existing_dict.keys():
-                for new_key, new_value in new_component_dict.items():
-                    if key in new_key:
-                        existing_dict[key] = new_value
-                        break
-            print(f"Updated `existing_dict` : {existing_dict}")
-
-            #{'clavicle': [25.049898363762455, 204.1387801815746, -2.857316447507074], 
-            # 'shoulder': [56.725387670640785, 201.32910223127163, -2.2466948070622976],
-            # 'elbow': [70.33014844879014, 157.89611765717723, -0.18116092381059445], 
-            # 'wrist': [86.67905337480897, 123.32819468000687, 12.801031162275592]}
             '''
             rig_folder_name = self.val_availableRigComboBox
             print(f"rig_folder_name = {rig_folder_name}")
@@ -695,7 +909,6 @@ class CharRigging(QtWidgets.QWidget):
         except Exception as e:
             print(f"No component exists in the scene of '{component_selection}'")
             print(f"error: {e}")
-        
         
 
     def visualise_active_db(self):
@@ -905,6 +1118,7 @@ class CharRigging(QtWidgets.QWidget):
             print(f"treeview selection list: {module_selection_list}")
             return module_selection_list
         
+
     def get_all_component_name_in_TreeView(self):
         # get selection model of all items in the treeView
         module_item_list = []

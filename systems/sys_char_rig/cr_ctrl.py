@@ -40,12 +40,19 @@ class CreateControl():
             imported_guide = cmds.file(guide_import_dir, i=1, 
                                        ns="imp_star", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
-        # create roundedSquare
-        elif ctrl_type == "roundedSquare":
+        # create beveledSquare
+        elif ctrl_type == "bvSquare":
             guide_import_dir = os.path.join(self.import_directory, 
-                                            "imp_roundedSquare.abc")
+                                            "imp_beveledSquare.abc")
             imported_guide = cmds.file(guide_import_dir, i=1, 
-                                       ns="imp_roundedSquare", rnn=1)
+                                       ns="imp_beveledSquare", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)
+        # create beveledRectangle
+        elif ctrl_type == "bvRectangle":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_beveledRectangle.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_beveledRectangle", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create square
         elif ctrl_type == "square":
