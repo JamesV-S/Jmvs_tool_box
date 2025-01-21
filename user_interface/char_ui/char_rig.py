@@ -387,6 +387,7 @@ class CharRigging(QtWidgets.QWidget):
         layV_LU = QtWidgets.QVBoxLayout()
         
         self.compnent_checkBox = QtWidgets.QCheckBox("Component")
+        self.val_compnent_checkBox = 0
         self.inputComp_checkBox = QtWidgets.QCheckBox("Input Components")
         self.OutputComp = QtWidgets.QCheckBox("Output Components")
         layV_LU.addWidget(self.compnent_checkBox)
@@ -441,6 +442,7 @@ class CharRigging(QtWidgets.QWidget):
         self.controls_template_checkBox.stateChanged.connect(self.sigFunc_controls_template_checkBox)
         self.ddj_template_checkBox.stateChanged.connect(self.sigFunc_ddj_template_checkBox)
         # ---- Lock/Unlock ----
+        self.compnent_checkBox.stateChanged.connect(self.sigFunc_compnent_checkBox)
         self.lock_btn.clicked.connect(self.sigFunc_lock_btn)
         self.unlock_btn.clicked.connect(self.sigFunc_unlock_btn)
         
@@ -618,97 +620,91 @@ class CharRigging(QtWidgets.QWidget):
         utils.select_set_displayType("ddj_*", self.val_ddj_template_checkBox, False)
     
     # --- Unlocked component configuration ---
-    def sigFunc_lock_btn(self):
-        component_selection = self.get_component_name_TreeSel()
-        # treeSel = ["mdl_bipedArm_0_L"]
-        for component in component_selection:
-            # delete any constraints on the component's guides
-            # offset_xfm_guide_bipedArm_clavicle_0_L
-            # bipedArm_*_0_L
-            if "mdl_root_0" in component:
-                component = "mdl_root_0_M"
-            parts = component.split('_')[1:] # bipedArm, 0, L
-            mdl = parts[0] # bipedArm
-            uID = parts[1] # 0
-            side = parts[2] # L
-            
-            # create the box:
-            if not cmds.objExists(f"cg_{mdl}_{uID}_{side}"):
-                cube_imp_ctrl = cr_ctrl.CreateControl(type="cube", name=f"cg_{mdl}_{uID}_{side}")
-                cube_locked_comp = cube_imp_ctrl.retrun_ctrl()
-            else: cube_locked_comp = f"cg_{mdl}_{uID}_{side}"
-            cmds.select(cl=1)
+    def sigFunc_compnent_checkBox(self):
+        self.val_compnent_checkBox = self.compnent_checkBox.isChecked()
 
-            if "mdl_root_0_M" in component:
-                sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
-            else:
-                sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
-            cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
-            comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
-            print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
-            # get constraint & delete it!
-            for grpXfm in comp_grpXfm_ls:
-                if cmds.objExists(grpXfm):
-                    print(f"grpXfm = {grpXfm}")
-                    constraints = cmds.listRelatives(grpXfm, type='constraint', ad=0)
-                    if constraints:
-                        for con in constraints:
-                            print(f"constraint : : {con}")
-                            cmds.delete(con)
-                    # constrain grps to cage!
-                    utils.constrain_2_items(cube_locked_comp, grpXfm, "parent", "all")  
+    def sigFunc_lock_btn(self):
+        if self.val_compnent_checkBox: #true
+            component_selection = self.get_component_name_TreeSel()
+            # treeSel = ["mdl_bipedArm_0_L"]
+            for component in component_selection:
+                # delete any constraints on the component's guides
+                # offset_xfm_guide_bipedArm_clavicle_0_L
+                # bipedArm_*_0_L
+                if "mdl_root_0" in component:
+                    component = "mdl_root_0_M"
+                parts = component.split('_')[1:] # bipedArm, 0, L
+                mdl = parts[0] # bipedArm
+                uID = parts[1] # 0
+                side = parts[2] # L
+                
+                # create the box:
+                if not cmds.objExists(f"cg_{mdl}_{uID}_{side}"):
+                    cube_imp_ctrl = cr_ctrl.CreateControl(type="cube", name=f"cg_{mdl}_{uID}_{side}")
+                    cube_locked_comp = cube_imp_ctrl.retrun_ctrl()
+                else: cube_locked_comp = f"cg_{mdl}_{uID}_{side}"
+                cmds.select(cl=1)
+
+                if "mdl_root_0_M" in component:
+                    sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
+                else:
+                    sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
+                cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
+                comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
+                print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
+                # get constraint & delete it!
+                for grpXfm in comp_grpXfm_ls:
+                    if cmds.objExists(grpXfm):
+                        print(f"grpXfm = {grpXfm}")
+                        constraints = cmds.listRelatives(grpXfm, type='constraint', ad=0)
+                        if constraints:
+                            for con in constraints:
+                                print(f"constraint : : {con}")
+                                cmds.delete(con)
+                        # constrain grps to cage!
+                        utils.constrain_2_items(cube_locked_comp, grpXfm, "parent", "all")  
+        else: print(f"component checkbox is not checked")
 
     def sigFunc_unlock_btn(self):
-        component_selection = self.get_component_name_TreeSel()
-        # treeSel = ["mdl_bipedArm_0_L"]
-        for component in component_selection:
-            # delete any constraints on the component's guides
-            # offset_xfm_guide_bipedArm_clavicle_0_L
-            # bipedArm_*_0_L
-            if "mdl_root_0" in component:
-                component = "mdl_root_0_M"
-            parts = component.split('_')[1:] # bipedArm, 0, L
-            mdl = parts[0] # bipedArm
-            uID = parts[1] # 0
-            side = parts[2] # L
-            
-            if "mdl_root_0_M" in component:
-                sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
-            else:
-                sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
-            cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
-            comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
-            print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
-            # get constraint & delete it!
-            for grpXfm in comp_grpXfm_ls:
-                if cmds.objExists(grpXfm):
-                    print(f"grpXfm = {grpXfm}")
-                    constraints = cmds.listRelatives(grpXfm, type='constraint', ad=0)
-                    if constraints:
-                        for con in constraints:
-                            print(f"constraint : : {con}")
-                            cmds.delete(con)
-            # add the normal following constraints!
-            print(f"Comp_for selectionUNLOCK = {component}")
-            # NORM = xfm_grp_bipedLeg_component_0_L
-            # new = mdl_bipedLeg_0_L
-            if "mdl_root_0" in component:
-                unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_M"
-            else: unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_{side}" 
-            self.constrain_guides_from_comp(unlock_rdy_component) 
-        
-            
-            
-
-    def delete_xfm_temp_constraints(self):
-        try:
-            cmds.select("pointCon_xfm_guide_*", "pCon_xfm_guide_*")
-            #xfm_con = cmds.ls(sl=1, type="constraint")
-            #print(f"SUIIIIIIIIIIIIIIIIII > xfm con = {xfm_con}")
-            cmds.delete()
-        except Exception as e:
-            print(f"deleting xfm constraints Exception: {e}")
-
+        if self.val_compnent_checkBox: #true
+            component_selection = self.get_component_name_TreeSel()
+            # treeSel = ["mdl_bipedArm_0_L"]
+            for component in component_selection:
+                # delete any constraints on the component's guides
+                # offset_xfm_guide_bipedArm_clavicle_0_L
+                # bipedArm_*_0_L
+                if "mdl_root_0" in component:
+                    component = "mdl_root_0_M"
+                parts = component.split('_')[1:] # bipedArm, 0, L
+                mdl = parts[0] # bipedArm
+                uID = parts[1] # 0
+                side = parts[2] # L
+                
+                if "mdl_root_0_M" in component:
+                    sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
+                else:
+                    sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
+                cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
+                comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
+                print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
+                # get constraint & delete it!
+                for grpXfm in comp_grpXfm_ls:
+                    if cmds.objExists(grpXfm):
+                        print(f"grpXfm = {grpXfm}")
+                        constraints = cmds.listRelatives(grpXfm, type='constraint', ad=0)
+                        if constraints:
+                            for con in constraints:
+                                print(f"constraint : : {con}")
+                                cmds.delete(con)
+                # add the normal following constraints!
+                print(f"Comp_for selectionUNLOCK = {component}")
+                # NORM = xfm_grp_bipedLeg_component_0_L
+                # new = mdl_bipedLeg_0_L
+                if "mdl_root_0" in component:
+                    unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_M"
+                else: unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_{side}" 
+                self.constrain_guides_from_comp(unlock_rdy_component) 
+        else: print(f"component checkbox is not checked")
 
     def func_unlocked_all(self):
         # establish components present in the scene!
