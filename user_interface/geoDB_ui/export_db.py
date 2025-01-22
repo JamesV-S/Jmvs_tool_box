@@ -186,13 +186,13 @@ class exportDatabaseOptions(QtWidgets.QWidget):
 
 
     def layV_SPACER_func(self):
-        layV_spacer = QtWidgets.QHBoxLayout()
+        layH_spacer = QtWidgets.QHBoxLayout()
         spacer = QtWidgets.QWidget()
         spacer.setFixedSize(100,10)
         spacer.setObjectName("Spacer")
-        layV_spacer.addWidget(spacer)
+        layH_spacer.addWidget(spacer)
 
-        return layV_spacer
+        return layH_spacer
     
 
     def sigFunc_export(self):
