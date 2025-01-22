@@ -84,6 +84,7 @@ class CharRigging(QtWidgets.QWidget):
         self.json_dict = self.get_modules_json_dict()
         
         self.user_module_data = {} # to store user inputs from 'choose module ui'! 
+        
         self.UI_modules()
         self.UI_tab1_connect_signals()        
         
@@ -101,6 +102,8 @@ class CharRigging(QtWidgets.QWidget):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
         main_Vlayout.setObjectName("main_Layout")
         
+        
+
         top_Hlayout = QtWidgets.QHBoxLayout() # db_vis & mdl_choose
         bottom_Vlayout = QtWidgets.QVBoxLayout() # add_blueprint & updating db
 
@@ -659,10 +662,27 @@ class CharRigging(QtWidgets.QWidget):
                 
                 # create the box:
                 if not cmds.objExists(f"cg_{mdl}_{uID}_{side}"):
-                    cube_imp_ctrl = cr_ctrl.CreateControl(type="cube", name=f"cg_{mdl}_{uID}_{side}")
+                    if 'bipedArm' in component:
+                        if side == "L": ctrl_type = "imp_cg_arm_L"
+                        else: ctrl_type = "imp_cg_arm_R"
+                    elif 'bipedLeg' in component:
+                        if side == "L": ctrl_type = "imp_cg_leg_L"
+                        else: ctrl_type = "imp_cg_leg_R"
+                    elif 'spine' in component:
+                        ctrl_type = "imp_cg_spine"
+                    elif 'root' in component:
+                        ctrl_type = "imp_cg_root"
+                    cube_imp_ctrl = cr_ctrl.CreateControl(type=ctrl_type, name=f"cg_{mdl}_{uID}_{side}")
                     cube_locked_comp = cube_imp_ctrl.retrun_ctrl()
                 else: cube_locked_comp = f"cg_{mdl}_{uID}_{side}"
                 cmds.select(cl=1)
+                cmds.showHidden("cg_*")
+                
+                try:
+                    cmds.setAttr(f"{cube_locked_comp}.overrideEnabled", 1)
+                    cmds.setAttr(f"{cube_locked_comp}.hiddenInOutliner", 1)
+                except Exception as e:
+                    print(f"Hiding CAGEE error: {e}")
 
                 if "mdl_root_0_M" in component:
                     sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
@@ -715,6 +735,9 @@ class CharRigging(QtWidgets.QWidget):
                             for con in constraints:
                                 print(f"constraint : : {con}")
                                 cmds.delete(con)
+                # hide the cages (make it specific in the future) 
+                cmds.hide("cg_*")
+
                 # add the normal following constraints!
                 print(f"Comp_for selectionUNLOCK = {component}")
                 # NORM = xfm_grp_bipedLeg_component_0_L

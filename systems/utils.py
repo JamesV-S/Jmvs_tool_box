@@ -309,7 +309,7 @@ def constrain_2_items(output_item, input_item, con_type, values):
     if con_type == "parent":
         constraint_name = f"{parent_prefix}_{input_item}"
     elif con_type == "point":
-        constraint_name = f"{point_prefix}_{output_item}"
+        constraint_name = f"{point_prefix}_{input_item}"
 
     # Check for existing constraints of the same type and delete them if so
     existing_constraints = cmds.listRelatives(input_item, type='constraint', allDescendents=False) or []

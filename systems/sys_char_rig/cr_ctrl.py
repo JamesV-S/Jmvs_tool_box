@@ -87,7 +87,46 @@ class CreateControl():
                                             "imp_root_octagon.abc")
             imported_guide = cmds.file(guide_import_dir, i=1, 
                                        ns="imp_root_octagon", rnn=1)
-            ctrl = cmds.rename(imported_guide[0], ctrl_name)        
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)
+
+        elif ctrl_type == "imp_cg_arm_L":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_cg_arm_L.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_cg_arm_L", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)   
+        elif ctrl_type == "imp_cg_arm_R":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_cg_arm_R.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_cg_arm_R", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)   
+        elif ctrl_type == "imp_cg_leg_L":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_cg_leg_L.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_cg_leg_L", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)   
+        elif ctrl_type == "imp_cg_leg_R":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_cg_leg_R.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_cg_leg_R", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)   
+        elif ctrl_type == "imp_cg_spine":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_cg_spine.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_cg_spine", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)
+        elif ctrl_type == "imp_cg_root":
+            guide_import_dir = os.path.join(self.import_directory, 
+                                            "imp_cg_root.abc")
+            imported_guide = cmds.file(guide_import_dir, i=1, 
+                                       ns="imp_cg_root", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name) 
+        
+
         else:
             # create locator
             ctrl = cmds.spaceLocator(n=ctrl_name)

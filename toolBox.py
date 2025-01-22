@@ -45,71 +45,23 @@ class ToolBox(QtWidgets.QWidget):
         ui_window_name = f"Jmvs_ToolBox_{version}"
         delete_existing_ui(self.ui_object_name)
         self.setObjectName(self.ui_object_name)
-        ''' Doesn't work
+        
         # ---------------------------------
-        # Create a frameless window
-        self.setWindowFlags(Qt.FramelessWindowHint)
-
-        # Custom title bar
-        self.title_bar = QtWidgets.QWidget(self)
-        self.title_bar.setStyleSheet("background-color: #444; color: white;")
-        self.title_bar.setFixedHeight(30)
-
-        self.title_label = QtWidgets.QLabel(ui_window_name, self.title_bar)
-        self.title_label.setStyleSheet("margin-left: 10px;")
-
-        # Custom close button
-        self.close_button = QtWidgets.QPushButton("X", self.title_bar)
-        self.close_button.setFixedSize(30, 30)
-        self.close_button.setStyleSheet("background-color: #f00; border: none;")
-        self.close_button.clicked.connect(self.close)
-
-        # Layout for title bar
-        title_layout = QtWidgets.QHBoxLayout(self.title_bar)
-        title_layout.addWidget(self.title_label)
-        title_layout.addStretch()
-        title_layout.addWidget(self.close_button)
-
-        # Main layout
-        main_layout = QtWidgets.QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.addWidget(self.title_bar)
-        '''
-        # ---------------------------------
-
-        self.setStyleSheet("""
-            QWidget {
-                background-color:rgb(245, 245, 245);
-                color: #333;
-                font-size: 12px;
-            }
-            QPushButton {
-                background-color: #ccc;
-                border: 1px solid #888;
-                border-radius: 5px;
-                padding: 10px;
-            }
-            QPushButton:hover {
-                background-color: #ddd;
-            }
-            QLabel {
-                font-weight: bold;
-            QWidget {
-                background-color: #444;
-                color: white;
-            }
-            QWidget::title {
-                background-color: #444;
-                color: rgb(220, 127, 20);
-            }
-        """)
+        # style
+        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                                       "user_interface", "CSS", "toolBox_style_sheet.css")
+        print(stylesheet_path)
+        with open(stylesheet_path, "r") as file:
+            stylesheet = file.read()
+        self.setStyleSheet(stylesheet)
+        
 
         # set flags & dimensions
         # ---------------------------------- 
         self.setParent(main_window) 
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(ui_window_name)
-        self.resize(300, 500)
+        self.resize(300, 300)
 
         # button functions
         # ----------------------------------  
@@ -125,28 +77,18 @@ class ToolBox(QtWidgets.QWidget):
 
         
     def UI(self):
-        self.char_button = QtWidgets.QPushButton("Char_tool")
-        self.vehicle_button = QtWidgets.QPushButton("Vehicle_tool")
-        self.geoDB_button = QtWidgets.QPushButton("geometryDB_tool")
-        self.other_button = QtWidgets.QPushButton("other_tool")
+        self.char_button = QtWidgets.QPushButton("Character Rigging")
+        self.vehicle_button = QtWidgets.QPushButton("Vehicle Rigging")
+        self.geoDB_button = QtWidgets.QPushButton("Geo Database")
+        self.other_button = QtWidgets.QPushButton("other tools")
         
         btn_list = [self.char_button, self.vehicle_button, self.geoDB_button, self.other_button]
         
         for buttons in btn_list:
-            buttons.setFixedSize(125, 125)
-            buttons.setMinimumSize(125, 125)
+            buttons.setFixedSize(135, 135)
+            buttons.setMinimumSize(135, 135)
             buttons.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
-        '''
-        # Instead of calling the main function directly in the lambda, 
-        # pass the class to load_ui which will make an instance of it when needed
-        Call the main function of the class when I want to initialisee the 
-        ui outside of ToolBox Menu (right clcik function!)
-        # self.char_button.clicked.connect(lambda: self.load_ui(CharRigging))
-        self.vehicle_button.clicked.connect(lambda: self.load_ui(VehicleRigging))
-        self.geoDB_button.clicked.connect(lambda: self.load_ui(GeoDatabase))
-        self.other_button.clicked.connect(lambda: self.load_ui(OtherTool))
-        '''
 
         # grid layout
         self.grid_layout = QtWidgets.QGridLayout(self)

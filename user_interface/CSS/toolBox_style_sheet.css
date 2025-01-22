@@ -1,0 +1,42 @@
+QWidget {
+    background-color:rgb(125, 120, 166);
+    color: #333;
+    font-size: 12px;
+}
+QPushButton {
+    color: #ddd;
+    background-color: #000b30;
+    border: 1.5px solid #ffffff;
+    border-radius: 5px;
+    padding: 10px;
+    font-weight: bold;
+    padding: 6px;
+    font-size: 13px;
+    font-family: "Arial", sans-serif;
+    font-style:oblique;
+}
+QPushButton:hover {
+    background-color: #000b30;
+    border: 1.5px solid #ffffff;
+    border-radius: 5px;
+    border-top-width: 1px;
+    border-left-width: 1px;
+    border-right-width: 5px;
+    border-bottom-width: 5px;
+}
+QPushButton:pressed {
+    background-color: #262a38;
+    border: 1.5px solid #ffffff;
+    border-radius: 5px;
+    border-top-width: 1px;
+    border-left-width: 1px;
+    border-right-width: 5px;
+    border-bottom-width: 5px;
+}
+QLabel{
+    font-weight: bold;
+    padding: 6px;
+    font-size: 13px;
+    font-family: "Arial", sans-serif;
+    font-style:oblique;
+}
