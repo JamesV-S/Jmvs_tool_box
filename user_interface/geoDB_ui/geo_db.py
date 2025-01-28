@@ -155,7 +155,7 @@ class GeoDatabase(QtWidgets.QWidget):
     
         # Connect the selection change on joint tree to effect geo tree. 
         self.joint_tree_view.selectionModel().selectionChanged.connect(self.signal_to_geo_tree_highlight)
-        # self.joint_tree_view.selectionModel().selectionChanged.connect(self.ui_joint_selects_scene_joint)
+        self.joint_tree_view.selectionModel().selectionChanged.connect(self.ui_joint_selects_scene_joint)
         self.geo_tree_view.selectionModel().selectionChanged.connect(self.ui_geo_selects_scene_geo)
         
         # -- Label tree views --
