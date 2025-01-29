@@ -43,18 +43,13 @@ importlib.reload(uuid_handler)
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 
-def delete_existing_ui(ui_name):
-    if cmds.window(ui_name, exists=True):
-        cmds.deleteUI(ui_name, window=True)
-
-
 class GeoDatabase(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(GeoDatabase, self).__init__(parent)
         version = "001"
         ui_object_name = f"JmvsGeoDatabase_{version}"
         ui_window_name = f"Jmvs_geo_database_{version}"
-        delete_existing_ui(ui_object_name)
+        utils.delete_existing_ui(ui_object_name)
         self.setObjectName(ui_object_name)
 
         # Set flags & dimensions

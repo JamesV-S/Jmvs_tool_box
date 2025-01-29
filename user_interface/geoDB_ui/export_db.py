@@ -23,17 +23,16 @@ from databases.geo_databases import database_schema_001
 importlib.reload(database_schema_001)
 
 from systems import (
-    os_custom_directory_utils
+    os_custom_directory_utils,
+    utils
 )
+
 importlib.reload(os_custom_directory_utils)
+importlib.reload(utils)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
-
-def delete_existing_ui(ui_name):
-    if cmds.window(ui_name, exists=True):
-        cmds.deleteUI(ui_name, window=True)
 
 class exportDatabaseOptions(QtWidgets.QWidget):
     # define a signal to indicate completion of db creation
@@ -43,7 +42,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
         version = "001"
         ui_object_name = f"DB_EXPORT{version}"
         ui_window_name = f"DB Export Options {version}"
-        delete_existing_ui(ui_object_name)
+        utils.delete_existing_ui(ui_object_name)
         self.setObjectName(ui_object_name)
 
         # Set flags & dimensions

@@ -19,13 +19,16 @@ import sys
 import importlib
 import os.path
 
+from systems import (
+    utils
+)
+
+importlib.reload(utils)
+
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 
-def delete_existing_ui(ui_name):
-    if cmds.window(ui_name, exists=True):
-        cmds.deleteUI(ui_name, window=True)
 
 class VehicleRigging(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -33,7 +36,7 @@ class VehicleRigging(QtWidgets.QWidget):
         version = "001"
         ui_object_name = f"JmvsVehicleRigging_{version}"
         ui_window_name = f"Jmvs_vehicle_tool_{version}"
-        delete_existing_ui(ui_object_name)
+        utils.delete_existing_ui(ui_object_name)
         self.setObjectName(ui_object_name)
 
         # set flags & dimensions

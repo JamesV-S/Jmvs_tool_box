@@ -41,9 +41,6 @@ importlib.reload(cr_ctrl)
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 
-def delete_existing_ui(ui_name):
-    if cmds.window(ui_name, exists=True):
-        cmds.deleteUI(ui_name, window=True)
 
 class CharRigging(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -51,7 +48,7 @@ class CharRigging(QtWidgets.QWidget):
         version = "001"
         ui_object_name = f"JmvsCharRig_{version}"
         ui_window_name = f"Jmvs_character_tool_{version}"
-        delete_existing_ui(ui_object_name)
+        utils.delete_existing_ui(ui_object_name)
         self.setObjectName(ui_object_name)
 
         # set flags & dimensions
