@@ -3,6 +3,18 @@ import maya.cmds as cmds
 import os
 import re
 
+
+def get_first_tree_index(tree_view):
+        selection_model = tree_view.selectionModel()
+        selected_indexes = selection_model.selectedIndexes()
+
+        # is there an item selected?
+        if selected_indexes:
+            # for the time being get the first selected index (I could change this to handle multiple selections)
+            selected_index = selected_indexes[0]
+            return selected_index
+
+
 def find_directory(db_name, root_directory):
             for dirpath, dirnames, filenames in os.walk(root_directory):
                 if db_name in filenames:
@@ -52,11 +64,14 @@ def select_set_displayType(name, checkBox, reference):
         cmds.select(cl=1)
 
 
-def get_selection_trans_dict(selection):    
+def get_selection_trans_dict(selection, side):    
     translation_pos = {}
     for sel in selection:
-        trans_ls = cmds.xform(sel, q=1, translation=1, worldSpace=1) 
+        trans_ls = cmds.xform(sel, q=1, translation=1, worldSpace=1)
+        if side == 'R':
+            trans_ls[0] = -trans_ls[0]
         translation_pos[sel] = list(trans_ls)
+    # if the component is on the right side, move it to the exact oposite, which means x is reversed!!
     
     return translation_pos
 

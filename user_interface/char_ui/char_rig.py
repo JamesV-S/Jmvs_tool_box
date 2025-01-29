@@ -910,7 +910,7 @@ class CharRigging(QtWidgets.QWidget):
             cmds.select(f"xfm_guide_{module}_*_{unique_id}_{side}")
             guides = cmds.ls(sl=1, type="transform")
             # gather the positions of the selected
-            new_component_pos_dict = utils.get_selection_trans_dict(guides)
+            new_component_pos_dict = utils.get_selection_trans_dict(guides, side)
             print("new_component_pos: ", new_component_pos_dict)
             ''' got this dict `B` from selection in treeView '''
             ''' if ^ = {} cancel the operation below. '''

@@ -385,16 +385,25 @@ UpdateDatabase(f'DB_geo_arm.db', oneJNT_for_oneGEO_uuid_combined_dict)
 
 #------------------------------------------------------------------------------
 
-class RemoveSpecificGEOfromDB():
-    def __init__(self, database_name, directory, geo_name, geo_uuid):
+class RemoveSpecificDATAfromDB():
+    def __init__(self, database_name, directory, data_type, data_name, data_uuid):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         db_name = os.path.join(db_directory, database_name)
 
+        self.data_type = data_type
+
         try:
             with sqlite3.connect(db_name) as conn:
-                self.remove_geo_data(conn, geo_name, geo_uuid)
-                print(f"Data with geo_name `{geo_name}` & geo_uuid `{geo_uuid}` has been deleted from db: {db_name}")
+                self.remove_data(conn, data_name, data_uuid)
+                '''
+                if data_type == "geo":
+                    self.remove_geo_data(conn, data_name, data_uuid)
+                    print(f"Data with geo_name `{data_name}` & geo_uuid `{data_uuid}` has been deleted from db: {db_name}")
+                elif data_type == "joint":
+                    self.remove_joint_data(conn, data_name, data_uuid)
+                    print(f"Data with geo_name `{data_name}` & geo_uuid `{data_uuid}` has been deleted from db: {db_name}")
+                '''
         except sqlite3.Error as e:
             print(f"Delete GEO Database error: {e}")
 
@@ -409,26 +418,24 @@ class RemoveSpecificGEOfromDB():
         except sqlite3.Error as e:
             print(f"Error deleting GEO data: {e}")
     '''
-
-    
-    def remove_geo_data(self, conn, geo_name, geo_uuid):
+    def remove_data(self, conn, type_name, type_uuid):
         cursor = conn.cursor()
         # use 'LIKE' for specific entries within the tables column
         try:
-            print(f"&&&&&&&&& > trying to REMOVE data")
-            sql = "SELECT geo_name, geo_uuid FROM uuid_data WHERE geo_name LIKE ? AND geo_uuid LIKE ?"
-            cursor.execute(sql, (f"%{geo_name}%", f"%{geo_uuid}%"))
+            print(f"&&&&&&&&& > trying to REMOVE {self.data_type} data")
+            sql = f"SELECT {self.data_type}_name, {self.data_type}_uuid FROM uuid_data WHERE {self.data_type}_name LIKE ? AND {self.data_type}_uuid LIKE ?"
+            cursor.execute(sql, (f"%{type_name}%", f"%{type_uuid}%"))
             conn.commit()
             # confirmation msg to user
             row = cursor.fetchone()
             if row:
                 # get existing geo & uuid names: 
-                existing_geo_names, existing_geo_uuids = row
-                updated_geo_names = ', '.join([name for name in existing_geo_names.split(', ') if name != geo_name])
-                updated_geo_uuids = ', '.join([uuid for uuid in existing_geo_uuids.split(', ') if uuid != geo_uuid])
+                existing_joint_names, existing_joint_uuids = row
+                updated_joint_names = ', '.join([name for name in existing_joint_names.split(', ') if name != type_name])
+                updated_joint_uuids = ', '.join([uuid for uuid in existing_joint_uuids.split(', ') if uuid != type_uuid])
                 
-                sql_update = "UPDATE uuid_data SET geo_name = ?, geo_uuid = ? WHERE geo_name LIKE ? AND geo_uuid LIKE ?"
-                cursor.execute( sql_update, (updated_geo_names, updated_geo_uuids, f"%{geo_name}%", f"%{geo_uuid}%"))
+                sql_update = f"UPDATE uuid_data SET {self.data_type}_name = ?, {self.data_type}_uuid = ? WHERE {self.data_type}_name LIKE ? AND {self.data_type}_uuid LIKE ?"
+                cursor.execute( sql_update, (updated_joint_names, updated_joint_uuids, f"%{type_name}%", f"%{type_uuid}%"))
                 conn.commit()
 
                 if cursor.rowcount == 0:
