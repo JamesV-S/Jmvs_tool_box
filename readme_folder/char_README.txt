@@ -21,3 +21,37 @@ Step 3 - Loop execution
 thru each iteratipon, filename(key), and data(value) which is the 
 associated dictionary.
 '''
+
+'''BELOW is not a utility, it's the order of constraint relationship of components'''
+def unlocked_component():
+    # guide > parentOperation > guideGROUP
+    if "bipedLeg":
+        print("bipedLeg unlocked configuration")
+        if cmds.objExists("spine_module"):
+            pass
+            # spine1 >PointConAll> hip
+        # Hip >PointConAll> knee
+        # knee > Nothing
+        if cmds.objExists("root_module"):
+            pass
+            # root >ParentCon_Y_> ankle
+            # root >PointtConAll> foot
+        # foot >PointConX_Z> ankle
+        # foot >ParentConAll> ball
+        # foot >ParentConAll> toe
+    elif "bipedArm":
+        print("bipedArm unlocked configuration")
+        if cmds.objExists("spine_module"):
+            pass
+            # spine4 >ParentConAll> clavicle
+            # spine4 >ParentConAll> shoulder
+    elif "root":
+        print("root unlocked configuration")
+        # root >PointtConAll> cog
+    elif "spine":
+        print("spine unlocked configuration")
+        # cog >ParentConAll> spine1
+        # spine1 >ParentConAll> spine2
+        # spine2 >ParentConAll> spine3
+        # spine3 >ParentConAll> spine4
+        # spine4 >ParentConAll> spine5

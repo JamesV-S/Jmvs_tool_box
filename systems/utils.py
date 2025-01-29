@@ -10,6 +10,11 @@ def find_directory(db_name, root_directory):
             raise FileNotFoundError(f"Database '{db_name}' not found starting from '{root_directory}'.")
 
 
+def delete_existing_ui(ui_name):
+    if cmds.window(ui_name, exists=True):
+        cmds.deleteUI(ui_name, window=True)
+
+
 def create_rig_group(name):
     hi_name_list = [name, 'grp_controls', 'grp_geo', 
                 'grp_skeleton', 'DO_NOT_TOUCH', 'grp_rig_systems', 
@@ -28,54 +33,6 @@ def create_rig_group(name):
     cmds.parent(grp_list[5:10], grp_list[4])
 
     cmds.select(cl=1)
-
-
-def connect_guide(start_guide, end_guide):
-        cmds.select(cl=1)
-        joint_1 = cmds.joint(n=f"ddj_start_{start_guide.replace('xfm_guide_', '')}")
-        joint_2 = cmds.joint(n=f"ddj_end_{start_guide.replace('xfm_guide_', '')}")
-        cmds.select(cl=1)
-        cmds.matchTransform(joint_1, start_guide, pos=1, scl=0, rot=0)
-        cmds.matchTransform(joint_2, end_guide, pos=1, scl=0, rot=0)
-        
-        jnt_1_xform = cmds.xform(joint_1, q=1, rotatePivot=1, ws=1)
-        jnt_2_xform = cmds.xform(joint_2, q=1, rotatePivot=1, ws=1)
-        
-        # constrain the joints!
-        cmds.pointConstraint(start_guide, joint_1, n=f"pointCon_str_{start_guide.replace('xfm_guide_', '')}", w=1)
-        cmds.pointConstraint(end_guide, joint_2, n=f"pointCon_end_{start_guide.replace('xfm_guide_', '')}", w=1)
-
-        curve_name = f"cv_{start_guide.replace('xfm_', '')}"
-        cmds.curve(d=1, n=curve_name, p=[jnt_1_xform, jnt_2_xform])
-        cmds.setAttr(f"{curve_name}.overrideEnabled", 1)
-        cmds.setAttr(f"{curve_name}.overrideDisplayType", 2)
-        
-        if not cmds.objExists("grp_component_misc"):
-            cmds.group(n=f"grp_component_misc", em=1)
-        cmds.parent(curve_name, joint_1, "grp_component_misc")
-
-        # cluster the curve
-        start_cluster = cmds.cluster(f"{curve_name}.cv[0]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv0")
-        end_cluster = cmds.cluster(f"{curve_name}.cv[1]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv1")
-        
-        #for x in range(2):
-        try:
-            cmds.parent(start_cluster, start_guide)
-            cmds.parent(end_cluster, end_guide)
-        except cmds.warning():
-            pass
-        
-        clusters = cmds.ls(type="cluster")
-        for x in clusters:
-            cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
-            cmds.hide(f"{x}Handle")
-        # arguments: 2 guides
-        # create: 2 joints / black linear curve / 
-        # methods: cr curve to go from start_guide to end_guide 
-        # > create cluster on each cv > parent correct cv to xfm_guide 
-        # > joint1 @ start_guide, joint2 @ end_guide > pointConstrain joint to xfm_guid
-        
-        # hiddenInOutliner
 
 
 def select_set_displayType(name, checkBox, reference):
@@ -338,38 +295,52 @@ def constrain_2_items(output_item, input_item, con_type, values):
 # constrain_2_items("output", "input", "parent", ["Y"])
 
 # constrain_2_items("output", "input", "parent", 'all')
-    
-def unlocked_component(self):
-    # guide > parentOperation > guideGROUP
-    if "bipedLeg":
-        print("bipedLeg unlocked configuration")
-        if cmds.objExists("spine_module"):
+
+def connect_guide(start_guide, end_guide):
+        cmds.select(cl=1)
+        joint_1 = cmds.joint(n=f"ddj_start_{start_guide.replace('xfm_guide_', '')}")
+        joint_2 = cmds.joint(n=f"ddj_end_{start_guide.replace('xfm_guide_', '')}")
+        cmds.select(cl=1)
+        cmds.matchTransform(joint_1, start_guide, pos=1, scl=0, rot=0)
+        cmds.matchTransform(joint_2, end_guide, pos=1, scl=0, rot=0)
+        
+        jnt_1_xform = cmds.xform(joint_1, q=1, rotatePivot=1, ws=1)
+        jnt_2_xform = cmds.xform(joint_2, q=1, rotatePivot=1, ws=1)
+        
+        # constrain the joints!
+        cmds.pointConstraint(start_guide, joint_1, n=f"pointCon_str_{start_guide.replace('xfm_guide_', '')}", w=1)
+        cmds.pointConstraint(end_guide, joint_2, n=f"pointCon_end_{start_guide.replace('xfm_guide_', '')}", w=1)
+
+        curve_name = f"cv_{start_guide.replace('xfm_', '')}"
+        cmds.curve(d=1, n=curve_name, p=[jnt_1_xform, jnt_2_xform])
+        cmds.setAttr(f"{curve_name}.overrideEnabled", 1)
+        cmds.setAttr(f"{curve_name}.overrideDisplayType", 2)
+        
+        if not cmds.objExists("grp_component_misc"):
+            cmds.group(n=f"grp_component_misc", em=1)
+        cmds.parent(curve_name, joint_1, "grp_component_misc")
+
+        # cluster the curve
+        start_cluster = cmds.cluster(f"{curve_name}.cv[0]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv0")
+        end_cluster = cmds.cluster(f"{curve_name}.cv[1]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv1")
+        
+        #for x in range(2):
+        try:
+            cmds.parent(start_cluster, start_guide)
+            cmds.parent(end_cluster, end_guide)
+        except cmds.warning():
             pass
-            # spine1 >PointConAll> hip
-        # Hip >PointConAll> knee
-        # knee > Nothing
-        if cmds.objExists("root_module"):
-            pass
-            # root >ParentCon_Y_> ankle
-            # root >PointtConAll> foot
-        # foot >PointConX_Z> ankle
-        # foot >ParentConAll> ball
-        # foot >ParentConAll> toe
-    elif "bipedArm":
-        print("bipedArm unlocked configuration")
-        if cmds.objExists("spine_module"):
-            pass
-            # spine4 >ParentConAll> clavicle
-            # spine4 >ParentConAll> shoulder
-    elif "root":
-        print("root unlocked configuration")
-        # root >PointtConAll> cog
-    elif "spine":
-        print("spine unlocked configuration")
-        # cog >ParentConAll> spine1
-        # spine1 >ParentConAll> spine2
-        # spine2 >ParentConAll> spine3
-        # spine3 >ParentConAll> spine4
-        # spine4 >ParentConAll> spine5
+        
+        clusters = cmds.ls(type="cluster")
+        for x in clusters:
+            cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
+            cmds.hide(f"{x}Handle")
+        # arguments: 2 guides
+        # create: 2 joints / black linear curve / 
+        # methods: cr curve to go from start_guide to end_guide 
+        # > create cluster on each cv > parent correct cv to xfm_guide 
+        # > joint1 @ start_guide, joint2 @ end_guide > pointConstrain joint to xfm_guid
+
+
     
 
