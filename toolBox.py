@@ -24,10 +24,15 @@ from user_interface.vehicle_ui import vehicle_rig
 from user_interface.geoDB_ui import geo_db
 from user_interface.other_ui import other_tool
 
+from systems import (
+    os_custom_directory_utils
+)
+
 importlib.reload(char_rig)
 importlib.reload(vehicle_rig)
 importlib.reload(geo_db)
 importlib.reload(other_tool)
+importlib.reload(os_custom_directory_utils)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -77,18 +82,43 @@ class ToolBox(QtWidgets.QWidget):
 
         
     def UI(self):
-        self.char_button = QtWidgets.QPushButton("Character Rigging")
-        self.vehicle_button = QtWidgets.QPushButton("Vehicle Rigging")
-        self.geoDB_button = QtWidgets.QPushButton("Geo Database")
+        self.char_button = QtWidgets.QPushButton()
+        self.vehicle_button = QtWidgets.QPushButton()
+        self.geoDB_button = QtWidgets.QPushButton()
         self.other_button = QtWidgets.QPushButton("other tools")
         
         btn_list = [self.char_button, self.vehicle_button, self.geoDB_button, self.other_button]
         
+        # add images
+        char_image_path = os.path.join(os_custom_directory_utils.create_directory(
+            "Jmvs_tool_box", "user_interface", "CSS", "images"), "img_char_db_001.png"
+            )
+        # Set the image as the button icon
+        char_icon = QIcon(char_image_path)
+
+        geo_image_path = os.path.join(os_custom_directory_utils.create_directory(
+            "Jmvs_tool_box", "user_interface", "CSS", "images"), "img_geo_db_001.png"
+            )
+        # Set the image as the button icon
+        geo_icon = QIcon(geo_image_path)
+
+        vehicle_image_path = os.path.join(os_custom_directory_utils.create_directory(
+            "Jmvs_tool_box", "user_interface", "CSS", "images"), "img_vehicle_db_001.png"
+            )
+        # Set the image as the button icon
+        vehicle_icon = QIcon(vehicle_image_path)
+
+        self.char_button.setIcon(char_icon)
+        self.geoDB_button.setIcon(geo_icon)
+        self.vehicle_button.setIcon(vehicle_icon)
+
+
         for buttons in btn_list:
             buttons.setFixedSize(135, 135)
             buttons.setMinimumSize(135, 135)
+            buttons.setIconSize(QtCore.QSize(135, 135))  # Explicitly set icon size to button size
             buttons.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
+            
 
         # grid layout
         self.grid_layout = QtWidgets.QGridLayout(self)
@@ -99,6 +129,7 @@ class ToolBox(QtWidgets.QWidget):
         self.grid_layout.addWidget(self.geoDB_button, 1, 0)
         self.grid_layout.addWidget(self.other_button, 1, 1)
 
+        
         # status bar label:
         #self.status_label = QtWidgets.QLabel("ToolBox menu open")
         #self.grid_layout.addWidget(self.status_label, 2, 0)
