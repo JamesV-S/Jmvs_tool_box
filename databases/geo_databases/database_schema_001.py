@@ -154,7 +154,7 @@ class UpdateDatabase():
 
 
 class UpdateJointDatabase():
-    def __init__(self, database_name, jnt_uuid_dict, directory, add_existing=None):
+    def __init__(self, database_name, jnt_uuid_dict, directory, parent_num=None):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         # db_name must include the entire path too!
@@ -165,21 +165,21 @@ class UpdateJointDatabase():
         jnt_name_list = list(jnt_uuid_dict.keys())
         jnt_uuid_list = list(jnt_uuid_dict.values())
 
+        jnt_names = ', '.join(jnt_name_list)
+        jnt_uuids = ', '.join(jnt_uuid_list)
+
         try:
             with sqlite3.connect(db_name) as conn:
-                if add_existing:
+                if parent_num:
                     print(f"GOING to update specific row")
-                    exs_jnt_name, exs_jnt_uuid = jnt_name_list[0], jnt_uuid_list[0] # shoulder
-                    add_jnt_name, add_jnt_uuid = jnt_name_list[-1], jnt_uuid_list[-1] # elbow
                     print("---------------------------------------------------------------------------")
                     print(f"HA < jnt_name_list = {jnt_name_list} + jnt_uuid_list = {jnt_uuid_list}> &&")
                     #HA < jnt_name_list = ['jnt_skn_0_shoulder_L, jnt_skn_0_elbow_L'] + jnt_uuid_list = ['0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F, 02E77D75-4DB2-4ECF-EF09-93B6F13E1134']> &&
                     print("---------------------------------------------------------------------------")
-                    self.update_add_jnt_db(conn, 'uuid_data', exs_jnt_name, exs_jnt_uuid, add_jnt_name, add_jnt_uuid)
+                    self.update_add_jnt_db(conn, 'uuid_data', jnt_names, jnt_uuids, parent_num)
                 else:
                     # prepare the values to put inot db
-                    jnt_names = ', '.join(jnt_name_list)
-                    jnt_uuids = ', '.join(jnt_uuid_list)
+                    
                     print(f"jnt_names = {jnt_names} & jnt_uuids = {jnt_uuids}")
 
                     self.new_row_id = self.update_new_joint_db(conn, 'uuid_data', (jnt_names, jnt_uuids))
@@ -197,17 +197,17 @@ class UpdateJointDatabase():
         conn.commit()
         return cursor.lastrowid
     
-    def update_add_jnt_db(self, conn, table, exs_jnt_name, exs_jnt_uuid, add_jnt_name, add_jnt_uuid):
+    def update_add_jnt_db(self, conn, table, add_jnt_name, add_jnt_uuid, parent_name):
         cursor = conn.cursor()
         if table == 'uuid_data':
-            
+
             try: 
                 # CHECK the UPDATE sql with items with row db_row_id:
-                cursor.execute(f"SELECT joint_name, joint_uuid FROM uuid_data WHERE joint_uuid = ?", 
-                               (exs_jnt_uuid,))
+                cursor.execute(f"SELECT joint_name, joint_uuid FROM uuid_data WHERE db_row_id = ?", 
+                               (parent_name,))
                 row = cursor.fetchone()
                 if row is None:
-                    print(f"No task found with exs_jnt_uuid: `{exs_jnt_name} > {exs_jnt_uuid}`.")
+                    print(f"No task found with db_row_id: `{parent_name}``.")
                 # retrieve existing joint data beforte adding to it to avoid overwriting! 
                 '''
                 existing_joint_names, existing_joint_uuids = row
@@ -217,18 +217,17 @@ class UpdateJointDatabase():
                     joint_uuids = existing_joint_uuids + ', ' + joint_uuids
                 '''
                 # Execute the UPDATE statement
-                sql = """UPDATE uuid_data SET joint_name = ?, joint_uuid = ? WHERE joint_uuid = ?"""
-                cursor.execute(sql, (add_jnt_name, add_jnt_uuid, exs_jnt_uuid))
+                sql = """UPDATE uuid_data SET joint_name = ?, joint_uuid = ? WHERE db_row_id = ?"""
+                cursor.execute(sql, (add_jnt_name, add_jnt_uuid, parent_name))
                 conn.commit()
-                '''
+                
                 if cursor.rowcount == 0:
-                    print(f"No uuid_data found with db_row_id: `{db_row_id}`.")
+                    print(f"No uuid_data found with db_row_id: `{parent_name}`.")
                 else:
-                     print(f"uuid_data found with db_row_id: `{db_row_id}`.")
-                '''
-
+                    print(f"uuid_data found with db_row_id: `{parent_name}`.")
+                    
             except sqlite3.Error as e:
-                print(f"No '{table}' found with existing joint name & uuid: `{exs_jnt_name} > {exs_jnt_uuid}`")
+                print(f"No '{table}' found with existing joint name & uuid: `{add_jnt_name} > {add_jnt_uuid}`")
 
         conn.commit()
     

@@ -29,9 +29,9 @@ Achieved:
 > Add geo selected in scene to the row of the Joint selected in the treeview.
 >> adjust treeView selection relationship!
 > abloe to remove joint from relationship 
+> Can now add joint
 
 NEXT:
-> Add a new button: "Add Joint" a function to add joint to existing relationship!
 > delete database, stop it being locked by Maya - (Don't need for submission!)
 > Replace jnt/geo on selected row in treeview - (Don't need for submission!)
 > Remove Row from treeview & database button! - (Don't need for submission!)

@@ -3,27 +3,16 @@ import maya.cmds as cmds
 import os
 import re
 
-
-def get_selected_parent_name(treeView_name):
+def get_selected_parent_name(treeView_name, model):
     selection_model = treeView_name.selectionModel()
     selected_indexes = selection_model.selectedIndexes()
-    
-    if selected_indexes:
-        selected_index = selected_indexes[0]
-        # Get the parent index of the selected index
-        parent_index = selected_index.parent()
-        if parent_index.isValid():
-            # Get name now
-            parent_name = treeView_name.model().data(parent_index)
-            return parent_name
-        else:
-            print("No parent item selected.")
-    else:
-        print("No item selected in the treeView.")
+    jnt_item = model.itemFromIndex(selected_indexes[0])
+    relationship_name = jnt_item.text()
+    return relationship_name
 
 
-def get_first_tree_index(tree_view):
-        selection_model = tree_view.selectionModel()
+def get_first_tree_index(treeView_name):
+        selection_model = treeView_name.selectionModel()
         selected_indexes = selection_model.selectedIndexes()
 
         # is there an item selected?

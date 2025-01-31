@@ -615,10 +615,10 @@ class GeoDatabase(QtWidgets.QWidget):
     
     def sigFunc_add_jnt_to_db_btn(self):
         print(f"sigFunc_add_jnt_to_db_btn CLICKED!!")
-        # cancel operation if geo is selected:
-        jnt_parent_name = utils.get_selected_parent_name(self.joint_tree_view)
-        print(f"jnt_parent_name: {jnt_parent_name}")
-        '''
+        jnt_parent_name = utils.get_selected_parent_name(self.joint_tree_view, self.joint_model)
+        print(f"relationship_name = {jnt_parent_name}")
+        jnt_parent_num = jnt_parent_name.split('_')[-1]
+
         joint_selection = cmds.ls(sl=1, type="joint")
         if not joint_selection:
             print("Operation canceled: Joints NOT selected!")
@@ -630,8 +630,6 @@ class GeoDatabase(QtWidgets.QWidget):
         except Exception as e:
             print(f"add_jnt_to_db_btn ERROR, selected tree joint parent! : {e}")
         
-        
-        
         try:
             if not self.val_new_relationship_checkBox:
                 # need to select joint in scene, DONE, need to select row in treeView to establish row!
@@ -642,14 +640,14 @@ class GeoDatabase(QtWidgets.QWidget):
                     print(f"joint row_index in treeView = {row_index}")
                     database_schema_001.UpdateJointDatabase(
                     self.active_db, joint_uuid_dict, self.active_db_dir, 
-                    True
+                    jnt_parent_num
                     )
                     self.visualise_active_db()
                 else:
                     print(f"add joint to existing row: error selecting existing joint")
         except Exception as e:
             print(f"add_jnt_to_db_btn ERRO: {e}")
-        '''
+        
 
     def sigFunc_new_relationship_checkBox(self):
         print(f"new_relationship_checkBox is checked cicked")
