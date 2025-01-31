@@ -36,7 +36,6 @@ importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
-
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
