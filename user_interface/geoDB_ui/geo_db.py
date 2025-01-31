@@ -118,11 +118,9 @@ class GeoDatabase(QtWidgets.QWidget):
         self.geo_model.setHeaderData(0, QtCore.Qt.Horizontal, "Geometry UUID")
 
         self.joint_tree_view = QtWidgets.QTreeView(self)
-        self.joint_tree_view.setObjectName("joint_treeview")
         self.joint_tree_view.setModel(self.joint_model)
 
         self.geo_tree_view = QtWidgets.QTreeView(self)
-        self.geo_tree_view.setObjectName("geo_treeview")
         self.geo_tree_view.setModel(self.geo_model)
         
         self.joint_tree_view.setObjectName("joint_tree_view")
@@ -317,12 +315,6 @@ class GeoDatabase(QtWidgets.QWidget):
         # -------- Add All Widgets to Main Layout through its child --------
         top_parent_HLayout.addLayout(layV_TOP_R)
 
-        # ---- TOOL TIPS ----
-        self.bind_skn_btn.setToolTip("Bind Geo to Joint SELECTION")
-        self.unbind_skn_btn.setToolTip("Unind Geo to Joint SELECTION")
-        self.bind_all_btn.setToolTip("Bind ALL Geo to Joint")
-        self.unbind_all_btn.setToolTip("Unbind ALL Geo to Joint")
-
         # ---- STYLE SETTINGS ----
         bind_style = [self.bind_skn_btn, self.bind_all_btn, ]
         unbind_style = [self.unbind_skn_btn, self.unbind_all_btn]
@@ -342,9 +334,13 @@ class GeoDatabase(QtWidgets.QWidget):
         self.add_geo_btn = QtWidgets.QPushButton("Add GEO")
         self.add_geo_btn.setEnabled(True)
 
+        self.add_jnt_btn = QtWidgets.QPushButton("Add JOINT")
+        self.add_jnt_btn.setEnabled(True)
+
         mid_parent_HLayout.addWidget(self.new_relationship_checkBox)
         mid_parent_HLayout.addWidget(self.new_jnt_btn)
         mid_parent_HLayout.addWidget(self.add_geo_btn)
+        mid_parent_HLayout.addWidget(self.add_jnt_btn)
 
         #----------------------------------------------------------------------
         # 3 replacing JOINT & GEO of selection!
@@ -363,6 +359,14 @@ class GeoDatabase(QtWidgets.QWidget):
         bott_parent_HLayout.addWidget(self.remove_relationship)
         
         #----------------------------------------------------------------------
+        # ---- TOOL TIPS ----
+        self.bind_skn_btn.setToolTip("Bind Geo to Joint SELECTION")
+        self.unbind_skn_btn.setToolTip("Unind Geo to Joint SELECTION")
+        self.bind_all_btn.setToolTip("Bind ALL Geo to Joint")
+        self.unbind_all_btn.setToolTip("Unbind ALL Geo to Joint")
+        self.add_jnt_btn.setToolTip("Select Existing Joint in TreeView FIRST")
+        #----------------------------------------------------------------------
+        
         self.setLayout(main_VLayout)
     
     
@@ -392,6 +396,7 @@ class GeoDatabase(QtWidgets.QWidget):
         self.new_relationship_checkBox.stateChanged.connect(self.sigFunc_new_relationship_checkBox)
         self.new_jnt_btn.clicked.connect(self.sigFunc_add_joint_to_db_btn)
         self.add_geo_btn.clicked.connect(self.sigFunc_add_geo_to_db_btn)
+        self.add_jnt_btn.clicked.connect(self.sigFunc_add_jnt_to_db_btn)
 
         # -- Remove JOINT/GEO --
         self.rmv_jnt_btn.clicked.connect(self.sigFunc_rmv_jnt_btn)
@@ -573,7 +578,7 @@ class GeoDatabase(QtWidgets.QWidget):
         try:
             print(f"geo_uuid_dict  == {geo_uuid_dict}")
         except Exception as e:
-            print(f"add_geo_to_db_btn ERROR, select tree jont parent! : {e}")
+            print(f"add_geo_to_db_btn ERROR, selected tree jont parent! : {e}")
     
         try:
             if self.val_new_relationship_checkBox: # Add geo to db, new relationship has been created, the joint is it's partner
@@ -607,16 +612,56 @@ class GeoDatabase(QtWidgets.QWidget):
             print(f"add_geo_to_db_btn ERROR: {e}")
         self.new_relationship_checkBox.setChecked(False)
     
-       
+    
+    def sigFunc_add_jnt_to_db_btn(self):
+        print(f"sigFunc_add_jnt_to_db_btn CLICKED!!")
+        # cancel operation if geo is selected:
+        jnt_parent_name = utils.get_selected_parent_name(self.joint_tree_view)
+        print(f"jnt_parent_name: {jnt_parent_name}")
+        '''
+        joint_selection = cmds.ls(sl=1, type="joint")
+        if not joint_selection:
+            print("Operation canceled: Joints NOT selected!")
+            return
+        elif joint_selection:
+            joint_uuid_dict = uuid_handler.return_uuid_dict_from_joint(joint_selection)
+        try:
+            print(f"joint_uuid_dict  == {joint_uuid_dict}")
+        except Exception as e:
+            print(f"add_jnt_to_db_btn ERROR, selected tree joint parent! : {e}")
+        
+        
+        
+        try:
+            if not self.val_new_relationship_checkBox:
+                # need to select joint in scene, DONE, need to select row in treeView to establish row!
+                result = self.get_sel_jnt_index_and_uuid()
+                if result:
+                    row_index, joint_uuid = result
+                    print(f"joint selected in treeView = {joint_uuid}")
+                    print(f"joint row_index in treeView = {row_index}")
+                    database_schema_001.UpdateJointDatabase(
+                    self.active_db, joint_uuid_dict, self.active_db_dir, 
+                    True
+                    )
+                    self.visualise_active_db()
+                else:
+                    print(f"add joint to existing row: error selecting existing joint")
+        except Exception as e:
+            print(f"add_jnt_to_db_btn ERRO: {e}")
+        '''
+
     def sigFunc_new_relationship_checkBox(self):
         print(f"new_relationship_checkBox is checked cicked")
         self.val_new_relationship_checkBox = self.new_relationship_checkBox.isChecked()
         if self.val_new_relationship_checkBox:
             self.new_jnt_btn.setEnabled(True)
             self.add_geo_btn.setEnabled(False)
+            self.add_jnt_btn.setEnabled(False)
         else:
             self.new_jnt_btn.setEnabled(False)
             self.add_geo_btn.setEnabled(True)
+            self.add_jnt_btn.setEnabled(True)
 
 
     # -- Remove JOINT/GEO buttons --
