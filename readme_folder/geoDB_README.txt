@@ -30,8 +30,10 @@ Achieved:
 >> adjust treeView selection relationship!
 > abloe to remove joint from relationship 
 > Can now add joint
+> Able to add joint properly (without overwriting) to 
+selected relationship parent & also remove (delete) 
+relationship row from database!
 
 NEXT:
 > delete database, stop it being locked by Maya - (Don't need for submission!)
 > Replace jnt/geo on selected row in treeview - (Don't need for submission!)
-> Remove Row from treeview & database button! - (Don't need for submission!)
