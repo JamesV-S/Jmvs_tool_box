@@ -345,18 +345,23 @@ class GeoDatabase(QtWidgets.QWidget):
         #----------------------------------------------------------------------
         # 3 replacing JOINT & GEO of selection!
         #----------------------------------------------------------------------
-
-        self.rmv_jnt_btn = QtWidgets.QPushButton("Remove JOINT")
+        self.rmv_rShip_checkBox = QtWidgets.QCheckBox("RMV RelationShip -")
+        self.rmv_rShip_checkBox.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        self.rmv_rShip_checkBox.setFixedSize(125, 30)
+        
+        self.remove_relationship_btn = QtWidgets.QPushButton("Remove Relationship")
         self.rmv_geo_btn = QtWidgets.QPushButton("Remove GEOMETRY")
-        self.remove_relationship = QtWidgets.QPushButton("REMOVE Row/Relationship")
-
+        self.rmv_jnt_btn = QtWidgets.QPushButton("Remove JOINT")
+        
         special_true = [self.add_geo_btn, self.rmv_geo_btn]  
         for item in special_true:
             item.setProperty("geoButtons", True)
-
-        bott_parent_HLayout.addWidget(self.rmv_jnt_btn)
+        self.remove_relationship_btn.setEnabled(False)
+        
+        bott_parent_HLayout.addWidget(self.rmv_rShip_checkBox)
+        bott_parent_HLayout.addWidget(self.remove_relationship_btn)
         bott_parent_HLayout.addWidget(self.rmv_geo_btn)
-        bott_parent_HLayout.addWidget(self.remove_relationship)
+        bott_parent_HLayout.addWidget(self.rmv_jnt_btn)
         
         #----------------------------------------------------------------------
         # ---- TOOL TIPS ----
@@ -399,8 +404,10 @@ class GeoDatabase(QtWidgets.QWidget):
         self.add_jnt_btn.clicked.connect(self.sigFunc_add_jnt_to_db_btn)
 
         # -- Remove JOINT/GEO --
+        self.rmv_rShip_checkBox.stateChanged.connect(self.sigFunc_rmv_rShip_checkBox)
         self.rmv_jnt_btn.clicked.connect(self.sigFunc_rmv_jnt_btn)
         self.rmv_geo_btn.clicked.connect(self.sigFunc_rmv_geo_btn)
+        self.remove_relationship_btn.clicked.connect(self.sigFunc_remove_relationship_btn)
 
     ########## UI SIGNAL FUNCTOINS ##########
     # -------- Tree views --------
@@ -494,38 +501,6 @@ class GeoDatabase(QtWidgets.QWidget):
         # Iterate over the geo dict list
         for geo_uuid_dict in geometry_dicts:
             unbind_skin.unbindSkin_by_uuid_dict(geo_uuid_dict)
-        '''
-        UNBIND_ALL::all_combined_dicts == 
-        {
-            1: {
-            'joint_UUID_dict': {
-                'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134'}, 
-            'geometry_UUID_dict': {
-                'geo_1': '946C0344-4B43-4E3E-E610-33AEFC6A76D2', 
-                'geo_2': 'BC1BBC88-49E0-705C-3B5E-89B24C670722', 
-                'geo_3': '2AD65DAA-4F33-E185-634E-B7A81D073E31'}
-            }, 
-            2: {
-            'joint_UUID_dict': {
-                'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-                'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-                'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
-            'geometry_UUID_dict': {
-                'geo_4': 'BB3DD158-422F-3966-C861-7C8E8FA7F144'}
-            }, 
-            3: {
-            'joint_UUID_dict': {
-                'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-                'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-                'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'}, 
-            'geometry_UUID_dict': {
-                'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
-                'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
-                'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'}
-            }
-        }
-
-        '''
 
     # -- Delete DB --
     def sigFunc_deleteDB_checkBox(self):
@@ -663,19 +638,34 @@ class GeoDatabase(QtWidgets.QWidget):
 
 
     # -- Remove JOINT/GEO buttons --
-    def sigFunc_rmv_jnt_btn(self):
-        print(f"Remove joint button selected")
-        # cancel operation if selection isn't a specific joint!
-        result = self.get_sel_jnt_name_and_uuid()
-        if result:
-            joint_name, joint_uuid = result
-            print(f"joint_row = {joint_name} & joint_uuid = {joint_uuid}")
-            database_schema_001.RemoveSpecificDATAfromDB(
-                self.active_db, self.active_db_dir, "joint", joint_name, joint_uuid
-                )
-            self.visualise_active_db()
+    def sigFunc_rmv_rShip_checkBox(self):
         
+        self.val_rmv_rShip_checkBox = self.rmv_rShip_checkBox.isChecked()
+        if self.val_rmv_rShip_checkBox:
+            print(f"rmv_rShip_checkBox YES")
+            self.remove_relationship_btn.setEnabled(True)
+            self.rmv_geo_btn.setEnabled(False)
+            self.rmv_jnt_btn.setEnabled(False)
+        else:
+            print(f"rmv_rShip_checkBox NO")
+            self.remove_relationship_btn.setEnabled(False)
+            self.rmv_geo_btn.setEnabled(True)
+            self.rmv_jnt_btn.setEnabled(True)
 
+
+    def sigFunc_remove_relationship_btn(self):
+        print("clicked remove_relationship_btn")
+        try:
+            jnt_parent_name = utils.get_selected_parent_name(self.joint_tree_view, self.joint_model)
+            print(f"relationship_name = {jnt_parent_name}")
+            db_row_id = jnt_parent_name.split('_')[-1]
+
+            database_schema_001.DeleteRelationshipFromDatabase(self.active_db, self.active_db_dir, db_row_id)
+        except:
+            print(f"Error: Need to SELECT relationship parent in JOINT TreeView!")
+        self.visualise_active_db()
+        
+    
     def sigFunc_rmv_geo_btn(self):
         # cancel the operation if joints are selected!
         result = self.get_geo_name_and_uuid_TreeSel()
@@ -689,6 +679,20 @@ class GeoDatabase(QtWidgets.QWidget):
         else:
             print(f"in trying to REMOVE GEO, getting name & uuid failed.")
 
+
+    def sigFunc_rmv_jnt_btn(self):
+        print(f"Remove joint button selected")
+        # cancel operation if selection isn't a specific joint!
+        result = self.get_sel_jnt_name_and_uuid()
+        if result:
+            joint_name, joint_uuid = result
+            print(f"joint_row = {joint_name} & joint_uuid = {joint_uuid}")
+            database_schema_001.RemoveSpecificDATAfromDB(
+                self.active_db, self.active_db_dir, "joint", joint_name, joint_uuid
+                )
+            self.visualise_active_db()
+    
+    
     #--------------------------------------------------------------------------
     ########## TREE VIEW FUNCTOINS ##########
     def gather_active_database_combined_dict(self):
@@ -715,7 +719,6 @@ class GeoDatabase(QtWidgets.QWidget):
     
     # by calling the 'populate tree view' i can update the treeview live as operations happen
     def visualise_active_db(self):
-        print(f"the active database is: {self.active_db}")
         combined_dict = self.gather_active_database_combined_dict()
         # clear the modules everytime the active db is switched
         self.joint_model.clear()
@@ -794,7 +797,7 @@ class GeoDatabase(QtWidgets.QWidget):
     
     def ui_geo_selects_scene_geo(self):
         geo_uuid = self.retrive_geo_uuid_of_selection()
-        print(f"From treeView selection geo_uuid = {geo_uuid}")
+        # print(f"From treeView selection geo_uuid = {geo_uuid}")
         # select the geo in the scene. 
         all_objects = cmds.ls(dag=1, long=1, type="transform")
         found_obj = None
@@ -807,13 +810,13 @@ class GeoDatabase(QtWidgets.QWidget):
         if found_obj:
             cmds.select(found_obj)
             print(f"selected object: {found_obj}")
-        else:
-            print("No object matches that given geo_uuid")
+        # else:
+            # print("No object matches that given geo_uuid")
 
     
     def ui_joint_selects_scene_joint(self):
         joint_uuid = self.retrive_joint_uuid_of_selection()
-        print(f"From treeView selection joint_uuid = {joint_uuid}")
+        #print(f"From treeView selection joint_uuid = {joint_uuid}")
         # select the joint in the scene. 
         all_objects = cmds.ls(dag=1, long=1, type="transform")
         found_obj = None
@@ -826,8 +829,8 @@ class GeoDatabase(QtWidgets.QWidget):
         if found_obj:
             cmds.select(found_obj)
             print(f"selected object: {found_obj}")
-        else:
-            print("No object matches that given geo_uuid")
+        #else:
+         #   print("No object matches that given geo_uuid")
 
 
     def retrive_geo_uuid_of_selection(self):

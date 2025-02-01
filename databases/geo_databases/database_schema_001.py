@@ -154,7 +154,7 @@ class UpdateDatabase():
 
 
 class UpdateJointDatabase():
-    def __init__(self, database_name, jnt_uuid_dict, directory, parent_num=None):
+    def __init__(self, database_name, jnt_uuid_dict, directory, parent_num=None, replace=None):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         # db_name must include the entire path too!
@@ -176,7 +176,10 @@ class UpdateJointDatabase():
                     print(f"HA < jnt_name_list = {jnt_name_list} + jnt_uuid_list = {jnt_uuid_list}> &&")
                     #HA < jnt_name_list = ['jnt_skn_0_shoulder_L, jnt_skn_0_elbow_L'] + jnt_uuid_list = ['0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F, 02E77D75-4DB2-4ECF-EF09-93B6F13E1134']> &&
                     print("---------------------------------------------------------------------------")
-                    self.update_add_jnt_db(conn, 'uuid_data', jnt_names, jnt_uuids, parent_num)
+                    if replace:
+                        self.update_replace_jnt_db(conn, 'uuid_data', jnt_names, jnt_uuids, parent_num)
+                    else:
+                        self.update_add_jnt_db(conn, 'uuid_data', jnt_names, jnt_uuids, parent_num)
                 else:
                     # prepare the values to put inot db
                     
@@ -196,8 +199,9 @@ class UpdateJointDatabase():
             cursor.execute(sql, values)
         conn.commit()
         return cursor.lastrowid
-    
-    def update_add_jnt_db(self, conn, table, add_jnt_name, add_jnt_uuid, parent_name):
+
+
+    def update_replace_jnt_db(self, conn, table, add_jnt_name, add_jnt_uuid, parent_name):
         cursor = conn.cursor()
         if table == 'uuid_data':
 
@@ -230,6 +234,49 @@ class UpdateJointDatabase():
                 print(f"No '{table}' found with existing joint name & uuid: `{add_jnt_name} > {add_jnt_uuid}`")
 
         conn.commit()
+
+    
+    def update_add_jnt_db(self, conn, table, add_jnt_name, add_jnt_uuid, parent_name):
+        cursor = conn.cursor()
+        if table == 'uuid_data':
+
+            try: 
+                # CHECK the UPDATE sql with items with row db_row_id:
+                cursor.execute(f"SELECT joint_name, joint_uuid FROM uuid_data WHERE db_row_id = ?", 
+                               (parent_name,))
+                row = cursor.fetchone()
+                if row is None:
+                    print(f"No task found with db_row_id: `{parent_name}``.")
+                # retrieve existing joint data beforte adding to it to avoid overwriting! 
+                
+                existing_joint_names, existing_joint_uuids = row
+                print(f"existing_joint_names = {existing_joint_names}")
+                print(f"existing_joint_uuids = {existing_joint_uuids}")
+                print(f"ROW == {row}")
+                if existing_joint_names:
+                    jnt_name = existing_joint_names + ', ' + add_jnt_name
+                else:
+                    jnt_name = add_jnt_name
+                if existing_joint_uuids:
+                    jnt_uuid = existing_joint_uuids + ', ' + add_jnt_uuid
+                else:
+                    jnt_uuid = add_jnt_uuid
+                
+                # Execute the UPDATE statement
+                sql = """UPDATE uuid_data SET joint_name = ?, joint_uuid = ? WHERE db_row_id = ?"""
+                cursor.execute(sql, (jnt_name, jnt_uuid, parent_name))
+                conn.commit()
+                
+                if cursor.rowcount == 0:
+                    print(f"No uuid_data found with db_row_id: `{parent_name}`.")
+                else:
+                    print(f"uuid_data found with db_row_id: `{parent_name}`.")
+                    
+            except sqlite3.Error as e:
+                print(f"No '{table}' found with existing joint name & uuid: `{add_jnt_name} > {add_jnt_uuid}`")
+
+        conn.commit()
+
     
     def get_new_row(self):
         return self.new_row_id
@@ -490,3 +537,25 @@ class RemoveSpecificDATAfromDB():
 
         except sqlite3.Error as e:
             print(f"Error removing GEO data: {e}")
+
+
+#------------------------------------------------------------------------------
+class DeleteRelationshipFromDatabase():
+    def __init__(self, database_name, directory, db_row_id):
+        db_directory = os.path.expanduser(directory)
+        os.makedirs(db_directory, exist_ok=1)
+        db_name = os.path.join(db_directory, database_name)
+
+        try:
+            with sqlite3.connect(db_name) as conn:
+                self.delete_from_row(conn, 'uuid_data', db_row_id)
+
+        except sqlite3.Error as e:
+            print(f"Delete Relationship From Database error: {e}")
+
+    def delete_from_row(self, conn, table, db_row_id):
+        cursor = conn.cursor()
+        if table == 'uuid_data':
+            sql = f"DELETE FROM {table} WHERE db_row_id=?" 
+            cursor.execute(sql, (db_row_id,))
+            conn.commit()
