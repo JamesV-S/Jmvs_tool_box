@@ -1,5 +1,6 @@
 
 import maya.cmds as cmds
+custom_uuid_attr = "custom_UUID"
 
 # return a uuid dict
 def return_uuid_dict_from_geo(obj_sel):
@@ -7,7 +8,10 @@ def return_uuid_dict_from_geo(obj_sel):
     uuid_dict = {}
     for name in obj_sel:
         if cmds.objExists(name):
-            uuid = cmds.ls(name, uuid=True)[0]
+            if cmds.attributeQuery(custom_uuid_attr, node=name, exists=True):
+                uuid = cmds.getAttr(f"{name}.{custom_uuid_attr}", asString=1)
+            else:
+                uuid = cmds.ls(name, uuid=True)[0]
             uuid_dict[name] = uuid
         else:
             print(f"Geo `{name}` doesn't exist")
@@ -20,6 +24,7 @@ def return_uuid_dict_from_joint(jnts_sel):
     for name in jnts_sel:
         if cmds.objExists(name):
             uuid = cmds.ls(name, uuid=True)[0]
+            # uuid = cmds.getAttr(f"{name}.{custom_uuid_attr}", asString=1)
             uuid_dict[name] = uuid
         else:
             print(f"joint `{name}` doesn't exist")
@@ -33,7 +38,8 @@ def return_uuid_list_from_geo(obj_sel):
     uuid_list = []
     for name in obj_sel:
         if cmds.objExists(name):
-            uuid = cmds.ls(name, uuid=True)[0]
+            # uuid = cmds.ls(name, uuid=True)[0]
+            uuid = cmds.getAttr(f"{name}.{custom_uuid_attr}", asString=1)
             uuid_list.append(uuid)
         else:
             print(f"Geo `{name}` doesn't exist")

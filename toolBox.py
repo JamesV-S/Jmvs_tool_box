@@ -21,7 +21,7 @@ import os
 
 from user_interface.char_ui import char_rig 
 from user_interface.vehicle_ui import vehicle_rig 
-from user_interface.geoDB_ui import geo_db
+from user_interface.geoDB_ui import master_geo_db_picker
 from user_interface.other_ui import other_tool
 
 from systems import (
@@ -30,7 +30,7 @@ from systems import (
 
 importlib.reload(char_rig)
 importlib.reload(vehicle_rig)
-importlib.reload(geo_db)
+importlib.reload(master_geo_db_picker)
 importlib.reload(other_tool)
 importlib.reload(os_custom_directory_utils)
 
@@ -160,7 +160,7 @@ class ToolBox(QtWidgets.QWidget):
 
     def geo_func(self):
         print("loading geo ui")
-        geo_db.geoDB_main()
+        master_geo_db_picker.master_geo_main()
         delete_existing_ui(self.ui_object_name)
     
 

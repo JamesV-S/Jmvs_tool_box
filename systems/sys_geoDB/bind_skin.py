@@ -1,112 +1,18 @@
 
 import maya.cmds as cmds
-'''
-oneJNT_for_multiGEO_combined_dict = {
-    'joint_UUID_dict': {'jnt_skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134'}, 
-    'geometry_UUID_dict': {'geo_1': '946C0344-4B43-4E3E-E610-33AEFC6A76D2', 
-          'geo_2': 'BC1BBC88-49E0-705C-3B5E-89B24C670722', 
-          'geo_3': '2AD65DAA-4F33-E185-634E-B7A81D073E31'}
-    }
 
-multiJNT_for_oneGEO_combined_dict = {
-    'joint_UUID_dict': {
-        'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-        'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-        'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'
-    }, 
-    'geometry_UUID_dict': {'geo_4': 'BB3DD158-422F-3966-C861-7C8E8FA7F144'}
-    }
+custom_UUID = "custom_UUID"
 
-oneJNT_for_oneGEO_combined_dict = {
-    'joint_UUID_dict': {
-        'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-        'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-        'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'
-        }, 
-    'geometry_UUID_dict': {
-        'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
-        'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
-        'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'
-        }
-    }
+def search_geometry_in_scene():
+    shape_nodes = cmds.ls(dag=1, type='mesh')
+    if shape_nodes:
+        print(shape_nodes)
+        all_geo = []
+        for shape in shape_nodes:
+            transform = cmds.listRelatives(shape, parent=1, type='transform')[0]
+            all_geo.append(transform)
+        return all_geo
 
-bind_skin_from_combined_dict(oneJNT_for_multiGEO_combined_dict)
-bind_skin_from_combined_dict(multiJNT_for_oneGEO_combined_dict)
-bind_skin_from_combined_dict(oneJNT_for_oneGEO_combined_dict)
-'''
-
-# bind from 2 nested dictionary's
-'''
-combined_dict = {
-    'joint_UUID_dict': {
-        'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-        'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-        'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'
-        }, 
-    'geometry_UUID_dict': {
-        'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
-        'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
-        'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'
-        }
-    }
- 
-def old_bind_skin_from_combined_dict(combined_dict):
-    # unpack the nested dict
-    jnt_uuid_dict = combined_dict["joint_UUID_dict"]
-    geo_uuid_dict = combined_dict["geometry_UUID_dict"]
-
-    all_bound = True
-    jnt_list = []
-    geo_list = []
-    for jnt_name, jnt_uuid in jnt_uuid_dict.items():
-        jnt = cmds.ls(jnt_uuid, type="joint")
-        jnt_list.append(jnt[0])
-    for geo_name, geo_uuid in geo_uuid_dict.items():
-        geo = cmds.ls(geo_uuid, type="transform")
-        geo_list.append(geo[0])
-
-    print(f"jnt = {jnt_list} & geo = {geo_list}")
-    
-    for jnt, geo in zip(jnt_list, geo_list):   
-        if not jnt or not geo:
-            print(f"joint or geometry UUID doesn't exist: `{jnt_uuid}` & `{geo_uuid}`")
-            continue
-        skn_clus = cmds.ls(cmds.listHistory(geo), type='skinCluster')
-        try:
-            if skn_clus:
-                existing_jnt_influence = cmds.skinCluster( skn_clus[0], q=1, inf=1 )
-                if jnt[0] not in existing_jnt_influence:
-                    cmds.skinCluster(skn_clus[0], edit=True, unbind=True)
-                    cmds.skinCluster(jnt, geo, tsb=True, wd=1)
-                    print(f"binded skin: geo `{geo}`, to jnt `{jnt}`")
-                    all_bound = False
-                else: 
-                    print(f"existing influence `{jnt_name}` is already skinned to {geo_name} with existing skincluster")
-            else:
-                cmds.skinCluster(jnt, geo, tsb=True, wd=1)
-                print(f"binded skin: geo `{geo}`, to jnt `{jnt}`")
-                all_bound = False
-        except RuntimeError as e:
-            print(f"RuntimeError: in bind_skin {e}")
-    
-    if all_bound:
-        print(f"All bind joints r already skinned to the geometry with skincluster")
-'''
-
-#------------------------------------------------------------------------------
-
-# bind from 2 seperate dicts
-'''
-jnt_uuid_dict = {
-        'skn_0_shoulder_L': '0ADBD31D-4A68-348A-FB5C-A5806EA2ED1F', 
-        'skn_0_elbow_L': '02E77D75-4DB2-4ECF-EF09-93B6F13E1134', 
-        'skn_0_wrist_L': 'F0E55702-46CF-4131-30FB-BDBC0E16AAC9'
-        }
-
-geo_uuid_dict = {'skn_geo_upperarm': 'A77BA8E3-4DBC-2121-CFEA-88AD3F446242', 
-            'skn_geo_lowerarm': '0AF4964F-40AC-FAB7-A329-C28F43B224EA', 
-            'skn_geo_hand': 'EB05CC29-40CB-1503-0C9C-629BE45E5CF8'}
-'''
 #------------------------------------------------------------------------------
 # this function is the meat of skin binding, handling errors and pre existing skinclusters!
 def bind_joints_to_geos(jnt_list, geo_list):
@@ -135,17 +41,28 @@ def bind_joints_to_geos(jnt_list, geo_list):
 
 #------------------------------------------------------------------------------
 def bind_skin_from_2_dicts(jnt_uuid_dict, geo_uuid_dict):
+    print(f"RUNNING 'bind_skin_from_2_dicts'")
     jnt_list = []
     geo_list = []
     for jnt_name, jnt_uuid in jnt_uuid_dict.items():
         jnt = cmds.ls(jnt_uuid, type="joint")
         if jnt:
             jnt_list.append(jnt[0])
+    
+    all_geo = search_geometry_in_scene()
     for geo_name, geo_uuid in geo_uuid_dict.items():
-        geo = cmds.ls(geo_uuid, type="transform")
-        if geo:
-            geo_list.append(geo[0])
-
+        for geo in all_geo:
+            if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
+                attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
+                print(f"attr_value = {attr_value}")
+                if attr_value == geo_uuid:
+                    print("OMG THEY MATCH!!!!")
+                    geo_list.append(geo)
+                else:
+                    print("NOT A MATCH")
+            else:
+                print("no object has custom attr")
+    
     # determine the bining strategy!!!
     if len(jnt_list) == len(geo_list):
         # One-to-one corresponding between joints and geos
@@ -194,6 +111,7 @@ def bind_skin_from_2_dicts(jnt_uuid_dict, geo_uuid_dict):
 
 #------------------------------------------------------------------------------
 def bind_skin_from_combined_dict(combined_dict):
+    print(f"******** RUNNING 'bind_skin_from_combined_dict'")
     # unpack the nested dict
     jnt_uuid_dict = combined_dict["joint_UUID_dict"]
     geo_uuid_dict = combined_dict["geometry_UUID_dict"]
@@ -204,10 +122,20 @@ def bind_skin_from_combined_dict(combined_dict):
         jnt = cmds.ls(jnt_uuid, type="joint")
         if jnt:
             jnt_list.append(jnt[0])
+
+    all_geo = search_geometry_in_scene()
     for geo_name, geo_uuid in geo_uuid_dict.items():
-        geo = cmds.ls(geo_uuid, type="transform")
-        if geo:
-            geo_list.append(geo[0])
+        for geo in all_geo:
+            if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
+                attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
+                print(f"attr_value = {attr_value}")
+                if attr_value == geo_uuid:
+                    print("OMG THEY MATCH!!!!")
+                    geo_list.append(geo)
+                else:
+                    print("NOT A MATCH")
+            else:
+                print("no object has custom attr")
 
     # determine the binding strategy!!!
     if len(jnt_list) == len(geo_list):
@@ -223,30 +151,3 @@ def bind_skin_from_combined_dict(combined_dict):
         bind_joints_to_geos(jnt_list, geo_list)
     else:
         print("Unsupported relationship configuration.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-''' READ THE DATABASE TO SKIN! So gather the combined dixtinary
- from each row and and create skin with button(5) '''

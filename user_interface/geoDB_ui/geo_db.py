@@ -38,6 +38,9 @@ importlib.reload(export_db)
 importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
 importlib.reload(uuid_handler)
+importlib.reload(bind_skin)
+importlib.reload(unbind_skin)
+
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -74,6 +77,7 @@ class GeoDatabase(QtWidgets.QWidget):
                     if db_file_name.endswith('.db'):
                         self.db_files.append(db_file_name)
         
+        self.custom_uuid_attr = "custom_UUID"
         self.UI()
         self.UI_connect_signals()
         self.val_new_relationship_checkBox = 0
@@ -802,8 +806,16 @@ class GeoDatabase(QtWidgets.QWidget):
         all_objects = cmds.ls(dag=1, long=1, type="transform")
         found_obj = None
         for obj in all_objects: # loop thru the objs and check their uuid
-            obj_uuid = cmds.ls(obj, uuid=1)
-            if obj_uuid and obj_uuid[0] == geo_uuid:
+            # obj_uuid = cmds.ls(obj, uuid=1)
+            print(f"GET custom uuid on geo:  {obj}.{self.custom_uuid_attr}")
+            if cmds.attributeQuery(self.custom_uuid_attr, node=obj, exists=True):
+                print("ATTRIBUTE EXISTS!")
+                obj_uuid = cmds.getAttr(f"{obj}.{self.custom_uuid_attr}", asString=1)
+            else:
+                obj_uuid = cmds.ls(obj, uuid=True)[0]
+                print("NO ATTRIBUTE!")
+            if obj_uuid == geo_uuid:
+                
                 found_obj = obj
                 break
         # if found, select it
@@ -822,6 +834,7 @@ class GeoDatabase(QtWidgets.QWidget):
         found_obj = None
         for obj in all_objects: # loop thru the objs and check their uuid
             obj_uuid = cmds.ls(obj, uuid=1)
+            # obj_uuid = cmds.getAttr(f"{obj}.{self.custom_uuid_attr}", asString=1)
             if obj_uuid and obj_uuid[0] == joint_uuid:
                 found_obj = obj
                 break
