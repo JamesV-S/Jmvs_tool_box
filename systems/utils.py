@@ -3,6 +3,26 @@ import maya.cmds as cmds
 import os
 import re
 
+
+def search_geometry_in_scene(custom_uuid_attr):
+    '''
+    shape_nodes = cmds.ls(dag=1, type='mesh')
+    if shape_nodes:
+        print(shape_nodes)
+        all_geo = []
+        for shape in shape_nodes:
+            transform = cmds.listRelatives(shape, parent=1, type='transform')[0]
+            all_geo.append(transform)
+    '''
+    objects_with_attr = cmds.ls(f"*.{custom_uuid_attr}", objectsOnly=1)
+    all_geo = []
+    for obj in objects_with_attr:
+        if cmds.objectType(obj) == "transform":
+            all_geo.append(obj)
+
+    return all_geo
+
+
 def get_selected_parent_name(treeView_name, model):
     selection_model = treeView_name.selectionModel()
     selected_indexes = selection_model.selectedIndexes()

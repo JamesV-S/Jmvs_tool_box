@@ -97,6 +97,13 @@ class GeoDatabase(QtWidgets.QWidget):
         self.database_comboBox.addItems(self.db_files_update)
         self.database_comboBox.setPlaceholderText("Updated Databases Added")
 
+    
+    def create_item(text, checkable=False):
+        item = QStandardItem(text)
+        if checkable:
+            item.setCheckable(True)
+        return item
+
 
     def UI(self):
         main_VLayout = QtWidgets.QVBoxLayout(self)
@@ -382,6 +389,7 @@ class GeoDatabase(QtWidgets.QWidget):
     def UI_connect_signals(self):
         ########## UI CONNECTIONS : 1 : ##########
         # -------- Tree views --------
+        self.geo_model.itemChanged.connect(self.sigfunc_on_geoTree_item_change)
 
         # -------- Options to the right of treer --------
         # -- Add Database options --
@@ -415,6 +423,51 @@ class GeoDatabase(QtWidgets.QWidget):
 
     ########## UI SIGNAL FUNCTOINS ##########
     # -------- Tree views --------
+    def sigfunc_on_geoTree_item_change(self, item):
+        if item.isCheckable():
+            name = item.text()
+            state = "checked" if item.checkState() == Qt.Checked else "unchecked"
+            print(f"item  '{item.text()}' was {state}")
+            
+            # select geometry in relationship
+            print(f"select geometry in relationship")
+
+            # gather the custom uuid's from the database!
+            db_row_id = name.split('_')[-1]
+            print(db_row_id)
+            # geo_uuids = ["AA179516-491A-F48B-34B3-F284368B43CE"]
+            uuids =  database_schema_001.ReturnRelationshipUUIDFromDatabase(
+                obj_type="geo", database_name=self.active_db, 
+                directory=self.active_db_dir, db_row_id=db_row_id
+                )
+            geo_uuids = uuids.get_uuids_list()
+            print(f"GEO_UUID: {geo_uuids}")
+            # from the list, select the objects by custom uuid
+
+            # gather's all abjects in the scene with the given custom attr
+            all_geo = utils.search_geometry_in_scene(self.custom_uuid_attr)
+
+            # search through all geo with custom attr. 
+            geo_uuid_map = {}
+            for geo in all_geo:
+                if cmds.attributeQuery(self.custom_uuid_attr, node=geo, exists=True):
+                    attr_value = cmds.getAttr(f"{geo}.{self.custom_uuid_attr}", asString=1)
+                    geo_uuid_map[attr_value] = geo
+                    
+            # Compare the 'geo_uuids' & if they're found in the 'geo_uuid_map' select those objects!
+            print(f"geo_uuid_map = {geo_uuid_map}")
+            for uuid in geo_uuids:
+                if uuid in geo_uuid_map:
+                    selected_geo = geo_uuid_map[uuid]
+                    if state == "checked":
+                        print(f"selecting objects: {selected_geo}")
+                        cmds.select(selected_geo, add=1)
+                    else:
+                        print(f"Not selecting objects: {selected_geo}")
+                        cmds.select(selected_geo, deselect=True)
+
+                # gather all objects in the scene with the given custom attr. search through all geo with custom attr. Compare the 'geo_uuids' & if they're found in the 'geo_uuid_map' select those objects!
+
     # -- Add Database options --
     def sigFunc_addNewDB_radioBtn(self):
         self.val_addDB_radioBtn = self.Add_new_DB_radioBtn.isChecked()
@@ -762,6 +815,7 @@ class GeoDatabase(QtWidgets.QWidget):
                 for geo_name, geo_uuid in geo_dict.items():
                     geo_item = QtGui.QStandardItem(geo_name)
                     geo_relationship_item.appendRow(geo_item)
+                    geo_relationship_item.setCheckable(True)
                     geo_item.setData(geo_uuid, QtCore.Qt.UserRole) # store jnt UUID
         except Exception as e:
                 print(f"If you just created a new db, ignore this error, if not: {e}")
@@ -802,32 +856,37 @@ class GeoDatabase(QtWidgets.QWidget):
     def ui_geo_selects_scene_geo(self):
         geo_uuid = self.retrive_geo_uuid_of_selection()
         # print(f"From treeView selection geo_uuid = {geo_uuid}")
-        # select the geo in the scene. 
-        all_objects = cmds.ls(dag=1, long=1, type="transform")
-        found_obj = None
-        for obj in all_objects: # loop thru the objs and check their uuid
-            # obj_uuid = cmds.ls(obj, uuid=1)
-            print(f"GET custom uuid on geo:  {obj}.{self.custom_uuid_attr}")
-            if cmds.attributeQuery(self.custom_uuid_attr, node=obj, exists=True):
-                print("ATTRIBUTE EXISTS!")
+        # select the geo in the scene.
+        objects_with_attr = cmds.ls(f"*.{self.custom_uuid_attr}", objectsOnly=1)
+
+        # store the obj & its custom UUID
+        uuid_to_obj = {}
+
+        # retrieve all custom UUIDs in one call
+        if objects_with_attr:
+            custom_uuids = cmds.getAttr(f"{objects_with_attr[0]}.{self.custom_uuid_attr}", asString=1)
+            for obj in objects_with_attr:
                 obj_uuid = cmds.getAttr(f"{obj}.{self.custom_uuid_attr}", asString=1)
-            else:
-                obj_uuid = cmds.ls(obj, uuid=True)[0]
-                print("NO ATTRIBUTE!")
-            if obj_uuid == geo_uuid:
-                
-                found_obj = obj
-                break
-        # if found, select it
+                uuid_to_obj[obj_uuid] = obj
+        found_obj = uuid_to_obj.get(geo_uuid)
         if found_obj:
             cmds.select(found_obj)
             print(f"selected object: {found_obj}")
-        # else:
-            # print("No object matches that given geo_uuid")
+        else:
+            print("No object matches that given geo_uuid")
 
     
     def ui_joint_selects_scene_joint(self):
         joint_uuid = self.retrive_joint_uuid_of_selection()
+        """
+        all_joints = cmds.ls("jnt_skn_*", dag=1, long=1, type="joint", uuid=1)
+        # Map the UUID's to the joint names
+        uuid_to_joint = {uuid: joint for joint, uuid in zip(all_joints[::2], all_joints[1::2])}
+        found_obj = uuid_to_joint.get(joint_uuid)
+        if found_obj:
+            cmds.select(found_obj)
+            print(f"selected Joint: {found_obj}")
+        """
         #print(f"From treeView selection joint_uuid = {joint_uuid}")
         # select the joint in the scene. 
         all_objects = cmds.ls(dag=1, long=1, type="transform")
@@ -842,8 +901,10 @@ class GeoDatabase(QtWidgets.QWidget):
         if found_obj:
             cmds.select(found_obj)
             print(f"selected object: {found_obj}")
-        #else:
-         #   print("No object matches that given geo_uuid")
+        
+        else:
+            print("No object matches that given geo_uuid")
+        
 
 
     def retrive_geo_uuid_of_selection(self):

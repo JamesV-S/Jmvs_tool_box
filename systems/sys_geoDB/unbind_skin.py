@@ -1,9 +1,15 @@
 
 import maya.cmds as cmds
 
+import importlib
+from systems import utils
+importlib.reload(utils)
+
 custom_UUID = "custom_UUID"
 
+'''
 def search_geometry_in_scene():
+   
     shape_nodes = cmds.ls(dag=1, type='mesh')
     if shape_nodes:
         print(shape_nodes)
@@ -11,32 +17,38 @@ def search_geometry_in_scene():
         for shape in shape_nodes:
             transform = cmds.listRelatives(shape, parent=1, type='transform')[0]
             all_geo.append(transform)
-        return all_geo
+
+    objects_with_attr = cmds.ls(f"*.{custom_UUID}", objectsOnly=1)
+    all_geo = []
+    for obj in objects_with_attr:
+        if cmds.objectType(obj) == "transform":
+            all_geo.append(obj)
+
+    return all_geo
+'''
 
 
 def unbindSkin_by_uuid_dict(geo_uuid_dict):
     print(f"RUNNING ``unbindSkin_by_uuid_dict``")
-    all_geo = search_geometry_in_scene()
+    all_geo = utils.search_geometry_in_scene(custom_UUID)
+
+    geo_uuid_map = {}
+    for geo in all_geo:
+        if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
+            attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
+            geo_uuid_map[attr_value] = geo
+
     for name, uuid in geo_uuid_dict.items():
-        for geo in all_geo:
-            if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
-                attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
-                print(f"attr_value = {attr_value}")
-                if attr_value == uuid:
-                    if geo:
-                        skn_clus = cmds.ls(cmds.listHistory(geo), type='skinCluster')
-                        if skn_clus:
-                            for skin in skn_clus:
-                                cmds.skinCluster(skin, edit=True, unbind=True)
-                                print(f"Unbinded skin from geometry {geo}, with UUID: {uuid}")
-                        else:
-                            print(f"transform geo `{geo}` has no skincluster to unbind")
-                    else:
-                        print(f"Geo with UUID `{uuid}` does NOT exist")
-                else:
-                    print("NOT A MATCH")
+        geo = geo_uuid_map.get(uuid)
+        if geo:
+            skn_clus = cmds.ls(cmds.listHistory(geo), type='skinCluster')
+            if skn_clus:
+                for skin in skn_clus:
+                    cmds.skinCluster(skin, edit=True, unbind=True)
+                    print(f"Unbinded skin from geometry {geo}, with UUID: {uuid}")
             else:
-                print("no object has custom attr")
+                print(f"transform geo `{geo}` has no skincluster to unbind")
+        
 
     '''
     for name, uuid in geo_uuid_dict.items():

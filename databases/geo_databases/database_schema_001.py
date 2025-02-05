@@ -559,3 +559,32 @@ class DeleteRelationshipFromDatabase():
             sql = f"DELETE FROM {table} WHERE db_row_id=?" 
             cursor.execute(sql, (db_row_id,))
             conn.commit()
+
+class ReturnRelationshipUUIDFromDatabase():
+    def __init__(self, obj_type, database_name, directory, db_row_id):
+        db_directory = os.path.expanduser(directory)
+        os.makedirs(db_directory, exist_ok=1)
+        db_name = os.path.join(db_directory, database_name)
+        self.obj_type = obj_type
+        try:
+            with sqlite3.connect(db_name) as conn:
+                self.uuids = self.uuid_from_row(conn, 'uuid_data', db_row_id)
+
+        except sqlite3.Error as e:
+            print(f"Delete Relationship From Database error: {e}")
+
+    def uuid_from_row(self, conn, table, db_row_id):
+        cursor = conn.cursor()
+        if table == 'uuid_data':
+            sql = f'SELECT {self.obj_type}_uuid FROM {table} WHERE db_row_id=?'
+            cursor.execute(sql, (db_row_id,))
+            conn.commit()
+            row = cursor.fetchone()
+            if row is None:
+                print(f"No task found with db_row_id: `{db_row_id}`.")
+                return []
+            # Convert tuple to list
+            return list(row)
+        
+    def get_uuids_list(self):
+        return self.uuids
