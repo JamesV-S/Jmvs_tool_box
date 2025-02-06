@@ -862,18 +862,44 @@ class GeoDatabase(QtWidgets.QWidget):
         # store the obj & its custom UUID
         uuid_to_obj = {}
 
+        # if cmds.attributeQuery(self.custom_uuid_attr, node=geo, exists=True):
+        
         # retrieve all custom UUIDs in one call
         if objects_with_attr:
             custom_uuids = cmds.getAttr(f"{objects_with_attr[0]}.{self.custom_uuid_attr}", asString=1)
+            
             for obj in objects_with_attr:
                 obj_uuid = cmds.getAttr(f"{obj}.{self.custom_uuid_attr}", asString=1)
                 uuid_to_obj[obj_uuid] = obj
-        found_obj = uuid_to_obj.get(geo_uuid)
-        if found_obj:
-            cmds.select(found_obj)
-            print(f"selected object: {found_obj}")
-        else:
-            print("No object matches that given geo_uuid")
+            found_obj = uuid_to_obj.get(geo_uuid)
+        
+            if found_obj:
+                cmds.select(found_obj)
+                print(f"selected object: {found_obj}")
+            else:
+                print("No object matches that given geo_uuid")
+        else: 
+            # this will tend to mean the object hasn't been exported
+            # Checking the original file for match.
+            print("No objects have custom UUID, meaning geo has not been imported USD")
+            shape_nodes = cmds.ls(dag=1, type='mesh')
+            all_geo = []
+            if shape_nodes:
+                transforms = cmds.listRelatives(shape_nodes, parent=True, type='transform', fullPath=True)
+                all_geo = list(set(transforms))  # Remove duplicates if any
+                for obj in all_geo: # loop thru the objs and check their uuid
+                    obj_uuid = cmds.ls(obj, uuid=1)
+                    # obj_uuid = cmds.getAttr(f"{obj}.{self.custom_uuid_attr}", asString=1)
+                    if obj_uuid and obj_uuid[0] == geo_uuid:
+                        found_obj = obj
+                        break
+            # if found, select it
+            if found_obj:
+                cmds.select(found_obj)
+                print(f"selected object without cutom UUID: {found_obj}")
+
+
+            
 
     
     def ui_joint_selects_scene_joint(self):
