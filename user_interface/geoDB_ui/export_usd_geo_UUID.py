@@ -210,19 +210,26 @@ class exportUUIDusd(QtWidgets.QWidget):
 
             print(f"clicked to EXPORT selection for USD")
             prefix = "exp_uuid_"
-            suffix = "_001"
+            suffix = ""
 
             usd_name = f"{prefix}{self.val_fileName_text}{suffix}"
             json_name = f"{prefix}{self.val_fileName_text}{suffix}.json"
             
-            # create a folder to go into this                                                                   exp_uuid_geo_shapes_001
-            grp_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd", f"{prefix}{self.val_fileName_text}{suffix}")
+            # create a folder to go into this
+            grp_dir = os_custom_directory_utils.create_directory(
+                "Jmvs_tool_box", "usd_exports", "geo_db_usd", 
+                f"{prefix}{self.val_fileName_text}{suffix}"
+                )
             usd_save_dir = grp_dir
             json_dir = os.path.join(grp_dir, json_name)
             print(f"usd_name ={usd_name}, usd_save_dir = {usd_save_dir}, json_dir = {json_dir}")
 
             # run export function!
-            func_export_geometry_UUID_usd.ExportGeometryUUID(selected_objects=self.selected_objects, usd_name=usd_name, output_dir=usd_save_dir, json_file_dir=json_dir)
+            func_export_geometry_UUID_usd.ExportGeometryUUID(
+                selected_objects=self.selected_objects, 
+                usd_name=usd_name, output_dir=usd_save_dir, 
+                json_file_dir=json_dir
+                )
         else:
             cmds.error(f"Select valid geometry!")
 

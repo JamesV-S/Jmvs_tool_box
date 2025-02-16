@@ -47,32 +47,13 @@ def bind_skin_from_2_dicts(jnt_uuid_dict, geo_uuid_dict):
     jnt_list = [cmds.ls(jnt_uuid, type="joint")[0] for jnt_name, jnt_uuid in 
                 jnt_uuid_dict.items() if cmds.ls(jnt_uuid, type="joint")]
     
-    #for jnt_name, jnt_uuid in jnt_uuid_dict.items():
-    #    jnt = cmds.ls(jnt_uuid, type="joint")
-    #    if jnt:
-    #        jnt_list.append(jnt[0])
-    
-    # 
     all_geo = bind_search_geometry_in_scene()
     geo_uuid_map = {}
     for geo in all_geo:
         if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
             attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
             geo_uuid_map[attr_value] = geo 
-    '''
-    for geo_name, geo_uuid in geo_uuid_dict.items():
-        for geo in all_geo:
-            if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
-                attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
-                print(f"attr_value = {attr_value}")
-                if attr_value == geo_uuid:
-                    print("OMG THEY MATCH!!!!")
-                    geo_list.append(geo)
-                else:
-                    print("NOT A MATCH")
-            else:
-                print("no object has custom attr")
-    '''
+    
     geo_list = [geo_uuid_map[geo_uuid] for geo_name, geo_uuid in geo_uuid_dict.items() if geo_uuid in geo_uuid_map]
 
     # determine the bining strategy!!!
@@ -100,34 +81,14 @@ def bind_skin_from_combined_dict(combined_dict):
     jnt_list = [cmds.ls(jnt_uuid, type="joint")[0] for jnt_name, jnt_uuid in 
                 jnt_uuid_dict.items() if cmds.ls(jnt_uuid, type="joint")]
     
-    #for jnt_name, jnt_uuid in jnt_uuid_dict.items():
-    #    jnt = cmds.ls(jnt_uuid, type="joint")
-    #    if jnt:
-    #        jnt_list.append(jnt[0])
-    
-    # 
     all_geo = bind_search_geometry_in_scene()
     geo_uuid_map = {}
     for geo in all_geo:
         if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
             attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
             geo_uuid_map[attr_value] = geo 
-    '''
-    for geo_name, geo_uuid in geo_uuid_dict.items():
-        for geo in all_geo:
-            if cmds.attributeQuery(custom_UUID, node=geo, exists=True):
-                attr_value = cmds.getAttr(f"{geo}.{custom_UUID}", asString=1)
-                print(f"attr_value = {attr_value}")
-                if attr_value == geo_uuid:
-                    print("OMG THEY MATCH!!!!")
-                    geo_list.append(geo)
-                else:
-                    print("NOT A MATCH")
-            else:
-                print("no object has custom attr")
-    '''
+    
     geo_list = [geo_uuid_map[geo_uuid] for geo_name, geo_uuid in geo_uuid_dict.items() if geo_uuid in geo_uuid_map]
-
 
     # determine the binding strategy!!!
     if len(jnt_list) == len(geo_list):
