@@ -290,7 +290,7 @@ class CreateXfmGuides():
         # parent the controls!
         # Check if lists are not empty and have expected values
         
-        
+        # parent clusters under control
         if clusters and spine_guides:
             try:
                 for x in range(num_of_cvs):
@@ -300,7 +300,26 @@ class CreateXfmGuides():
         else:
             print("Either clusters or spine_guides list is empty.")
         
+        # position the guides:
+        guide_pos = []
+        for key, pos in component_pos.items():
+                guide_pos.append(pos)
+
+        print(f"guide_pos = {guide_pos} & spine_guides = {spine_guides}")
+        for x in range(num_of_cvs):
+                cmds.xform(spine_guides[x], translation=guide_pos[x], worldSpace=1)
+
+        '''
         
+        spine_guides = ['xfm_guide_spine_0_0_M', 'xfm_guide_spine_1_0_M', 'xfm_guide_spine_2_0_M', 
+                        'xfm_guide_spine_3_0_M', 'xfm_guide_spine_4_0_M', 'xfm_guide_spine_5_0_M']
+        guide_pos = [[0.0, 150.0, 0.0], 
+                        [-1.0302985026792348e-14, 165.3182830810547, 2.138536453247061], 
+                        [-2.3043808310802754e-14, 185.50926208496094, 2.8292100429534632], 
+                        [-3.3364796818449844e-14, 204.27308654785156, -0.3802546262741595], 
+                        [-5.1020985278054485e-14, 237.46397399902344, -8.25034904479989]]
+        
+        '''
             
 '''
         // Cluster the CVs 
