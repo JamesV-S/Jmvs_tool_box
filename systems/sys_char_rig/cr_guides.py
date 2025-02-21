@@ -48,7 +48,7 @@ class CreateXfmGuides():
         print(f"Working on `self.module_name`: {self.module_name}, `self.unique_id`: {self.unique_id}, `self.side`: {self.side}, `self.component_pos_dict`:{self.component_pos_dict}")
         self.guides = self.build_guide_components(self.module_name, self.unique_id, self.side, self.component_pos_dict, self.component_controls_dict)
         
-        # self.build_control_components(self.guides, self.module_name, self.unique_id, self.side, self.component_controls_dict)
+        self.build_control_components(self.guides, self.module_name, self.unique_id, self.side, self.component_controls_dict)
 
 
     def build_guide_components(self, module_name, unique_id, side, component_pos, component_ctrls):
