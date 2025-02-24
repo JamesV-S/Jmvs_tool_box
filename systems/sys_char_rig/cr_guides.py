@@ -48,6 +48,7 @@ class CreateXfmGuides():
         print(f"Working on `self.module_name`: {self.module_name}, `self.unique_id`: {self.unique_id}, `self.side`: {self.side}, `self.component_pos_dict`:{self.component_pos_dict}")
         self.guides = self.build_guide_components(self.module_name, self.unique_id, self.side, self.component_pos_dict, self.component_controls_dict)
         
+        # if not self.module_name == 'spine':
         self.build_control_components(self.guides, self.module_name, self.unique_id, self.side, self.component_controls_dict)
 
 
@@ -55,13 +56,13 @@ class CreateXfmGuides():
         self.guide_import_dir =  os.path.join(os_custom_directory_utils.create_directory("Jmvs_tool_box", "imports" ), "imp_component_guide.abc")# 
         
         # import the guide & distribbute it to all necessary guides!    
-        guides = []
+        # guides = []
         
         if module_name == "spine":
             print(f"Spine module detected: {module_name}")
-            spine_guide_names = self.spine_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
-            
+            guides = self.spine_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
         else:
+            '''
             (f"Other module: {module_name}")
             for key, pos in component_pos.items():
                 imported_guide = cmds.file(self.guide_import_dir, i=1, ns="component_guide", rnn=1)
@@ -76,7 +77,7 @@ class CreateXfmGuides():
                 guides.append(cmds.rename(imported_guide[0], guide_name))
                 cmds.xform(guide_name, translation=pos, worldSpace=1)
             
-            ''''''
+            
             if side == "R":
                 temp_grp = cmds.group(n=f"temp_grp_{module_name}_{unique_id}_{side}", em=1)
                 for guide in guides:
@@ -97,14 +98,7 @@ class CreateXfmGuides():
                     utils.connect_guide(guides[x], guides[x+1])
                 except:
                     pass
-
-            # lock & hide scale & visibilty 
-            for x in range(len(guides)):
-                cmds.setAttr(f"{guides[x]}.sx", lock=1, keyable=0, channelBox=0)
-                cmds.setAttr(f"{guides[x]}.sy", lock=1, keyable=0, channelBox=0)
-                cmds.setAttr(f"{guides[x]}.sz", lock=1, keyable=0, channelBox=0)
-                cmds.setAttr(f"{guides[x]}.v", lock=1, keyable=0, channelBox=0) 
-
+            
             # ankle has extra guide helper for positioning    
             if module_name == "bipedLeg":
                 leg_imp_ctrl = cr_ctrl.CreateControl(
@@ -113,38 +107,51 @@ class CreateXfmGuides():
                 cmds.matchTransform(ankle_helper_ctrl, guides[2], pos=1, scl=0, rot=0)
                 cmds.setAttr(f"{ankle_helper_ctrl}.translateY", 0)
                 guides.append(ankle_helper_ctrl)
-            
-            guide_grp_list = []
-            # group every Guide
-            for guide in guides:
-                offset_grp = cmds.group(n=f"offset_{guide}", em=1)
-                print(f"{offset_grp} < {guide}")
-                cmds.matchTransform(offset_grp, guide, pos=1, scl=0, rot=0)
-                cmds.parent(guide, offset_grp)
-                guide_grp_list.append(offset_grp)
-            
-            print(f"imported_guide = {imported_guide[0]}")
+            '''
+            guides = self.guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
 
-            #----------------------------------------------------------------------
-            # group guides 
-            gd_master_group = f"grp_xfm_components"
-            if module_name == "root": 
-                gd_component_grp_name = f"xfm_grp_{module_name}_component_{unique_id}_M"
-            else:
-                gd_component_grp_name = f"xfm_grp_{module_name}_component_{unique_id}_{side}"
-            if not cmds.objExists(gd_component_grp_name):
-                cmds.group(n=gd_component_grp_name, em=1)
-            if not cmds.objExists(gd_master_group):
-                cmds.group(n=gd_master_group, em=1)
-            cmds.parent(guide_grp_list, gd_component_grp_name)
-            cmds.parent(gd_component_grp_name, gd_master_group)
-            cmds.select(cl=1)
-            ''''''
+        #----------------------------------------------------------------------
+        # lock & hide scale & visibilty
+        for x in range(len(guides)):
+            cmds.setAttr(f"{guides[x]}.sx", lock=1, keyable=0, channelBox=0)
+            cmds.setAttr(f"{guides[x]}.sy", lock=1, keyable=0, channelBox=0)
+            cmds.setAttr(f"{guides[x]}.sz", lock=1, keyable=0, channelBox=0)
+            cmds.setAttr(f"{guides[x]}.v", lock=1, keyable=0, channelBox=0)
+
+        # Hide clusters in outliner           
+        clusters = cmds.ls(type="cluster")
+        print(f"))))))))> clusters = {clusters}")
+        for x in clusters:
+            cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
+            cmds.hide(f"{x}Handle")
+
+        guide_grp_list = []
+        # group every Guide
+        for guide in guides:
+            offset_grp = cmds.group(n=f"offset_{guide}", em=1)
+            print(f"{offset_grp} < {guide}")
+            cmds.matchTransform(offset_grp, guide, pos=1, scl=0, rot=0)
+            cmds.parent(guide, offset_grp)
+            guide_grp_list.append(offset_grp)
+        
+        # group guides 
+        gd_master_group = f"grp_xfm_components"
+        if module_name == "root": 
+            gd_component_grp_name = f"xfm_grp_{module_name}_component_{unique_id}_M"
+        else:
+            gd_component_grp_name = f"xfm_grp_{module_name}_component_{unique_id}_{side}"
+        if not cmds.objExists(gd_component_grp_name):
+            cmds.group(n=gd_component_grp_name, em=1)
+        if not cmds.objExists(gd_master_group):
+            cmds.group(n=gd_master_group, em=1)
+        cmds.parent(guide_grp_list, gd_component_grp_name)
+        cmds.parent(gd_component_grp_name, gd_master_group)
+        cmds.select(cl=1)
+
         return guides
 
         
     def build_control_components(self, guides, module_name, unique_id, side, component_ctrls):
-        #----------------------------------------------------------------------
         # create controls ontop
         # have a function that given the name of the control, creates it!
         ctrl_name_list = []
@@ -246,17 +253,64 @@ class CreateXfmGuides():
         cmds.select(cl=1)
         
 
+    def guide_setup(self, module_name, unique_id, side, component_pos, component_ctrls):
+        (f"Other module: {module_name}")
+        guides = []
+        for key, pos in component_pos.items():
+            imported_guide = cmds.file(self.guide_import_dir, i=1, ns="component_guide", rnn=1)
+            # esyablish guides, check for root module that acts differently
+            if module_name == "root":
+                if cmds.objExists(f"xfm_guide_{module_name}"):
+                    guide_name = f"xfm_guide_COG" # cog guide
+                else: # root guide
+                    guide_name = f"xfm_guide_{module_name}"
+            else:
+                guide_name = f"xfm_guide_{module_name}_{key}_{unique_id}_{side}"
+            guides.append(cmds.rename(imported_guide[0], guide_name))
+            cmds.xform(guide_name, translation=pos, worldSpace=1)
+        
+        if side == "R":
+            temp_grp = cmds.group(n=f"temp_grp_{module_name}_{unique_id}_{side}", em=1)
+            for guide in guides:
+                cmds.parent(guide, temp_grp)
+            cmds.setAttr(f"{temp_grp}.scaleX", -1)
+            for guide in guides:
+                cmds.parent(guide, w=1)
+                cmds.makeIdentity(guide, t=0, r=1, s=1)
+            cmds.delete(temp_grp)
+            cmds.select(cl=1)
+        
+        for x in range(len(guides)):
+            try:
+                cmds.setAttr(f"{guides[x]}.overrideEnabled", 1)
+                cmds.setAttr(f"{guides[x]}.overrideColor", 25)
+                # PARENTING THE GUIDES IS TEMPORARY!
+                # cmds.parent(guides[x+1], guides[x])
+                utils.connect_guide(guides[x], guides[x+1])
+            except:
+                pass
+        
+        # ankle has extra guide helper for positioning    
+        if module_name == "bipedLeg":
+            leg_imp_ctrl = cr_ctrl.CreateControl(
+                type="bvSquare", name=f"xfm_guide_{module_name}_foot_{unique_id}_{side}")
+            ankle_helper_ctrl = leg_imp_ctrl.retrun_ctrl()
+            cmds.matchTransform(ankle_helper_ctrl, guides[2], pos=1, scl=0, rot=0)
+            cmds.setAttr(f"{ankle_helper_ctrl}.translateY", 0)
+            guides.append(ankle_helper_ctrl)
+        
+        return guides
+
+
     def spine_guide_setup(self, module_name, unique_id, side, component_pos, component_ctrls):
         gd_curve = f"cv_guide_{module_name}_{unique_id}_{side}"
+
         # cr curve
         cmds.curve(n=gd_curve, d=3, p=[(-45, 0, 0), (-16.666667, 0, 0), (11.666667, 0, 0), (40, 0, 0)], k=[0, 0, 0, 1, 1, 1])
-        #curve -d 3 -p -45 0 0 -p -16.666667 0 0 -p 11.666667 0 0 -p 40 0 0 -k 0 -k 0 -k 0 -k 1 -k 1 -k 1;
-        
-        #rebuildCurve -ch 1 -rpo 1 -rt 0 -end 1 -kr 0 -kcp 0 -kep 1 -kt 0 -s 3 -d 3 -tol 0.01 "curve1";
-        # Rebuild it 
-        cmds.rebuildCurve(gd_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=3, d=3, tol=0.01)
 
-        
+        # Rebuild it 
+        cmds.rebuildCurve(gd_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=2, d=3, tol=0.01)
+
         # Cluster the CVs
         # gather all cvs on the curve
         crv_shape = cmds.listRelatives(gd_curve, shapes=True)[0]
@@ -276,20 +330,32 @@ class CreateXfmGuides():
         # Create the controls!
         spine_guides = []
         for x in range(num_of_cvs):
-                imported_guide = cmds.file(self.guide_import_dir, i=1, ns="component_guide", rnn=1)
-                # esyablish guides, check for root module that acts differently
+                temp_guide = cmds.circle()
+                # cmds.file(self.guide_import_dir, i=1, ns="component_guide", rnn=1)
+                
+                # establish guides, check for root module that acts differently
                 guide_name = f"xfm_guide_{module_name}_{x}_{unique_id}_{side}"
-                spine_guides.append(cmds.rename(imported_guide[0], guide_name))
+                spine_guides.append(cmds.rename(temp_guide[0], guide_name))
+                print(f"@@ > spine_guides IN LOOP = {guide_name}")
         print(f"spine_guides = {spine_guides}")
+        
+        # Replace control shapes
+        for temp_gd in spine_guides:
+            parts = temp_gd.split('_')[-3]
+            print(f"PARTS of guide name = {parts}")
+            if parts == "0":
+                utils.replace_control("imp_xfmSpine", temp_gd, 17, 1.5)
+            elif parts == "1" or parts == "3":
+                print(f"#_Prism_# temp_gd == {temp_gd}")
+                utils.replace_control("imp_prism", temp_gd, 29, 0.5)
+            elif parts == "2" or parts == "4":
+                utils.replace_control("imp_orb", temp_gd, 25)
 
         # position the guides to the clusters
         for cluster, guide in zip(clusters, spine_guides):
-            cluster_pos = cmds.xform(cluster, q=True, ws=True, t=True)
+            # cluster_pos = cmds.xform(cluster, q=True, ws=True, t=True)
             cmds.matchTransform(guide, cluster, pos=1, rot=0, scl=0)
 
-        # parent the controls!
-        # Check if lists are not empty and have expected values
-        
         # parent clusters under control
         if clusters and spine_guides:
             try:
@@ -309,6 +375,8 @@ class CreateXfmGuides():
         for x in range(num_of_cvs):
                 cmds.xform(spine_guides[x], translation=guide_pos[x], worldSpace=1)
 
+
+        return spine_guides
         '''
         
         spine_guides = ['xfm_guide_spine_0_0_M', 'xfm_guide_spine_1_0_M', 'xfm_guide_spine_2_0_M', 
@@ -321,7 +389,7 @@ class CreateXfmGuides():
         
         '''
             
-'''
+        '''
         // Cluster the CVs 
         // Create 6 guides
         // Match pos for each curve's CVs 

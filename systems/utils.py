@@ -1,8 +1,37 @@
 
 import maya.cmds as cmds
+import importlib
 import os
 import re
 
+from systems import (
+    os_custom_directory_utils,
+)
+importlib.reload(os_custom_directory_utils)
+
+#----------------------------------------------------------------------------------------------
+def replace_ctrl_list(curve_list):
+    # curve_list = cmds.ls(sl=1)
+    print(curve_list)
+    shapes = [cmds.listRelatives(crv, type="nurbsCurve", c=1) for crv in curve_list]
+    shape_grp = [cmds.listRelatives(shape, p=1)[0] for shape in shapes]
+    cmds.parent(shapes[:1][0], shape_grp[1:], s=1, r=1)
+    cmds.delete( shape_grp[0], shapes[1:][0] )
+    cmds.select(cl=1)
+#[remain, delete] 
+
+def replace_control(new_ctrl, replace_ctrl, colour, scale=None):
+            imp_dir = os.path.join(
+                os_custom_directory_utils.create_directory(
+                    "Jmvs_tool_box", "imports" ), f"{new_ctrl}.abc")
+            imp = cmds.file(imp_dir, i=1, ns="temp_name", rnn=1)[0]
+            if scale:
+                cmds.scale(scale, scale, scale, imp, r=1)
+                cmds.makeIdentity(imp, a=1, t=0, r=0, s=1, n=0, pn=1)
+            replace_ctrl_list([imp, replace_ctrl])
+            cmds.setAttr(f"{replace_ctrl}.overrideEnabled", 1)
+            cmds.setAttr(f"{replace_ctrl}.overrideColor", colour)
+#----------------------------------------------------------------------------------------------
 
 def search_geometry_in_scene(custom_uuid_attr):
     '''
@@ -373,10 +402,10 @@ def connect_guide(start_guide, end_guide):
         except cmds.warning():
             pass
         
-        clusters = cmds.ls(type="cluster")
-        for x in clusters:
-            cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
-            cmds.hide(f"{x}Handle")
+        #clusters = cmds.ls(type="cluster")
+        #for x in clusters:
+        #    cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
+        #    cmds.hide(f"{x}Handle")
         # arguments: 2 guides
         # create: 2 joints / black linear curve / 
         # methods: cr curve to go from start_guide to end_guide 

@@ -744,6 +744,7 @@ class CharRigging(QtWidgets.QWidget):
                 self.constrain_guides_from_comp(unlock_rdy_component) 
         else: print(f"component checkbox is not checked")
 
+
     def func_unlocked_all(self):
         # establish components present in the scene!
         possible_comp_groups = "xfm_grp_*_component_*"
@@ -775,7 +776,7 @@ class CharRigging(QtWidgets.QWidget):
                 leg_output_mdl = "spine"
                 leg_output_uID = leg_output_comp.split('_')[4:][0]
                 leg_output_side = leg_output_comp.split('_')[4:][-1]
-                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_spine1_{leg_output_uID}_{leg_output_side}"
+                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_0_{leg_output_uID}_{leg_output_side}"
                 # spine1 >PointConAll> hip 
                 utils.constrain_2_items(leg_spine_output_name, leg_spine_input_name, "point", "all")
             else: print("spine component not in scene")
@@ -821,7 +822,7 @@ class CharRigging(QtWidgets.QWidget):
                 print(f"output_comp = {arm_output_comp}") # xfm_grp_spine_component_0_M
                 arm_output_uID = arm_output_comp.split('_')[4:][0]
                 arm_output_side = arm_output_comp.split('_')[4:][-1]
-                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_spine4_{arm_output_uID}_{arm_output_side}"
+                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_3_{arm_output_uID}_{arm_output_side}"
                 # spine4 >ParentConAll> clavicle
                 clavicle_input_name = f"offset_xfm_guide_bipedArm_clavicle_{working_comp_unique_id}_{working_comp_side}"
                 utils.constrain_2_items(arm_spine_output_name, clavicle_input_name, 
@@ -854,28 +855,26 @@ class CharRigging(QtWidgets.QWidget):
                 # cog >ParentConAll> spine1
                 utils.constrain_2_items(
                 f"{xfm}_COG",
-                f"{grpXfm}_{spine_output_mdl}_spine1_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine1 >ParentConAll> spine2
+            # spine0 > ParentConAll> spine1/2/3/4
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine1_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine2_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_1_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine2 >ParentConAll> spine3
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine2_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine3_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_2_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine3 >ParentConAll> spine4
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine3_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine4_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_3_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine4 >ParentConAll> spine5
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine4_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine5_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_4_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
+            
 
     # -------------------------------------------------------------------------
     def load_rig_group(self):
