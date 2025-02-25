@@ -62,52 +62,7 @@ class CreateXfmGuides():
             print(f"Spine module detected: {module_name}")
             guides = self.spine_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
         else:
-            '''
-            (f"Other module: {module_name}")
-            for key, pos in component_pos.items():
-                imported_guide = cmds.file(self.guide_import_dir, i=1, ns="component_guide", rnn=1)
-                # esyablish guides, check for root module that acts differently
-                if module_name == "root":
-                    if cmds.objExists(f"xfm_guide_{module_name}"):
-                        guide_name = f"xfm_guide_COG" # cog guide
-                    else: # root guide
-                        guide_name = f"xfm_guide_{module_name}"
-                else:
-                    guide_name = f"xfm_guide_{module_name}_{key}_{unique_id}_{side}"
-                guides.append(cmds.rename(imported_guide[0], guide_name))
-                cmds.xform(guide_name, translation=pos, worldSpace=1)
             
-            
-            if side == "R":
-                temp_grp = cmds.group(n=f"temp_grp_{module_name}_{unique_id}_{side}", em=1)
-                for guide in guides:
-                    cmds.parent(guide, temp_grp)
-                cmds.setAttr(f"{temp_grp}.scaleX", -1)
-                for guide in guides:
-                    cmds.parent(guide, w=1)
-                    cmds.makeIdentity(guide, t=0, r=1, s=1)
-                cmds.delete(temp_grp)
-                cmds.select(cl=1)
-
-            for x in range(len(guides)):
-                try:
-                    cmds.setAttr(f"{guides[x]}.overrideEnabled", 1)
-                    cmds.setAttr(f"{guides[x]}.overrideColor", 25)
-                    # PARENTING THE GUIDES IS TEMPORARY!
-                    # cmds.parent(guides[x+1], guides[x])
-                    utils.connect_guide(guides[x], guides[x+1])
-                except:
-                    pass
-            
-            # ankle has extra guide helper for positioning    
-            if module_name == "bipedLeg":
-                leg_imp_ctrl = cr_ctrl.CreateControl(
-                    type="bvSquare", name=f"xfm_guide_{module_name}_foot_{unique_id}_{side}")
-                ankle_helper_ctrl = leg_imp_ctrl.retrun_ctrl()
-                cmds.matchTransform(ankle_helper_ctrl, guides[2], pos=1, scl=0, rot=0)
-                cmds.setAttr(f"{ankle_helper_ctrl}.translateY", 0)
-                guides.append(ankle_helper_ctrl)
-            '''
             guides = self.guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
 
         #----------------------------------------------------------------------
@@ -321,11 +276,26 @@ class CreateXfmGuides():
         'cv_guide_spine_0_M.cv[2]', 'cv_guide_spine_0_M.cv[3]', 
         'cv_guide_spine_0_M.cv[4]', 'cv_guide_spine_0_M.cv[5]']
         '''
-        clusters = []
+        
+        
+        # Create Rail & rename shape nodes: 
+        rail_gd_curve = f"crv_gdRail_{module_name}_{unique_id}_{side}"
+        rail_shape = f"crv_gdRail_{module_name}_{unique_id}_{side}Shape"
+        spine_shape = f"{gd_curve}Shape"
+        cmds.rename(cmds.duplicate(gd_curve, rc=1), rail_gd_curve, ignoreShape=0)
+        # rename shapes
+        cmds.rename(cmds.listRelatives(rail_gd_curve, s=1)[0], rail_shape)
+        cmds.rename(cmds.listRelatives(gd_curve, s=1)[0], spine_shape)
+        cmds.move(10,0,0, rail_gd_curve, r=1)
+
+        spine_clusters = []
+        rail_clusters = []
         for x in range(num_of_cvs):
-            cluster_handle = cmds.cluster(f"{gd_curve}.cv[{x}]", n=f"cls{x}_guide_{module_name}_{unique_id}_{side}")[1]
-            clusters.append(cluster_handle)
-        print(f"clusters = {clusters}")
+            cls_spine_handle = cmds.cluster(f"{gd_curve}.cv[{x}]", n=f"cls{x}_guide_{module_name}_{unique_id}_{side}")[1] # rail_gd_curve
+            cls_rail_handle = cmds.cluster(f"{rail_gd_curve}.cv[{x}]", n=f"cls{x}_rail_{module_name}_{unique_id}_{side}")[1]
+            spine_clusters.append(cls_spine_handle)
+            rail_clusters.append(cls_rail_handle)
+        print(f"spine_clusters = {spine_clusters}")
 
         # Create the controls!
         spine_guides = []
@@ -351,21 +321,24 @@ class CreateXfmGuides():
             elif parts == "2" or parts == "4":
                 utils.replace_control("imp_orb", temp_gd, 25)
 
-        # position the guides to the clusters
-        for cluster, guide in zip(clusters, spine_guides):
+        # position the guides to the spine_clusters
+        for cluster, guide in zip(spine_clusters, spine_guides):
             # cluster_pos = cmds.xform(cluster, q=True, ws=True, t=True)
             cmds.matchTransform(guide, cluster, pos=1, rot=0, scl=0)
+        for cluster, guide in zip(rail_clusters, spine_guides):
+            cmds.matchTransform(guide, cluster, pos=1, rot=0, scl=0)
 
-        # parent clusters under control
-        if clusters and spine_guides:
+        # parent spine_clusters under control
+        if spine_clusters and spine_guides:
             try:
                 for x in range(num_of_cvs):
-                    cmds.parent(clusters[x], spine_guides[x])
+                    cmds.parent(spine_clusters[x], spine_guides[x])
+                    cmds.parent(rail_clusters[x], spine_guides[x])
             except Exception as e:
                 print(f"Error during parenting: {e}")
         else:
-            print("Either clusters or spine_guides list is empty.")
-        
+            print("Either spine_clusters or spine_guides list is empty.")
+        ''''''
         # position the guides:
         guide_pos = []
         for key, pos in component_pos.items():
@@ -381,14 +354,61 @@ class CreateXfmGuides():
         ## CONSTANT: 
             # Name convention: f"NODE_{module_name}_{unique_id}_{side}"
             # spineShape.worldSpace[0] > curveInfo.inputCurve
-        rail_gd_curve = f"crv_gdRail_{module_name}_{unique_id}_{side}"
-        rail_shape = f"crv_gdRail_{module_name}_{unique_id}_{side}Shape"
-        spine_shape = 
-        cmds.rename(cmds.duplicate(gd_curve, rc=1), rail_gd_curve, ignoreShape=0)
-        # ranme shapes
-        cmds.rename(cmds.listRelatives(rail_gd_curve, s=1)[0], rail_shape)
-        cmds.rename(cmds.listRelatives(gd_curve, s=1)[0], f"{gd_curve}Shape")
+        node_name_convention = f"_{module_name}_{unique_id}_{side}"
 
+        # create all nodes first for constant
+        crvInfo = f"INFO{node_name_convention}"
+        utils.cr_node_if_not_exists(1, "curveInfo", crvInfo)# util_type, node_type, node_name, set_attrs=None)
+        lenRatio = f"MD_lenRatio{node_name_convention}" # .operation" 2
+        utils.cr_node_if_not_exists(1, "multiplyDivide", lenRatio, {"operation": 2})
+        
+        # Make constant connections
+        utils.connect_attr(f"{spine_shape}.worldSpace[0]", f"{crvInfo}.inputCurve")
+        utils.connect_attr(f"{crvInfo}.arcLength", f"{lenRatio}.input2X")
+        arclength = cmds.getAttr(f"{crvInfo}.arcLength")
+        print(f"arclength = {arclength}")
+        cmds.setAttr(f"{lenRatio}.input1X", arclength)
+
+        # connection for each ddj joint (after root)
+        # calculate the addative fraction needed for the nodes
+
+        # Example:
+            # 5 joints -> -1 = 4 -> VAL = 1/4 = 0.25 -> first joint = VAL 0.25 -> rest of joints = previous value + 0.25 -> End joint = 1
+        # Establish number of joints 
+        temp_jnt_number = 10
+        ddj_spine_jnts = []
+        for x in range(temp_jnt_number):
+            joint_name = f"ddj_{x}{node_name_convention}"
+            cmds.joint(n=joint_name)
+            ddj_spine_jnts.append(joint_name)
+
+            # cr stretchMult
+            strechMult = f"MD_{x}_stretch{node_name_convention}"
+            utils.cr_node_if_not_exists(1, "multiplyDivide", strechMult)
+
+            RemapVal = f"RVAL_{x}{node_name_convention}"
+            utils.cr_node_if_not_exists(1, "remapValue", RemapVal)
+
+            condition = f"COND_{x}{node_name_convention}"
+            utils.cr_node_if_not_exists(1, "condition", condition, {"operation":2, "secondTerm":1})
+
+            moRailPath = f"MPATH_{x}_rail{node_name_convention}"
+            utils.cr_node_if_not_exists(0, "motionPath", moRailPath)
+
+            cmRail = f"CM_{x}_rail{node_name_convention}"
+            utils.cr_node_if_not_exists(0, "composeMatrix", cmRail)
+
+            moPath = f"MPATH_{x}{node_name_convention}"
+            utils.cr_node_if_not_exists(0, "motionPath", moPath, {"follow": 1, "worldUpType":1, "frontAxis": 0})
+
+            cmSpine = f"CM_{x}{node_name_convention}"
+            utils.cr_node_if_not_exists(0, "composeMatrix", cmSpine) # multMatrix
+            
+            MM_ddj =  f"MM_{x}{node_name_convention}"
+            utils.cr_node_if_not_exists(1, "multMatrix", MM_ddj)
+        
+        # from the list, set last value: 
+        ''''''
 
         return spine_guides
         '''
@@ -407,7 +427,7 @@ class CreateXfmGuides():
         // Cluster the CVs 
         // Create 6 guides
         // Match pos for each curve's CVs 
-        // Parent the clusters to the guides
+        // Parent the spine_clusters to the guides
         // Move the guides to deisred position
 
         // Don't use 'connect_guide()', make the curve drive the ddj

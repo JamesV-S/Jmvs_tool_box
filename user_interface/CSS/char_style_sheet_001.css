@@ -428,6 +428,7 @@ QPushButton[treeComponents_UI_01="true"]:disabled,
 QLabel[treeComponents_UI_01="true"]:disabled,
 QSpinBox[treeComponents_UI_01="true"]:disabled,
 QComboBox[treeComponents_UI_01="true"]:disabled,
+QLabel[Current_disabled="true"]:disabled,
 QTreeView[treeComponents_UI_01="true"]:disabled {
     background-color: rgba(50, 50, 50, 0.5); /* Dimmed background */
     color: rgba(254, 254, 254, 0.481); /* Dimmed text color */

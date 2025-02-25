@@ -277,6 +277,7 @@ class CharRigging(QtWidgets.QWidget):
         self.cmo_stretch_lbl = QtWidgets.QLabel("Stretch: _ _")
         self.cmo_twist_lbl = QtWidgets.QLabel("Twist: _ _")
         
+        
         umo_lbl = QtWidgets.QLabel("Update >")
         umo_lbl.setObjectName("update_left_lbl")
         umo_rigType_lbl = QtWidgets.QLabel("Rig Type:")
@@ -432,6 +433,10 @@ class CharRigging(QtWidgets.QWidget):
 
         for widget in style_update_mdl_ui:
             widget.setProperty("update_UI", True)
+
+        for wid in [cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]:
+            wid.setEnabled(False)
+            wid.setProperty("Current_disabled", True)
 
 
     def UI_tab1_connect_signals(self):
