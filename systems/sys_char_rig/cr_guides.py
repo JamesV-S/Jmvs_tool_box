@@ -303,7 +303,7 @@ class CreateXfmGuides():
 
 
     def spine_guide_setup(self, module_name, unique_id, side, component_pos, component_ctrls):
-        gd_curve = f"cv_guide_{module_name}_{unique_id}_{side}"
+        gd_curve = f"crv_gd_{module_name}_{unique_id}_{side}"
 
         # cr curve
         cmds.curve(n=gd_curve, d=3, p=[(-45, 0, 0), (-16.666667, 0, 0), (11.666667, 0, 0), (40, 0, 0)], k=[0, 0, 0, 1, 1, 1])
@@ -374,6 +374,20 @@ class CreateXfmGuides():
         print(f"guide_pos = {guide_pos} & spine_guides = {spine_guides}")
         for x in range(num_of_cvs):
                 cmds.xform(spine_guides[x], translation=guide_pos[x], worldSpace=1)
+
+        # Build Joints
+        # > Gather spine curve SHAPE
+        # > Make rail curve, gather shape
+        ## CONSTANT: 
+            # Name convention: f"NODE_{module_name}_{unique_id}_{side}"
+            # spineShape.worldSpace[0] > curveInfo.inputCurve
+        rail_gd_curve = f"crv_gdRail_{module_name}_{unique_id}_{side}"
+        rail_shape = f"crv_gdRail_{module_name}_{unique_id}_{side}Shape"
+        spine_shape = 
+        cmds.rename(cmds.duplicate(gd_curve, rc=1), rail_gd_curve, ignoreShape=0)
+        # ranme shapes
+        cmds.rename(cmds.listRelatives(rail_gd_curve, s=1)[0], rail_shape)
+        cmds.rename(cmds.listRelatives(gd_curve, s=1)[0], f"{gd_curve}Shape")
 
 
         return spine_guides
