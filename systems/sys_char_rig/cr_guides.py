@@ -77,7 +77,7 @@ class CreateXfmGuides():
         clusters = cmds.ls(type="cluster")
         print(f"))))))))> clusters = {clusters}")
         for x in clusters:
-            cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
+            cmds.setAttr(f"{x}Handle.hiddenInOutliner", 0)
             cmds.hide(f"{x}Handle")
 
         guide_grp_list = []
@@ -259,6 +259,7 @@ class CreateXfmGuides():
 
     def spine_guide_setup(self, module_name, unique_id, side, component_pos, component_ctrls):
         gd_curve = f"crv_gd_{module_name}_{unique_id}_{side}"
+        spine_shape = f"{gd_curve}Shape"
 
         # cr curve
         cmds.curve(n=gd_curve, d=3, p=[(-45, 0, 0), (-16.666667, 0, 0), (11.666667, 0, 0), (40, 0, 0)], k=[0, 0, 0, 1, 1, 1])
@@ -271,39 +272,33 @@ class CreateXfmGuides():
         crv_shape = cmds.listRelatives(gd_curve, shapes=True)[0]
         num_of_cvs = cmds.getAttr(f"{gd_curve}.spans") + cmds.getAttr(f"{gd_curve}.degree")
         gd_curve_cvs = [f"{gd_curve}.cv[{i}]" for i in range(num_of_cvs)]
-        '''
-        ['cv_guide_spine_0_M.cv[0]', 'cv_guide_spine_0_M.cv[1]', 
-        'cv_guide_spine_0_M.cv[2]', 'cv_guide_spine_0_M.cv[3]', 
-        'cv_guide_spine_0_M.cv[4]', 'cv_guide_spine_0_M.cv[5]']
-        '''
         
         
         # Create Rail & rename shape nodes: 
         rail_gd_curve = f"crv_gdRail_{module_name}_{unique_id}_{side}"
         rail_shape = f"crv_gdRail_{module_name}_{unique_id}_{side}Shape"
-        spine_shape = f"{gd_curve}Shape"
         cmds.rename(cmds.duplicate(gd_curve, rc=1), rail_gd_curve, ignoreShape=0)
+
         # rename shapes
         cmds.rename(cmds.listRelatives(rail_gd_curve, s=1)[0], rail_shape)
         cmds.rename(cmds.listRelatives(gd_curve, s=1)[0], spine_shape)
-        cmds.move(10,0,0, rail_gd_curve, r=1)
+        
+        cmds.move(-10, 0, 0, rail_gd_curve, r=True)
 
-        spine_clusters = []
         rail_clusters = []
         for x in range(num_of_cvs):
-            cls_spine_handle = cmds.cluster(f"{gd_curve}.cv[{x}]", n=f"cls{x}_guide_{module_name}_{unique_id}_{side}")[1] # rail_gd_curve
             cls_rail_handle = cmds.cluster(f"{rail_gd_curve}.cv[{x}]", n=f"cls{x}_rail_{module_name}_{unique_id}_{side}")[1]
-            spine_clusters.append(cls_spine_handle)
             rail_clusters.append(cls_rail_handle)
-        print(f"spine_clusters = {spine_clusters}")
-
+            
+        spine_clusters = []
+        for x in range(num_of_cvs):
+            cls_spine_handle = cmds.cluster(f"{gd_curve}.cv[{x}]", n=f"cls{x}_guide_{module_name}_{unique_id}_{side}")[1] # rail_gd_curve
+            spine_clusters.append(cls_spine_handle)
+        
         # Create the controls!
         spine_guides = []
         for x in range(num_of_cvs):
                 temp_guide = cmds.circle()
-                # cmds.file(self.guide_import_dir, i=1, ns="component_guide", rnn=1)
-                
-                # establish guides, check for root module that acts differently
                 guide_name = f"xfm_guide_{module_name}_{x}_{unique_id}_{side}"
                 spine_guides.append(cmds.rename(temp_guide[0], guide_name))
                 print(f"@@ > spine_guides IN LOOP = {guide_name}")
@@ -325,8 +320,6 @@ class CreateXfmGuides():
         for cluster, guide in zip(spine_clusters, spine_guides):
             # cluster_pos = cmds.xform(cluster, q=True, ws=True, t=True)
             cmds.matchTransform(guide, cluster, pos=1, rot=0, scl=0)
-        for cluster, guide in zip(rail_clusters, spine_guides):
-            cmds.matchTransform(guide, cluster, pos=1, rot=0, scl=0)
 
         # parent spine_clusters under control
         if spine_clusters and spine_guides:
@@ -338,22 +331,17 @@ class CreateXfmGuides():
                 print(f"Error during parenting: {e}")
         else:
             print("Either spine_clusters or spine_guides list is empty.")
-        ''''''
+        
         # position the guides:
         guide_pos = []
         for key, pos in component_pos.items():
                 guide_pos.append(pos)
-
+        
         print(f"guide_pos = {guide_pos} & spine_guides = {spine_guides}")
         for x in range(num_of_cvs):
                 cmds.xform(spine_guides[x], translation=guide_pos[x], worldSpace=1)
-
+        
         # Build Joints
-        # > Gather spine curve SHAPE
-        # > Make rail curve, gather shape
-        ## CONSTANT: 
-            # Name convention: f"NODE_{module_name}_{unique_id}_{side}"
-            # spineShape.worldSpace[0] > curveInfo.inputCurve
         node_name_convention = f"_{module_name}_{unique_id}_{side}"
 
         # create all nodes first for constant
@@ -374,43 +362,133 @@ class CreateXfmGuides():
 
         # Example:
             # 5 joints -> -1 = 4 -> VAL = 1/4 = 0.25 -> first joint = VAL 0.25 -> rest of joints = previous value + 0.25 -> End joint = 1
-        # Establish number of joints 
+        # Establish number of joints
         temp_jnt_number = 10
         ddj_spine_jnts = []
+        
         for x in range(temp_jnt_number):
             joint_name = f"ddj_{x}{node_name_convention}"
             cmds.joint(n=joint_name)
             ddj_spine_jnts.append(joint_name)
+        
+        # parent joint to a group " origin"
+        ddj_parent_grp = "grp_component_misc"
+        if not cmds.objExists(ddj_parent_grp):
+            cmds.group(n=ddj_parent_grp, em=1)
+        cmds.parent(rail_gd_curve, gd_curve, ddj_spine_jnts[0], ddj_parent_grp)
 
+        # first joint connection:
+        mm_initialJoint = f"MD_0{node_name_convention}"
+        utils.cr_node_if_not_exists(1, "multMatrix", mm_initialJoint)
+        utils.connect_attr(f"{spine_guides[0]}.worldMatrix[0]", f"{mm_initialJoint}.matrixIn[0]")
+        utils.connect_attr(f"{ddj_parent_grp}.worldInverseMatrix[0]", f"{mm_initialJoint}.matrixIn[1]") # matrixSum
+        utils.connect_attr(f"{mm_initialJoint}.matrixSum", f"{ddj_spine_jnts[0]}.offsetParentMatrix")
+        
+        # Ignore the first joint:
+        ddj_spine_jnts[1:]
+        print(f"skipped joint: {ddj_spine_jnts[1:]}")
+        
+        ls_strechMulth = []
+        ls_remapVal = []
+        ls_condition = []
+        ls_moRailPath = []
+        ls_cmRail = []
+        ls_moPath = []
+        ls_cmSpine = []
+        ls_MM_ddj = []
+        
+        for x in range(len(ddj_spine_jnts)):
             # cr stretchMult
             strechMult = f"MD_{x}_stretch{node_name_convention}"
             utils.cr_node_if_not_exists(1, "multiplyDivide", strechMult)
+            ls_strechMulth.append(strechMult)
 
-            RemapVal = f"RVAL_{x}{node_name_convention}"
-            utils.cr_node_if_not_exists(1, "remapValue", RemapVal)
+            remapVal = f"RVAL_{x}{node_name_convention}"
+            utils.cr_node_if_not_exists(1, "remapValue", remapVal, {"inputValue":1})
+            ls_remapVal.append(remapVal)
 
             condition = f"COND_{x}{node_name_convention}"
             utils.cr_node_if_not_exists(1, "condition", condition, {"operation":2, "secondTerm":1})
+            ls_condition.append(condition)
 
             moRailPath = f"MPATH_{x}_rail{node_name_convention}"
             utils.cr_node_if_not_exists(0, "motionPath", moRailPath)
+            ls_moRailPath.append(moRailPath)
 
             cmRail = f"CM_{x}_rail{node_name_convention}"
             utils.cr_node_if_not_exists(0, "composeMatrix", cmRail)
+            ls_cmRail.append(cmRail)
 
             moPath = f"MPATH_{x}{node_name_convention}"
             utils.cr_node_if_not_exists(0, "motionPath", moPath, {"follow": 1, "worldUpType":1, "frontAxis": 0})
+            ls_moPath.append(moPath)
 
             cmSpine = f"CM_{x}{node_name_convention}"
             utils.cr_node_if_not_exists(0, "composeMatrix", cmSpine) # multMatrix
+            ls_cmSpine.append(cmSpine)
             
             MM_ddj =  f"MM_{x}{node_name_convention}"
             utils.cr_node_if_not_exists(1, "multMatrix", MM_ddj)
-        
-        # from the list, set last value: 
-        ''''''
+            ls_MM_ddj.append(MM_ddj)
 
+        # Connect signals
+        
+        for x in range(len(ddj_spine_jnts)):
+            utils.connect_attr(f"{lenRatio}.outputX", f"{ls_strechMulth[x]}.input2X")
+            utils.connect_attr(f"{ls_strechMulth[x]}.outputX", f"{ls_remapVal[x]}.outputMin")
+            utils.connect_attr(f"{lenRatio}.outputX", f"{ls_condition[x]}.firstTerm")
+            utils.connect_attr(f"{ls_remapVal[x]}.outValue", f"{ls_condition[x]}.colorIfFalseR")
+            utils.connect_attr(f"{ls_condition[x]}.outColorR", f"{ls_moRailPath[x]}.uValue")
+            utils.connect_attr(f"{rail_shape}.worldSpace[0]", f"{ls_moRailPath[x]}.geometryPath")
+            utils.connect_attr(f"{ls_moRailPath[x]}.allCoordinates", f"{ls_cmRail[x]}.inputTranslate")
+            utils.connect_attr(f"{ls_condition[x]}.outColorR", f"{ls_moPath[x]}.uValue")
+            utils.connect_attr(f"{spine_shape}.worldSpace[0]", f"{ls_moPath[x]}.geometryPath")
+            utils.connect_attr(f"{ls_cmRail[x]}.outputMatrix", f"{ls_moPath[x]}.worldUpMatrix")
+            utils.connect_attr(f"{ls_moPath[x]}.allCoordinates", f"{ls_cmSpine[x]}.inputTranslate")
+            utils.connect_attr(f"{ls_moPath[x]}.rotate", f"{ls_cmSpine[x]}.inputRotate")
+            utils.connect_attr(f"{ls_cmSpine[x]}.outputMatrix", f"{ls_MM_ddj[x]}.matrixIn[0]")
+            # mm into Current current joint
+            utils.connect_attr(f"{ls_MM_ddj[x]}.matrixSum", f"{ddj_spine_jnts[x]}.offsetParentMatrix")
+
+        # Connect joint_0.worldInverseMatrix[0] to ls_MM_ddj[0].matrixIn[1]
+        utils.connect_attr(f"ddj_0{node_name_convention}.worldInverseMatrix[0]", f"{ls_MM_ddj[0]}.matrixIn[1]")
+
+        # Connect each ls_MM_ddj[x] to the previous joint's worldInverseMatrix
+        for x in range(1, len(ddj_spine_jnts)):  
+            utils.connect_attr(f"{ddj_spine_jnts[x-1]}.worldInverseMatrix[0]", f"{ls_MM_ddj[x]}.matrixIn[1]")
+
+        increment_value = 1.0 / (temp_jnt_number - 1)  # (10-1) = 9, so 1/9 = 0.111...
+        # Set attribute values progressively
+        print(f"NUM stretchMULT = {len(ls_strechMulth)}")
+        value_list = []
+        for x in range(len(ls_strechMulth)):
+            value = (x + 1) * increment_value  # First = 0.1, Second = 0.2, etc.
+            value_list.append(value) 
+            cmds.setAttr(f"{ls_strechMulth[x]}.input1X", value) # ls_remapVal
+            cmds.setAttr(f"{ls_remapVal[x]}.outputMax", value)
+            cmds.setAttr(f"{ls_condition[x]}.colorIfTrueR", value)
+        print(f"VALUE INCRMENT LIST == {value_list}")
+        '''
+        VALUE INCRMENT LIST == [
+            0.1111111111111111, 
+            0.2222222222222222, 
+            0.3333333333333333, 
+            0.4444444444444444, 
+            0.5555555555555556, 
+            0.6666666666666666, 
+            0.7777777777777777, 
+            0.8888888888888888, 
+            1.0, 
+            1.1111111111111112]
+
+        '''
+
+
+        # set value attribute
+        
         return spine_guides
+    
+
         '''
         
         spine_guides = ['xfm_guide_spine_0_0_M', 'xfm_guide_spine_1_0_M', 'xfm_guide_spine_2_0_M', 
