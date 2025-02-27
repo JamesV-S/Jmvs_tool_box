@@ -50,8 +50,10 @@ class exportUUIDusd(QtWidgets.QWidget):
         self.setWindowTitle(ui_window_name)
         self.resize(400, 100)
         
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                       "..", "CSS", "geoDB_style_sheet_001.css")
+        stylesheet_path = os.path.join(
+            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "geoDB_style_sheet_001.css"
+            )
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)

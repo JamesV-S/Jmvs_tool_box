@@ -53,14 +53,13 @@ class ToolBox(QtWidgets.QWidget):
         
         # ---------------------------------
         # style
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                       "user_interface", "CSS", "toolBox_style_sheet.css")
+        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                      "assets", "styles", "toolBox_style_sheet.css")
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
         
-
         # set flags & dimensions
         # ---------------------------------- 
         self.setParent(main_window) 
@@ -74,11 +73,7 @@ class ToolBox(QtWidgets.QWidget):
         self.ui_stack = []
 
         self.UI()
-        
-        self.char_button.clicked.connect(self.char_func)
-        self.vehicle_button.clicked.connect(self.vehicle_func)
-        self.geoDB_button.clicked.connect(self.geo_func)
-        self.other_button.clicked.connect(self.other_func)
+        self.UI_connect_signals()
 
         
     def UI(self):
@@ -146,25 +141,32 @@ class ToolBox(QtWidgets.QWidget):
         ''' 
     
     
-    def char_func(self):
+    def UI_connect_signals(self):
+        self.char_button.clicked.connect(self.sigFunc_character)
+        self.vehicle_button.clicked.connect(self.sigFunc_vehicle)
+        self.geoDB_button.clicked.connect(self.sigFunc_geometry)
+        self.other_button.clicked.connect(self.sigFunc_other)
+
+
+    def sigFunc_character(self):
         print("loading character ui")
         char_rig.char_main()
         delete_existing_ui(self.ui_object_name)
 
     
-    def vehicle_func(self):
+    def sigFunc_vehicle(self):
         print("loading vehicle ui")
         vehicle_rig.vehicle_main()
         delete_existing_ui(self.ui_object_name)
 
 
-    def geo_func(self):
+    def sigFunc_geometry(self):
         print("loading geo ui")
         master_geo_db_picker.master_geo_main()
         delete_existing_ui(self.ui_object_name)
     
 
-    def other_func(self):
+    def sigFunc_other(self):
         print("loading other ui")
         other_tool.geoDB_main()
         delete_existing_ui(self.ui_object_name)

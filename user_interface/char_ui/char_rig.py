@@ -58,8 +58,10 @@ class CharRigging(QtWidgets.QWidget):
         self.resize(400, 550)
         
         # style
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                       "..", "CSS", "char_style_sheet_001.css")
+        stylesheet_path = os.path.join(
+            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "char_style_sheet_001.css"
+            )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()

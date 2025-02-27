@@ -19,11 +19,10 @@ import sys
 import importlib
 import os
 
-
 from user_interface.geoDB_ui import (
     export_usd_geo_UUID,
     import_usd_geo_UUID,
-    geo_db 
+    geo_db
     )
 
 from systems import (
@@ -53,11 +52,10 @@ class masterGeoPicker(QtWidgets.QWidget):
         
         # ---------------------------------
         # style
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                        "..", "CSS", "toolBox_style_sheet.css")
-        #'C:\Docs\maya\scripts\Jmvs_tool_box\     user_interface\CSS'
-        #'C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\user_interface\\geoDB_ui\\CSS\\toolBox_style_sheet.css'
-        #'C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\user_interface\\geoDB_ui\\CSS\\toolBox_style_sheet.css'
+        stylesheet_path = os.path.join(
+            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "toolBox_style_sheet.css"
+            )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
