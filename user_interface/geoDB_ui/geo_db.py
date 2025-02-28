@@ -22,7 +22,7 @@ import os
 from databases import database_manager
 from databases.geo_databases import database_schema_001
 
-# from user_interface.geoDB_ui import export_db
+from user_interface.geoDB_ui import export_db
 from main_entry_points.geoDB_mep import export_database_main  
 
 from systems import (
@@ -37,6 +37,7 @@ from systems.sys_geoDB import (
 
 importlib.reload(database_manager)
 importlib.reload(database_schema_001)
+importlib.reload(export_db)
 importlib.reload(export_database_main)
 importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
