@@ -8,7 +8,7 @@ def export_db_main():
     app = QtWidgets.QApplication.instance()
     if not app:
         app = QtWidgets.QApplication([])
-    controller = export_database_controller.ExportDatabaseController()
+    controller = export_database_controller.exportDatabaseController()
     controller.view.show()
     app.exec()
     # returning `controller.view` specifically becuase need to use 

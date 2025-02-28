@@ -11,4 +11,5 @@ class exportDatabaseModel:
         self.directory = ""
 
     def create_database(self):
+        print(f"file_name = {self.file_name}, directory = {self.directory}" )
         database_schema_001.CreateDatabase(name=self.file_name, directory=self.directory)
