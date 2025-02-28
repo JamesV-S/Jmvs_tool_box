@@ -2,7 +2,12 @@
 import importlib
 import sys
 import os
-print("Is it UPDATING???")
+
+from systems import (
+    os_custom_directory_utils
+    )
+
+importlib.reload(os_custom_directory_utils)
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 print(f"current_dir == {current_dir}")
@@ -25,6 +30,13 @@ def add_to_sys_path(directory):
         print(f"'{directory}' is already in sys.path")
 
 
+def gather_folders_to_add_to_list(the_list, append_list, *args):
+    folder_list = the_list
+    for fld in folder_list:
+        dr = os.path.join(os_custom_directory_utils.create_directory(*args, fld))
+        append_list.append(dr)
+
+
 def updating_paths():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     add_path = os.path.join(current_dir)
@@ -32,19 +44,12 @@ def updating_paths():
     os.environ['MAYA_SCRIPT_PATH'] = current_dir + os.pathsep + os.environ.get('MAYA_SCRIPT_PATH', '')
     custom_dir_list = []
     
-    # ----------------------------------------
-    # custom directory's I need adding to path
-    db_dir = os.path.join(os.path.dirname(os.path.normpath(__file__)), 
-                               'databases')
-    custom_dir_list.append(db_dir)
-    
-    # these dir share same path, so it's quicker to do this
-    ui_list = ['char_ui', 'vehicle_ui', 'geoDB_ui', 'other_ui']
-    for folder in ui_list:
-        ui_dir = os.path.join(os.path.dirname(os.path.normpath(__file__)), 
-                                'user_interface', folder)
-        custom_dir_list.append(ui_dir)
-    
+    # ------------------ Add Necessary paths ----------------------
+    gather_folders_to_add_to_list([], custom_dir_list, "Jmvs_tool_box")
+    gather_folders_to_add_to_list(['char_ui', 'vehicle_ui', 'geoDB_ui', 'other_ui'], custom_dir_list, "Jmvs_tool_box", "user_interface")
+    gather_folders_to_add_to_list(['databases', 'models', 'views', 'controllers'], custom_dir_list, "Jmvs_tool_box")
+    gather_folders_to_add_to_list(['char_models', 'geoDB_models'], custom_dir_list, "Jmvs_tool_box", "models")
+
     # check if the custom dir exist:
     for directory in custom_dir_list:
         if does_directory_exist(directory):

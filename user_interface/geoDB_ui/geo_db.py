@@ -21,7 +21,10 @@ import os
 
 from databases import database_manager
 from databases.geo_databases import database_schema_001
-from user_interface.geoDB_ui import export_db
+
+# from user_interface.geoDB_ui import export_db
+from main_entry_points.geoDB_mep import export_database_main  
+
 from systems import (
     os_custom_directory_utils,
     utils
@@ -34,7 +37,7 @@ from systems.sys_geoDB import (
 
 importlib.reload(database_manager)
 importlib.reload(database_schema_001)
-importlib.reload(export_db)
+importlib.reload(export_database_main)
 importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
 importlib.reload(uuid_handler)
@@ -483,7 +486,8 @@ class GeoDatabase(QtWidgets.QWidget):
 
     def sigFunc_exportOptions_btn(self):
         try:
-            ui = export_db.export_DB_main()
+            ui = export_database_main.export_db_main()
+            # ui = export_db.export_DB_main()
             # connect the signal to the update db combobox function
             ui.databaseCreated.connect(self.update_database_ComboBox)
         except Exception as e:

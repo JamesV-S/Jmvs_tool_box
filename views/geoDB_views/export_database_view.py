@@ -1,18 +1,6 @@
-# -------------------------------------- MODEL ------------------------------------------
-# models/database_model.py
-from databases.geo_databases import database_schema_001
-
-class exportDatabaseModel:
-    def __init__(self):
-        self.file_name = ""
-        self.directory = ""
-
-    def create_database(self):
-        database_schema_001.CreateDatabase(name=self.file_name, directory=self.directory)
-
-
 # ----------------------------------------- VIEW ----------------------------------------
 # views/export_database_view.py
+import importlib
 from maya import OpenMayaUI
 
 try:
@@ -29,20 +17,38 @@ except ModuleNotFoundError:
     from shiboken2 import wrapInstance
 import os
 
+from systems import (
+    utils,
+    os_custom_directory_utils
+)
+
+importlib.reload(utils)
+importlib.reload(os_custom_directory_utils)
+
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 
-class ExportDatabaseView(QtWidgets.QWidget):
+class exportDatabaseView(QtWidgets.QWidget):
     databaseCreated = Signal()
 
     def __init__(self, parent=None):
-        super(ExportDatabaseView, self).__init__(parent)
-        self.setObjectName("DB_EXPORT001")
-        self.setWindowTitle("DB Export Options 001")
+        super(exportDatabaseView, self).__init__(parent)
+        version = "MVC"
+        ui_object_name = f"DB_EXPORT{version}"
+        ui_window_name = f"DB Export Options {version}"
+        utils.delete_existing_ui(ui_object_name)
+        self.setObjectName(ui_object_name)
+        self.setWindowTitle(ui_window_name)
+        
+        self.setParent(main_window)
+        self.setWindowFlags(Qt.Window)
         self.resize(400, 100)
         
         # Load stylesheet
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "CSS", "geoDB_style_sheet_001.css")
+        stylesheet_path = os.path.join(
+            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "geoDB_style_sheet_001.css"
+            )
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
@@ -78,6 +84,7 @@ class ExportDatabaseView(QtWidgets.QWidget):
         export_layout.addWidget(self.export_button)
         self.main_layout.addLayout(export_layout)
     '''
+    
     def init_ui(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
         #----------------------------------------------------------------------
@@ -153,73 +160,3 @@ class ExportDatabaseView(QtWidgets.QWidget):
             label_02.setProperty("DB_export_UI_02", True)
         
         self.setLayout(main_Vlayout)
-
-        
-# ----------------------------------- CONTROLLER ----------------------------------------
-# controllers/export_database_controller.py
-from models.database_model import exportDatabaseModel
-from views.export_database_view import ExportDatabaseView
-from systems import os_custom_directory_utils
-
-class ExportDatabaseController:
-    def __init__(self): # class
-        self.model = exportDatabaseModel()
-        self.view = ExportDatabaseView()
-        
-        # Connect signals and slots
-        self.view.file_name_text.textChanged.connect(self.sigFunc_update_file_name)
-        self.view.preset_path_radio.clicked.connect(self.sigFunc_toggle_preset_path)
-        self.view.folder_path_button.clicked.connect(self.sigFunc_select_folder)
-        self.view.export_button.clicked.connect(self.sigFunc_export_database)
-
-    def sigFunc_update_file_name(self, text):
-        self.model.file_name = text
-    
-    def sigFunc_toggle_preset_path(self):
-        if self.view.preset_path_radio.isChecked():
-            directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")
-            self.view.folder_path_button.setText(directory)
-            self.view.folder_path_button.setEnabled(False)
-            self.model.directory = directory
-        else:
-            self.view.folder_path_button.setText("Select Path")
-            self.view.folder_path_button.setEnabled(True)
-
-    def sigFunc_select_folder(self):
-        if not self.view.preset_path_radio.isChecked():
-            directory = QtWidgets.QFileDialog.getExistingDirectory(self.view, "Select Directory")
-            if directory:
-                self.view.folder_path_button.setText(directory)
-                self.model.directory = directory
-
-    def sigFunc_export_database(self):
-        self.model.create_database()
-        self.view.databaseCreated.emit()
-# - - - - - - - - - - - - - - - - - - - - - 
-def export_db_main():
-    app = QtWidgets.QApplication.instance()
-    if not app:
-        app = QtWidgets.QApplication([])
-    controller = ExportDatabaseController()
-    controller.view.show()
-    app.exec()
-# - - - - - - -  - OR - - - - - - - - - - -
-# main.py -> in a different file!
-from controllers.export_database_controller import ExportDatabaseController
-from PySide6 import QtWidgets
-
-def export_db_main():
-    app = QtWidgets.QApplication.instance()
-    if not app:
-        app = QtWidgets.QApplication([])
-    controller = ExportDatabaseController()
-    controller.view.show()
-    app.exec()
-    # returning `controller.view` specifically becuase need to use 
-    # 'databaseCreated' signal that's in the view
-    return controller.view
-# - - - - - - - - - - - - - - - - - - - - - 
-
-
-
-
