@@ -7,27 +7,27 @@ try:
 except ModuleNotFoundError:
     from PySide2 import QtCore, QtWidgets, QtGui
 
-from models.geoDB_models.export_database_model import exportDatabaseModel
-from views.geoDB_views.export_database_view import exportDatabaseView
+from models.geoDB_models import export_database_model
+from views.geoDB_views import export_database_view
 from systems import (
     os_custom_directory_utils
     )
 
-importlib.reload(exportDatabaseModel)
-importlib.reload(exportDatabaseView)
+importlib.reload(export_database_model)
+importlib.reload(export_database_view)
 
 importlib.reload(os_custom_directory_utils)
 
 class ExportDatabaseController:
     def __init__(self): # class
-        self.model = exportDatabaseModel()
-        self.view = exportDatabaseView()
+        self.model = export_database_model.exportDatabaseModel()
+        self.view = export_database_view.exportDatabaseView()
         
         # Connect signals and slots
-        self.view.file_name_text.textChanged.connect(self.sigFunc_update_file_name)
-        self.view.preset_path_radio.clicked.connect(self.sigFunc_toggle_preset_path)
-        self.view.folder_path_button.clicked.connect(self.sigFunc_select_folder)
-        self.view.export_button.clicked.connect(self.sigFunc_export_database)
+        self.view.fileName_text.textChanged.connect(self.sigFunc_update_file_name)
+        self.view.presetPath_radioBtn.clicked.connect(self.sigFunc_toggle_preset_path)
+        self.view.folderPath_btn.clicked.connect(self.sigFunc_select_folder)
+        self.view.export_btn.clicked.connect(self.sigFunc_export_database)
 
 
     def sigFunc_update_file_name(self, text):

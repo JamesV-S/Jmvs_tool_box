@@ -160,3 +160,12 @@ class exportDatabaseView(QtWidgets.QWidget):
             label_02.setProperty("DB_export_UI_02", True)
         
         self.setLayout(main_Vlayout)
+
+    def layV_SPACER_func(self):
+        layH_spacer = QtWidgets.QHBoxLayout()
+        spacer = QtWidgets.QWidget()
+        spacer.setFixedSize(100,10)
+        spacer.setObjectName("Spacer")
+        layH_spacer.addWidget(spacer)
+
+        return layH_spacer
