@@ -32,6 +32,9 @@ class exportDatabaseView(QtWidgets.QWidget):
     databaseCreated = Signal()
 
     def __init__(self, parent=None):
+
+        print("new structure")
+
         super(exportDatabaseView, self).__init__(parent)
         version = "MVC"
         ui_object_name = f"DB_EXPORT{version}"
