@@ -18,12 +18,8 @@ except ModuleNotFoundError:
 importlib.reload(export_database_controller)
 
 def export_db_main():
-    app = QtWidgets.QApplication.instance()
-    if not app:
-        app = QtWidgets.QApplication([])
-    controller = export_database_controller.exportDatabaseController()
+    # No ApplicationInstance becuase it is being handled through 'geo_db.py' already! 
+    controller = export_database_controller.ExportDatabaseController()
     controller.view.show()
-    app.exec()
-    # returning `controller.view` specifically becuase need to use 
-    # 'databaseCreated' signal that's in the view
-    return controller.view
+
+    return controller

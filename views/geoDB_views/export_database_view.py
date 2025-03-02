@@ -31,11 +31,11 @@ main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 class exportDatabaseView(QtWidgets.QWidget):
     databaseCreated = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self):
 
         print("new structure")
 
-        super(exportDatabaseView, self).__init__(parent)
+        super(exportDatabaseView, self).__init__()
         version = "MVC"
         ui_object_name = f"DB_EXPORT{version}"
         ui_window_name = f"DB Export Options {version}"

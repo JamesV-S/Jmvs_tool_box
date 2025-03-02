@@ -40,6 +40,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
     # define a signal to indicate completion of db creation
     databaseCreated = Signal()
     def __init__(self, parent=None):
+        print("OLD structure")
         super(exportDatabaseOptions, self).__init__(parent)
         version = "001"
         ui_object_name = f"DB_EXPORT{version}"
