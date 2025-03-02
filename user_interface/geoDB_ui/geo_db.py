@@ -90,6 +90,8 @@ class GeoDatabase(QtWidgets.QWidget):
         self.active_db = self.database_comboBox.currentText()
         self.visualise_active_db()
 
+        self.export_db_controller = None
+
 
     def update_database_ComboBox(self):
         print(f"UPDATING DB COMBO BOX WITH NEW database!")
@@ -487,7 +489,8 @@ class GeoDatabase(QtWidgets.QWidget):
 
     def sigFunc_exportOptions_btn(self):
         try:
-            ui = export_database_main.export_db_main()
+            self.export_db_controller = export_database_main.export_db_main()
+            ui = self.export_db_controller.view
             # ui = export_db.export_DB_main()
             # connect the signal to the update db combobox function
             ui.databaseCreated.connect(self.update_database_ComboBox)
