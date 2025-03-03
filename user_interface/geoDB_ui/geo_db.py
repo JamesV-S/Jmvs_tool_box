@@ -45,7 +45,6 @@ importlib.reload(uuid_handler)
 importlib.reload(bind_skin)
 importlib.reload(unbind_skin)
 
-
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
@@ -74,6 +73,7 @@ class GeoDatabase(QtWidgets.QWidget):
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
 
+        # Controller section: -------------------------------------------------
         # gather available database file names & pass to the ComboBox
         self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         self.db_files = []
@@ -84,6 +84,8 @@ class GeoDatabase(QtWidgets.QWidget):
                         self.db_files.append(db_file_name)
         
         self.custom_uuid_attr = "custom_UUID"
+        # Controller section: -------------------------------------------------
+        
         self.UI()
         self.UI_connect_signals()
         self.val_new_relationship_checkBox = 0
@@ -765,26 +767,26 @@ class GeoDatabase(QtWidgets.QWidget):
     #--------------------------------------------------------------------------
     ########## TREE VIEW FUNCTOINS ##########
     def gather_active_database_combined_dict(self):
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            levels = os_custom_directory_utils.determine_levels_to_target(
-                current_dir, "Jmvs_tool_box"
-                )
-            root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
-            try:
-                self.active_db_dir = utils.find_directory(self.active_db, root_dir)
-                #print(f"Directory of `{self.active_db}` is:  `{self.active_db_dir}`")
-            except FileNotFoundError as e:
-                print(f"active db file '{self.active_db}' not found cus of this error: {e}")
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        levels = os_custom_directory_utils.determine_levels_to_target(
+            current_dir, "Jmvs_tool_box"
+            )
+        root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
+        try:
+            self.active_db_dir = utils.find_directory(self.active_db, root_dir)
+            #print(f"Directory of `{self.active_db}` is:  `{self.active_db_dir}`")
+        except FileNotFoundError as e:
+            print(f"active db file '{self.active_db}' not found cus of this error: {e}")
 
-            # Get dictionary of all the data from db
-            uuid_retrieval = database_schema_001.RetrieveAllUUIDs(
-                self.active_db, self.active_db_dir
-                )
-            try:
-                combined_dict = uuid_retrieval.get_combined_dict()
-                return combined_dict
-            except Exception as e:
-                print(f"If you just created a new db, ignore this error, if not: {e}")
+        # Get dictionary of all the data from db
+        uuid_retrieval = database_schema_001.RetrieveAllUUIDs(
+            self.active_db, self.active_db_dir
+            )
+        try:
+            combined_dict = uuid_retrieval.get_combined_dict()
+            return combined_dict
+        except Exception as e:
+            print(f"If you just created a new db, ignore this error, if not: {e}")
     
     # by calling the 'populate tree view' i can update the treeview live as operations happen
     def visualise_active_db(self):
@@ -909,9 +911,6 @@ class GeoDatabase(QtWidgets.QWidget):
             if found_obj:
                 cmds.select(found_obj)
                 print(f"selected object without cutom UUID: {found_obj}")
-
-
-            
 
     
     def ui_joint_selects_scene_joint(self):

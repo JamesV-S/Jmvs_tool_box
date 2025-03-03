@@ -19,9 +19,14 @@ import sys
 import importlib
 import os
 
+from main_entry_points.geoDB_mep import (
+    import_geo_usd_main,
+    export_geo_usd_main
+)
+
 from user_interface.geoDB_ui import (
     export_usd_geo_UUID,
-    import_usd_geo_UUID,
+    # import_usd_geo_UUID,
     geo_db
     )
 
@@ -29,8 +34,10 @@ from systems import (
     os_custom_directory_utils
 )
 
+importlib.reload(import_geo_usd_main)
+importlib.reload(export_geo_usd_main)
 importlib.reload(export_usd_geo_UUID)
-importlib.reload(import_usd_geo_UUID)
+# importlib.reload(import_usd_geo_UUID)
 importlib.reload(geo_db)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
@@ -79,6 +86,9 @@ class masterGeoPicker(QtWidgets.QWidget):
         self.export_usd_button.clicked.connect(self.export_usd_func)
         self.import_usd_button.clicked.connect(self.import_usd_func)
         self.geoDB_button.clicked.connect(self.geo_func)
+
+        self.import_geo_usd_controller = None
+        self.export_geo_usd_controller = None
 
         
     def UI(self):
@@ -130,13 +140,14 @@ class masterGeoPicker(QtWidgets.QWidget):
     
     def export_usd_func(self):
         print("loading export ui")
-        export_usd_geo_UUID.export_UUID_usd_main()
+        self.export_geo_usd_controller = export_geo_usd_main.import_geo_usd_main()
+        # export_usd_geo_UUID.export_UUID_usd_main()
         #delete_existing_ui(self.ui_object_name)
 
     
     def import_usd_func(self):
         print("loading import ui")
-        import_usd_geo_UUID.import_UUID_usd_main()
+        self.import_geo_usd_controller = import_geo_usd_main.import_geo_usd_main()
         #delete_existing_ui(self.ui_object_name)
 
 
@@ -144,6 +155,7 @@ class masterGeoPicker(QtWidgets.QWidget):
         print("loading geo ui")
         geo_db.geoDB_main()
         # delete_existing_ui(self.ui_object_name)
+
 
 def master_geo_main():
     app = QtWidgets.QApplication.instance()

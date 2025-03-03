@@ -15,7 +15,6 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-import sys
 import importlib
 import os.path
 
@@ -186,16 +185,6 @@ class imnportDatabaseOptions(QtWidgets.QWidget):
             self.folderPath_text.setText(self.directory)
             print(f"Selected Directory: {self.directory}")
         print(f"directory :: `{self.directory}`")
-
-
-    def layV_SPACER_func(self):
-        layH_spacer = QtWidgets.QHBoxLayout()
-        spacer = QtWidgets.QWidget()
-        spacer.setFixedSize(100,10)
-        spacer.setObjectName("Spacer")
-        layH_spacer.addWidget(spacer)
-
-        return layH_spacer
     
 
     def sigFunc_export(self):
@@ -221,7 +210,18 @@ class imnportDatabaseOptions(QtWidgets.QWidget):
             func_import_geometry_UUID_usd.ImporttGeometryUUID(usd_file=usd_save_dir, json_file=json_dir)
         else:
             cmds.error("CHOOSE A VALID GROUP PATH!")
+    
+    
+    def layV_SPACER_func(self):
+        layH_spacer = QtWidgets.QHBoxLayout()
+        spacer = QtWidgets.QWidget()
+        spacer.setFixedSize(100,10)
+        spacer.setObjectName("Spacer")
+        layH_spacer.addWidget(spacer)
 
+        return layH_spacer
+    
+    
 def import_UUID_usd_main():
     app = QtWidgets.QApplication.instance()
     if not app:

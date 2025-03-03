@@ -64,7 +64,6 @@ class exportUUIDusd(QtWidgets.QWidget):
         self.UI_connect_signals()
 
         
-
     def UI(self):
         
         main_Vlayout = QtWidgets.QVBoxLayout(self)
