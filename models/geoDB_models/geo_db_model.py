@@ -25,11 +25,15 @@ from databases.geo_databases import database_schema_001
 
 importlib.reload(database_schema_001)
 
-
 class GeometryDatabaseModel:
     def __init__(self):
+        self.custom_uuid_attr = "custom_UUID"
+        # return_geo_uuid_from_db()
+        self.db_row_id = ""
+
         # gather_active_database_combined_dict()
         self.active_db = ""
+        self.active_db_dir = ""
         
         # visualise_active_db()
         self.joint_model = None #""
@@ -38,7 +42,28 @@ class GeometryDatabaseModel:
         # signal_to_geo_tree_highlight()
         self.geo_tree_view = ""
         self.joint_tree_view = ""
-        
+
+
+    def return_geo_uuid_from_db(self, db_row_id):
+        uuids =  database_schema_001.ReturnRelationshipUUIDFromDatabase(
+                obj_type="geo", database_name=self.active_db, 
+                directory=self.active_db_dir, db_row_id=db_row_id
+                )
+        return uuids
+    
+
+    def update_database_ComboBox(self):
+        print(f"UPDATING DB COMBO BOX WITH NEW database!")
+        self.db_files_update = []
+        for directory in self.directory_list:
+            if os.path.exists(directory):
+                for db_file_name in os.listdir(directory):
+                    if db_file_name.endswith('.db'):
+                        self.db_files_update.append(db_file_name)
+        self.database_comboBox.clear()
+        self.database_comboBox.addItems(self.db_files_update)
+        self.database_comboBox.setPlaceholderText("Updated Databases Added")
+    
 
     # Tree view functions -----------------------------------------------------
     def gather_active_database_combined_dict(self):

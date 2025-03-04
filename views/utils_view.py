@@ -14,7 +14,7 @@ except ModuleNotFoundError:
     from shiboken2 import wrapInstance
 
 
-def layV_SPACER_func(self):
+def layV_SPACER_func():
         layH_spacer = QtWidgets.QHBoxLayout()
         spacer = QtWidgets.QWidget()
         spacer.setFixedSize(100,10)
