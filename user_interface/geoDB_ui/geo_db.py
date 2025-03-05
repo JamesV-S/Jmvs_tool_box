@@ -22,7 +22,6 @@ import os
 from databases import database_manager
 from databases.geo_databases import database_schema_001
 
-# from user_interface.geoDB_ui import export_db
 from main_entry_points.geoDB_mep import export_database_main  
 
 from systems import (
@@ -37,13 +36,13 @@ from systems.sys_geoDB import (
 
 importlib.reload(database_manager)
 importlib.reload(database_schema_001)
-# importlib.reload(export_db)
 importlib.reload(export_database_main)
 importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
 importlib.reload(uuid_handler)
 importlib.reload(bind_skin)
 importlib.reload(unbind_skin)
+
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -73,7 +72,6 @@ class GeoDatabase(QtWidgets.QWidget):
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
 
-        # Controller section: -------------------------------------------------
         # gather available database file names & pass to the ComboBox
         self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         self.db_files = []
@@ -84,12 +82,11 @@ class GeoDatabase(QtWidgets.QWidget):
                         self.db_files.append(db_file_name)
         
         self.custom_uuid_attr = "custom_UUID"
-        # Controller section: -------------------------------------------------
-        
         self.UI()
         self.UI_connect_signals()
         self.val_new_relationship_checkBox = 0
         self.active_db = self.database_comboBox.currentText()
+        print(f"CONTROLLER: self.active_db = {self.active_db}")
         self.visualise_active_db()
 
         self.export_db_controller = None
@@ -493,7 +490,7 @@ class GeoDatabase(QtWidgets.QWidget):
             # Show the ui & get the returned the controller
             self.export_db_controller = export_database_main.export_db_main()
         
-            # Access the view through the controller.
+            # Access the view through the controller 
             ui = self.export_db_controller.view
             
             # connect the signal to the update db combobox function
@@ -767,26 +764,26 @@ class GeoDatabase(QtWidgets.QWidget):
     #--------------------------------------------------------------------------
     ########## TREE VIEW FUNCTOINS ##########
     def gather_active_database_combined_dict(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        levels = os_custom_directory_utils.determine_levels_to_target(
-            current_dir, "Jmvs_tool_box"
-            )
-        root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
-        try:
-            self.active_db_dir = utils.find_directory(self.active_db, root_dir)
-            #print(f"Directory of `{self.active_db}` is:  `{self.active_db_dir}`")
-        except FileNotFoundError as e:
-            print(f"active db file '{self.active_db}' not found cus of this error: {e}")
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            levels = os_custom_directory_utils.determine_levels_to_target(
+                current_dir, "Jmvs_tool_box"
+                )
+            root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
+            try:
+                self.active_db_dir = utils.find_directory(self.active_db, root_dir)
+                #print(f"Directory of `{self.active_db}` is:  `{self.active_db_dir}`")
+            except FileNotFoundError as e:
+                print(f"active db file '{self.active_db}' not found cus of this error: {e}")
 
-        # Get dictionary of all the data from db
-        uuid_retrieval = database_schema_001.RetrieveAllUUIDs(
-            self.active_db, self.active_db_dir
-            )
-        try:
-            combined_dict = uuid_retrieval.get_combined_dict()
-            return combined_dict
-        except Exception as e:
-            print(f"If you just created a new db, ignore this error, if not: {e}")
+            # Get dictionary of all the data from db
+            uuid_retrieval = database_schema_001.RetrieveAllUUIDs(
+                self.active_db, self.active_db_dir
+                )
+            try:
+                combined_dict = uuid_retrieval.get_combined_dict()
+                return combined_dict
+            except Exception as e:
+                print(f"If you just created a new db, ignore this error, if not: {e}")
     
     # by calling the 'populate tree view' i can update the treeview live as operations happen
     def visualise_active_db(self):
@@ -912,7 +909,7 @@ class GeoDatabase(QtWidgets.QWidget):
                 cmds.select(found_obj)
                 print(f"selected object without cutom UUID: {found_obj}")
 
-    
+
     def ui_joint_selects_scene_joint(self):
         joint_uuid = self.retrive_joint_uuid_of_selection()
         """
@@ -941,8 +938,7 @@ class GeoDatabase(QtWidgets.QWidget):
         
         else:
             print("No object matches that given geo_uuid")
-        
-
+     
 
     def retrive_geo_uuid_of_selection(self):
         # get the selection of the geo tree view
@@ -990,6 +986,7 @@ class GeoDatabase(QtWidgets.QWidget):
         joint_uuid = joint_item.data(QtCore.Qt.UserRole)
 
         return joint_name, joint_uuid
+
 
     def get_geo_name_and_uuid_TreeSel(self):
         selected_index = utils.get_first_tree_index(self.geo_tree_view)

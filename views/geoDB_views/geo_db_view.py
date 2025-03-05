@@ -54,7 +54,14 @@ class GeometryDatabaseView(QtWidgets.QWidget):
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
-
+        
+        self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        self.db_files = []
+        for directory in self.directory_list:
+             if os.path.exists(directory):
+                 for db_file_name in os.listdir(directory):
+                     if db_file_name.endswith('.db'):
+                         self.db_files.append(db_file_name)
         self.init_ui()
 
 
@@ -194,7 +201,7 @@ class GeometryDatabaseView(QtWidgets.QWidget):
         
         layH_comboBox = QtWidgets.QHBoxLayout()
         self.database_comboBox = QtWidgets.QComboBox()
-        # self.database_comboBox.addItems(self.db_files)
+        self.database_comboBox.addItems(self.db_files)
         self.database_comboBox.setPlaceholderText("^Add Databases^")
         self.database_comboBox.model().sort(-1)
         # editing features of a QComboBox

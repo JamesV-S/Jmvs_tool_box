@@ -19,6 +19,8 @@ import sys
 import importlib
 import os
 
+from main_entry_points.geoDB_mep import picker_geoDB_main
+
 from user_interface.char_ui import char_rig 
 from user_interface.vehicle_ui import vehicle_rig 
 from user_interface.geoDB_ui import master_geo_db_picker
@@ -27,6 +29,8 @@ from user_interface.other_ui import other_tool
 from systems import (
     os_custom_directory_utils
 )
+
+importlib.reload(picker_geoDB_main)
 
 importlib.reload(char_rig)
 importlib.reload(vehicle_rig)
@@ -75,6 +79,8 @@ class ToolBox(QtWidgets.QWidget):
         self.UI()
         self.UI_connect_signals()
 
+        self.picker_geoDB_controller = None
+
         
     def UI(self):
         self.char_button = QtWidgets.QPushButton()
@@ -86,19 +92,19 @@ class ToolBox(QtWidgets.QWidget):
         
         # add images
         char_image_path = os.path.join(os_custom_directory_utils.create_directory(
-            "Jmvs_tool_box", "user_interface", "CSS", "images"), "img_char_db_001.png"
+            "Jmvs_tool_box", "assets", "images"), "img_char_db_001.png"
             )
         # Set the image as the button icon
         char_icon = QIcon(char_image_path)
 
         geo_image_path = os.path.join(os_custom_directory_utils.create_directory(
-            "Jmvs_tool_box", "user_interface", "CSS", "images"), "img_geo_db_001.png"
+            "Jmvs_tool_box", "assets", "images"), "img_geo_db_001.png"
             )
         # Set the image as the button icon
         geo_icon = QIcon(geo_image_path)
 
         vehicle_image_path = os.path.join(os_custom_directory_utils.create_directory(
-            "Jmvs_tool_box", "user_interface", "CSS", "images"), "img_vehicle_db_001.png"
+            "Jmvs_tool_box", "assets", "images"), "img_vehicle_db_001.png"
             )
         # Set the image as the button icon
         vehicle_icon = QIcon(vehicle_image_path)
@@ -162,6 +168,7 @@ class ToolBox(QtWidgets.QWidget):
 
     def sigFunc_geometry(self):
         print("loading geo ui")
+        # self.picker_geoDB_controller = picker_geoDB_main.picker_geoDB_main()
         master_geo_db_picker.master_geo_main()
         delete_existing_ui(self.ui_object_name)
     

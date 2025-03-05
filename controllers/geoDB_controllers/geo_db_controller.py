@@ -48,10 +48,21 @@ importlib.reload(unbind_skin)
 
 class GeometryDatabaseController:
     def __init__(self): # class
+        f"GEO_dB CONTROLLER RUN"
         self.model = geo_db_model.GeometryDatabaseModel()
         self.view = geo_db_view.GeometryDatabaseView()
+
+        self.custom_uuid_attr = "custom_UUID"
+        self.export_db_controller = None
+        self.val_new_relationship_checkBox = 0
+        self.active_db = self.view.database_comboBox.currentText()
         
-        # gather available database file names & pass to the ComboBox
+        print(f"CONTROLLER: self.active_db = {self.active_db}")
+        
+        self.model.active_db = self.active_db
+        self.model.joint_model = self.view.joint_model
+        self.model.geo_model = self.view.geo_model
+
         self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         self.db_files = []
         for directory in self.directory_list:
@@ -59,20 +70,14 @@ class GeometryDatabaseController:
                 for db_file_name in os.listdir(directory):
                     if db_file_name.endswith('.db'):
                         self.db_files.append(db_file_name)
-        
-        self.view.database_comboBox.addItems(self.db_files)
 
-        self.custom_uuid_attr = "custom_UUID"
-        self.export_db_controller = None
-        self.val_new_relationship_checkBox = 0
-        self.active_db = self.view.database_comboBox.currentText()
-        self.model.visualise_active_db()
+        
+        self.visualise_active_db()
         
         # Connect the selection change on joint tree to effect geo tree. 
         self.view.joint_tree_view.selectionModel().selectionChanged.connect(self.model.signal_to_geo_tree_highlight)
         self.view.joint_tree_view.selectionModel().selectionChanged.connect(self.model.ui_joint_selects_scene_joint)
         self.view.geo_tree_view.selectionModel().selectionChanged.connect(self.model.ui_geo_selects_scene_geo)
-        
 
         ########## UI CONNECTIONS : 1 : ##########
         # -------- Tree views --------
@@ -107,7 +112,7 @@ class GeometryDatabaseController:
         self.view.rmv_jnt_btn.clicked.connect(self.sigFunc_rmv_jnt_btn)
         self.view.rmv_geo_btn.clicked.connect(self.sigFunc_rmv_geo_btn)
         self.view.remove_relationship_btn.clicked.connect(self.sigFunc_remove_relationship_btn)
-
+        
 
     ########## UI SIGNAL FUNCTOINS ##########
     # -------- Tree views --------
@@ -173,7 +178,7 @@ class GeometryDatabaseController:
             ui = self.export_db_controller.view
             
             # connect the signal to the update db combobox function
-            ui.databaseCreated.connect(self.model.update_database_ComboBox(self.view.database_comboBox))
+            ui.databaseCreated.connect(self.update_database_ComboBox)
         except Exception as e:
             print(f"Export button encounted an errors: {e}")
 
@@ -181,17 +186,23 @@ class GeometryDatabaseController:
     # -- available databases --
     def sigFunc_dbFolderPath_btn(self):
         # below is the chosen path by the user
+        # directory = QtWidgets.QFileDialog.getExistingDirectory(
+        #     self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
         directory = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
+        parent=self.view,  # Assuming self.view is a QWidget
+        caption="Select Directory",
+        dir=os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")
+        )
+        print(f"CON: self.directory_list = {self.directory_list}")
         self.directory_list.append(directory)
-        self.model.update_database_ComboBox(self.view.database_comboBox)
+        self.update_database_ComboBox()
 
 
     def sigFunc_database_comboBox(self, index):
-        self.val_database_comboBox = self.view.db_folder_path_btn.itemText(index)
-        self.active_db = self.view.db_folder_path_btn.currentText()
-        #print(f"db_comboBox current text = `{self.active_db}`")
-        self.model.visualise_active_db()
+        self.val_database_comboBox = self.view.database_comboBox.itemText(index)
+        self.active_db = self.view.database_comboBox.currentText()
+        print(f"db_comboBox current text = `{self.active_db}`")
+        self.visualise_active_db()
         return self.val_database_comboBox
     
     # -- skinning --
@@ -233,6 +244,7 @@ class GeometryDatabaseController:
 
     def sigFunc_bind_all_btn(self):
         print(f"bind_all_btn clicked!")
+        self.model.active_db = self.active_db
         all_combined_dicts = self.model.gather_active_database_combined_dict()
         print(f"all_combined_dicts = {all_combined_dicts}")
         for key, values in all_combined_dicts.items():
@@ -241,6 +253,7 @@ class GeometryDatabaseController:
 
     def sigFunc_unbind_all_btn(self):
         print(f"unbind_all_btn clicked!")
+        self.model.active_db = self.active_db
         all_combined_dicts = self.model.gather_active_database_combined_dict()
         # Get all geo UUID dicts and put in a list to iterate over afrer
         geometry_dicts = []
@@ -280,7 +293,7 @@ class GeometryDatabaseController:
                     )
                 self.jnt_rShip_row = update_jnt_db.get_new_row()
                 print(f"update_jnt_row!: {self.jnt_rShip_row}")
-                self.model.visualise_active_db()
+                self.visualise_active_db()
             else: # would not add joint to existing row, becuase would just make a new relationship if it doesn't already exist, 
                 # instead work on geo being added!
                 pass
@@ -310,7 +323,7 @@ class GeometryDatabaseController:
                     self.jnt_rShip_row, self.active_db, 
                     geo_uuid_dict, self.model.active_db_dir
                     )
-                self.model.visualise_active_db()
+                self.visualise_active_db()
             else: # once the joint had been selected in the treeview Ui
                 print(f"Adding GEO to existing row!")
                 result = self.model.get_sel_jnt_index_and_uuid()
@@ -328,7 +341,7 @@ class GeometryDatabaseController:
                     database_schema_001.UpdateGeoDatabase(
                         row_index+1, self.active_db, geo_uuid_dict, self.model.active_db_dir
                         )
-                    self.model.visualise_active_db()
+                    self.visualise_active_db()
                 else:
                     print(f"add geo to existing: error selecting existing joint")
         except Exception as e:
@@ -365,7 +378,7 @@ class GeometryDatabaseController:
                     self.active_db, joint_uuid_dict, self.model.active_db_dir, 
                     jnt_parent_num
                     )
-                    self.model.visualise_active_db()
+                    self.visualise_active_db()
                 else:
                     print(f"add joint to existing row: error selecting existing joint")
         except Exception as e:
@@ -411,7 +424,7 @@ class GeometryDatabaseController:
             database_schema_001.DeleteRelationshipFromDatabase(self.active_db, self.model.active_db_dir, db_row_id)
         except:
             print(f"Error: Need to SELECT relationship parent in JOINT TreeView!")
-        self.model.visualise_active_db()
+        self.visualise_active_db()
         
     
     def sigFunc_rmv_geo_btn(self):
@@ -423,7 +436,7 @@ class GeometryDatabaseController:
             database_schema_001.RemoveSpecificDATAfromDB(
                 self.active_db, self.model.active_db_dir, "geo", geo_name, geo_uuid
                 )
-            self.model.visualise_active_db()
+            self.visualise_active_db()
         else:
             print(f"in trying to REMOVE GEO, getting name & uuid failed.")
 
@@ -438,5 +451,29 @@ class GeometryDatabaseController:
             database_schema_001.RemoveSpecificDATAfromDB(
                 self.active_db, self.model.active_db_dir, "joint", joint_name, joint_uuid
                 )
-            self.model.visualise_active_db()
+            self.visualise_active_db()
     
+
+    def update_database_ComboBox(self):
+        print(f"UPDATING DB COMBO BOX WITH NEW database!")
+        self.db_files_update = []
+        for directory in self.directory_list:
+            if os.path.exists(directory):
+                for db_file_name in os.listdir(directory):
+                    if db_file_name.endswith('.db'):
+                        self.db_files_update.append(db_file_name)
+        self.view.database_comboBox.clear()
+        self.view.database_comboBox.addItems(self.db_files_update)
+        self.view.database_comboBox.setPlaceholderText("Updated Databases Added")
+
+
+    # by calling the 'populate tree view' i can update the treeview live as operations happen
+    def visualise_active_db(self):
+        print(f"visualise_active_db:self.active_db = {self.active_db} -&- self.active_db_dir = {self.model.active_db_dir}")
+        self.model.active_db = self.active_db
+        combined_dict = self.model.gather_active_database_combined_dict()
+        # clear the modules everytime the active db is switched
+        self.view.joint_model.clear()
+        self.view.geo_model.clear()
+        #for key, values in combined_dict.items():
+        self.model.populate_tree_views(combined_dict)

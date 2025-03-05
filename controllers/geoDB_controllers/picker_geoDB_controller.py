@@ -19,6 +19,7 @@ except ModuleNotFoundError:
 
 from models.geoDB_models import picker_geoDB_model
 from views.geoDB_views import picker_geoDB_view
+from user_interface.geoDB_ui import geo_db
 
 from main_entry_points.geoDB_mep import (
     import_geo_usd_main,
@@ -32,10 +33,12 @@ importlib.reload(picker_geoDB_view)
 importlib.reload(import_geo_usd_main)
 importlib.reload(export_geo_usd_main)
 importlib.reload(geo_db_main)
+importlib.reload(geo_db)
 
 
-class GeometryDatabaseController:
+class PickerGeometryDatabaseController:
     def __init__(self): # class
+        print(f"Picker geoDB MVC controller")
         self.model = picker_geoDB_model.PickerGeometryDatabaseModel()
         self.view = picker_geoDB_view.PickerGeometryDatabaseView()
         
@@ -61,8 +64,8 @@ class GeometryDatabaseController:
 
 
     def sigFunc_geo_func(self):
-        print("loading geo ui")
-        self.geo_db_controller = geo_db_main.geo_db_main()
-        # geo_db.geoDB_main()
+        print("loading geo uii")
+        #self.geo_db_controller = geo_db_main.geo_db_main()
+        geo_db.geoDB_main()
         # delete_existing_ui(self.ui_object_name)
     

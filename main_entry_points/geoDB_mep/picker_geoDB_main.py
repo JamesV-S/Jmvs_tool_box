@@ -17,7 +17,7 @@ from controllers.geoDB_controllers import picker_geoDB_controller
 
 importlib.reload(picker_geoDB_controller)
 
-def geo_db_main():
+def picker_geoDB_main():
     # No ApplicationInstance becuase it is being handled through 'geo_db.py' already! 
     controller = picker_geoDB_controller.PickerGeometryDatabaseController()
     controller.view.show()

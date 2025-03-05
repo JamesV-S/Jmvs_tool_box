@@ -43,6 +43,14 @@ class GeometryDatabaseModel:
         self.geo_tree_view = ""
         self.joint_tree_view = ""
 
+        self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        self.db_files_update = []
+        for directory in self.directory_list:
+            if os.path.exists(directory):
+                for db_file_name in os.listdir(directory):
+                    if db_file_name.endswith('.db'):
+                        self.db_files_update.append(db_file_name)
+
 
     def return_geo_uuid_from_db(self, db_row_id):
         uuids =  database_schema_001.ReturnRelationshipUUIDFromDatabase(
@@ -51,19 +59,13 @@ class GeometryDatabaseModel:
                 )
         return uuids
     
-
+    '''
     def update_database_ComboBox(self, database_comboBox):
         print(f"UPDATING DB COMBO BOX WITH NEW database!")
-        self.db_files_update = []
-        for directory in self.directory_list:
-            if os.path.exists(directory):
-                for db_file_name in os.listdir(directory):
-                    if db_file_name.endswith('.db'):
-                        self.db_files_update.append(db_file_name)
         database_comboBox.clear()
         database_comboBox.addItems(self.db_files_update)
         database_comboBox.setPlaceholderText("Updated Databases Added")
-    
+    '''
 
     # Tree view functions -----------------------------------------------------
     def gather_active_database_combined_dict(self):
@@ -73,12 +75,14 @@ class GeometryDatabaseModel:
             )
         root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
         try:
+            print(f"MODELgather_active....: self.active_db={self.active_db} & root_dir={root_dir}")
             self.active_db_dir = utils.find_directory(self.active_db, root_dir)
             #print(f"Directory of `{self.active_db}` is:  `{self.active_db_dir}`")
         except FileNotFoundError as e:
             print(f"active db file '{self.active_db}' not found cus of this error: {e}")
 
         # Get dictionary of all the data from db
+        print(f"self.active_db = {self.active_db} -&- self.active_db_dir = {self.active_db_dir}")
         uuid_retrieval = database_schema_001.RetrieveAllUUIDs(
             self.active_db, self.active_db_dir
             )
@@ -88,16 +92,17 @@ class GeometryDatabaseModel:
         except Exception as e:
             print(f"If you just created a new db, ignore this error, if not: {e}")
 
-        
+    '''    
     # by calling the 'populate tree view' i can update the treeview live as operations happen
     def visualise_active_db(self):
+        print(f"visualise_active_db:self.active_db = {self.active_db} -&- self.active_db_dir = {self.active_db_dir}")
         combined_dict = self.gather_active_database_combined_dict()
         # clear the modules everytime the active db is switched
         self.joint_model.clear()
         self.geo_model.clear()
         #for key, values in combined_dict.items():
         self.populate_tree_views(combined_dict)
-
+    '''
     
     def populate_tree_views(self, data_dict):
         # Store the UUID's from TreeView as Data
