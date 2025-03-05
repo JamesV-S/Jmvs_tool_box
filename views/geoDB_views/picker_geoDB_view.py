@@ -1,58 +1,43 @@
+# ----------------------------------------- VIEW ----------------------------------------
 
-import maya.cmds as cmds
+import importlib
 from maya import OpenMayaUI
+import os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
-    from PySide6.QtCore import Qt
-    from PySide6.QtGui import QIcon
+    from PySide6.QtCore import Qt, Signal
+    from PySide6.QtGui import QIcon, QStandardItemModel, QStandardItem
     from PySide6.QtWidgets import (QWidget)
     from shiboken6 import wrapInstance
 except ModuleNotFoundError:
     from PySide2 import QtCore, QtWidgets, QtGui
-    from PySide2.QtCore import Qt
+    from PySide2.QtCore import Qt, Signal
     from PySide2.QtGui import QIcon
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
-
-import sys
-import importlib
-import os
-
-from main_entry_points.geoDB_mep import (
-    import_geo_usd_main,
-    export_geo_usd_main, 
-    geo_db_main
-)
-
-from user_interface.geoDB_ui import (
-    geo_db
-    )
 
 from systems import (
     os_custom_directory_utils
 )
 
-importlib.reload(import_geo_usd_main)
-importlib.reload(export_geo_usd_main)
-importlib.reload(geo_db_main)
-importlib.reload(geo_db)
+from views import utils_view
 
-# For the time being, use this file to simply call the 'modular_char_ui.py'
+importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_view)
+
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 
-def delete_existing_ui(ui_name):
-    if cmds.window(ui_name, exists=True):
-        cmds.deleteUI(ui_name, window=True)
-
-class masterGeoPicker(QtWidgets.QWidget):
-    def __init__(self, *args, **kwargs):
-        super(masterGeoPicker, self).__init__(*args, **kwargs)
-        version = "001"
-        self.ui_object_name = f"Jmvs_masterGeoPicker_{version}"
-        ui_window_name = f"Jmvs_masterGeoPicker_{version}"
-        delete_existing_ui(self.ui_object_name)
+class PickerGeometryDatabaseView(QtWidgets.QWidget):
+    # define a signal to indicate completion of db creation
+    # databaseCreated = Signal()
+    def __init__(self, parent=None):
+        super(PickerGeometryDatabaseView, self).__init__(parent)
+        version = "MVC"
+        self.ui_object_name = f"Jmvs_picker_geoDB_{version}"
+        ui_window_name = f"Jmvs picker geoDB {version}"
+        utils_view.delete_existing_ui(self.ui_object_name)
         self.setObjectName(self.ui_object_name)
         
         # set flags & dimensions
@@ -73,23 +58,10 @@ class masterGeoPicker(QtWidgets.QWidget):
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
 
-        # button functions
-        # ----------------------------------  
-        self.current_ui = None
-        self.ui_stack = []
+        self.init_ui()
 
-        self.UI()
-        
-        self.export_usd_button.clicked.connect(self.sigFunc_export_usd_func)
-        self.import_usd_button.clicked.connect(self.sigFunc_import_usd_func)
-        self.geoDB_button.clicked.connect(self.sigFunc_geo_func)
 
-        self.import_geo_usd_controller = None
-        self.export_geo_usd_controller = None
-        self.geo_db_controller = None
-
-        
-    def UI(self):
+    def init_ui(self):
         self.export_usd_button = QtWidgets.QPushButton("EXPORT")
         self.import_usd_button = QtWidgets.QPushButton("IMPORT")
         self.geoDB_button = QtWidgets.QPushButton("DATABASE")
@@ -134,34 +106,3 @@ class masterGeoPicker(QtWidgets.QWidget):
         self.grid_layout.addWidget(self.export_usd_button, 0, 0)
         self.grid_layout.addWidget(self.import_usd_button, 0, 1)
         self.grid_layout.addWidget(self.geoDB_button, 0, 2)
-    
-    
-    def sigFunc_export_usd_func(self):
-        print("loading export ui")
-        self.export_geo_usd_controller = export_geo_usd_main.export_geo_usd_main()
-        #delete_existing_ui(self.ui_object_name)
-
-    
-    def sigFunc_import_usd_func(self):
-        print("loading import ui")
-        self.import_geo_usd_controller = import_geo_usd_main.import_geo_usd_main()
-        #delete_existing_ui(self.ui_object_name)
-
-
-    def sigFunc_geo_func(self):
-        print("loading geo ui")
-        self.geo_db_controller = geo_db_main.geo_db_main()
-        # geo_db.geoDB_main()
-        # delete_existing_ui(self.ui_object_name)
-
-
-def master_geo_main():
-    app = QtWidgets.QApplication.instance()
-    if not app:
-        app = QtWidgets.QApplication([])
-    
-    ui = masterGeoPicker()
-    ui.show()
-    app.exec()
-    return ui
-            

@@ -52,7 +52,7 @@ class GeometryDatabaseModel:
         return uuids
     
 
-    def update_database_ComboBox(self):
+    def update_database_ComboBox(self, database_comboBox):
         print(f"UPDATING DB COMBO BOX WITH NEW database!")
         self.db_files_update = []
         for directory in self.directory_list:
@@ -60,9 +60,9 @@ class GeometryDatabaseModel:
                 for db_file_name in os.listdir(directory):
                     if db_file_name.endswith('.db'):
                         self.db_files_update.append(db_file_name)
-        self.database_comboBox.clear()
-        self.database_comboBox.addItems(self.db_files_update)
-        self.database_comboBox.setPlaceholderText("Updated Databases Added")
+        database_comboBox.clear()
+        database_comboBox.addItems(self.db_files_update)
+        database_comboBox.setPlaceholderText("Updated Databases Added")
     
 
     # Tree view functions -----------------------------------------------------

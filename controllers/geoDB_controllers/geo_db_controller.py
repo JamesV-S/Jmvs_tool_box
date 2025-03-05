@@ -29,7 +29,7 @@ from systems import (
     utils
     )
 from systems.sys_geoDB import (
-    uuid_handler, 
+    uuid_handler,
     bind_skin,
     unbind_skin
 )
@@ -76,7 +76,7 @@ class GeometryDatabaseController:
 
         ########## UI CONNECTIONS : 1 : ##########
         # -------- Tree views --------
-        self.view.geo_model.itemChanged.connect(self.sigfunc_on_geoTree_item_change)
+        self.view.geo_model.itemChanged.connect(self.sigFunc_on_geoTree_item_change)
 
         # -------- Options to the right of treer --------
         # -- Add Database options --
@@ -111,7 +111,7 @@ class GeometryDatabaseController:
 
     ########## UI SIGNAL FUNCTOINS ##########
     # -------- Tree views --------
-    def sigfunc_on_geoTree_item_change(self, item):
+    def sigFunc_on_geoTree_item_change(self, item):
         if item.isCheckable():
             name = item.text()
             state = "checked" if item.checkState() == Qt.Checked else "unchecked"
@@ -173,7 +173,7 @@ class GeometryDatabaseController:
             ui = self.export_db_controller.view
             
             # connect the signal to the update db combobox function
-            ui.databaseCreated.connect(self.model.update_database_ComboBox)
+            ui.databaseCreated.connect(self.model.update_database_ComboBox(self.view.database_comboBox))
         except Exception as e:
             print(f"Export button encounted an errors: {e}")
 
@@ -184,7 +184,7 @@ class GeometryDatabaseController:
         directory = QtWidgets.QFileDialog.getExistingDirectory(
             self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
         self.directory_list.append(directory)
-        self.model.update_database_ComboBox()
+        self.model.update_database_ComboBox(self.view.database_comboBox)
 
 
     def sigFunc_database_comboBox(self, index):
