@@ -89,8 +89,8 @@ def modify_schema(db_name):
         print(f"Error modifying schema: {e}")
 
 # Example usage
-db_name = 'C:\Docs\maya\scripts\Jmvs_tool_box\databases\char_databases\db_rig_storage\DB_jmvs_cartoonMale_rig\DB_bipedArm.db'
-        #  C:\Docs\maya\scripts\Jmvs_tool_box\databases\char_databases\db_rig_storage\DB_jmvs_cartoonMale_rig\DB_bipedArm
+
+#  C:\Docs\maya\scripts\Jmvs_tool_box\databases\char_databases\db_rig_storage\DB_jmvs_cartoonMale_rig\DB_bipedArm
 #modify_schema(db_name)
 
 def delete_row_by_id(db_name, row_id):
@@ -116,4 +116,48 @@ def delete_row_by_id(db_name, row_id):
 row_id_to_delete = 3  # Replace with the actual db_row_id you want to delete
 #for x in range(1):
 #    delete_row_by_id(db_name, x)
-delete_row_by_id(db_name, 3)
+# delete_row_by_id(db_name, 3)
+'''
+# from database, where 'db_row_id' == 4, update it to '2'
+table = 'uuid_data'
+update_statement = f'UPDATE {table} SET db_row_id = ?, WHERE db_row_id = ?'
+db_name = 'C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases\grp_MECH_db\DB_Mech_Torso.db'
+# C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases\grp_MECH_db
+def update_specififc_same_data(conn, sql, collumn_name, arg1, ID):
+    cursor = conn.cursor()
+    try:
+        # execute the UPDATE statement with the priority and id.
+        cursor.execute(f"SELECT * FROM {table} WHERE {collumn_name} = ?", (ID,))
+        if cursor.fetchone() is None:
+            print(f"No task found with id: `{ID}`.")
+            return
+        
+        # Execute the UPDATE statement
+        cursor.execute(sql, (arg1, ID))
+        conn.commit()
+        if cursor.rowcount == 0:
+            print(f"No '{table}' table found with id `{ID}`.")
+        else:
+            print(f"'{table}' table found with id `{ID}`.")
+
+        # verify the update on a specific row: 
+        cursor.execute(f'SELECT {collumn_name}, FROM tasks WHERE {collumn_name} = ?', (ID,))
+        row = cursor.fetchone() # Gets all rows from the result of the query
+        if row: 
+            print("Verifying the update:")
+            print(row)
+        else:
+            print(f"No '{table}' table found with id `{ID}`.")
+
+    except sqlite3.Error as e:
+        print(f"An error occured in the UPDATE statement: {e}")
+
+def same_name_main():
+    try:
+        with sqlite3.connect(db_name) as conn:
+            update_specififc_same_data(conn, update_statement, collumn_name, arg1, ID)
+
+    except sqlite3.Error as e:
+        print(e)
+'''
+

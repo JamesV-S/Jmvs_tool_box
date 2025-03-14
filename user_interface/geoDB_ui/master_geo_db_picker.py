@@ -150,8 +150,8 @@ class masterGeoPicker(QtWidgets.QWidget):
 
     def sigFunc_geo_func(self):
         print("loading geo ui")
-        self.geo_db_controller = geo_db_main.geo_db_main()
-        # geo_db.geoDB_main()
+        #self.geo_db_controller = geo_db_main.geo_db_main()
+        geo_db.geoDB_main()
         # delete_existing_ui(self.ui_object_name)
 
 
