@@ -9,7 +9,7 @@ from systems import (
 
 # from usd_exports.systems import func_import_geometry_UUID_usd
 
-class SkeletonModel:
+class CharSkeletonModel:
     def __init__(self):
         pass
     #     self.usd_file = ""

@@ -1187,7 +1187,7 @@ class CharRigging(QtWidgets.QWidget):
         try: # handle if it has no side
             side = split_names[2]
         except Exception:
-            side = "L" #use M to represent middle (but doesn't show up in scene)
+            side = "M" #use M to represent middle (but doesn't show up in scene)
             # Or whatever it needs to be in the database! 
         print(f"split_names: module = {module}, unique_id = {unique_id}, side = {side}")
         
