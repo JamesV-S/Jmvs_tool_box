@@ -30,10 +30,12 @@ from systems.sys_char_rig import (
     cr_guides, 
     cr_ctrl
 )
-
+# Model
 importlib.reload(database_schema_002)
 importlib.reload(os_custom_directory_utils)
+# All MVC
 importlib.reload(utils)
+# Controller 
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
 # For the time being, use this file to simply call the 'modular_char_ui.py'
@@ -99,8 +101,6 @@ class CharRigging(QtWidgets.QWidget):
     def UI_modules(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
         main_Vlayout.setObjectName("main_Layout")
-        
-        
 
         top_Hlayout = QtWidgets.QHBoxLayout() # db_vis & mdl_choose
         bottom_Vlayout = QtWidgets.QVBoxLayout() # add_blueprint & updating db
