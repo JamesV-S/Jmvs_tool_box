@@ -3,19 +3,16 @@ import importlib
 import sys
 import os
 
-# construct the dir path for newfolders! 
-#dir_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'systems')
-#os.makedirs(dir_path, exist_ok=True)
-#print(f"dir_path = {dir_path}")
-#from systems import (
-#    os_custom_directory_utils
-#    )
+import service_locator_pattern 
+from main_entry_points.char_mep import char_master_main
+from main_entry_points.geoDB_mep import geoDB_master_main
 
-# importlib.reload(os_custom_directory_utils)
+importlib.reload(service_locator_pattern)
+importlib.reload(char_master_main)
 
+tool_box_controller = None
 current_dir = os.path.dirname(os.path.abspath(__file__))
 print(f"current_dir == {current_dir}")
-
 
 def does_directory_exist(directory):
     if os.path.exists(directory):
@@ -62,13 +59,28 @@ def updating_paths():
             add_to_sys_path(directory)
 
 
+def register_services():
+    from main_entry_points import tool_box_main
+    importlib.reload(tool_box_main)
+
+    tool_box_instance = tool_box_main.ToolBoxMain()
+    service_locator_pattern.ServiceLocator.add_service('tool_box_main', tool_box_instance)
+
+    char_master_instance = char_master_main.CharMasterMain() 
+    service_locator_pattern.ServiceLocator.add_service('char_master_main', char_master_instance)
+
+    geoDB_master_instance = geoDB_master_main.GeoDbMasterMain()
+    service_locator_pattern.ServiceLocator.add_service('geoDB_master_main', geoDB_master_instance)
+    print("Registered services:", service_locator_pattern.ServiceLocator._services)
+
+
 def run_tool_box():
     updating_paths()
+    register_services()
     
-    import toolBox
-    importlib.reload(toolBox)
-    toolBox.tool_box_main()
-
+    tool_box_controller = service_locator_pattern.ServiceLocator.get_service('tool_box_main')
+    if tool_box_controller:
+        tool_box_controller.show_ui()
     
     
 

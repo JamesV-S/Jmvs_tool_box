@@ -29,14 +29,14 @@ importlib.reload(utils_view)
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 
-class PickerGeometryDatabaseView(QtWidgets.QWidget):
+class GeoDbMasterView(QtWidgets.QWidget):
     # define a signal to indicate completion of db creation
     # databaseCreated = Signal()
     def __init__(self, parent=None):
-        super(PickerGeometryDatabaseView, self).__init__(parent)
+        super(GeoDbMasterView, self).__init__(parent)
         version = "MVC"
-        self.ui_object_name = f"Jmvs_picker_geoDB_{version}"
-        ui_window_name = f"Jmvs picker geoDB {version}"
+        self.ui_object_name = f"Jmvs_geoDB_master_{version}"
+        ui_window_name = f"Jmvs geoDB master {version}"
         utils_view.delete_existing_ui(self.ui_object_name)
         self.setObjectName(self.ui_object_name)
         

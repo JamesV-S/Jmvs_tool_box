@@ -49,15 +49,21 @@ importlib.reload(char_layout_main)
 importlib.reload(char_skeleton_main)
 
 class CharMasterController:
-    def __init__(self): # class
+    def __init__(self):
         self.model = char_master_model.CharMasterModel()
         self.view = char_master_view.CharMasterView()
-        
+
         self.view.char_layout_button.clicked.connect(self.sigfunc_char_layout_button)
-
-        self.char_layout_controller = None
-
-
+        self.view.char_skeleton_button.clicked.connect(self.sigfunc_char_skeleton_button)
+        # self.char_layout_controller = None
+        
+    
     def sigfunc_char_layout_button(self):
         print(f"running 'char_layout_controller'")
         # self.char_layout_controller = char_layout_main.char_layout_main()
+
+    
+    def sigfunc_char_skeleton_button(self):
+        print(f"running 'char_skeleotn_controller'")
+
+    

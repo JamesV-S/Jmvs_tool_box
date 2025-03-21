@@ -17,8 +17,8 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-from models.geoDB_models import picker_geoDB_model
-from views.geoDB_views import picker_geoDB_view
+from models.geoDB_models import geoDb_master_model
+from views.geoDB_views import geoDb_master_view
 from user_interface.geoDB_ui import geo_db
 
 from main_entry_points.geoDB_mep import (
@@ -27,8 +27,8 @@ from main_entry_points.geoDB_mep import (
     geo_db_main
 )
 
-importlib.reload(picker_geoDB_model)
-importlib.reload(picker_geoDB_view)
+importlib.reload(geoDb_master_model)
+importlib.reload(geoDb_master_view)
 
 importlib.reload(import_geo_usd_main)
 importlib.reload(export_geo_usd_main)
@@ -36,11 +36,11 @@ importlib.reload(geo_db_main)
 importlib.reload(geo_db)
 
 
-class PickerGeometryDatabaseController:
+class GeoDbMasterController:
     def __init__(self): # class
         print(f"Picker geoDB MVC controller")
-        self.model = picker_geoDB_model.PickerGeometryDatabaseModel()
-        self.view = picker_geoDB_view.PickerGeometryDatabaseView()
+        self.model = geoDb_master_model.GeoDbMasterModel()
+        self.view = geoDb_master_view.GeoDbMasterView()
         
         self.view.export_usd_button.clicked.connect(self.sigFunc_export_usd_func)
         self.view.import_usd_button.clicked.connect(self.sigFunc_import_usd_func)

@@ -20,7 +20,15 @@ import importlib
 import os
 
 from main_entry_points.geoDB_mep import picker_geoDB_main
-from main_entry_points.char_mep import char_master_main
+# from main_entry_points.char_mep import char_master_main
+
+from Jmvs_tool_box.main_entry_points.char_mep import char_master_main
+# '''RELOAD MEP'''
+importlib.reload(char_master_main)
+'''INITIALISE ITS CONTROLLER'''
+char_master_controller = None
+'''CALL THE MEP AND RETURN CONTROLLER'''
+char_master_controller = char_master_main.char_master_main()
 
 from user_interface.char_ui import char_rig 
 from user_interface.vehicle_ui import vehicle_rig 
@@ -81,8 +89,9 @@ class ToolBox(QtWidgets.QWidget):
         self.UI()
         self.UI_connect_signals()
 
+        self.char_master_controller = char_master_controller
         self.picker_geoDB_controller = None
-        self.char_master_controller = None
+        
 
         
     def UI(self):
@@ -158,7 +167,7 @@ class ToolBox(QtWidgets.QWidget):
 
 
     def sigFunc_character(self):
-        print("loading character ui")
+        print("loading character MASTER Main")
         self.char_master_controller = char_master_main.char_master_main()
         # char_rig.char_main()
         delete_existing_ui(self.ui_object_name)
@@ -172,14 +181,15 @@ class ToolBox(QtWidgets.QWidget):
 
     def sigFunc_geometry(self):
         print("loading geo ui")
-        # self.picker_geoDB_controller = picker_geoDB_main.picker_geoDB_main()
-        master_geo_db_picker.master_geo_main()
+        self.picker_geoDB_controller = picker_geoDB_main.picker_geoDB_main()
+        # master_geo_db_picker.master_geo_main()
         delete_existing_ui(self.ui_object_name)
     
 
     def sigFunc_other(self):
         print("loading other ui")
-        other_tool.geoDB_main()
+        # self.char_master_controller = char_master_main.char_master_main()
+        # other_tool.geoDB_main()
         delete_existing_ui(self.ui_object_name)
 
     # Not in use

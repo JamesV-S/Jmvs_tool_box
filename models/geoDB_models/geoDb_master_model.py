@@ -25,7 +25,7 @@ from databases.geo_databases import database_schema_001
 
 importlib.reload(database_schema_001)
 
-class PickerGeometryDatabaseModel:
+class GeoDbMasterModel:
     def __init__(self):
         pass
 
