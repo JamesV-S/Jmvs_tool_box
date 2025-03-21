@@ -28,7 +28,7 @@ from systems.sys_char_rig import (
     cr_ctrl
 )
 
-from views import utils_QTree
+from controllers import utils_QTree
 
 from models.char_models import char_skeleton_model
 from views.char_views import char_skeleton_view

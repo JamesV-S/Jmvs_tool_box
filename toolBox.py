@@ -20,6 +20,7 @@ import importlib
 import os
 
 from main_entry_points.geoDB_mep import picker_geoDB_main
+from main_entry_points.char_mep import char_master_main
 
 from user_interface.char_ui import char_rig 
 from user_interface.vehicle_ui import vehicle_rig 
@@ -31,6 +32,7 @@ from systems import (
 )
 
 importlib.reload(picker_geoDB_main)
+importlib.reload(char_master_main)
 
 importlib.reload(char_rig)
 importlib.reload(vehicle_rig)
@@ -80,6 +82,7 @@ class ToolBox(QtWidgets.QWidget):
         self.UI_connect_signals()
 
         self.picker_geoDB_controller = None
+        self.char_master_controller = None
 
         
     def UI(self):
@@ -156,7 +159,8 @@ class ToolBox(QtWidgets.QWidget):
 
     def sigFunc_character(self):
         print("loading character ui")
-        char_rig.char_main()
+        self.char_master_controller = char_master_main.char_master_main()
+        # char_rig.char_main()
         delete_existing_ui(self.ui_object_name)
 
     

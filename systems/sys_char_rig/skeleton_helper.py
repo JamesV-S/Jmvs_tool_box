@@ -12,4 +12,4 @@ all_roots = [o for o in pmc.ls() if is_root_joint(o)]
 
 import maya.cmds as cmds
 
-cmds.ls(getP)
+# cmds.ls(getP)

@@ -1,5 +1,4 @@
 # ----------------------------------------- VIEW ----------------------------------------
-
 import importlib
 from maya import OpenMayaUI
 import os
@@ -29,11 +28,9 @@ importlib.reload(utils_view)
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
 
-class CharMastreView(QtWidgets.QWidget):
-    # define a signal to indicate completion of db creation
-    # databaseCreated = Signal()
+class CharMasterView(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(CharMastreView, self).__init__(parent)
+        super(CharMasterView, self).__init__(parent)
         version = "MVC"
         ui_object_name = f"JmvsCharMaster_{version}"
         ui_window_name = f"Jmvs_Character_Master_{version}"
@@ -59,10 +56,29 @@ class CharMastreView(QtWidgets.QWidget):
         
         self.user_module_data = {} # to store user inputs from 'choose module ui'! 
         
+        self.init_ui()
         # -- CONTROL paramaters --
 
     def init_ui(self):
-        main_Vlayout = QtWidgets.QVBoxLayout(self)
-        #----------------------------------------------------------------------
+        layV_main = QtWidgets.QVBoxLayout(self)
+        layH_row = QtWidgets.QHBoxLayout()
+        layV_main.addLayout(layH_row)
+
+        self.char_layout_button = QtWidgets.QPushButton("Layout")
+        self.char_skeleton_button = QtWidgets.QPushButton("Skeleton")
+
+        layH_row.addWidget(self.char_layout_button)
+        layH_row.addWidget(self.char_skeleton_button)
+
+        btn_list = [self.char_layout_button, self.char_skeleton_button]
         
-        self.setLayout(main_Vlayout)
+        # add images
+        # char_layout_image_path = os.path.join(os_custom_directory_utils.create_directory(
+        #     "Jmvs_tool_box", "assets", "images"), "img_char_layout_db_001.png"
+        #     )
+        # # Set the image as the button icon
+        # char_layout_icon = QIcon(char_layout_image_path)
+        # self.char_layout_button.setIcon(char_layout_icon)
+        
+        utils_view.set_button_size(btn_list, 100, 100)
+            

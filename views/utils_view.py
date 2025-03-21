@@ -47,3 +47,11 @@ def get_component_name_TreeSel(tree_view, tree_model):
             module_selection_list.append(name)
         print(f"treeview selection list: {module_selection_list}")
         return module_selection_list
+    
+
+def set_button_size(btn_list, fixed_val_01, fixed_val_02):
+     for buttons in btn_list:
+        buttons.setFixedSize(fixed_val_01, fixed_val_02)
+        buttons.setMinimumSize(fixed_val_01, fixed_val_02)
+        buttons.setIconSize(QtCore.QSize(fixed_val_01, fixed_val_02))  # Explicitly set icon size to button size
+        buttons.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)

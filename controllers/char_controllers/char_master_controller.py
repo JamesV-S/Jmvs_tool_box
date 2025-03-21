@@ -28,20 +28,36 @@ from systems.sys_char_rig import (
     cr_ctrl
 )
 
-from views import utils_QTree
+from controllers import utils_QTree
 
-from models.char_models import char_skeleton_model
-from views.char_views import char_skeleton_view
+from models.char_models import char_master_model
+from views.char_views import char_master_view
+
+from main_entry_points.char_mep import (
+    char_layout_main,
+    char_skeleton_main
+)
 
 importlib.reload(os_custom_directory_utils)
 importlib.reload(utils)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
-importlib.reload(char_skeleton_model)
-importlib.reload(char_skeleton_view)
+importlib.reload(char_master_model)
+importlib.reload(char_master_view)
+importlib.reload(char_layout_main)
+importlib.reload(char_skeleton_main)
 
 class CharMasterController:
     def __init__(self): # class
         self.model = char_master_model.CharMasterModel()
         self.view = char_master_view.CharMasterView()
+        
+        self.view.char_layout_button.clicked.connect(self.sigfunc_char_layout_button)
+
+        self.char_layout_controller = None
+
+
+    def sigfunc_char_layout_button(self):
+        print(f"running 'char_layout_controller'")
+        # self.char_layout_controller = char_layout_main.char_layout_main()
