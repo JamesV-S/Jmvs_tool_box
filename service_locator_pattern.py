@@ -1,5 +1,4 @@
 
-
 class ServiceLocator:
     _services = {}
 
