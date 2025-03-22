@@ -255,8 +255,27 @@ def connect_attr(source_attr, target_attr):
         print(f" CON {source_attr} is already connected to {target_attr} ")
 
 
+def add_attr_if_not_exists(node_name, attr_name, attr_type, visible=True):
+    if cmds.objExists(node_name):
+        if not cmds.attributeQuery(attr_name, node=node_name, exists=True):
+            if attr_type == 'matrix':
+                cmds.addAttr(node_name, longName=attr_name, attributeType=attr_type)
+            else:
+                cmds.addAttr(node_name, longName=attr_name, attributeType=attr_type, defaultValue=0)
+            if visible:
+                cmds.setAttr(f"{node_name}.{attr_name}", lock=False, keyable=True, 
+                                channelBox=True
+                            )
+            else:
+                cmds.setAttr(f"{node_name}.{attr_name}", lock=False, keyable=False, 
+                                channelBox=False
+                            )
+    else:
+        print(f"Node '{node_name}' does not exist.")
+
+
 def add_locked_attrib(ctrl, en):              
-    dividerNN = "------------" 
+    dividerNN = " " 
     atrrType = "enum"
     
     for attr in en:

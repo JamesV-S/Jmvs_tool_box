@@ -3,13 +3,6 @@ import importlib
 import sys
 import os
 
-import service_locator_pattern 
-from main_entry_points.char_mep import char_master_main
-from main_entry_points.geoDB_mep import geoDB_master_main
-
-importlib.reload(service_locator_pattern)
-importlib.reload(char_master_main)
-
 tool_box_controller = None
 current_dir = os.path.dirname(os.path.abspath(__file__))
 print(f"current_dir == {current_dir}")
@@ -46,13 +39,13 @@ def updating_paths():
     add_to_sys_path(add_path)
     os.environ['MAYA_SCRIPT_PATH'] = current_dir + os.pathsep + os.environ.get('MAYA_SCRIPT_PATH', '')
     custom_dir_list = []
-    
+
 
     # ------------------ Add Necessary paths ----------------------
     gather_folders_to_add_to_list(['char_ui', 'vehicle_ui', 'geoDB_ui', 'other_ui'], custom_dir_list, "Jmvs_tool_box", "user_interface")
     gather_folders_to_add_to_list(['databases', 'models', 'views', 'controllers'], custom_dir_list, "Jmvs_tool_box")
     gather_folders_to_add_to_list(['char_models', 'geoDB_models'], custom_dir_list, "Jmvs_tool_box", "models")
-
+    
     # check if the custom dir exist:
     for directory in custom_dir_list:
         if does_directory_exist(directory):
@@ -60,6 +53,13 @@ def updating_paths():
 
 
 def register_services():
+    import service_locator_pattern 
+    from main_entry_points.char_mep import char_master_main
+    from main_entry_points.geoDB_mep import geoDB_master_main
+
+    importlib.reload(service_locator_pattern)
+    importlib.reload(char_master_main)
+
     from main_entry_points import tool_box_main
     importlib.reload(tool_box_main)
 
@@ -72,15 +72,17 @@ def register_services():
     geoDB_master_instance = geoDB_master_main.GeoDbMasterMain()
     service_locator_pattern.ServiceLocator.add_service('geoDB_master_main', geoDB_master_instance)
     print("Registered services:", service_locator_pattern.ServiceLocator._services)
-
+    
+    # show the tool_box ui!
+    tool_box_controller = service_locator_pattern.ServiceLocator.get_service('tool_box_main')
+    if tool_box_controller:
+        tool_box_controller.show_ui()
 
 def run_tool_box():
     updating_paths()
     register_services()
     
-    tool_box_controller = service_locator_pattern.ServiceLocator.get_service('tool_box_main')
-    if tool_box_controller:
-        tool_box_controller.show_ui()
+    
     
     
 

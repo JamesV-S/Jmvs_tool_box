@@ -35,8 +35,8 @@ class CreateXfmGuides():
                         'IK_ctrls': 
                                 {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
                         }                
-            }
-        '''
+            }'''
+        
         print(f"crerating guide component for {database_componment_dict}")
         # self.component_pos_dict = {} 
         self.module_name = database_componment_dict['module_name']
