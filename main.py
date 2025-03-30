@@ -76,6 +76,7 @@ def register_services():
     # show the tool_box ui!
     tool_box_controller = service_locator_pattern.ServiceLocator.get_service('tool_box_main')
     if tool_box_controller:
+        print("Available services:", service_locator_pattern.ServiceLocator._services)
         tool_box_controller.show_ui()
 
 def run_tool_box():

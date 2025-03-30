@@ -42,14 +42,14 @@ def root_system(cog_pos):
 
     # plugs
     axis_plgs = ['X', 'Y', 'Z']
-    mtx_in_plgs = []
+    mtx_in_plgs_ls = []
     for x in range(3):
         plg = f".matrixIn[{x}]"
-        mtx_in_plgs.append(plg)
-    input2_val_plgs = []
+        mtx_in_plgs_ls.append(plg)
+    input2_val_plgs_ls = []
     for x in range(3):
         plg = f".input2{axis_plgs[x]}"
-        input2_val_plgs.append(plg)
+        input2_val_plgs_ls.append(plg)
     output_plg = ".output"
     inputT_plug = ".inputTranslate"
     mtx_sum_plg = ".matrixSum"
@@ -100,8 +100,8 @@ def root_system(cog_pos):
     MM_list = [MM_centre, MM_cog, MM_centre_outputs, MM_cog_outputs]
     for node_name in MM_list:
         utils.cr_node_if_not_exists(1, "multMatrix", node_name)
-    cmds.setAttr(f"{MM_cog}{mtx_in_plgs[0]}", *cog_mtxVal, type="matrix")
-    cmds.setAttr(f"{MM_cog_outputs}{mtx_in_plgs[0]}", *minus_cog_mtxVal, type="matrix")
+    cmds.setAttr(f"{MM_cog}{mtx_in_plgs_ls[0]}", *cog_mtxVal, type="matrix")
+    cmds.setAttr(f"{MM_cog_outputs}{mtx_in_plgs_ls[0]}", *minus_cog_mtxVal, type="matrix")
 
         # Cog offset ctrls
     MD_cog_ofs = f"MD_ctrl_cog_offset"
@@ -153,26 +153,26 @@ def root_system(cog_pos):
         utils.connect_attr(f"{fm_global_scale}{out_flt}", f"{root_ctrl}.scale{axis_plgs[x]}")
 
     # centre
-    utils.connect_attr(f"{root_ctrl}{wld_mtx_plg}", f"{MM_centre}{mtx_in_plgs[1]}")
+    utils.connect_attr(f"{root_ctrl}{wld_mtx_plg}", f"{MM_centre}{mtx_in_plgs_ls[1]}")
     utils.connect_attr(f"{MM_centre}{mtx_sum_plg}", f"{centre_ctrl}{opm_plg}")
 
     # cog
-    utils.connect_attr(f"{centre_ctrl}{wld_mtx_plg}", f"{MM_cog}{mtx_in_plgs[1]}")
+    utils.connect_attr(f"{centre_ctrl}{wld_mtx_plg}", f"{MM_cog}{mtx_in_plgs_ls[1]}")
     utils.connect_attr(f"{MM_cog}{mtx_sum_plg}", f"{cog_ctrl}{opm_plg}")
 
     # centre outputs
-    utils.connect_attr(f"{centre_ctrl}{wld_mtx_plg}", f"{MM_centre_outputs}{mtx_in_plgs[1]}")
-    utils.connect_attr(f"{cog_ctrl}{wld_mtx_plg}", f"{MM_cog_outputs}{mtx_in_plgs[1]}")
+    utils.connect_attr(f"{centre_ctrl}{wld_mtx_plg}", f"{MM_centre_outputs}{mtx_in_plgs_ls[1]}")
+    utils.connect_attr(f"{cog_ctrl}{wld_mtx_plg}", f"{MM_cog_outputs}{mtx_in_plgs_ls[1]}")
 
     # cog offset option]
     for x in range(3):
-        utils.connect_attr(f"{cog_ctrl}.{offset_piv__attr_list[x]}", f"{MD_cog_ofs}{input2_val_plgs[x]}")
+        utils.connect_attr(f"{cog_ctrl}.{offset_piv__attr_list[x]}", f"{MD_cog_ofs}{input2_val_plgs_ls[x]}")
     utils.connect_attr(f"{MD_cog_ofs}{output_plg}", f"{CM_cog_ofs}{inputT_plug}")
-    utils.connect_attr(f"{CM_cog_ofs}{out_mtx_plg}", f"{MM_cog}{mtx_in_plgs[0]}")
+    utils.connect_attr(f"{CM_cog_ofs}{out_mtx_plg}", f"{MM_cog}{mtx_in_plgs_ls[0]}")
         # reverse
     utils.connect_attr(f"{MD_cog_ofs}{output_plg}", f"{rev_cog_ofs}.input")
     utils.connect_attr(f"{rev_cog_ofs}{output_plg}", f"{CM_inv_cog_ofs}{inputT_plug}")
-    utils.connect_attr(f"{CM_inv_cog_ofs}{out_mtx_plg}", f"{MM_cog_outputs}{mtx_in_plgs[0]}")
+    utils.connect_attr(f"{CM_inv_cog_ofs}{out_mtx_plg}", f"{MM_cog_outputs}{mtx_in_plgs_ls[0]}")
 
     # cog outputs
     utils.connect_attr(f"{fm_global_scale}{out_flt}", f"{root_outputs_grp}.globalScale")

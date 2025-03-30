@@ -70,15 +70,16 @@ class ToolBoxController(QtWidgets.QWidget):
         geoDB_master_controller = service_locator_pattern.ServiceLocator.get_service('geoDB_master_main')
         if geoDB_master_controller:
             geoDB_master_controller.show_ui()
+            utils_view.delete_existing_ui(self.view.ui_object_name)
+       
 
-
-def MVC_calling_main():
-    app = QtWidgets.QApplication.instance()
-    if not app:
-        app = QtWidgets.QApplication([])
+# def MVC_calling_main():
+#     app = QtWidgets.QApplication.instance()
+#     if not app:
+#         app = QtWidgets.QApplication([])
     
-    ui = ToolBoxController()
-    ui.show()
-    app.exec()
-    return ui
+#     ui = ToolBoxController()
+#     ui.show()
+#     app.exec()
+#     return ui
             

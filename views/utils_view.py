@@ -25,6 +25,7 @@ def layV_SPACER_func():
 
 
 def delete_existing_ui(ui_name):
+    print(f"ui_name to delete = {ui_name}")
     if cmds.window(ui_name, exists=True):
         cmds.deleteUI(ui_name, window=True)
 

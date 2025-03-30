@@ -1,0 +1,314 @@
+import importlib
+import maya.cmds as cmds
+from systems import (
+    utils as u
+)
+from systems.sys_char_rig import (
+    cr_ctrl
+)
+importlib.reload(u)
+importlib.reload(cr_ctrl)
+
+'''
+database_componment_dict = {
+    "module_name":"bipedArm", 
+    "unique_id":0,
+    "side":"L", 
+    "component_pos":{'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
+                    'shoulder': [28.9705319404602, 230.650634765625, 2.762230157852166], 
+                    'elbow': [49.96195602416994, 192.91743469238278, -8.43144416809082], 
+                    'wrist': [72.36534118652347, 164.23757934570304, 15.064828872680739]
+                    },
+    "controls":{'FK_ctrls': 
+                        {'fk_clavicle': 'circle', 'fk_shoulder': 'circle', 'fk_elbow': 'circle', 'fk_wrist': 'circle'}, 
+                'IK_ctrls': 
+                        {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
+                }   
+    }
+    'IK_ctrls': = {"ik_spine1": "cube", "ik_spine2": null, "ik_spine3": "cube", "ik_spine4": null, "ik_spine5": "cube"}
+    '''
+
+class Spine_System():
+    def __init__(self, skeleton_dict, fk_dict, ik_dict):
+        skeleton_pos = skeleton_dict["spine_pos"]
+        skeleton_rot = skeleton_dict["spine_rot"]
+        fk_pos = fk_dict["fk_pos"]
+        ik_pos = ik_dict["ik_pos"]
+        fk_rot = fk_dict["fk_rot"]
+        ik_rot = ik_dict["ik_rot"]
+
+        '''
+        IN ESSENSE, with 3 types of controls active at once, 
+        FK & FKInv are the drivers > IK is THE driven that help bring the spine to life. 
+
+        What this system consists of: 
+        ----- CTRLS ------
+        9 Sets of controlls : [all bottom [0] are in same pos / 
+                            mid [1] are positoned exact middle of corresponding ctrls /
+                            top fk[2] & fkInv[2] r pos same place, top IK[2] is a bit higher(at very top of joint chain!) )
+            IK_ctrls
+                ctrl_ik_spine_0 (bottom)
+                ctrl_ik_spine_1 (mid)
+                ctrl_ik_spine_3 (top)
+            fk_ctrls
+                ctrl_fk_spine_0 
+                ctrl_fk_spine_1 
+                ctrl_fk_spine_3 
+            fkInv_ctrls
+                ctrl_fk_spine_0
+                ctrl_fk_spine_1 
+                ctrl_fk_spine_3
+        
+        ----- JOINTS ------
+        GRP_SKELETON
+            ----- SYSTEM JOINTS ------
+            > Jnt_rig_bottomSpine / Jnt_rig_topSpine
+            ----- SKN JOINTS ------
+            > jnt_skn_spine_0-9 (it's NOT a ctrl for each joint)
+        GRP_spineLogic
+            ----- SYSTEM JOINTS ------
+            > GRP_jnt_ik_spine
+                jnt_ik_spine_0 (bottom)
+                jnt_ik_spine_1 (mid)
+                jnt_ik_spine_3 (top)
+                jnt_ik_spine_hold (I think this is all other weights like a root joint...)
+            > GRP_jnt_fk_spine
+                jnt_fk_spine_0-3
+            > GRP_jnt_fkInv_spine
+                jnt_fkInv_spine_0-3
+        '''
+
+        print(f"MM_SPINE_TOP_0{u.Plg.mtx_sum_plg}")
+        # Create the controls temporarily (they will already exist with char_Layout tool)
+        fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(fk_pos, ik_pos)
+        self.group_ctrls(fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls)
+
+        # create the joints
+        bott_name, top_name = self.cr_jnt_sys_bt_tp(ik_pos)
+        skeleton_ls = self.cr_jnt_sys_skeleton(skeleton_pos, skeleton_rot)
+        self.group_jnts_sys(bott_name, top_name, skeleton_ls)
+        self.logic_elements(skeleton_pos, fk_pos, fk_rot, ik_pos, ik_rot)
+
+
+    def build_ctrls(self, fk_pos, ik_pos):
+        inv_values = list(fk_pos.values())[::-1]
+        # Create a new dictionary with the reversed values
+        inv_fk_pos = {key: inv_values[i] for i, key in enumerate(fk_pos.keys())}
+        
+        print(f"inv_pos = {inv_fk_pos}")
+        fk_ctrl_ls = []
+        inv_ctrl_ls = []
+        ik_ctrl_ls = []
+
+        # fk & fkInv ctrls
+        for spn_name, spn_pos in fk_pos.items():
+            fk_name = f"{spn_name}"
+            fk_ctrl_ls.append(fk_name)
+            fk_import_ctrl = cr_ctrl.CreateControl(type="circle", name=fk_name)
+            fk_import_ctrl.retrun_ctrl()
+            cmds.rotate(0, 0, 90, fk_name)
+            cmds.makeIdentity(fk_name, a=1, t=0, r=1, s=0, n=0, pn=1)
+            cmds.xform(fk_name, translation=spn_pos, worldSpace=True)
+            u.colour_object(fk_name, 17)
+            
+
+        for spn_name, spn_pos in inv_fk_pos.items():
+            inv_name = spn_name.replace("_fk_", "_inv_")
+            inv_ctrl_ls.append(inv_name)
+            inv_import_ctrl = cr_ctrl.CreateControl(type="bvSquare", name=inv_name)
+            inv_import_ctrl.retrun_ctrl()
+            cmds.xform(inv_name, translation=spn_pos, worldSpace=True)
+            u.colour_object(inv_name, 21)
+
+        # ik ctrls
+        for spn_name, spn_pos in ik_pos.items():
+            ik_name = f"{spn_name}"
+            ik_ctrl_ls.append(ik_name)
+            ik_import_ctrl = cr_ctrl.CreateControl(type="octogan", name=ik_name)
+            ik_import_ctrl.retrun_ctrl()
+            cmds.rotate(0, 0, 90, ik_name)
+            cmds.scale(1.5, 1.5, 1.5, ik_name)
+            cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=1, n=0, pn=1)
+            cmds.xform(ik_name, translation=spn_pos, worldSpace=True)
+            u.colour_object(ik_name, 17)
+            
+        return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
+    
+
+    def group_ctrls(self, fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls):
+        ctrls_grp = f"grp_ctrls_spine"
+        fk_grp = f"grp_ctrl_fk_spine"
+        inv_grp = f"grp_ctrl_inv_spine"
+        ik_grp = f"grp_ctrl_ik_spine" 
+        u.cr_node_if_not_exists(0, "transform", ctrls_grp)
+        u.cr_node_if_not_exists(0, "transform", fk_grp)
+        u.cr_node_if_not_exists(0, "transform", inv_grp)
+        u.cr_node_if_not_exists(0, "transform", ik_grp)
+        cmds.parent(fk_grp, inv_grp, ik_grp, ctrls_grp)
+        cmds.parent(fk_ctrl_ls, fk_grp)
+        cmds.parent(inv_ctrl_ls, inv_grp)
+        cmds.parent(ik_ctrl_ls, ik_grp)
+
+    
+    def cr_jnt_sys_bt_tp(self, ik_pos):
+        names = [key for key in ik_pos.keys()]
+        pos = [value for value in ik_pos.values()]
+        bott_name = names[0].replace("ctrl_ik_", "jnt_sys_")
+        top_name = names[-1].replace("ctrl_ik_", "jnt_sys_")
+        bott_pos = pos[0]
+        top_pos = pos[-1]
+
+        for jnt_nm, jnt_ps in zip([bott_name, top_name], [bott_pos, top_pos]):
+            cmds.select(cl=True) 
+            cmds.joint(n=jnt_nm)
+            cmds.xform(jnt_nm, translation=jnt_ps, worldSpace=True)
+            cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=1, n=0, pn=1)
+        
+        return bott_name, top_name
+
+
+    def cr_jnt_sys_skeleton(self, skeleton_pos, skeleton_rot):
+        cmds.select(cl=True)
+        jnt_ls = []
+        for name in skeleton_pos:
+            jnt_nm = f"jnt_sys_{name}"
+            jnt_ls.append(jnt_nm)
+            cmds.joint(n=jnt_nm)
+            cmds.xform(jnt_nm, translation=skeleton_pos[name], worldSpace=True)
+            cmds.xform(jnt_nm, rotation=skeleton_rot[name], worldSpace=True)
+            cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
+
+        return jnt_ls
+
+
+    def group_jnts_sys(self, bott_name, top_name, skeleton_name):
+        joint_grp = f"grp_joints_spine"
+        skeleton_grp = f"grp_skeleton_spine"
+        u.cr_node_if_not_exists(0, "transform", joint_grp)
+        u.cr_node_if_not_exists(0, "transform", skeleton_grp)
+        cmds.parent(skeleton_name[0], skeleton_grp)
+        cmds.parent(bott_name, top_name, skeleton_grp, joint_grp)
+
+
+    def logic_elements(self, skeleton_pos, fk_pos, fk_rot, ik_pos, ik_rot):
+        # establish the inv dictionary's
+        inv_pos_values = list(fk_pos.values())[::-1]
+        inv_rot_values = list(fk_rot.values())[::-1]
+        inv_pos = {key: inv_pos_values[i] for i, key in enumerate(fk_pos.keys())}
+        inv_rot = {key: inv_rot_values[i] for i, key in enumerate(fk_pos.keys())}
+        # 4 groups
+        logic_grp = f"grp_logic_sys_spine"
+        fk_grp = f"grp_jnts_fk_spine"
+        inv_grp = f"grp_jnts_inv_spine"
+        ik_grp = f"grp_jnts_ik_spine" 
+        u.cr_node_if_not_exists(0, "transform", logic_grp)
+        u.cr_node_if_not_exists(0, "transform", fk_grp)
+        u.cr_node_if_not_exists(0, "transform", inv_grp)
+        u.cr_node_if_not_exists(0, "transform", ik_grp)
+        cmds.parent(fk_grp, inv_grp, ik_grp, logic_grp)
+        
+        fk_logic_ls = []
+        inv_logic_ls = []
+        ik_logic_ls = []
+        # cr the logic joints!
+        for spn_name in fk_pos:
+            cmds.select(cl=1)
+            fk_name = spn_name.replace("ctrl_", "jnt_") # ctrl_fk_spine0
+            fk_logic_ls.append(fk_name)
+            inv_name = spn_name.replace("ctrl_fk_", "jnt_inv_") # ctrl_fk_spine0
+            inv_logic_ls.append(inv_name)
+            cmds.joint(n=fk_name)
+            cmds.select(cl=1)
+            cmds.joint(n=inv_name)
+            cmds.xform(fk_name, translation=fk_pos[spn_name], worldSpace=True)
+            cmds.xform(inv_name, translation=inv_pos[spn_name], worldSpace=True)
+            cmds.xform(fk_name, rotation=fk_rot[spn_name], worldSpace=True)
+            cmds.xform(inv_name, rotation=inv_rot[spn_name], worldSpace=True)
+            cmds.makeIdentity(fk_name, a=1, t=0, r=1, s=0, n=0, pn=1)
+            cmds.makeIdentity(inv_name, a=1, t=0, r=1, s=0, n=0, pn=1)
+
+        for spn_name in ik_pos:
+            cmds.select(cl=1)
+            ik_name = spn_name.replace("ctrl_", "jnt_")
+            ik_logic_ls.append(ik_name)    
+            cmds.joint(n=ik_name)
+            cmds.xform(ik_name, translation=ik_pos[spn_name], worldSpace=True)
+            cmds.xform(ik_name, rotation=ik_rot[spn_name], worldSpace=True)
+            cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=0, n=0, pn=1)
+
+        # THE CURVE IS CREATED WITH THE IK SPLINE OPPTIONALLY - build the curve for the ik spline
+        # logic_curve = f"crv_spine"
+        # positions = list(skeleton_pos.values())
+        # cmds.curve(n=logic_curve, d=3, p=positions)
+        # cmds.rebuildCurve(logic_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=len(positions) - 3, d=3, tol=0.01)
+
+        # organise the joints into the right groups
+        # cmds.parent(logic_curve, logic_grp)
+        cmds.parent(fk_logic_ls, fk_grp)
+        cmds.parent(inv_logic_ls, inv_grp)
+        cmds.parent(ik_logic_ls, ik_grp)
+        
+
+        
+
+
+
+skeleton_dict = {
+    "spine_pos":{
+        'spine0' : [0.0, 147.00000000000003, 0.0], 
+        'spine1' : [0.0, 153.4444446563721, 0.0], 
+        'spine2' : [0.0, 159.88888931274417, 0.0], 
+        'spine3' : [0.0, 166.33333396911624, 0.0], 
+        'spine4' : [0.0, 172.7777786254883, 0.0], 
+        'spine5' : [0.0, 179.22222328186038, 0.0], 
+        'spine6' : [0.0, 185.66666793823245, 0.0], 
+        'spine7' : [0.0, 192.11111259460452, 0.0], 
+        'spine8' : [0.0, 198.5555572509766, 0.0], 
+        'spine9' : [0.0, 205.00000190734866, 0.0]
+    },
+    "spine_rot":{
+        'spine0' : [0.0, 0.0, 0.0], 
+        'spine1' : [0.0, 0.0, 0.0], 
+        'spine2' : [0.0, 0.0, 0.0], 
+        'spine3' : [0.0, 0.0, 0.0], 
+        'spine4' : [0.0, 0.0, 0.0], 
+        'spine5' : [0.0, 0.0, 0.0], 
+        'spine6' : [0.0, 0.0, 0.0], 
+        'spine7' : [0.0, 0.0, 0.0], 
+        'spine8' : [0.0, 0.0, 0.0], 
+        'spine9' : [0.0, 0.0, 0.0]
+    } 
+
+    }
+
+''' ---These outputs will be determined by Char_Layout tool! 
+        (place joints, choose num of ctrls, position ctrls, shape ctrls)--- '''
+# I want this to be changable (3 by default)
+fk_spine_dict = {
+    "fk_pos":{
+        'ctrl_fk_spine0': [0.0, 147.0, 0.0], 
+        'ctrl_fk_spine1': [0.0, 167.29999965429306, 0.0], 
+        'ctrl_fk_spine2': [0.0, 187.59999930858612, 0.0]
+        },
+    "fk_rot":{
+        'ctrl_fk_spine0': [0.0, 0.0, 0.0], 
+        'ctrl_fk_spine1': [0.0, 0.0, 0.0], 
+        'ctrl_fk_spine2': [0.0, 0.0, 0.0]
+        }
+    }
+# Always 3 ctrls!
+ik_spine_dict = {
+    "ik_pos":{
+        'ctrl_ik_spine_bottom': [0.0, 147.0, 0.0], 
+        'ctrl_ik_spine_middle': [0.0, 176.0, 0.0], 
+        'ctrl_ik_spine_top': [0.0, 205.0, 0.0]
+        },
+    "ik_rot":{
+        'ctrl_ik_spine_bottom': [0.0, 0.0, 0.0], 
+        'ctrl_ik_spine_middle': [0.0, 0.0, 0.0], 
+        'ctrl_ik_spine_top': [0.0, 0.0, 0.0]
+        }
+    }
+
+Spine_System(skeleton_dict, fk_spine_dict, ik_spine_dict)
+

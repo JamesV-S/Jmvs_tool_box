@@ -139,8 +139,8 @@ def get_selection_trans_rots_dictionary():
     rotation_pos = {}
     
     for sel in selection:
-        trans_ls = cmds.getAttr(f"{sel}.translate")[0]
-        rot_ls = cmds.getAttr(f"{sel}.rotate")[0]
+        trans_ls = cmds.xform(sel, q=True, t=True, ws=True)
+        rot_ls = cmds.xform(sel, q=True, r=True, ws=True)
         
         translation_pos[sel] = trans_ls
         rotation_pos[sel] = rot_ls
@@ -148,12 +148,11 @@ def get_selection_trans_rots_dictionary():
     print("Trans dictionary: ", translation_pos)
     print("Rots dictionary: ", rotation_pos)
     
-    return translation_pos, rotation_pos
-   
-# get_selection_trans_rots_dictionary()
+    # system_pos = {"spine_1": [0,150,0],"spine_2": [0, 165, 3.771372431203975],"spine_3": [0, 185, 6.626589870023061],"spine_4": [0, 204, 5.4509520093959845],"spine_5": [0.0, 231.0, 0.0150903206755304]}
+    # system_rot = {"spine_1": [13.832579598094327, 0, 0],"spine_2":[8.04621385323777, 0, 0],"spine_3":[-3.330793760291316, 0, 0],"spine_4":[-11.225661138926666, 0, 0],"spine_5":[0,0,0]}
 
-system_pos = {"spine_1": [0,150,0],"spine_2": [0, 165, 3.771372431203975],"spine_3": [0, 185, 6.626589870023061],"spine_4": [0, 204, 5.4509520093959845],"spine_5": [0.0, 231.0, 0.0150903206755304]}
-system_rot = {"spine_1": [13.832579598094327, 0, 0],"spine_2":[8.04621385323777, 0, 0],"spine_3":[-3.330793760291316, 0, 0],"spine_4":[-11.225661138926666, 0, 0],"spine_5":[0,0,0]}
+    return translation_pos, rotation_pos
+
 
 def set_transformations(translation_dict, rotation_dict):
     for obj in translation_dict:
@@ -175,7 +174,13 @@ def set_transformations(translation_dict, rotation_dict):
         cmds.setAttr(f"{obj}.rotate", *rotation_dict[obj])
         print(f"Set the trans & rot values for '{obj}' ")
 
-# set_transformations(system_pos, system_rot)
+    # set_transformations(system_pos, system_rot)
+
+#--------------------------------- COLOUR -------------------------------------
+def colour_object(obj, colour):
+    cmds.setAttr(f"{obj}.overrideEnabled", 1)
+    cmds.setAttr(f"{obj}.overrideColor", colour)
+
 
 def colour_guide_custom_shape(custom_crv):
     # Firstly, from the 'custom_crv' select all shapes in it & set their overrideEnabled!
@@ -204,7 +209,8 @@ def colour_guide_custom_shape(custom_crv):
     for shape in black_shape:
         cmds.setAttr(f"{shape}.overrideColor", 1)
 
-# colour_custom_shape("crv_custom_guide")
+    # colour_custom_shape("crv_custom_guide")
+
 
 def colour_COG_control(custom_crv):
     print(f"Colour_cog = {custom_crv}")
@@ -218,7 +224,8 @@ def colour_COG_control(custom_crv):
     grey_shape = [shape for shape in shape_list if "kite" in shape]
     for shape in grey_shape:
         cmds.setAttr(f"{shape}.overrideColor", 3)
-# colour_COG_control("ctrl_COG")
+    # colour_COG_control("ctrl_COG")
+
 
 def colour_root_control(custom_crv):
     
@@ -232,9 +239,10 @@ def colour_root_control(custom_crv):
     white_shape = [shape for shape in shape_list if "white" in shape]
     for shape in white_shape:
         cmds.setAttr(f"{shape}.overrideColor", 16)
-# colour_root_control("ctrl_root")
+    # colour_root_control("ctrl_root")
 
 
+#---------------------------- CONNECTIONS -------------------------------------
 def cr_node_if_not_exists(util_type, node_type, node_name, set_attrs=None):
     if not cmds.objExists(node_name):
         if util_type:
@@ -255,6 +263,34 @@ def connect_attr(source_attr, target_attr):
         print(f" CON {source_attr} is already connected to {target_attr} ")
 
 
+class Plg():
+    axis = ['X', 'Y', 'Z']
+    def mtx_in_ls():
+        mtx_ins = []
+        for x in range(3):
+            plg = f".matrixIn[{x}]"
+            mtx_ins.append(plg)
+        return mtx_ins
+    def input2_val_ls():
+        input2_val = []
+        for x in range(3):
+            plg = f".input2{['X', 'Y', 'Z'][x]}"
+            input2_val.append(plg)
+        return input2_val
+    
+    output_plg = ".output"
+    inputT_plug = ".inputTranslate"
+    mtx_sum_plg = ".matrixSum"
+    wld_mtx_plg = ".worldMatrix[0]"
+    wld_inv_mtx_plg = ".worldInverseMatrix[0]"
+    inp_mtx_plg = ".inputMatrix"
+    out_mtx_plg = ".outputMatrix"
+    opm_plg = ".offsetParentMatrix"
+    flt_A = ".floatA"
+    flt_B = ".floatB"
+    out_flt = ".outFloat"    
+
+#----------------------------- ATTRIBUTES -------------------------------------
 def add_attr_if_not_exists(node_name, attr_name, attr_type, visible=True):
     if cmds.objExists(node_name):
         if not cmds.attributeQuery(attr_name, node=node_name, exists=True):
@@ -335,8 +371,10 @@ def custom_enum_attr(ctrl, enm_lng_nm, CtrlEnmOptions):
             cmds.addAttr(target, longName=enm_lng_nm, at="enum", enumName=CtrlEnmOptions )
             print(f"{target}.{enm_lng_nm}")
             cmds.setAttr( f"{target}.{enm_lng_nm}", e=1, k=1 )
-#custom_enum_attr( "James", "Thuki:Arron:Harv")
+    #custom_enum_attr( "James", "Thuki:Arron:Harv")
 
+
+#----------------------------- CONSTRAINTS ------------------------------------
 def constrain_2_items(output_item, input_item, con_type, values):
     parent_prefix = "pCon"
     point_prefix = "pointCon"
@@ -380,12 +418,14 @@ def constrain_2_items(output_item, input_item, con_type, values):
             skip=skip_translate
         )
 
-# necessary order:
-# constrain_2_items("output", "input", "point", ["X", "Z"])
-# constrain_2_items("output", "input", "parent", ["Y"])
+    # necessary order:
+    # constrain_2_items("output", "input", "point", ["X", "Z"])
+    # constrain_2_items("output", "input", "parent", ["Y"])
 
-# constrain_2_items("output", "input", "parent", 'all')
+    # constrain_2_items("output", "input", "parent", 'all')
 
+
+#------------------------------- GUIDES ---------------------------------------
 def connect_guide(start_guide, end_guide):
         cmds.select(cl=1)
         joint_1 = cmds.joint(n=f"ddj_start_{start_guide.replace('xfm_guide_', '')}")
