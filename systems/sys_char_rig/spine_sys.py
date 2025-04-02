@@ -298,7 +298,9 @@ class Spine_System():
         utils.connect_attr(f"{root_outputs_grp}.ctrl_centre_mtx", f"{input_grp}.base_mtx")
         utils.connect_attr(f"{root_outputs_grp}.ctrl_cog_mtx", f"{input_grp}.hook_mtx")
         utils.connect_attr(f"{root_outputs_grp}.globalScale", f"{input_grp}.globalScale")
-
+        
+        ''' This is my first attempt at making controls follow without parenting, 
+         Using their matrix's & adding the offset to keep their distance!!! '''
         # fk ctrl setup: 
             # MD's
         MD_fk_ls = []
