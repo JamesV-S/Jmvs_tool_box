@@ -1,12 +1,12 @@
 import importlib
 import maya.cmds as cmds
 from systems import (
-    utils as u
+    utils
 )
 from systems.sys_char_rig import (
     cr_ctrl
 )
-importlib.reload(u)
+importlib.reload(utils)
 importlib.reload(cr_ctrl)
 
 '''
@@ -29,13 +29,17 @@ database_componment_dict = {
     '''
 
 class Spine_System():
-    def __init__(self, skeleton_dict, fk_dict, ik_dict):
+    def __init__(self, root_outputs_grp, skeleton_dict, fk_dict, ik_dict):
         skeleton_pos = skeleton_dict["spine_pos"]
         skeleton_rot = skeleton_dict["spine_rot"]
-        fk_pos = fk_dict["fk_pos"]
+        self.fk_pos = fk_dict["fk_pos"]
         ik_pos = ik_dict["ik_pos"]
         fk_rot = fk_dict["fk_rot"]
         ik_rot = ik_dict["ik_rot"]
+        
+        # gather the number of values in the dict
+        num_jnts = len(skeleton_pos.keys())
+        print(f"num_jnts = {num_jnts}")
 
         '''
         IN ESSENSE, with 3 types of controls active at once, 
@@ -78,16 +82,23 @@ class Spine_System():
                 jnt_fkInv_spine_0-3
         '''
 
-        print(f"MM_SPINE_TOP_0{u.Plg.mtx_sum_plg}")
+        print(f"MM_SPINE_TOP_0{utils.Plg.mtx_sum_plg}")
+
         # Create the controls temporarily (they will already exist with char_Layout tool)
-        fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(fk_pos, ik_pos)
+        fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(self.fk_pos, ik_pos)
         self.group_ctrls(fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls)
 
         # create the joints
         bott_name, top_name = self.cr_jnt_sys_bt_tp(ik_pos)
         skeleton_ls = self.cr_jnt_sys_skeleton(skeleton_pos, skeleton_rot)
         self.group_jnts_sys(bott_name, top_name, skeleton_ls)
-        self.logic_elements(skeleton_pos, fk_pos, fk_rot, ik_pos, ik_rot)
+        self.logic_elements(skeleton_pos, self.fk_pos, fk_rot, ik_pos, ik_rot)
+
+        # input & output groups
+        input_grp, output_grp = self.input_output_groups(10)
+
+        # make connections for the spine setup!
+        self.spine_nodes_and_connections(root_outputs_grp, input_grp, output_grp)
 
 
     def build_ctrls(self, fk_pos, ik_pos):
@@ -108,8 +119,8 @@ class Spine_System():
             fk_import_ctrl.retrun_ctrl()
             cmds.rotate(0, 0, 90, fk_name)
             cmds.makeIdentity(fk_name, a=1, t=0, r=1, s=0, n=0, pn=1)
-            cmds.xform(fk_name, translation=spn_pos, worldSpace=True)
-            u.colour_object(fk_name, 17)
+            # cmds.xform(fk_name, translation=spn_pos, worldSpace=True)
+            utils.colour_object(fk_name, 17)
             
 
         for spn_name, spn_pos in inv_fk_pos.items():
@@ -117,8 +128,8 @@ class Spine_System():
             inv_ctrl_ls.append(inv_name)
             inv_import_ctrl = cr_ctrl.CreateControl(type="bvSquare", name=inv_name)
             inv_import_ctrl.retrun_ctrl()
-            cmds.xform(inv_name, translation=spn_pos, worldSpace=True)
-            u.colour_object(inv_name, 21)
+            # cmds.xform(inv_name, translation=spn_pos, worldSpace=True)
+            utils.colour_object(inv_name, 21)
 
         # ik ctrls
         for spn_name, spn_pos in ik_pos.items():
@@ -129,8 +140,8 @@ class Spine_System():
             cmds.rotate(0, 0, 90, ik_name)
             cmds.scale(1.5, 1.5, 1.5, ik_name)
             cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=1, n=0, pn=1)
-            cmds.xform(ik_name, translation=spn_pos, worldSpace=True)
-            u.colour_object(ik_name, 17)
+            # cmds.xform(ik_name, translation=spn_pos, worldSpace=True)
+            utils.colour_object(ik_name, 17)
             
         return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
     
@@ -140,10 +151,10 @@ class Spine_System():
         fk_grp = f"grp_ctrl_fk_spine"
         inv_grp = f"grp_ctrl_inv_spine"
         ik_grp = f"grp_ctrl_ik_spine" 
-        u.cr_node_if_not_exists(0, "transform", ctrls_grp)
-        u.cr_node_if_not_exists(0, "transform", fk_grp)
-        u.cr_node_if_not_exists(0, "transform", inv_grp)
-        u.cr_node_if_not_exists(0, "transform", ik_grp)
+        utils.cr_node_if_not_exists(0, "transform", ctrls_grp)
+        utils.cr_node_if_not_exists(0, "transform", fk_grp)
+        utils.cr_node_if_not_exists(0, "transform", inv_grp)
+        utils.cr_node_if_not_exists(0, "transform", ik_grp)
         cmds.parent(fk_grp, inv_grp, ik_grp, ctrls_grp)
         cmds.parent(fk_ctrl_ls, fk_grp)
         cmds.parent(inv_ctrl_ls, inv_grp)
@@ -184,8 +195,8 @@ class Spine_System():
     def group_jnts_sys(self, bott_name, top_name, skeleton_name):
         joint_grp = f"grp_joints_spine"
         skeleton_grp = f"grp_skeleton_spine"
-        u.cr_node_if_not_exists(0, "transform", joint_grp)
-        u.cr_node_if_not_exists(0, "transform", skeleton_grp)
+        utils.cr_node_if_not_exists(0, "transform", joint_grp)
+        utils.cr_node_if_not_exists(0, "transform", skeleton_grp)
         cmds.parent(skeleton_name[0], skeleton_grp)
         cmds.parent(bott_name, top_name, skeleton_grp, joint_grp)
 
@@ -201,10 +212,10 @@ class Spine_System():
         fk_grp = f"grp_jnts_fk_spine"
         inv_grp = f"grp_jnts_inv_spine"
         ik_grp = f"grp_jnts_ik_spine" 
-        u.cr_node_if_not_exists(0, "transform", logic_grp)
-        u.cr_node_if_not_exists(0, "transform", fk_grp)
-        u.cr_node_if_not_exists(0, "transform", inv_grp)
-        u.cr_node_if_not_exists(0, "transform", ik_grp)
+        utils.cr_node_if_not_exists(0, "transform", logic_grp)
+        utils.cr_node_if_not_exists(0, "transform", fk_grp)
+        utils.cr_node_if_not_exists(0, "transform", inv_grp)
+        utils.cr_node_if_not_exists(0, "transform", ik_grp)
         cmds.parent(fk_grp, inv_grp, ik_grp, logic_grp)
         
         fk_logic_ls = []
@@ -247,11 +258,80 @@ class Spine_System():
         cmds.parent(fk_logic_ls, fk_grp)
         cmds.parent(inv_logic_ls, inv_grp)
         cmds.parent(ik_logic_ls, ik_grp)
+    
+
+    def input_output_groups(self, jnt_num):
+        # create input & output groups
+        inputs_grp = f"grp_spineInputs"
+        outputs_grp = f"grp_spineOutputs"
+        utils.cr_node_if_not_exists(0, "transform", inputs_grp)
+        utils.cr_node_if_not_exists(0, "transform", outputs_grp)
         
+        # custom atr on 'input group'
+            # - "Global_Scale" (flt)
+            # - "Base_Matrix" (matrix)
+            # - "Hook_Matrix" (matrix)
+            # - "Spine0-9_Squash_Value" (flt) = -0.5
 
-        
+        # custom atr on 'output group'
+            # - "ctrl_spine_bottom" (matrix)
+            # - "ctrl_spine_top" (matrix)
+        utils.add_float_attrib(inputs_grp, ["globalScale"], [0.01, 999], True) 
+        cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
+        utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
+        utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
+        for x in range(jnt_num):
+            utils.add_float_attrib(inputs_grp, [f"Spine{x}_Squash_Value"], [1.0, 1.0], False)
+            cmds.setAttr(f"{inputs_grp}.Spine{x}_Squash_Value", keyable=1, channelBox=1)
+            cmds.setAttr(f"{inputs_grp}.Spine{x}_Squash_Value", -0.5)
+
+        utils.add_attr_if_not_exists(outputs_grp, "ctrl_spine_bottom_mtx", 
+                                     'matrix', False) # for upper body module to follow
+        utils.add_attr_if_not_exists(outputs_grp, "ctrl_spine_top_mtx", 
+                                     'matrix', False) # for lower body module to follow
+
+        return inputs_grp, outputs_grp
 
 
+    def spine_nodes_and_connections(self, root_outputs_grp, input_grp, output_grp):
+        # connect ghe root module to the spine module with inputs group nodes!
+        utils.connect_attr(f"{root_outputs_grp}.ctrl_centre_mtx", f"{input_grp}.base_mtx")
+        utils.connect_attr(f"{root_outputs_grp}.ctrl_cog_mtx", f"{input_grp}.hook_mtx")
+        utils.connect_attr(f"{root_outputs_grp}.globalScale", f"{input_grp}.globalScale")
+
+        # fk ctrl setup: 
+            # MD's
+        MD_fk_ls = []
+        MD_inv_ls = []
+        previous_pos = None
+        for i, (fk_ctrl_name, pos) in enumerate(self.fk_pos.items()):
+            MD_fk_name = f"MD_{fk_ctrl_name}"
+            MD_inv_name = f"MD_{fk_ctrl_name.replace('fk', 'inv')}"
+                # cr the MD nodes
+            utils.cr_node_if_not_exists(1, 'multMatrix', MD_fk_name)
+            utils.cr_node_if_not_exists(1, 'multMatrix', MD_inv_name)
+                # append their names to the list
+            MD_fk_ls.append(MD_fk_name)
+            MD_inv_ls.append(MD_inv_name)
+                # Calculate the offset for the next control
+            if previous_pos is not None:
+                fk_offset = [p2 - p1 for p1, p2 in zip(previous_pos, pos)]
+                inv_offset = [-(p2 - p1) for p1, p2 in zip(previous_pos, pos)]
+                # set the offset to the MD's inMatrix[0]
+                utils.set_matrix(fk_offset, f"{MD_fk_name}{utils.Plg.mtx_ins[0]}")
+                utils.set_matrix(inv_offset, f"{MD_inv_name}{utils.Plg.mtx_ins[0]}")
+            previous_pos = pos
+
+        # connect the MDs
+            # iniitial inputs
+        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MD_fk_ls[0]}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MD_inv_ls[0]}{utils.Plg.mtx_ins[1]}")
+            # connect remaining FK & INV matrices
+        # for x in range(len(MD_fk_ls) - 1):
+        #     utils.connect_attr(f"{MD_fk_ls[x]}{utils.Plg.mtx_sum_plg}", f"{MD_fk_ls[x+1]}{utils.Plg.mtx_ins[1]}")
+        #     # utils.connect_attr(f"{MD_inv_ls[x]}.matrixSum", f"{MD_inv_ls[x+1]}.inMatrix[1]")
+
+            
 
 skeleton_dict = {
     "spine_pos":{
@@ -310,5 +390,5 @@ ik_spine_dict = {
         }
     }
 
-Spine_System(skeleton_dict, fk_spine_dict, ik_spine_dict)
+Spine_System("grp_rootOutputs", skeleton_dict, fk_spine_dict, ik_spine_dict)
 

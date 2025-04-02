@@ -83,7 +83,7 @@ def root_system(cog_pos):
     cmds.setAttr(f"{centre_ctrl}.overrideColor", 25)
     utils.colour_COG_control(cog_ctrl)
 
-    # create groups
+    # create input & output groups
     root_input_grp = f"grp_rootInputs"
     root_outputs_grp = f"grp_rootOutputs"
     utils.cr_node_if_not_exists(0, "transform", root_input_grp)
@@ -122,19 +122,17 @@ def root_system(cog_pos):
         cmds.setAttr(f"{MD_cog_ofs}.input1Z", cog_z)
 
     # add custom attributes
-        # groups
+        # Input & Output groups
     utils.add_float_attrib(root_input_grp, ["globalScale"], [0.01, 999], True) 
     utils.add_float_attrib(root_outputs_grp, ["globalScale"], [0.01, 999], True)
+    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_centre_mtx", 'matrix', False)
+    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_cog_mtx", 'matrix', False)
     cmds.setAttr(f"{root_input_grp}.globalScale", 1, keyable=0, channelBox=0)
     cmds.setAttr(f"{root_outputs_grp}.globalScale", 1, keyable=0, channelBox=0)
         # ctrls
     utils.add_locked_attrib(root_ctrl, ["Attributes"])
     utils.add_float_attrib(root_ctrl, ["globalScale"], [0.01, 999], True)
     cmds.setAttr(f"{root_ctrl}.globalScale", 1)
-        # groups
-    utils.add_float_attrib(root_outputs_grp, ["globalScale"], [0.01, 999], True)
-    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_centre_mtx", 'matrix', False)
-    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_cog_mtx", 'matrix', False)
         # cog offset
     utils.add_locked_attrib(cog_ctrl, ["Cog_Pivot"])
     offset_piv__attr_list = ["Offset_pivot_X", "Offset_pivot_Y", "Offset_pivot_Z"]
@@ -142,7 +140,6 @@ def root_system(cog_pos):
     utils.add_float_attrib(cog_ctrl, [offset_piv__attr_list[1]], [0, 1], False)
     utils.add_float_attrib(cog_ctrl, [offset_piv__attr_list[2]], [0, 1], False)
     cmds.setAttr(f"{cog_ctrl}.{offset_piv__attr_list[1]}", 1)
-
 
     # connections
     utils.connect_attr(f"{root_input_grp}.globalScale", f"{fm_global_scale}{flt_A}")
@@ -182,7 +179,7 @@ def root_system(cog_pos):
 # -----------------------------------------------------------------------------
 cog_position_dict = {
         "root": [0, 0, 0],
-        "COG": [0, 150, 0]
+        "COG": [0, 147, 0]
         }
 cog_pos = cog_position_dict["COG"]
 print(cog_pos)

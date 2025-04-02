@@ -1,5 +1,6 @@
 
 import maya.cmds as cmds
+import maya.api.OpenMaya as om
 import importlib
 import os
 import re
@@ -265,19 +266,16 @@ def connect_attr(source_attr, target_attr):
 
 class Plg():
     axis = ['X', 'Y', 'Z']
-    def mtx_in_ls():
-        mtx_ins = []
-        for x in range(3):
-            plg = f".matrixIn[{x}]"
-            mtx_ins.append(plg)
-        return mtx_ins
-    def input2_val_ls():
-        input2_val = []
-        for x in range(3):
-            plg = f".input2{['X', 'Y', 'Z'][x]}"
-            input2_val.append(plg)
-        return input2_val
-    
+    mtx_ins = []
+    for x in range(3):
+        plg = f".matrixIn[{x}]"
+        mtx_ins.append(plg)
+        
+    input2_val = []
+    for x in range(3):
+        plg = f".input2{['X', 'Y', 'Z'][x]}"
+        input2_val.append(plg)
+
     output_plg = ".output"
     inputT_plug = ".inputTranslate"
     mtx_sum_plg = ".matrixSum"
@@ -288,7 +286,20 @@ class Plg():
     opm_plg = ".offsetParentMatrix"
     flt_A = ".floatA"
     flt_B = ".floatB"
-    out_flt = ".outFloat"    
+    out_flt = ".outFloat"
+
+def set_matrix(translation_ls, mtx):
+    # cr a translation matrix
+    translation_matrix = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        translation_ls[0], translation_ls[1], translation_ls[2], 1.0
+        ]
+        # convert the mtx to a list
+    # matrix_list = [translation_matrix(i, j) for i in range(4) for j in range(4)]
+        # set the inMatrix atr
+    cmds.setAttr(mtx, *translation_matrix, type='matrix')
 
 #----------------------------- ATTRIBUTES -------------------------------------
 def add_attr_if_not_exists(node_name, attr_name, attr_type, visible=True):
