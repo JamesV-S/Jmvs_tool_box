@@ -276,6 +276,11 @@ class Plg():
         plg = f".input2{['X', 'Y', 'Z'][x]}"
         input2_val.append(plg)
 
+    target_mtx = []
+    for x in range(5):
+        plg = f".target[{x}].targetMatrix"
+        target_mtx.append(plg)
+
     output_plg = ".output"
     inputT_plug = ".inputTranslate"
     mtx_sum_plg = ".matrixSum"
@@ -287,6 +292,14 @@ class Plg():
     flt_A = ".floatA"
     flt_B = ".floatB"
     out_flt = ".outFloat"
+
+
+#--------------------------------- MATRIX -------------------------------------
+def calculate_matrix_offset(previous_pos, pos):
+    # pos format = [0.0, 0.0, 0.0]
+    offset = [p2 - p1 for p1, p2 in zip(previous_pos, pos)]
+    return offset
+
 
 def set_matrix(translation_ls, mtx):
     # cr a translation matrix

@@ -33,7 +33,7 @@ class Spine_System():
         skeleton_pos = skeleton_dict["spine_pos"]
         skeleton_rot = skeleton_dict["spine_rot"]
         self.fk_pos = fk_dict["fk_pos"]
-        ik_pos = ik_dict["ik_pos"]
+        self.ik_pos = ik_dict["ik_pos"]
         fk_rot = fk_dict["fk_rot"]
         ik_rot = ik_dict["ik_rot"]
         
@@ -85,20 +85,20 @@ class Spine_System():
         print(f"MM_SPINE_TOP_0{utils.Plg.mtx_sum_plg}")
 
         # Create the controls temporarily (they will already exist with char_Layout tool)
-        fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(self.fk_pos, ik_pos)
+        fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(self.fk_pos, self.ik_pos)
         self.group_ctrls(fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls)
 
         # create the joints
-        bott_name, top_name = self.cr_jnt_sys_bt_tp(ik_pos)
+        bott_name, top_name = self.cr_jnt_sys_bt_tp(self.ik_pos)
         skeleton_ls = self.cr_jnt_sys_skeleton(skeleton_pos, skeleton_rot)
         self.group_jnts_sys(bott_name, top_name, skeleton_ls)
-        self.logic_elements(skeleton_pos, self.fk_pos, fk_rot, ik_pos, ik_rot)
+        self.logic_elements(skeleton_pos, self.fk_pos, fk_rot, self.ik_pos, ik_rot)
 
         # input & output groups
         input_grp, output_grp = self.input_output_groups(10)
 
         # make connections for the spine setup!
-        self.spine_nodes_and_connections(root_outputs_grp, input_grp, output_grp)
+        self.spine_ctrl_wires(root_outputs_grp, input_grp, output_grp)
 
 
     def build_ctrls(self, fk_pos, ik_pos):
@@ -293,47 +293,120 @@ class Spine_System():
         return inputs_grp, outputs_grp
 
 
-    def spine_nodes_and_connections(self, root_outputs_grp, input_grp, output_grp):
+    def spine_ctrl_wires(self, root_outputs_grp, input_grp, output_grp):
         # connect ghe root module to the spine module with inputs group nodes!
-        utils.connect_attr(f"{root_outputs_grp}.ctrl_centre_mtx", f"{input_grp}.base_mtx")
-        utils.connect_attr(f"{root_outputs_grp}.ctrl_cog_mtx", f"{input_grp}.hook_mtx")
-        utils.connect_attr(f"{root_outputs_grp}.globalScale", f"{input_grp}.globalScale")
+        if cmds.objExists(root_outputs_grp):
+            utils.connect_attr(f"{root_outputs_grp}.ctrl_centre_mtx", f"{input_grp}.base_mtx")
+            utils.connect_attr(f"{root_outputs_grp}.ctrl_cog_mtx", f"{input_grp}.hook_mtx")
+            utils.connect_attr(f"{root_outputs_grp}.globalScale", f"{input_grp}.globalScale")
         
+        # ---------------------------------------------------------------------------------
         ''' This is my first attempt at making controls follow without parenting, 
          Using their matrix's & adding the offset to keep their distance!!! '''
-        # fk ctrl setup: 
-            # MD's
-        MD_fk_ls = []
-        MD_inv_ls = []
+        # fk ctrl setup = Constraining the controls in canon, with MMs to achieve the neccesary offset: 
+            # MM's
+        MM_fk_ls = []
+        MM_inv_ls = []
+        fk_ctrl_ls = []
+        inv_ctrl_ls = []
         previous_pos = None
         for i, (fk_ctrl_name, pos) in enumerate(self.fk_pos.items()):
-            MD_fk_name = f"MD_{fk_ctrl_name}"
-            MD_inv_name = f"MD_{fk_ctrl_name.replace('fk', 'inv')}"
-                # cr the MD nodes
-            utils.cr_node_if_not_exists(1, 'multMatrix', MD_fk_name)
-            utils.cr_node_if_not_exists(1, 'multMatrix', MD_inv_name)
+                # append the ctrls to the list
+            fk_ctrl_ls.append(fk_ctrl_name)
+            inv_ctrl_ls.append(fk_ctrl_name.replace('fk', 'inv'))
+                # cr MM names
+            MM_fk_name = f"MM_{fk_ctrl_name}"
+            MM_inv_name = f"MM_{fk_ctrl_name.replace('fk', 'inv')}"
+                # cr the MM nodes
+            utils.cr_node_if_not_exists(1, 'multMatrix', MM_fk_name)
+            utils.cr_node_if_not_exists(1, 'multMatrix', MM_inv_name)
                 # append their names to the list
-            MD_fk_ls.append(MD_fk_name)
-            MD_inv_ls.append(MD_inv_name)
+            MM_fk_ls.append(MM_fk_name)
+            MM_inv_ls.append(MM_inv_name)
+            
                 # Calculate the offset for the next control
             if previous_pos is not None:
                 fk_offset = [p2 - p1 for p1, p2 in zip(previous_pos, pos)]
                 inv_offset = [-(p2 - p1) for p1, p2 in zip(previous_pos, pos)]
-                # set the offset to the MD's inMatrix[0]
-                utils.set_matrix(fk_offset, f"{MD_fk_name}{utils.Plg.mtx_ins[0]}")
-                utils.set_matrix(inv_offset, f"{MD_inv_name}{utils.Plg.mtx_ins[0]}")
+                # set the offset to the MM's inMatrix[0]
+                utils.set_matrix(fk_offset, f"{MM_fk_name}{utils.Plg.mtx_ins[0]}")
+                utils.set_matrix(inv_offset, f"{MM_inv_name}{utils.Plg.mtx_ins[0]}")
             previous_pos = pos
-
-        # connect the MDs
+    
+        # connect the MMs
             # iniitial inputs
-        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MD_fk_ls[0]}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MD_inv_ls[0]}{utils.Plg.mtx_ins[1]}")
-            # connect remaining FK & INV matrices
-        # for x in range(len(MD_fk_ls) - 1):
-        #     utils.connect_attr(f"{MD_fk_ls[x]}{utils.Plg.mtx_sum_plg}", f"{MD_fk_ls[x+1]}{utils.Plg.mtx_ins[1]}")
-        #     # utils.connect_attr(f"{MD_inv_ls[x]}.matrixSum", f"{MD_inv_ls[x+1]}.inMatrix[1]")
+        utils.set_matrix(list(self.fk_pos.values())[0], f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[0]}")
+        utils.set_matrix(list(self.fk_pos.values())[-1], f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[1]}")
+        # connect remaining FK & INV matrices ORDER:
+            # connect the MM to corresponding ctrl
+        for x in range(len(MM_fk_ls)):
+            utils.connect_attr(f"{MM_fk_ls[x]}{utils.Plg.mtx_sum_plg}", f"{fk_ctrl_ls[x]}{utils.Plg.opm_plg}")
+            utils.connect_attr(f"{MM_inv_ls[x]}{utils.Plg.mtx_sum_plg}", f"{inv_ctrl_ls[x]}{utils.Plg.opm_plg}")
+            # connect the ctrls to MM to create the sequence
+        for x in range(1, len(MM_fk_ls)):
+            utils.connect_attr(f"{fk_ctrl_ls[x-1]}{utils.Plg.wld_mtx_plg}", f"{MM_fk_ls[x]}{utils.Plg.mtx_ins[1]}")
+            utils.connect_attr(f"{inv_ctrl_ls[x-1]}{utils.Plg.wld_mtx_plg}", f"{MM_inv_ls[x]}{utils.Plg.mtx_ins[1]}")
+        
+        # ---------------------------------------------------------------------------------
+        # IK ctrl setup
+        # wire hierarchy: FK > IK_Top | Inv > IK_Bott | IK_top/bott > IK_mid
+            # cr the MM for ik ctrls!
+        MM_ik_ls = []
+        ik_ctrl_ls = []
+        for ik_ctrl_name in self.ik_pos.keys():
+            ik_ctrl_ls.append(ik_ctrl_name)
+            MM_ik_name = f"MM_{ik_ctrl_name}"
+            utils.cr_node_if_not_exists(1, 'multMatrix', MM_ik_name)
+            MM_ik_ls.append(MM_ik_name)
 
-            
+            # Only IK_top ctrl needs its offset claculated!
+        last_fk_pos = list(self.fk_pos.values())[-1]
+        ik_top_ofs = utils.calculate_matrix_offset(last_fk_pos, list(self.ik_pos.values())[-1])
+        utils.set_matrix(ik_top_ofs, f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[0]}")
+            # two end fk & inv ctrls into ik MM top & bottom
+        utils.connect_attr(f"{fk_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[1]}") # MM_ik_top
+        utils.connect_attr(f"{inv_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_ik_ls[0]}{utils.Plg.mtx_ins[1]}") # MM_ik_bottom
+            # connect the MMs to ctrls
+        for x in range(len(MM_ik_ls)):
+            utils.connect_attr(f"{MM_ik_ls[x]}{utils.Plg.mtx_sum_plg}", f"{ik_ctrl_ls[x]}{utils.Plg.opm_plg}")
+        
+        # IK middle ctrl wires: (twisting axis in this scenario is 'Y' >
+        twist_axis = "Y" 
+        # calc this by the givin rotation values)
+            # Blend matrix for pos between top & bottom
+            # 2 flt nodes, 1 aim matracies & 1 CM for twisting
+        BM_ik_mid = f"BM_{ik_ctrl_ls[1]}"
+        utils.cr_node_if_not_exists(1, "blendMatrix", BM_ik_mid)
+        AM_ik_mid =  f"AM_sub_{ik_ctrl_ls[1]}"
+        utils.cr_node_if_not_exists(0, "aimMatrix", AM_ik_mid, {f"primaryInputAxis{twist_axis}":1, "primaryInputAxisX":0}) 
+        FM_ik_mid_sub = f"FM_sub_{ik_ctrl_ls[1]}"
+        FM_ik_mid_div = f"FM_div_{ik_ctrl_ls[1]}"
+        utils.cr_node_if_not_exists(1, "floatMath", FM_ik_mid_sub, {"operation":1})
+        utils.cr_node_if_not_exists(1, "floatMath", FM_ik_mid_div, {"operation":2, "floatB":0.5}) 
+        CM_ik_mid =  f"CM_{ik_ctrl_ls[1]}"
+        utils.cr_node_if_not_exists(1, "composeMatrix", CM_ik_mid)
+
+        # Connections
+        bot_ik_ctrl = ik_ctrl_ls[0]
+        top_ik_ctrl = ik_ctrl_ls[-1]
+            # for MM_mid_ctrl -> matrixIn[0]
+        utils.connect_attr(f"{bot_ik_ctrl}.rotate{twist_axis}", f"{FM_ik_mid_sub}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{top_ik_ctrl}.rotate{twist_axis}", f"{FM_ik_mid_sub}{utils.Plg.flt_B}")
+        utils.connect_attr(f"{FM_ik_mid_sub}{utils.Plg.out_flt}", f"{FM_ik_mid_div}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{FM_ik_mid_div}{utils.Plg.out_flt}", f"{CM_ik_mid}.inputRotate{twist_axis}")
+        utils.connect_attr(f"{CM_ik_mid}{utils.Plg.out_mtx_plg}", f"{MM_ik_ls[1]}{utils.Plg.mtx_ins[0]}")
+            # # for MM_mid_ctrl -> matrixIn[1]
+        utils.connect_attr(f"{bot_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{BM_ik_mid}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{top_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{BM_ik_mid}{utils.Plg.target_mtx[0]}")
+        cmds.setAttr(f"{BM_ik_mid}.target[0].translateWeight", 0.5)
+        utils.connect_attr(f"{BM_ik_mid}{utils.Plg.out_mtx_plg}", f"{AM_ik_mid}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{top_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{AM_ik_mid}.primaryTargetMatrix")
+        utils.connect_attr(f"{top_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{AM_ik_mid}.secondaryTargetMatrix")
+        utils.connect_attr(f"{AM_ik_mid}{utils.Plg.out_mtx_plg}", f"{MM_ik_ls[1]}{utils.Plg.mtx_ins[1]}")
+        #secondaryTargetMatrix
+
 
 skeleton_dict = {
     "spine_pos":{
