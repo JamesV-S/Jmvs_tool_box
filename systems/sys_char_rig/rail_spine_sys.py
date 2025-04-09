@@ -29,7 +29,6 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
     num_of_cvs = cmds.getAttr(f"{gd_curve}.spans") + cmds.getAttr(f"{gd_curve}.degree")
     gd_curve_cvs = [f"{gd_curve}.cv[{i}]" for i in range(num_of_cvs)]
     
-    
     # Create Rail & rename shape nodes: 
     rail_gd_curve = f"crv_gdRail_{module_name}_{unique_id}_{side}"
     rail_shape = f"crv_gdRail_{module_name}_{unique_id}_{side}Shape"
@@ -45,7 +44,7 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
     for x in range(num_of_cvs):
         cls_rail_handle = cmds.cluster(f"{rail_gd_curve}.cv[{x}]", n=f"cls{x}_rail_{module_name}_{unique_id}_{side}")[1]
         rail_clusters.append(cls_rail_handle)
-        
+    
     spine_clusters = []
     for x in range(num_of_cvs):
         cls_spine_handle = cmds.cluster(f"{gd_curve}.cv[{x}]", n=f"cls{x}_guide_{module_name}_{unique_id}_{side}")[1] # rail_gd_curve
@@ -119,7 +118,7 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
     # Example:
         # 5 joints -> -1 = 4 -> VAL = 1/4 = 0.25 -> first joint = VAL 0.25 -> rest of joints = previous value + 0.25 -> End joint = 1
     # Establish number of joints
-    temp_jnt_number = 5
+    temp_jnt_number = 10
     ddj_spine_jnts = []
     
     for x in range(temp_jnt_number):
@@ -238,30 +237,19 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
         1.1111111111111112]
 
     '''
-
-
     # set value attribute
     
     return spine_guides
 
-spine_guide_setup("bipedArm", "0", "M", {'spine1': [0.0012658856576307723, 143.5152587890625, -1.623886823654159], 
-                            'spine2': [-0.0028628071304410696, 145.74124145507812, -1.4550552368164062], 
-                            'spine3': [-0.01112019270658493, 150.19320678710938, -0.061740268021821976],
-                            'spine4': [0.02035440318286419, 153.80276489257812, 0.4705770015716553], 
-                            'spine5': [0.03609170093071815, 155.950570228017, 0.7560442576832147]
-                            })
-
-# Trans dictionary:  {'loc_0': (0.0012658856576307723, 143.5152587890625, -1.623886823654159), 
-#                     'loc_1': (-0.0028628071304410696, 145.74124145507812, -1.4550552368164062), 
-#                     '|loc_2': (-0.01112019270658493, 150.19320678710938, -0.061740268021821976), 
-#                     '|loc_3': (0.02035440318286419, 153.80276489257812, 0.4705770015716553), 
-#                     'loc_4': (0.03609170093071815, 155.950570228017, 0.7560442576832147)}
-
-
-def joint_from_sel():
-     sel = cmds.ls(sl=1, type="transform")
-
-     for s in sel:
-          new_name = cmds.rename(s, f"jnt_rig_{s}")
-          cmds.joint(name=new_name, parent=None)
+spine_guide_setup("spine", "0", "M", {'spine1': [0.0, 144.03905123892466, 0.0], 
+                    'spine2': [-1.2281763474396059e-14, 153.44444274902344, 0.0], 
+                    'spine3': [-1.2281763474396059e-14, 159.88888549804688, 0.0], 
+                    'spine4': [-1.2281763474396059e-14, 166.3333282470703, 0.0], 
+                    'spine5': [-1.2281763474396059e-14, 172.77777099609375, 0.0], 
+                    'spine6': [-1.2281763474396059e-14, 179.22222900390625, 0.0], 
+                    'spine7': [-1.2281763474396059e-14, 185.6666717529297, 0.0], 
+                    'spine8': [-1.2281763474396059e-14, 192.11111450195312, 0.0], 
+                    'spine9': [-1.2281763474396059e-14, 198.55555725097656, 0.0], 
+                    'spine10': [0.0, 206.02795168683824, 0.0]}
+                    )
         

@@ -1,16 +1,19 @@
 
 import maya.cmds as cmds
 import maya.api.OpenMaya as om
+import maya.OpenMayaAnim as oma
 import importlib
 import os
 import re
 
 from systems import (
     os_custom_directory_utils,
+    OPM
 )
 importlib.reload(os_custom_directory_utils)
+importlib.reload(OPM)
 
-#----------------------------------------------------------------------------------------------
+#---------------------------------- CTRL --------------------------------------
 def replace_ctrl_list(curve_list):
     # curve_list = cmds.ls(sl=1)
     print(curve_list)
@@ -141,7 +144,7 @@ def get_selection_trans_rots_dictionary():
     
     for sel in selection:
         trans_ls = cmds.xform(sel, q=True, t=True, ws=True)
-        rot_ls = cmds.xform(sel, q=True, r=True, ws=True)
+        rot_ls = cmds.xform(sel, q=True, ro=True, ws=True)
         
         translation_pos[sel] = trans_ls
         rotation_pos[sel] = rot_ls
@@ -267,34 +270,65 @@ def connect_attr(source_attr, target_attr):
 class Plg():
     axis = ['X', 'Y', 'Z']
     mtx_ins = []
+    out_axis = []
     for x in range(3):
-        plg = f".matrixIn[{x}]"
-        mtx_ins.append(plg)
-        
+        mtx_ins.append(f".matrixIn[{x}]")
+        out_axis.append(f".output{axis[x]}")
+
+    input1_val = []   
     input2_val = []
     for x in range(3):
-        plg = f".input2{['X', 'Y', 'Z'][x]}"
-        input2_val.append(plg)
+        input1_val.append(f".input1{axis[x]}")
+        input2_val.append(f".input2{axis[x]}")
 
     target_mtx = []
     for x in range(5):
-        plg = f".target[{x}].targetMatrix"
-        target_mtx.append(plg)
+        target_mtx.append(f".target[{x}].targetMatrix")
+
+    color1_plg = []
+    color2_plg = []
+    color3_plg = []
+    out_letter = []
+    for x in ["R", "G", "B"]:
+        color1_plg.append(f".color1{x}")
+        color2_plg.append(f".color2{x}")
+        color3_plg.append(f".color3{x}")
+        out_letter.append(f".output{x}")
 
     output_plg = ".output"
     inputT_plug = ".inputTranslate"
     mtx_sum_plg = ".matrixSum"
     wld_mtx_plg = ".worldMatrix[0]"
     wld_inv_mtx_plg = ".worldInverseMatrix[0]"
+    wld_space_plg = ".worldSpace[0]"
     inp_mtx_plg = ".inputMatrix"
     out_mtx_plg = ".outputMatrix"
     opm_plg = ".offsetParentMatrix"
     flt_A = ".floatA"
     flt_B = ".floatB"
     out_flt = ".outFloat"
+    arc_len_plg = ".arcLength"
+    inp_curve_plg = ".inputCurve"
+    blndr_plg = ".blender"
+
+
+def check_non_default_transforms(obj):
+    attributes = ['translate', 'rotate', 'scale']
+    # check for translate & rotate vals with 0 & scale with 1
+    for atr in attributes:
+        values = cmds.getAttr(f"{obj}.{atr}")[0]
+        if any(value != 0 for value in values) if atr != 'scale' else any(value != 1 for value in values):
+            return True
+    return False
 
 
 #--------------------------------- MATRIX -------------------------------------
+def clean_opm(obj):
+    cmds.select(obj)
+    OPM.OpmCleanTool()
+    cmds.select(cl=1)
+
+
 def calculate_matrix_offset(previous_pos, pos):
     # pos format = [0.0, 0.0, 0.0]
     offset = [p2 - p1 for p1, p2 in zip(previous_pos, pos)]
@@ -309,10 +343,15 @@ def set_matrix(translation_ls, mtx):
         0.0, 0.0, 1.0, 0.0,
         translation_ls[0], translation_ls[1], translation_ls[2], 1.0
         ]
-        # convert the mtx to a list
-    # matrix_list = [translation_matrix(i, j) for i in range(4) for j in range(4)]
-        # set the inMatrix atr
     cmds.setAttr(mtx, *translation_matrix, type='matrix')
+
+
+def mtxCon_no_ofs(driver, driven):
+        MM = f"MM_{driven}"
+        cr_node_if_not_exists(1, "multMatrix", MM)
+        connect_attr(f"{driver}{Plg.wld_mtx_plg}", f"{MM}{Plg.mtx_ins[1]}")
+        connect_attr(f"{MM}{Plg.mtx_sum_plg}", f"{driven}{Plg.opm_plg}")
+        return MM
 
 #----------------------------- ATTRIBUTES -------------------------------------
 def add_attr_if_not_exists(node_name, attr_name, attr_type, visible=True):
@@ -495,6 +534,51 @@ def connect_guide(start_guide, end_guide):
         # > create cluster on each cv > parent correct cv to xfm_guide 
         # > joint1 @ start_guide, joint2 @ end_guide > pointConstrain joint to xfm_guid
 
+#--------------------------------- SKIN ---------------------------------------
+def add_empty_skin_cluster(mesh, skin_name):
+    new_skin_cluster = cr_node_if_not_exists(0, 'skinCluster', skin_name)
+    mesh_shape = cmds.listRelatives(mesh, shapes=1, noIntermediate=True)[0]
+    connect_attr(f"{mesh_shape}.worldMesh[0]", f"{skin_name}.input[0].inputGeometry") 
+    connect_attr(f"{mesh}.worldMatrix[0]", f"{skin_name}.")
 
+
+def create_skin_cluster(geometry_name, joint_names):
+    # Create MSelectionList and add the geometry
+    selection_list = om.MSelectionList()
+    selection_list.add(geometry_name)
+    geo_dag_path = om.MDagPath()
+    selection_list.getDagPath(0, geo_dag_path)
+
+    # Create MObjectArray for the joints
+    joint_objects = om.MObjectArray()
+    for joint_name in joint_names:
+        selection_list.clear()
+        selection_list.add(joint_name)
+        joint_dag_path = om.MDagPath()
+        selection_list.getDagPath(0, joint_dag_path)
+        joint_objects.append(joint_dag_path.node())
+
+    # Create the skinCluster
+    skin_cluster_fn = oma.MFnSkinCluster()
+    skin_cluster_fn.create(joint_objects, geo_dag_path.node())
+
+
+def connect_inv_matrix_to_skin_cluster(jnt_MM, inv_mtx_name, skincluster_name):
+    connect_attr(f"{jnt_MM}{Plg.mtx_sum_plg}", f"{inv_mtx_name}{Plg.inp_mtx_plg}")
+    connect_attr(f"{inv_mtx_name}{Plg.out_mtx_plg}", f"{skincluster_name}.bindPreMatrix[0]")
     
+    # import importlib
+    # from Jmvs_tool_box.systems import utils
+    # importlib.reload(utils)
+    # utils.connect_inv_matrix_to_skin_cluster("MD_jnt_ik_spine_middle", "IM_MD_jnt_ik_spine_middle", "")
+
+
+def joint_from_sel():
+     sel = cmds.ls(sl=1, type="transform")
+
+     for s in sel:
+          new_name = cmds.rename(s, f"jnt_rig_{s}")
+          cmds.joint(name=new_name, parent=None)
+
+
 

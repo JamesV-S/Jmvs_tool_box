@@ -105,11 +105,11 @@ def root_system(cog_pos):
 
         # Cog offset ctrls
     MD_cog_ofs = f"MD_ctrl_cog_offset"
-    rev_cog_ofs = f"R_ctrl_cog_offset"
+    MD_rev_cog_ofs = f"MD_ctrl_cog_offset_rev"
     CM_cog_ofs = f"CM_ctrl_cog_offset"
     CM_inv_cog_ofs = f"CM_inv_ctrl_cog_offset"
     utils.cr_node_if_not_exists(1, "multiplyDivide", MD_cog_ofs, {"input1Y" : cog_y})
-    utils.cr_node_if_not_exists(1, "reverse", rev_cog_ofs)
+    utils.cr_node_if_not_exists(1, "multiplyDivide", MD_rev_cog_ofs, {"input1X":-1, "input1Y":-1, "input1Z":-1})
     utils.cr_node_if_not_exists(1, "composeMatrix", CM_cog_ofs)
     utils.cr_node_if_not_exists(1, "composeMatrix", CM_inv_cog_ofs)
     if cog_x == 0:
@@ -125,10 +125,10 @@ def root_system(cog_pos):
         # Input & Output groups
     utils.add_float_attrib(root_input_grp, ["globalScale"], [0.01, 999], True) 
     utils.add_float_attrib(root_outputs_grp, ["globalScale"], [0.01, 999], True)
-    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_centre_mtx", 'matrix', False)
-    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_cog_mtx", 'matrix', False)
     cmds.setAttr(f"{root_input_grp}.globalScale", 1, keyable=0, channelBox=0)
     cmds.setAttr(f"{root_outputs_grp}.globalScale", 1, keyable=0, channelBox=0)
+    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_centre_mtx", 'matrix', False)
+    utils.add_attr_if_not_exists(root_outputs_grp, "ctrl_cog_mtx", 'matrix', False)
         # ctrls
     utils.add_locked_attrib(root_ctrl, ["Attributes"])
     utils.add_float_attrib(root_ctrl, ["globalScale"], [0.01, 999], True)
@@ -167,8 +167,8 @@ def root_system(cog_pos):
     utils.connect_attr(f"{MD_cog_ofs}{output_plg}", f"{CM_cog_ofs}{inputT_plug}")
     utils.connect_attr(f"{CM_cog_ofs}{out_mtx_plg}", f"{MM_cog}{mtx_in_plgs_ls[0]}")
         # reverse
-    utils.connect_attr(f"{MD_cog_ofs}{output_plg}", f"{rev_cog_ofs}.input")
-    utils.connect_attr(f"{rev_cog_ofs}{output_plg}", f"{CM_inv_cog_ofs}{inputT_plug}")
+    utils.connect_attr(f"{MD_cog_ofs}{output_plg}", f"{MD_rev_cog_ofs}.input2")
+    utils.connect_attr(f"{MD_rev_cog_ofs}{output_plg}", f"{CM_inv_cog_ofs}{inputT_plug}")
     utils.connect_attr(f"{CM_inv_cog_ofs}{out_mtx_plg}", f"{MM_cog_outputs}{mtx_in_plgs_ls[0]}")
 
     # cog outputs
