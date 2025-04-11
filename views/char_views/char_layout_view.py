@@ -1,6 +1,7 @@
 # ----------------------------------------- VIEW ----------------------------------------
 import maya.cmds as cmds
 import importlib
+import json
 from maya import OpenMayaUI
 import os
 
@@ -54,9 +55,12 @@ class CharLayoutView(QtWidgets.QWidget):
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
+        
+        self.json_dict = self.get_modules_json_dict()
+        self.init_ui()
     
 
-    def UI_modules(self):
+    def init_ui(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
         main_Vlayout.setObjectName("main_Layout")
 
@@ -397,3 +401,25 @@ class CharLayoutView(QtWidgets.QWidget):
         for wid in [cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]:
             wid.setEnabled(False)
             wid.setProperty("Current_disabled", True)
+
+    
+    def get_modules_json_dict(self):
+        # derive the `self.json_all_mdl_list` from the config folder!
+        # self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
+        json_mdl_list = []
+        json_config_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "config", "char_config")
+        if os.path.exists(json_config_dir):
+            for mdl_config_file in os.listdir(json_config_dir):
+                if mdl_config_file.endswith('.json'):
+                    json_mdl_list.append(mdl_config_file)
+        
+        # This dictionary contains nested dict of all possible json modules in `char_config` folder
+        json_dict = {}
+        for json_file in json_mdl_list:
+            # configer the json file
+            json_path = os.path.join(json_config_dir, json_file)
+            with open(json_path, 'r') as file:
+                # load the json data
+                json_data = json.load(file)
+                json_dict[json_file] = json_data
+        return json_dict 

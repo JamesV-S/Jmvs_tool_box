@@ -10,5 +10,6 @@ class CharLayoutMain():
     
 
     def show_ui(self):
+        self.controller = char_layout_controller.CharLayoutController()
         self.controller.view.show()
         return self.controller
