@@ -29,7 +29,7 @@ class CharLayoutModel:
             )
         self.json_dict = utils_json.get_modules_json_dict('char_config')
 
-
+    # ---- TreeView functions ----
     def load_rig_group(self, val_availableRigComboBox):
         # rig_syntax "jmvs_char*_rig" - DB_jmvs_cyborg_rig
         rig_name = val_availableRigComboBox.replace("DB_", "")
@@ -40,6 +40,23 @@ class CharLayoutModel:
                 print(e)
         else:
             print(f"rig_group `{rig_name}` already exists in the scene")
+
+
+    def get_available_DB_rig_folders(self, location):
+            name_of_rig_fld = []
+            self.rig_db_storage_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
+            if os.path.exists(self.rig_db_storage_dir):
+                print(f"Dir does exist: {self.rig_db_storage_dir}")
+                for db_rig_folder in os.listdir(self.rig_db_storage_dir):
+                    if db_rig_folder.startswith("DB_jmvs_"):
+                        name_of_rig_fld.append(db_rig_folder)
+                        print(f"RIG Folder(s): {db_rig_folder}")
+                    elif not db_rig_folder.startswith("DB_jmvs_"):
+                        print(f"NOT a rig folder: {db_rig_folder}")
+            else:
+                print(f"Dir doesn't exist: {self.rig_db_storage_dir}")
+            return name_of_rig_fld
+    
 
 
     def retrieve_component_dict_from_nameSel(self, val_availableRigComboBox,  module_selection_name):

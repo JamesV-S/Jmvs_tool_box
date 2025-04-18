@@ -59,6 +59,7 @@ def register_services():
 
     importlib.reload(service_locator_pattern)
     importlib.reload(char_master_main)
+    importlib.reload(geoDB_master_main)
 
     from main_entry_points import tool_box_main
     importlib.reload(tool_box_main)

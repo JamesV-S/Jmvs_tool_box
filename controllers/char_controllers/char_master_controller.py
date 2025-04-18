@@ -11,10 +11,11 @@ try:
 except ModuleNotFoundError:
     from PySide2 import QtCore, QtWidgets, QtGui
     from PySide2.QtCore import Qt, Signal
-    from PySide2.QtGui import QIcon
+    from PySide2.QtGui import QIcon, QStandardItemModel, QStandardItem
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
+import service_locator_pattern
 import importlib
 import os.path
 
@@ -48,6 +49,8 @@ importlib.reload(char_master_model)
 importlib.reload(char_master_view)
 importlib.reload(char_layout_main)
 importlib.reload(char_skeleton_main)
+# importlib.reload(char_rig)
+
 
 import service_locator_pattern
 
@@ -77,5 +80,6 @@ class CharMasterController:
 
     def sigfunc_char_skeleton_button(self):
         print(f"running 'char_skeleotn_controller'")
+        # char_rig.char_main()
 
     
