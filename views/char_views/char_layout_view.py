@@ -17,16 +17,17 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils_os,
+    utils_json
 )
 
 from views import (
     utils_view
     )
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
+importlib.reload(utils_json)
 importlib.reload(utils_view)
 
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -47,16 +48,20 @@ class CharLayoutView(QtWidgets.QWidget):
         self.resize(400, 550)
 
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "char_style_sheet_001.css"
             )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
-    
 
-    def UI_modules(self):
+        self.json_dict = utils_json.get_modules_json_dict('char_config')
+
+        self.init_ui()
+
+  
+    def init_ui(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
         main_Vlayout.setObjectName("main_Layout")
 

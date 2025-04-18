@@ -18,12 +18,12 @@ except ModuleNotFoundError:
 import os
 
 from views import utils_view
-from systems import (
-    os_custom_directory_utils
+from utils import (
+    utils_os
 )
 
 importlib.reload(utils_view)
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
 main_window = wrapInstance(int(maya_main_wndwPtr), QWidget)
@@ -45,7 +45,7 @@ class exportDatabaseView(QtWidgets.QWidget):
         
         # Load stylesheet
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "geoDB_style_sheet_001.css"
             )
         with open(stylesheet_path, "r") as file:

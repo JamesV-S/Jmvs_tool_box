@@ -1,19 +1,53 @@
 
 import importlib
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 from systems.sys_char_rig import (
     cr_ctrl
 )
-importlib.reload(os_custom_directory_utils)
+from utils import utils_os
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
 import maya.cmds as cmds
 
-def spine_guide_setup(module_name, unique_id, side, component_pos):
+'''
+Turn this into a Class
+
+replace cluster setup with loicator worl postions for the spline curve!.
+
+add squash float values to the joints!
+
+'''
+
+class rail_spine_setup():
+    def __init__(self, module_name, unique_id, side, component_pos, ctrl_dict):
+        self.mdl_nm = module_name
+        self.unique_id = unique_id
+        self.side = side
+        self.component_pos = component_pos
+        self.ctrl_dict = ctrl_dict
+
+        # Get number of spans based off the number of ctrls
+
+        self.build_curves(spans=2)
+
+    def build_curves(self, spans):
+        # -------------------------------------------------------------------------
+        curve = f"crv_gd_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        spine_shape = cmds.listRelatives(curve, s=1)[0]
+
+        # cr curve
+        cmds.curve(n=curve, d=3, p=[(-45, 0, 0), (-16.666667, 0, 0), (11.666667, 0, 0), (40, 0, 0)], k=[0, 0, 0, 1, 1, 1])
+
+        # Rebuild it 
+        cmds.rebuildCurve(curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=spans, d=3, tol=0.01)
+
+
+def func_rail_spine_setup(module_name, unique_id, side, component_pos):
+    # -------------------------------------------------------------------------
     gd_curve = f"crv_gd_{module_name}_{unique_id}_{side}"
     spine_shape = f"{gd_curve}Shape"
 
@@ -23,6 +57,7 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
     # Rebuild it 
     cmds.rebuildCurve(gd_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=2, d=3, tol=0.01)
 
+    # -------------------------------------------------------------------------
     # Cluster the CVs
     # gather all cvs on the curve
     crv_shape = cmds.listRelatives(gd_curve, shapes=True)[0]
@@ -50,6 +85,7 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
         cls_spine_handle = cmds.cluster(f"{gd_curve}.cv[{x}]", n=f"cls{x}_guide_{module_name}_{unique_id}_{side}")[1] # rail_gd_curve
         spine_clusters.append(cls_spine_handle)
     
+    # -------------------------------------------------------------------------
     # Create the controls!
     spine_guides = []
     for x in range(num_of_cvs):
@@ -241,15 +277,15 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
     
     return spine_guides
 
-spine_guide_setup("spine", "0", "M", {'spine1': [0.0, 144.03905123892466, 0.0], 
-                    'spine2': [-1.2281763474396059e-14, 153.44444274902344, 0.0], 
-                    'spine3': [-1.2281763474396059e-14, 159.88888549804688, 0.0], 
-                    'spine4': [-1.2281763474396059e-14, 166.3333282470703, 0.0], 
-                    'spine5': [-1.2281763474396059e-14, 172.77777099609375, 0.0], 
-                    'spine6': [-1.2281763474396059e-14, 179.22222900390625, 0.0], 
-                    'spine7': [-1.2281763474396059e-14, 185.6666717529297, 0.0], 
-                    'spine8': [-1.2281763474396059e-14, 192.11111450195312, 0.0], 
-                    'spine9': [-1.2281763474396059e-14, 198.55555725097656, 0.0], 
-                    'spine10': [0.0, 206.02795168683824, 0.0]}
-                    )
+# rail_spine_setup("spine", "0", "M", {'spine1': [0.0, 144.03905123892466, 0.0], 
+#                     'spine2': [-1.2281763474396059e-14, 153.44444274902344, 0.0], 
+#                     'spine3': [-1.2281763474396059e-14, 159.88888549804688, 0.0], 
+#                     'spine4': [-1.2281763474396059e-14, 166.3333282470703, 0.0], 
+#                     'spine5': [-1.2281763474396059e-14, 172.77777099609375, 0.0], 
+#                     'spine6': [-1.2281763474396059e-14, 179.22222900390625, 0.0], 
+#                     'spine7': [-1.2281763474396059e-14, 185.6666717529297, 0.0], 
+#                     'spine8': [-1.2281763474396059e-14, 192.11111450195312, 0.0], 
+#                     'spine9': [-1.2281763474396059e-14, 198.55555725097656, 0.0], 
+#                     'spine10': [0.0, 206.02795168683824, 0.0]}
+#                     )
         

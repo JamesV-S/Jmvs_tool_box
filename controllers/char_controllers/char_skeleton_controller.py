@@ -18,9 +18,9 @@ except ModuleNotFoundError:
 import importlib
 import os.path
 
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils,
+    utils_os
 )
 
 from systems.sys_char_rig import (
@@ -33,7 +33,7 @@ from controllers import utils_QTree
 from models.char_models import char_skeleton_model
 from views.char_views import char_skeleton_view
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)

@@ -19,12 +19,12 @@ import sys
 import importlib
 import os
 
-from systems import (
-    os_custom_directory_utils
+from utils import (
+    utils_os
 )
 from views import utils_view
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils_view)
 
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -40,7 +40,7 @@ class ToolBoxView(QtWidgets.QWidget):
         self.setObjectName(self.ui_object_name)
         
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "toolBox_style_sheet.css"
             )
         print(stylesheet_path)
@@ -67,19 +67,19 @@ class ToolBoxView(QtWidgets.QWidget):
         btn_list = [self.char_button, self.vehicle_button, self.geoDB_button, self.other_button]
         
         # add images
-        char_image_path = os.path.join(os_custom_directory_utils.create_directory(
+        char_image_path = os.path.join(utils_os.create_directory(
             "Jmvs_tool_box", "assets", "images"), "img_char_db_001.png"
             )
         # Set the image as the button icon
         char_icon = QIcon(char_image_path)
 
-        geo_image_path = os.path.join(os_custom_directory_utils.create_directory(
+        geo_image_path = os.path.join(utils_os.create_directory(
             "Jmvs_tool_box", "assets", "images"), "img_geo_db_001.png"
             )
         # Set the image as the button icon
         geo_icon = QIcon(geo_image_path)
 
-        vehicle_image_path = os.path.join(os_custom_directory_utils.create_directory(
+        vehicle_image_path = os.path.join(utils_os.create_directory(
             "Jmvs_tool_box", "assets", "images"), "img_vehicle_db_001.png"
             )
         # Set the image as the button icon

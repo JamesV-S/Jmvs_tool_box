@@ -2,6 +2,7 @@
 import importlib
 import sys
 import os
+from utils import utils_os
 
 tool_box_controller = None
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -25,11 +26,11 @@ def add_to_sys_path(directory):
 
 
 def gather_folders_to_add_to_list(the_list, append_list, *args):
-    from systems import os_custom_directory_utils
-    importlib.reload(os_custom_directory_utils)
+    # from utils import utils_os
+    # importlib.reload(utils_os)
     folder_list = the_list
     for fld in folder_list:
-        dr = os.path.join(os_custom_directory_utils.create_directory(*args, fld))
+        dr = os.path.join(utils_os.create_directory(*args, fld))
         append_list.append(dr)
 
 
@@ -38,10 +39,9 @@ def updating_paths():
     add_path = os.path.join(current_dir)
     add_to_sys_path(add_path)
     os.environ['MAYA_SCRIPT_PATH'] = current_dir + os.pathsep + os.environ.get('MAYA_SCRIPT_PATH', '')
-    custom_dir_list = []
-
-
+    
     # ------------------ Add Necessary paths ----------------------
+    custom_dir_list = []
     gather_folders_to_add_to_list(['char_ui', 'vehicle_ui', 'geoDB_ui', 'other_ui'], custom_dir_list, "Jmvs_tool_box", "user_interface")
     gather_folders_to_add_to_list(['databases', 'models', 'views', 'controllers'], custom_dir_list, "Jmvs_tool_box")
     gather_folders_to_add_to_list(['char_models', 'geoDB_models'], custom_dir_list, "Jmvs_tool_box", "models")
@@ -78,6 +78,7 @@ def register_services():
     if tool_box_controller:
         print("Available services:", service_locator_pattern.ServiceLocator._services)
         tool_box_controller.show_ui()
+
 
 def run_tool_box():
     updating_paths()

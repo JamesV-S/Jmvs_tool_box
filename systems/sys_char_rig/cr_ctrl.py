@@ -4,16 +4,17 @@ import importlib
 import sys
 import os
 
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils,
+    utils_os
 )
-importlib.reload(os_custom_directory_utils)
+
+importlib.reload(utils_os)
 importlib.reload(utils)
 
 class CreateControl():
     def __init__(self, type, name):
-        self.import_directory = os_custom_directory_utils.create_directory(
+        self.import_directory = utils_os.create_directory(
             "Jmvs_tool_box", "imports" 
             )
         self.ctrl = self.circle_type(type, name)

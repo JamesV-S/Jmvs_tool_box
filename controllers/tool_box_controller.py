@@ -1,6 +1,9 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+import sys
+import importlib
+import os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -15,9 +18,6 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-import sys
-import importlib
-import os
 
 from models import tool_box_model
 from views import tool_box_view

@@ -4,6 +4,8 @@ import maya.cmds as cmds
 import importlib
 import os
 
+from utils import utils_os
+
 try:
     from PySide6 import QtCore, QtWidgets, QtGui, QtUiTools
     from PySide6.QtCore import Qt
@@ -24,8 +26,7 @@ from main_entry_points.geoDB_mep import export_database_main
 
 from databases import database_manager
 from databases.geo_databases import database_schema_001
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
     )
 from systems.sys_geoDB import (
@@ -40,7 +41,7 @@ importlib.reload(geo_db_view)
 importlib.reload(database_manager)
 importlib.reload(database_schema_001)
 importlib.reload(export_database_main)
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(uuid_handler)
 importlib.reload(bind_skin)
@@ -63,7 +64,7 @@ class GeometryDatabaseController:
         self.model.joint_model = self.view.joint_model
         self.model.geo_model = self.view.geo_model
 
-        self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        self.directory_list = [utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         self.db_files = []
         for directory in self.directory_list:
             if os.path.exists(directory):
@@ -191,7 +192,7 @@ class GeometryDatabaseController:
         directory = QtWidgets.QFileDialog.getExistingDirectory(
         parent=self.view,  # Assuming self.view is a QWidget
         caption="Select Directory",
-        dir=os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")
+        dir=utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases")
         )
         print(f"CON: self.directory_list = {self.directory_list}")
         self.directory_list.append(directory)

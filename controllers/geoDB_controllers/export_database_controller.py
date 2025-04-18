@@ -9,14 +9,14 @@ except ModuleNotFoundError:
 
 from models.geoDB_models import export_database_model
 from views.geoDB_views import export_database_view
-from systems import (
-    os_custom_directory_utils
+from utils import (
+    utils_os
     )
 
 importlib.reload(export_database_model)
 importlib.reload(export_database_view)
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 
 class ExportDatabaseController:
     def __init__(self): # class
@@ -49,7 +49,7 @@ class ExportDatabaseController:
             self.view.folderPath_text.setText("...\\Jmvs_ToolBox\\databases\\geo_databases")
             self.view.folderPath_text.setEnabled(False)
             # gather the directory rather than just writing it. 
-            self.directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")
+            self.directory = utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases")
             print(f"database directory PRESET: {self.directory}")
             # self.directory = "C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases"
         else:

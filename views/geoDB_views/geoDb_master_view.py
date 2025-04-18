@@ -17,13 +17,13 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-from systems import (
-    os_custom_directory_utils
+from utils import (
+    utils_os
 )
 
 from views import utils_view
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils_view)
 
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -50,7 +50,7 @@ class GeoDbMasterView(QtWidgets.QWidget):
         # ---------------------------------
         # style
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "toolBox_style_sheet.css"
             )
         print(stylesheet_path)

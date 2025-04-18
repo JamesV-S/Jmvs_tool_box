@@ -2,12 +2,12 @@
 import importlib
 import os.path
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 
 from usd_exports.systems import func_import_geometry_UUID_usd
+from utils import utils_os
 
 class ImportGeoUsdModel:
     def __init__(self):

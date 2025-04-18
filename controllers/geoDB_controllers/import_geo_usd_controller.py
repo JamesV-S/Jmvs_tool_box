@@ -2,6 +2,7 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+from utils import utils_os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -19,15 +20,14 @@ except ModuleNotFoundError:
 import importlib
 import os.path
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 
 from models.geoDB_models import import_geo_usd_model
 from views.geoDB_views import import_geo_usd_view
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(import_geo_usd_model)
 importlib.reload(import_geo_usd_view)
@@ -59,7 +59,7 @@ class ImportGeoUsdController:
             self.view.folderPath_text.setText("...\\Jmvs_ToolBox\\usd_exports\\geo_db_usd")
             self.view.folderPath_text.setEnabled(False)
             # gather the directory rather than just writing it. 
-            self.directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
+            self.directory = utils_os.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
             print(f"database directory PRESET: {self.directory}")
         else:
             self.view.folderPath_text.setText("Select Path")
@@ -71,7 +71,7 @@ class ImportGeoUsdController:
         self.directory = QtWidgets.QFileDialog.getExistingDirectory(
             parent=self.view,  # Assuming self.view is a QWidget
             caption="Select Directory",
-            dir=os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
+            dir=utils_os.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
         )
         if self.directory:
             self.view.folderPath_text.setText(self.directory)

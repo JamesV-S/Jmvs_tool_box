@@ -17,13 +17,13 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-from systems import (
-    os_custom_directory_utils
+from utils import (
+    utils_os
 )
 
 from views import utils_view
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils_view)
 
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -47,7 +47,7 @@ class GeometryDatabaseView(QtWidgets.QWidget):
         self.resize(400, 550)
         
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "geoDB_style_sheet_001.css"
             )
         print(stylesheet_path)
@@ -55,7 +55,7 @@ class GeometryDatabaseView(QtWidgets.QWidget):
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
         
-        self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        self.directory_list = [utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         self.db_files = []
         for directory in self.directory_list:
              if os.path.exists(directory):

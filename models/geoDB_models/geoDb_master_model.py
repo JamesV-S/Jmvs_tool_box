@@ -3,6 +3,8 @@ import maya.cmds as cmds
 import importlib
 import os.path
 
+from utils import utils_os
+
 try:
     from PySide6 import QtCore, QtWidgets, QtGui, QtUiTools
     from PySide6.QtCore import Qt
@@ -16,8 +18,7 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 

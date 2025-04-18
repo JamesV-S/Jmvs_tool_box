@@ -4,14 +4,15 @@ import importlib
 import sys
 import os
 
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils, 
+    utils_os
 )
 from systems.sys_char_rig import (
     cr_ctrl
 )
-importlib.reload(os_custom_directory_utils)
+
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
 
@@ -53,7 +54,7 @@ class CreateXfmGuides():
 
 
     def build_guide_components(self, module_name, unique_id, side, component_pos, component_ctrls):
-        self.guide_import_dir =  os.path.join(os_custom_directory_utils.create_directory("Jmvs_tool_box", "imports" ), "imp_component_guide.abc")# 
+        self.guide_import_dir =  os.path.join(utils_os.create_directory("Jmvs_tool_box", "imports" ), "imp_component_guide.abc")# 
         
         # import the guide & distribbute it to all necessary guides!    
         # guides = []

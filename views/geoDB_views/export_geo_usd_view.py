@@ -17,13 +17,13 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-from systems import (
-    os_custom_directory_utils
+from utils import (
+    utils_os
 )
 
 from views import utils_view
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils_view)
 
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -47,7 +47,7 @@ class ExportGeoUsdView(QtWidgets.QWidget):
         self.resize(400, 100)
         
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "geoDB_style_sheet_001.css"
             )
         with open(stylesheet_path, "r") as file:

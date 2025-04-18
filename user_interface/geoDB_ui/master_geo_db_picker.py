@@ -29,8 +29,8 @@ from user_interface.geoDB_ui import (
     geo_db
     )
 
-from systems import (
-    os_custom_directory_utils
+from utils import (
+    utils_os
 )
 
 importlib.reload(import_geo_usd_main)
@@ -65,7 +65,7 @@ class masterGeoPicker(QtWidgets.QWidget):
         # ---------------------------------
         # style
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "toolBox_style_sheet.css"
             )
         print(stylesheet_path)

@@ -42,7 +42,6 @@ def OpmCleanTool():
         reset_transforms(node)
 
     def bake_transform_to_offset_parent_matrix_selection():
-        print("New opm import strat")
         for node in cmds.ls(sl=True):
             bake_transform_to_offset_parent_matrix(node)
 

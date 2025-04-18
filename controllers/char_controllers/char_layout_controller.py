@@ -19,8 +19,7 @@ except ModuleNotFoundError:
 import importlib
 import os.path
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 
@@ -34,7 +33,7 @@ from controllers import utils_QTree
 from models.char_models import char_layout_model
 from views.char_views import char_layout_view
 
-importlib.reload(os_custom_directory_utils)
+# importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)
@@ -46,7 +45,8 @@ class CharLayoutController:
     def __init__(self): # class
         self.model = char_layout_model.CharLayoutModel()
         self.view = char_layout_view.CharLayoutView()
-        
+
+        # self.json_dict = self.model.json_dict
         self.user_module_data = {}
 
         # Connect signals and slots
@@ -125,6 +125,7 @@ class CharLayoutController:
             self.view.mdl_choose_ui_dict[mdl_name][2].setEnabled(False)
         print(f"MDL::{mdl_name} &  self.val_mdl_checkBox::{self.val_mdl_checkBox}")
     
+
     def sigFunc_mdl_IterationSpinBox(self, mdl_name):
         mdl_iteration = self.view.mdl_choose_ui_dict[mdl_name][1]
         if mdl_name == "root":
@@ -136,6 +137,7 @@ class CharLayoutController:
         self.user_module_data[mdl_name]["mdl_iteration"] = self.val_mdl_iteration
 
         print(f"MDL::{mdl_name} &  self.val_mdl_checkBox::{self.val_mdl_iteration}")
+
 
     def sigFunc_mdl_SideCombobox(self, mdl_name):
         mdl_side = self.view.mdl_choose_ui_dict[mdl_name][2]
@@ -255,6 +257,7 @@ class CharLayoutController:
     def sigFunc_compnent_checkBox(self):
         self.val_compnent_checkBox = self.view.compnent_checkBox.isChecked()
 
+
     def sigFunc_lock_btn(self):
         if self.val_compnent_checkBox: #true
             component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
@@ -313,6 +316,7 @@ class CharLayoutController:
                         # constrain grps to cage!
                         utils.constrain_2_items(cube_locked_comp, grpXfm, "parent", "all")  
         else: print(f"component checkbox is not checked")
+
 
     def sigFunc_unlock_btn(self):
         if self.val_compnent_checkBox: #true

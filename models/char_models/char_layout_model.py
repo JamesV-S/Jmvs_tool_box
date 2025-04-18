@@ -9,22 +9,25 @@ try:
 except ModuleNotFoundError:
     from PySide2 import QtCore, QtWidgets, QtGui
 
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils,
+    utils_os,
+    utils_json
 )
 
 from databases.char_databases import database_schema_002
 
 importlib.reload(database_schema_002)
+importlib.reload(utils_os)
+importlib.reload(utils_json)
 
 class CharLayoutModel:
     def __init__(self):
         self.db_rig_location = "db_rig_storage"
-        self.rig_db_storage_dir = os_custom_directory_utils.create_directory(
+        self.rig_db_storage_dir = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", "db_rig_storage"
             )
-        self.json_dict = self.get_modules_json_dict()
+        self.json_dict = utils_json.get_modules_json_dict('char_config')
 
 
     def load_rig_group(self, val_availableRigComboBox):
@@ -55,7 +58,7 @@ class CharLayoutModel:
         # gather dict from database!
         rig_folder_name = val_availableRigComboBox
         print(f"rig_folder_name = {rig_folder_name}")
-        rig_db_directory = os_custom_directory_utils.create_directory(
+        rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, rig_folder_name
             )
@@ -93,7 +96,7 @@ class CharLayoutModel:
             ''' compare `B` to `A`, find the same name 'clavicle', ect, and put the new values in it.'''
             rig_folder_name = val_availableRigComboBox
             print(f"rig_folder_name = {rig_folder_name}")
-            rig_db_directory = os_custom_directory_utils.create_directory(
+            rig_db_directory = utils_os.create_directory(
                 "Jmvs_tool_box", "databases", "char_databases", 
                 self.db_rig_location, rig_folder_name
                 )
@@ -123,7 +126,7 @@ class CharLayoutModel:
     def visualise_active_db(self, val_availableRigComboBox, mdl_tree_model):
         # get directory of current chosen rig folder!
         rig_folder_name = val_availableRigComboBox
-        rig_db_directory = os_custom_directory_utils.create_directory(
+        rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, rig_folder_name
             )
@@ -258,26 +261,26 @@ class CharLayoutModel:
                 print(f"Not required module database creation for {mdl_name}")
 
 
-    def get_modules_json_dict(self):
-        # derive the `self.json_all_mdl_list` from the config folder!
-        # self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
-        json_mdl_list = []
-        json_config_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "config", "char_config")
-        if os.path.exists(json_config_dir):
-            for mdl_config_file in os.listdir(json_config_dir):
-                if mdl_config_file.endswith('.json'):
-                    json_mdl_list.append(mdl_config_file)
+    # def get_modules_json_dict(self, config_type):
+    #     # derive the `self.json_all_mdl_list` from the config folder!
+    #     # self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
+    #     json_mdl_list = []
+    #     json_config_dir = utils_os.create_directory("Jmvs_tool_box", "config", "char_config")
+    #     if os.path.exists(json_config_dir):
+    #         for mdl_config_file in os.listdir(json_config_dir):
+    #             if mdl_config_file.endswith('.json'):
+    #                 json_mdl_list.append(mdl_config_file)
         
-        # This dictionary contains nested dict of all possible json modules in `char_config` folder
-        json_dict = {}
-        for json_file in json_mdl_list:
-            # configer the json file
-            json_path = os.path.join(json_config_dir, json_file)
-            with open(json_path, 'r') as file:
-                # load the json data
-                json_data = json.load(file)
-                json_dict[json_file] = json_data
-        return json_dict 
+    #     # This dictionary contains nested dict of all possible json modules in `char_config` folder
+    #     json_dict = {}
+    #     for json_file in json_mdl_list:
+    #         # configer the json file
+    #         json_path = os.path.join(json_config_dir, json_file)
+    #         with open(json_path, 'r') as file:
+    #             # load the json data
+    #             json_data = json.load(file)
+    #             json_dict[json_file] = json_data
+    #     return json_dict 
     
 
     # ---- Component constraints ----

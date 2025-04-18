@@ -3,6 +3,8 @@ import maya.cmds as cmds
 import importlib
 import os.path
 
+from utils import utils_os
+
 try:
     from PySide6 import QtCore, QtWidgets, QtGui, QtUiTools
     from PySide6.QtCore import Qt
@@ -16,8 +18,7 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 
@@ -43,7 +44,7 @@ class GeometryDatabaseModel:
         self.geo_tree_view = ""
         self.joint_tree_view = ""
 
-        self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        self.directory_list = [utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         self.db_files_update = []
         for directory in self.directory_list:
             if os.path.exists(directory):
@@ -70,10 +71,10 @@ class GeometryDatabaseModel:
     # Tree view functions -----------------------------------------------------
     def gather_active_database_combined_dict(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        levels = os_custom_directory_utils.determine_levels_to_target(
+        levels = utils_os.determine_levels_to_target(
             current_dir, "Jmvs_tool_box"
             )
-        root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
+        root_dir = utils_os.go_up_path_levels(current_dir, levels)
         try:
             print(f"MODELgather_active....: self.active_db={self.active_db} & root_dir={root_dir}")
             self.active_db_dir = utils.find_directory(self.active_db, root_dir)

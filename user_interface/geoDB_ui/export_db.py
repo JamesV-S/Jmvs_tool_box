@@ -1,6 +1,7 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+from utils import utils_os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -24,12 +25,11 @@ from databases.geo_databases import database_schema_001
 importlib.reload(database_schema_001)
 
 # Controllers
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
@@ -55,7 +55,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
         self.resize(400, 100)
         
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "geoDB_style_sheet_001.css"
             )
         with open(stylesheet_path, "r") as file:
@@ -169,7 +169,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
             self.folderPath_text.setText("...\\Jmvs_ToolBox\\databases\\geo_databases")
             self.folderPath_text.setEnabled(False)
             # gather the directory rather than just writing it. 
-            self.directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")
+            self.directory = utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases")
             print(f"database directory PRESET: {self.directory}")
             # self.directory = "C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases"
         else:
@@ -182,7 +182,7 @@ class exportDatabaseOptions(QtWidgets.QWidget):
         # Open a directory picker dialog
         if not self.val_presetPath_radioBtn:
             self.directory = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
+            self, "Select Directory", utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
         if self.directory:
             self.folderPath_text.setText(self.directory)
             print(f"Selected Directory: {self.directory}")

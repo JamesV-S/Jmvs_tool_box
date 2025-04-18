@@ -2,6 +2,7 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+from utils import utils_os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -18,14 +19,13 @@ except ModuleNotFoundError:
 
 import importlib
 import os.path
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 from models.geoDB_models import export_geo_usd_model
 from views.geoDB_views import export_geo_usd_view
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(export_geo_usd_model)
 importlib.reload(export_geo_usd_view)
@@ -59,7 +59,7 @@ class ExportGeoUsdController:
             self.view.folderPath_text.setText("...\\Jmvs_ToolBox\\usd_exports\\geo_db_usd")
             self.view.folderPath_text.setEnabled(False)
             # gather the directory rather than just writing it. 
-            self.directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
+            self.directory = utils_os.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
             print(f"database directory PRESET: {self.directory}")
             # self.directory = "C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases"
         else:
@@ -73,7 +73,7 @@ class ExportGeoUsdController:
             self.directory = QtWidgets.QFileDialog.getExistingDirectory(
             parent=self.view,  # Assuming self.view is a QWidget
             caption="Select Directory",
-            dir=os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
+            dir=utils_os.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
         )
         if self.directory:
             self.view.folderPath_text.setText(self.directory)
@@ -97,7 +97,7 @@ class ExportGeoUsdController:
             json_name = f"{prefix}{self.val_fileName_text}{suffix}.json"
             
             # create a folder to go into this
-            grp_dir = os_custom_directory_utils.create_directory(
+            grp_dir = utils_os.create_directory(
                 "Jmvs_tool_box", "usd_exports", "geo_db_usd", 
                 f"{prefix}{self.val_fileName_text}{suffix}"
                 )
