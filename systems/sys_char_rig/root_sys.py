@@ -1,6 +1,6 @@
 import importlib
 import maya.cmds as cmds
-from systems import (
+from utils import (
     utils
 )
 from systems.sys_char_rig import (

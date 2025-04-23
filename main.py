@@ -2,7 +2,7 @@
 import importlib
 import sys
 import os
-from utils import utils_os
+# from utils import utils_os
 
 tool_box_controller = None
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,8 +26,8 @@ def add_to_sys_path(directory):
 
 
 def gather_folders_to_add_to_list(the_list, append_list, *args):
-    # from utils import utils_os
-    # importlib.reload(utils_os)
+    from utils import utils_os
+    importlib.reload(utils_os)
     folder_list = the_list
     for fld in folder_list:
         dr = os.path.join(utils_os.create_directory(*args, fld))

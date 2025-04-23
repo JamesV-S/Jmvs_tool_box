@@ -1,6 +1,11 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+import sys
+import random
+import importlib
+import os
+import json
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -15,16 +20,10 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-import sys
-import random
-import importlib
-import os
-import json
-
 from databases.char_databases import database_schema_002
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils,
+    utils_os
 )
 from systems.sys_char_rig import (
     cr_guides, 
@@ -32,7 +31,7 @@ from systems.sys_char_rig import (
 )
 # Model
 importlib.reload(database_schema_002)
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 # All MVC
 importlib.reload(utils)
 # Controller 
@@ -61,7 +60,7 @@ class CharRigging(QtWidgets.QWidget):
         
         # style
         stylesheet_path = os.path.join(
-            os_custom_directory_utils.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "char_style_sheet_001.css"
             )
         print(stylesheet_path)
@@ -924,7 +923,7 @@ class CharRigging(QtWidgets.QWidget):
             '''
             rig_folder_name = self.val_availableRigComboBox
             print(f"rig_folder_name = {rig_folder_name}")
-            rig_db_directory = os_custom_directory_utils.create_directory(
+            rig_db_directory = utils_os.create_directory(
                 "Jmvs_tool_box", "databases", "char_databases", 
                 self.db_rig_location, rig_folder_name
                 )
@@ -954,7 +953,7 @@ class CharRigging(QtWidgets.QWidget):
     def visualise_active_db(self):
         # get directory of current chosen rig folder!
         rig_folder_name = self.val_availableRigComboBox
-        rig_db_directory = os_custom_directory_utils.create_directory(
+        rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, rig_folder_name
             )
@@ -1017,7 +1016,7 @@ class CharRigging(QtWidgets.QWidget):
     # -- DB Rig folder functions --
     def get_available_DB_rig_folders(self, location):
             name_of_rig_fld = []
-            self.rig_db_storage_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
+            self.rig_db_storage_dir = utils_os.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
             if os.path.exists(self.rig_db_storage_dir):
                 print(f"Dir does exist: {self.rig_db_storage_dir}")
                 for db_rig_folder in os.listdir(self.rig_db_storage_dir):
@@ -1047,7 +1046,7 @@ class CharRigging(QtWidgets.QWidget):
         # derive the `self.json_all_mdl_list` from the config folder!
         # self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
         json_mdl_list = []
-        json_config_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "config", "char_config")
+        json_config_dir = utils_os.create_directory("Jmvs_tool_box", "config", "char_config")
         if os.path.exists(json_config_dir):
             for mdl_config_file in os.listdir(json_config_dir):
                 if mdl_config_file.endswith('.json'):
@@ -1194,7 +1193,7 @@ class CharRigging(QtWidgets.QWidget):
         # gather dict from database!
         rig_folder_name = self.val_availableRigComboBox
         print(f"rig_folder_name = {rig_folder_name}")
-        rig_db_directory = os_custom_directory_utils.create_directory(
+        rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, rig_folder_name
             )

@@ -44,7 +44,7 @@ class CharLayoutModel:
 
     def get_available_DB_rig_folders(self, location):
             name_of_rig_fld = []
-            self.rig_db_storage_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
+            self.rig_db_storage_dir = utils_os.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
             if os.path.exists(self.rig_db_storage_dir):
                 print(f"Dir does exist: {self.rig_db_storage_dir}")
                 for db_rig_folder in os.listdir(self.rig_db_storage_dir):

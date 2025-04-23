@@ -9,7 +9,10 @@ import re
 from systems import (
     OPM
 )
-from utils import utils_os
+from utils import (
+    utils_os
+)
+
 importlib.reload(utils_os)
 importlib.reload(OPM)
 
