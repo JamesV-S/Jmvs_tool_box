@@ -89,7 +89,7 @@ class Spine_System():
         self.wire_ctrl_to_jnt_logic()
         self.wire_ik_bott_top_logic_to_skn('skn')
         self.wire_ik_spline('skn', skeleton_pos, input_grp)
-        self.group_module(self.mdl_nm, input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}", f"grp_skn_joints_{self.mdl_nm}", f"grp_logic_{self.mdl_nm}")
+        utils.group_module(self.mdl_nm, input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}", f"grp_skn_joints_{self.mdl_nm}", f"grp_logic_{self.mdl_nm}")
         ''''''
     
     # Temporary functions for skn joints & ctrl creation ----------------------
@@ -110,7 +110,8 @@ class Spine_System():
             fk_import_ctrl = cr_ctrl.CreateControl(type="circle", name=fk_name)
             fk_import_ctrl.retrun_ctrl()
             cmds.rotate(0, 0, 90, fk_name)
-            cmds.scale(0.25, 0.25, 0.25, fk_name)
+            fk_scl = 1
+            cmds.scale(fk_scl, fk_scl, fk_scl, fk_name)
             cmds.makeIdentity(fk_name, a=1, t=0, r=1, s=1, n=0, pn=1)
             # cmds.xform(fk_name, translation=spn_pos, worldSpace=True)
             utils.colour_object(fk_name, 17)
@@ -121,7 +122,8 @@ class Spine_System():
             inv_ctrl_ls.append(inv_name)
             inv_import_ctrl = cr_ctrl.CreateControl(type="bvSquare", name=inv_name)
             inv_import_ctrl.retrun_ctrl()
-            cmds.scale(0.25, 0.25, 0.25, inv_name)
+            inv_scl = 1
+            cmds.scale(inv_scl, inv_scl, inv_scl, inv_name)
             cmds.makeIdentity(inv_name, a=1, t=0, r=1, s=1, n=0, pn=1)
             # cmds.xform(inv_name, translation=spn_pos, worldSpace=True)
             utils.colour_object(inv_name, 21)
@@ -133,8 +135,8 @@ class Spine_System():
             ik_import_ctrl = cr_ctrl.CreateControl(type="octogan", name=ik_name)
             ik_import_ctrl.retrun_ctrl()
             cmds.rotate(0, 0, 90, ik_name)
-            # cmds.scale(1.5, 1.5, 1.5, ik_name)
-            cmds.scale(0.25, 0.25, 0.25, ik_name)
+            cmds.scale(1.5, 1.5, 1.5, ik_name)
+            # cmds.scale(0.25, 0.25, 0.25, ik_name)
             cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=1, n=0, pn=1)
             # cmds.xform(ik_name, translation=spn_pos, worldSpace=True)
             utils.colour_object(ik_name, 17)
@@ -539,12 +541,12 @@ class Spine_System():
         utils.connect_attr(f"{self.ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
 
 
-    def group_module(self, module_name, input_grp, output_grp, ctrl_grp, joint_grp, logic_grp):
-        grp_module_name = f"grp_module_{module_name}"
-        cmds.group(n=grp_module_name, em=1)
-        cmds.parent(input_grp, output_grp, ctrl_grp, joint_grp, logic_grp, 
-                    grp_module_name)
-        cmds.hide(logic_grp)
+    # def group_module(self, module_name, input_grp, output_grp, ctrl_grp, joint_grp, logic_grp):
+    #     grp_module_name = f"grp_module_{module_name}"
+    #     cmds.group(n=grp_module_name, em=1)
+    #     cmds.parent(input_grp, output_grp, ctrl_grp, joint_grp, logic_grp, 
+    #                 grp_module_name)
+    #     cmds.hide(logic_grp)
         
 
 # Basic spine example: 

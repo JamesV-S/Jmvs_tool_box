@@ -38,7 +38,39 @@ def replace_control(new_ctrl, replace_ctrl, colour, scale=None):
             replace_ctrl_list([imp, replace_ctrl])
             cmds.setAttr(f"{replace_ctrl}.overrideEnabled", 1)
             cmds.setAttr(f"{replace_ctrl}.overrideColor", colour)
-#----------------------------------------------------------------------------------------------
+
+
+#--------------------------------- HIERARCHY ----------------------------------
+def make_group_and_parent(grp_name, parent):
+    cmds.group(n=grp_name, em=1)
+    cmds.parent(grp_name, parent)
+
+def group_module(module_name, input_grp, output_grp, ctrl_grp, joint_grp=None, logic_grp=None):
+        grp_module_name = f"grp_module_{module_name}"
+        cmds.group(n=grp_module_name, em=1)
+
+        # check if the ctrl grp name provided exists in the scene!
+        if cmds.objExists(ctrl_grp):
+            cmds.parent(input_grp, output_grp, ctrl_grp, grp_module_name)
+        else:
+            print(f"No module child group `{ctrl_grp}` exists in the scene")
+
+        if joint_grp:
+            if cmds.objExists(joint_grp):
+                cmds.parent(joint_grp, grp_module_name)
+            else:
+                print(f"No module child group `{joint_grp}` exists in the scene")
+
+        if logic_grp:
+            if cmds.objExists(logic_grp):
+                cmds.parent(logic_grp, grp_module_name)
+                cmds.hide(logic_grp)
+            else:
+                print(f"No module child group `{logic_grp}` exists in the scene")
+
+            
+
+# -----------------------------------------------------------------------------
 
 def search_geometry_in_scene(custom_uuid_attr):
     '''
@@ -180,7 +212,7 @@ def colour_COG_control(custom_crv):
     shape_list = cmds.listRelatives(custom_crv, shapes=1)
     for shape in shape_list:
         cmds.setAttr(f"{shape}.overrideEnabled", 1)
-        cmds.setAttr(f"{shape}.overrideColor", 18)
+        cmds.setAttr(f"{shape}.overrideColor", 23)
         
     # Create lists for shapes with specific patterns in their names!
     grey_shape = [shape for shape in shape_list if "kite" in shape]

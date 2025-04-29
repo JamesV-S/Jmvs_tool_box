@@ -58,7 +58,6 @@ class CharLayoutModel:
             return name_of_rig_fld
     
 
-
     def retrieve_component_dict_from_nameSel(self, val_availableRigComboBox,  module_selection_name):
         # mdl_spine_0 : mdl_MODULE*_uniqueID*_side*
         # split the name 
