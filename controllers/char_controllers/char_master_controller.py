@@ -22,7 +22,6 @@ import os.path
 from utils import (
     utils,
 )
-    # utils_os
 
 
 from systems.sys_char_rig import (
@@ -40,7 +39,13 @@ from main_entry_points.char_mep import (
     char_skeleton_main
 )
 
-# importlib.reload(utils_os)
+''''''
+# Temp:
+
+from user_interface.char_ui import char_rig
+
+''''''
+
 importlib.reload(utils)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)
@@ -49,8 +54,7 @@ importlib.reload(char_master_model)
 importlib.reload(char_master_view)
 importlib.reload(char_layout_main)
 importlib.reload(char_skeleton_main)
-# importlib.reload(char_rig)
-
+importlib.reload(char_rig)
 
 import service_locator_pattern
 
@@ -80,6 +84,6 @@ class CharMasterController:
 
     def sigfunc_char_skeleton_button(self):
         print(f"running 'char_skeleotn_controller'")
-        # char_rig.char_main()
+        char_rig.char_main()
 
     

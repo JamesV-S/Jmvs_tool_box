@@ -1,0 +1,608 @@
+
+/*------------------------------ QENTIREWIDGET ------------------------------*/
+
+QWidget {
+    background-color:rgb(21, 18, 46); /*rgba(65, 25, 25, 0.5)/rgb(24, 24, 28)/ rgb(19, 16, 43) / 948196*/
+}
+/*
+QWidget:disabled {
+    background-color: rgba(50, 50, 50, 0.5); /* Dimmed background  */ 
+    /*color: rgba(200, 200, 200, 0.5);  Dimmed text color */
+    /*border: 1px solid rgba(100, 100, 100, 0.5); /* Optional: dimmed border */
+/*}*/
+
+/*------------------------------ QPUSHBUTTON ------------------------------*/
+QPushButton {
+    background-color: #2e2e3d;
+    /* rgb(45, 45, 67); | rgb(69, 45, 79) | rgb(67, 45, 67) */
+    border-bottom: rgb(237, 237, 237);
+    border-right: rgb(237, 237, 237);
+    color: rgb(225, 225, 225);
+    border-bottom-style: solid ;
+    border-right-style: solid ;
+    border-width: 2.5px;
+    border-radius: 0px;
+    font-family:'Source Code Pro';
+    font: medium 8px;
+    min-width: 6em;
+    padding: 8px;
+    font-size: larger;
+}
+
+QPushButton:hover {
+    color: azure;
+    border-width: 2.5px;
+    background-size: 50%;
+    background-position: left 20px top 20px;
+    background-color: black;
+    border-color: #a59b5a; /*#cda153/ #766141/rgb(105, 28, 28)*/
+}
+
+QPushButton:pressed {
+    background-color: rgb(137, 137, 137); /* Change background color to indicate it's pressed */
+    color: rgb(2, 2, 2); /* Change text color to white for better visibility */
+    border-color: rgb(105, 28, 28); /* Optional: change border color */
+    border-width: 2.5px; /* Keep the same border width */
+    border-style: solid; /* Ensure border style remains solid */
+    background-size: 50%; /* Keep the background size if you have a specific style */
+     /* Maintain background position if used */
+}
+
+QPushButton[geoButtons="true"]:pressed{
+    background-color: rgb(137, 137, 137);
+    color: rgb(2, 2, 2); 
+    border-color: rgb(105, 28, 28);
+    border-width: 2.5px; 
+    border-style: solid; 
+    background-size: 50%; 
+}
+
+QPushButton#folderPath_text{
+    color:rgb(241, 255, 238) ;
+    background-color: rgba(46, 0, 0, 0.375);
+    font: 800 ;
+    min-width: 12em;
+    max-height: 1.5em;
+}
+
+QPushButton#folderPath_btn{
+    max-width: 0.5px;
+}
+
+QPushButton[bind_style="true"]:hover{
+    background-color: black;
+    border-color: rgb(54, 90, 50);
+
+}
+
+QPushButton[unbind_style="true"]:hover{
+    background-color: black;
+    border-color: rgb(180, 0, 0);
+}
+
+/*
+QPushButton:disabled {
+    background-color: rgba(19, 16, 43, 0.5); 
+    color: rgba(225, 225, 225, 0.5); 
+    border: 2px solid rgba(237, 237, 237, 0.5); 
+}
+*/
+/*------------------------------ QLABEL ------------------------------*/
+/*
+QLabel {
+    color:rgb(232, 228, 255) ;
+    background-color: rgb(19, 16, 43);
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 2px;
+    font: bold 14px;
+    min-width: 10em;
+    padding: 6px;
+}
+*/
+
+QLabel#jointTree_lbl{
+    color:rgb(239, 239, 239);
+    background-color: rgba(48, 0, 0, 0.5);
+    font: 800;
+    border-style: double;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: rgb(5, 0, 42);
+    min-width: 3.8em;
+    max-height: 1em;
+    padding: 6px;
+}
+
+QLabel#geoTree_lbl{
+    color:rgb(239, 239, 239) ; /**/
+    background-color: rgba(35, 34, 41, 0.5);
+    font: 800;
+    border-style: double;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: rgb(5, 0, 42);
+    min-width: 3.8em;
+    max-height: 1em;
+    padding: 6px;
+}
+
+
+QLabel[module_UI_01="true"]{
+    color:rgb(239, 239, 239) ; /**/
+    background-color: rgba(35, 34, 41, 0.5);
+    font: 800;
+    border-style: double;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: rgb(5, 0, 42);
+    min-width: 3.8em;
+    max-height: 1em;
+    padding: 6px;
+}
+
+
+/*------------------------------ QTEXTEDIT ------------------------------*/
+
+QLineEdit[DB_export_UI_01="true"]{
+    color:rgb(241, 255, 238) ;
+    background-color: rgba(46, 0, 0, 0.375);
+    font: 800 ;
+    min-width: 12em;
+    max-height: 1.5em;
+}
+
+/*------------------------------ QTREEVIEW ------------------------------*/
+
+/*
+QTreeView#joint_tree_view {
+    color: rgb(255, 255, 255);
+    background-color: rgb(48, 0, 0);
+    border-color: rgb(5, 0, 42);
+}
+
+QTreeView#geo_tree_view {
+    color: rgb(239, 239, 239);
+    background-color: rgb(35, 34, 41);
+    border-style: double;
+    border-width: 2px;
+    border-radius: 5px;
+    border-color: rgb(5, 0, 42);
+    font: medium 8px;
+    min-width: 10em;
+    padding: 15px;
+}
+
+QTreeView#joint_tree_view::item:selected:active{
+    color:white;
+    background-color: black;
+    border-color:rgb(105, 28, 28)  
+}
+
+
+QTreeView#geo_tree_view::item:selected:active{
+    color:white;
+    background-color: black;
+    border-width: 2.5px;
+    border-color:rgb(105, 28, 28)
+}
+*/
+/*------------------------------ QVOMBOBOX ------------------------------*/
+QComboBox {
+    border: none;
+    background-color: rgb(19, 16, 43);
+    border-bottom: 2px solid rgb(255, 255, 255); /* Adjusted contrast */
+    color: rgb(225, 225, 225);
+}
+
+/*------------------------------ QObjectWidgets ------------------------------*/
+
+QWidget#main_layout {
+    color: CRIMSON;
+}
+
+QWidget#Spacer {
+    background-color: rgb(100, 100, 100);
+    border-style: solid;
+    border-radius: 3px;
+    border-width: 2px;
+    border-color: rgb(27, 7, 7)
+}
+
+
+/*------------------------------ QGROUPBOX ------------------------------*/
+/*
+QGroupBox {
+    color:#86061e;
+    background-color: rgb(255, 226, 63);
+    border-radius: 1px;
+}
+
+QGroupBox::title {
+    color: #ffffff;
+    background-color: #fca5b1;
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 2.5px;
+}*/
+QGroupBox::title {
+    alignment: AlignCenter;
+}
+
+QGroupBox>.QWidget {
+    background-color: rgb(163, 140, 11); /* Background color for the content area */
+}
+
+QGroupBox#grp_boxUL {
+    color: #ffffff; /* This applies to the entire group box */
+    background-color: rgba(179, 80, 80, 0.39);
+}
+
+QGroupBox#grp_boxUL::title {
+    color: #ffffff; /* This applies specifically to the title text */
+    background-color: #86061e; /* This may not have an effect depending on the style */
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 2.5px;
+}
+
+QGroupBox#grp_boxTempDisp {
+    color: #ffffff; /* This applies to the entire group box */
+    background-color: rgba(179, 80, 80, 0.39);
+}
+
+QGroupBox#grp_boxTempDisp::title {
+    color: black; /* This applies specifically to the title text */
+    background-color: #f7a1a9; /* This may not have an effect depending on the style */
+    subcontrol-origin: margin;
+    subcontrol-position: top center;
+    padding: 2.5px;
+}
+
+
+
+/*------------------------------ QSCROLLBAR ------------------------------*/
+
+QScrollBar:vertical {
+    width: 2px;
+}
+
+QScrollBar:horizontal {
+    height: 10px;
+}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal {
+    background: #000000;
+    background-color: rgba(179, 80, 80, 0.39);
+    border-radius: 0px;
+}
+
+/*------------------------------ QTOOLTIP ------------------------------*/
+QToolTip {
+    background-color: rgba(0, 0, 0, 0.733);
+    color:white;
+    font-family:'Lucida Sans Unicode'; /*'Lucida Grande' ,, Tahoma, Geneva, Verdana, sans-serif, 'ource Code Pro',  'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif*/
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px;
+    border-radius: 10px; 
+} 
+
+/*------------------------------ update_UI ------------------------------*/
+
+QPushButton[update_UI="true"]{
+    border: none;
+    background-color: #000000; /*rgb(67, 45, 67)*/
+    border-bottom: rgb(103, 15, 3);
+    color: rgb(225, 225, 225);
+    border-bottom-style: solid ;
+    border-width: 2.5px;
+    border-radius: 0px;
+    font-family:'Source Code Pro';
+    font: medium 8px;
+    min-width: 8em;
+    padding: 8px;
+    font-size: larger;
+}
+QPushButton[update_UI="true"]:hover {
+    color: azure;
+    border-width: 2.5px;
+    background-size: 50%;
+    background-position: left 20px top 20px;
+    background-color: #000000;
+    font-size: 13px;
+    border-color: rgb(103, 15, 3);
+}
+
+QPushButton[update_UI="true"]:pressed{
+    color: azure; 
+    border-color: #03675d;
+    border-width: 2.5px; 
+}
+
+QLabel#update_left_lbl{
+    min-width:1em;
+    font-weight: bold; 
+}
+
+
+
+QLabel[update_UI="true"]{
+    color:rgb(241, 255, 238) ;
+    background-color: #000000;
+    font:bolder 800 ;
+    min-width: auto;
+    max-height: 4em;
+    padding: 6px;
+    font-size: 13px;
+    font-family: "Arial", sans-serif;
+    font-style:normal;
+}
+
+QLabel#Spacer{
+    background-color: #000000;
+    max-height: .5em;
+    min-height: .5em;
+}
+
+QLabel#mdl_data_lbl{
+    text-align: center;
+    font-size: 13px;
+    font-family: "Arial", sans-serif;
+    font-style:italic;
+}
+
+QCheckBox[update_UI="true"] {
+    color: rgb(241, 255, 238);
+    background-color: #000000;
+    min-width: 2.5em;
+    max-height: 4em;
+    padding: 1px;
+    border-bottom: 2px solid #86061e;
+    border-radius: 2px;
+    text-align: center;
+    font-size: 12px;
+    font-family: "Arial", sans-serif;
+    font-style:normal;
+    line-height: 1.2em;
+}
+
+QCheckBox[update_UI="true"]:hover {
+    border-bottom-color: rgb(3, 103, 93);
+    font-weight: bold; /* Example of a hover effect */
+    font-size: 13px;
+}
+
+QCheckBox[update_UI="true"]:checked {
+    border:2px solid;
+    border-color: rgb(3, 103, 93);
+    color: white;
+}
+
+QComboBox[update_UI="true"] {
+    border: none;
+    color: rgb(241, 255, 238);
+    background-color: #000000;
+    font: bolder 800;
+    min-width: 2.5em;
+    max-height: 4em;
+    padding: 1px;
+    border-bottom: 2px solid rgb(3, 103, 93);
+    border-radius: 2px;
+    text-align: center;
+    font-size: 13px;
+    font-family: "Arial", sans-serif;
+    font-style:normal;
+    line-height: 1.2em;
+}
+
+QComboBox[update_UI="true"]::item:hover {
+    background-color: rgb(0, 128, 0); /* Change the highlight color to green */
+    color: white; /* Optional: Change text color for better visibility */
+}
+
+/*------------------------------ style_treeView ------------------------------*/
+/* Base Styles */
+QPushButton[treeComponents_UI_01="true"],
+QLabel[treeComponents_UI_01="true"],
+QSpinBox[treeComponents_UI_01="true"],
+QComboBox[treeComponents_UI_01="true"],
+QTreeView[treeComponents_UI_01="True"],
+QCheckBox[treeComponents_UI_01="true"] {
+    background-color: #2e2e3d;
+    /* rgb(69, 45, 79); Complementary color */
+    color: #fefefe; /* Text color */
+    border: 1px solid #2d334f; /* Border color */
+    padding: 5px;
+    font-size: 12px;
+}
+
+/* Hover State */
+QPushButton[treeComponents_UI_01="true"]:hover,
+QSpinBox[treeComponents_UI_01="true"]:hover,
+QComboBox[treeComponents_UI_01="true"]:hover{
+    background-color: #2d334f; /* Darker background on hover */
+}
+
+/* Disabled State */
+QPushButton[treeComponents_UI_01="true"]:disabled,
+QLabel[treeComponents_UI_01="true"]:disabled,
+QSpinBox[treeComponents_UI_01="true"]:disabled,
+QComboBox[treeComponents_UI_01="true"]:disabled,
+QLabel[Current_disabled="true"]:disabled,
+QTreeView[treeComponents_UI_01="true"]:disabled {
+    background-color: rgba(50, 50, 50, 0.5); /* Dimmed background */
+    color: rgba(254, 254, 254, 0.481); /* Dimmed text color */
+    border: 1px solid rgb(0, 0, 0); /* Dimmed border */
+}
+
+/* Pressed State */
+QPushButton[treeComponents_UI_01="true"] {
+    border-style: none;
+    border-bottom: rgb(92, 42, 42);
+    border-right: rgb(92, 42, 42);
+    border-bottom-style: solid ;
+    border-right-style: solid ;
+    border-width: 2.5px;
+    border-radius: 1px;
+}
+
+QPushButton[treeComponents_UI_01="true"]:pressed {
+    background-color: rgba(179, 80, 80, 0.39);
+    border-width: 3px;
+    border-radius: 4.5px;
+}
+
+QLabel#tree_DB_NAME_lbl{
+    color:rgb(239, 239, 239);
+    background-color: rgba(179, 80, 80, 0.39);
+    font: 800;
+    border-style: solid;
+    border-width: 3px;
+    border-radius: 2.5px;
+    border-color: #2d334f;
+    min-width: 3.8em;
+    max-height: 1em;
+    padding: 6px;
+}
+
+
+/* Additional States for Other Widgets if needed */
+QSpinBox[treeComponents_UI_01="true"] {
+    background-color:  #2e2e3d;
+    /* rgb(69, 45, 79); Light background on hover */
+}
+QSpinBox[treeComponents_UI_01="true"]:hover {
+    background-color: #452d4f6c; /* Light background on hover */
+}
+
+QComboBox[treeComponents_UI_01="true"]:hover {
+    background-color:  #2d334f;/* Darker background on hover */
+}
+
+QTreeView {
+    color: rgb(239, 239, 239);
+    background-color: rgb(89, 89, 89);
+    font-size: 16px;
+    border-style: solid;
+    border-width: 3px;
+    border-radius: 5px;
+    border-color: #2d334f;
+    min-width: 5em;
+    padding: 15px;
+}
+
+
+QTreeView::item:selected:active{
+    color:rgb(255, 255, 255);
+    background-color: rgba(179, 80, 80, 0.711);
+}
+
+/* QTreeView specific styles */
+QTreeView[treeComponents_UI_01="true"]{ /* Alternating row color */
+    selection-background-color:  rgba(45, 51, 79, 0.90); /* Selection color */
+    selection-color: #ffffff; /* Text color for selected items */
+}
+
+/* QCheckBox styles */
+QCheckBox[treeComponents_UI_01="true"] {
+    color:rgb(239, 239, 239);
+    border-style: solid;
+    border-width: 1.5px;
+    border-radius: 2.5px;
+    border-color: #2d334f;
+    min-width: 1.25em;
+    max-width: 1.25em;
+    height: 15px;
+}
+
+QCheckBox[treeComponents_UI_01="true"]::indicator {
+    color: rgb(255, 255, 255);
+    width:20px;
+    height:20px;
+}
+
+QCheckBox[treeComponents_UI_01="true"]:hover {
+    background-color: #2d334f;
+    border-width: 1.5px;
+}
+
+/* - -- - - -- - -- - - -- - - -- - - -- - - -- - -  - -- - - -- - - -- */
+/*self.add_mdl_btn.setObjectName("add_mdl_btn")
+self.add_blueprint_btn.setObjectName("add_blueprint_btn")
+self.delete_mdl_btn.setObjectName("remove_mdl_btn")
+self.delete_blueprint_btn.setObjectName("delete_blueprint_btn")
+*/
+QPushButton#add_mdl_btn {
+    background-color: #4c3754;
+}
+QPushButton#add_mdl_btn:hover {
+    background-color: #2d334f;
+    border-right-color: #03675d;
+    border-bottom-color: #03675d;
+}
+
+QPushButton#add_mdl_btn:pressed {
+    border-top-style:none;
+    border-left-style:none;
+    color: white;
+    background-color: #21263a;
+    border-right-color: #03673c;
+    border-bottom-color: #03673c;
+}
+
+QPushButton#add_blueprint_btn {
+    background-color: #532169;
+}
+QPushButton#add_blueprint_btn:hover {
+    background-color: #2d334f;
+    border-right-color: #532169;
+    font-weight: bold;
+    border-bottom-color: #532169;
+}
+QPushButton#add_blueprint_btn:pressed {
+    border-top-style:none;
+    border-left-style:none;
+    color: white;
+    font-weight: bold;
+    background-color: #2e4a31;
+    border-right-color: #03673c;
+    border-bottom-color: #03673c;
+}
+
+QPushButton#remove_mdl_btn:hover {
+    background-color: #2e2e3d;
+    border-right-color: #670303;
+    border-bottom-color: #670303;
+}
+
+/* QPushButton#remove_mdl_btn {
+    background-color: #452d4f;
+} */
+QPushButton#remove_mdl_btn:pressed {
+    border-top-style:none;
+    border-left-style:none;
+    color: white;
+    background-color: #000000;
+    border-right-color: #767676;
+    border-bottom-color: #767676;
+}
+
+
+QPushButton#delete_blueprint_btn:hover {
+    /* color:black; */
+    font-weight: bold;
+    background-color: #2e2e3d;
+    border-right-color: #ff0000;
+    border-bottom-color: #ff0000;
+}
+
+QPushButton#delete_blueprint_btn:pressed {
+    border-top-style:none;
+    border-left-style:none;
+    color: white;
+    background-color: #670303;
+    border-right-color: #ff0000;
+    border-bottom-color: #ff0000;
+}

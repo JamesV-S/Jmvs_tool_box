@@ -50,7 +50,7 @@ class CharLayoutView(QtWidgets.QWidget):
 
         stylesheet_path = os.path.join(
             utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
-            "char_style_sheet_001.css"
+            "char_style_sheet_002.css"
             )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
