@@ -1,6 +1,7 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+from utils import utils_os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -19,14 +20,13 @@ import sys
 import importlib
 import os.path
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 
 from usd_exports.systems import func_export_geometry_UUID_usd
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(func_export_geometry_UUID_usd)
 
@@ -50,8 +50,10 @@ class exportUUIDusd(QtWidgets.QWidget):
         self.setWindowTitle(ui_window_name)
         self.resize(400, 100)
         
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                       "..", "CSS", "geoDB_style_sheet_001.css")
+        stylesheet_path = os.path.join(
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "geoDB_style_sheet_001.css"
+            )
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
@@ -62,7 +64,6 @@ class exportUUIDusd(QtWidgets.QWidget):
         self.UI_connect_signals()
 
         
-
     def UI(self):
         
         main_Vlayout = QtWidgets.QVBoxLayout(self)
@@ -166,7 +167,7 @@ class exportUUIDusd(QtWidgets.QWidget):
             self.folderPath_text.setText("...\\Jmvs_ToolBox\\usd_exports\\geo_db_usd")
             self.folderPath_text.setEnabled(False)
             # gather the directory rather than just writing it. 
-            self.directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
+            self.directory = utils_os.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
             print(f"database directory PRESET: {self.directory}")
             # self.directory = "C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases"
         else:
@@ -179,7 +180,7 @@ class exportUUIDusd(QtWidgets.QWidget):
         # Open a directory picker dialog
         if not self.val_presetPath_radioBtn:
             self.directory = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports"))
+            self, "Select Directory", utils_os.create_directory("Jmvs_tool_box", "usd_exports"))
             # C:\Docs\maya\scripts\Jmvs_tool_box\usd_exports\geo_db_usd
         if self.directory:
             self.folderPath_text.setText(self.directory)
@@ -216,7 +217,7 @@ class exportUUIDusd(QtWidgets.QWidget):
             json_name = f"{prefix}{self.val_fileName_text}{suffix}.json"
             
             # create a folder to go into this
-            grp_dir = os_custom_directory_utils.create_directory(
+            grp_dir = utils_os.create_directory(
                 "Jmvs_tool_box", "usd_exports", "geo_db_usd", 
                 f"{prefix}{self.val_fileName_text}{suffix}"
                 )

@@ -19,19 +19,23 @@ import sys
 import importlib
 import os
 
-
-from user_interface.geoDB_ui import (
-    export_usd_geo_UUID,
-    import_usd_geo_UUID,
-    geo_db 
-    )
-
-from systems import (
-    os_custom_directory_utils
+from main_entry_points.geoDB_mep import (
+    import_geo_usd_main,
+    export_geo_usd_main, 
+    geo_db_main
 )
 
-importlib.reload(export_usd_geo_UUID)
-importlib.reload(import_usd_geo_UUID)
+from user_interface.geoDB_ui import (
+    geo_db
+    )
+
+from utils import (
+    utils_os
+)
+
+importlib.reload(import_geo_usd_main)
+importlib.reload(export_geo_usd_main)
+importlib.reload(geo_db_main)
 importlib.reload(geo_db)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
@@ -51,25 +55,23 @@ class masterGeoPicker(QtWidgets.QWidget):
         delete_existing_ui(self.ui_object_name)
         self.setObjectName(self.ui_object_name)
         
-        # ---------------------------------
-        # style
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                        "..", "CSS", "toolBox_style_sheet.css")
-        #'C:\Docs\maya\scripts\Jmvs_tool_box\     user_interface\CSS'
-        #'C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\user_interface\\geoDB_ui\\CSS\\toolBox_style_sheet.css'
-        #'C:\\Docs\\maya\\scripts\\Jmvs_tool_box\\user_interface\\geoDB_ui\\CSS\\toolBox_style_sheet.css'
-        print(stylesheet_path)
-        with open(stylesheet_path, "r") as file:
-            stylesheet = file.read()
-        self.setStyleSheet(stylesheet)
-        
-
         # set flags & dimensions
         # ---------------------------------- 
         self.setParent(main_window) 
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(ui_window_name)
         self.resize(300, 150)
+
+        # ---------------------------------
+        # style
+        stylesheet_path = os.path.join(
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "toolBox_style_sheet.css"
+            )
+        print(stylesheet_path)
+        with open(stylesheet_path, "r") as file:
+            stylesheet = file.read()
+        self.setStyleSheet(stylesheet)
 
         # button functions
         # ----------------------------------  
@@ -78,9 +80,13 @@ class masterGeoPicker(QtWidgets.QWidget):
 
         self.UI()
         
-        self.export_usd_button.clicked.connect(self.export_usd_func)
-        self.import_usd_button.clicked.connect(self.import_usd_func)
-        self.geoDB_button.clicked.connect(self.geo_func)
+        self.export_usd_button.clicked.connect(self.sigFunc_export_usd_func)
+        self.import_usd_button.clicked.connect(self.sigFunc_import_usd_func)
+        self.geoDB_button.clicked.connect(self.sigFunc_geo_func)
+
+        self.import_geo_usd_controller = None
+        self.export_geo_usd_controller = None
+        self.geo_db_controller = None
 
         
     def UI(self):
@@ -130,22 +136,24 @@ class masterGeoPicker(QtWidgets.QWidget):
         self.grid_layout.addWidget(self.geoDB_button, 0, 2)
     
     
-    def export_usd_func(self):
+    def sigFunc_export_usd_func(self):
         print("loading export ui")
-        export_usd_geo_UUID.export_UUID_usd_main()
+        self.export_geo_usd_controller = export_geo_usd_main.export_geo_usd_main()
         #delete_existing_ui(self.ui_object_name)
 
     
-    def import_usd_func(self):
+    def sigFunc_import_usd_func(self):
         print("loading import ui")
-        import_usd_geo_UUID.import_UUID_usd_main()
+        self.import_geo_usd_controller = import_geo_usd_main.import_geo_usd_main()
         #delete_existing_ui(self.ui_object_name)
 
 
-    def geo_func(self):
+    def sigFunc_geo_func(self):
         print("loading geo ui")
+        #self.geo_db_controller = geo_db_main.geo_db_main()
         geo_db.geoDB_main()
         # delete_existing_ui(self.ui_object_name)
+
 
 def master_geo_main():
     app = QtWidgets.QApplication.instance()

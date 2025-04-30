@@ -1,6 +1,7 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+from utils import utils_os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui, QtUiTools
@@ -21,9 +22,10 @@ import os
 
 from databases import database_manager
 from databases.geo_databases import database_schema_001
-from user_interface.geoDB_ui import export_db
-from systems import (
-    os_custom_directory_utils,
+
+from main_entry_points.geoDB_mep import export_database_main  
+
+from utils import (
     utils
 )
 from systems.sys_geoDB import (
@@ -34,8 +36,8 @@ from systems.sys_geoDB import (
 
 importlib.reload(database_manager)
 importlib.reload(database_schema_001)
-importlib.reload(export_db)
-importlib.reload(os_custom_directory_utils)
+importlib.reload(export_database_main)
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(uuid_handler)
 importlib.reload(bind_skin)
@@ -61,15 +63,17 @@ class GeoDatabase(QtWidgets.QWidget):
         self.setWindowTitle(ui_window_name)
         self.resize(400, 550)
         
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                       "..", "CSS", "geoDB_style_sheet_001.css")
+        stylesheet_path = os.path.join(
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "geoDB_style_sheet_001.css"
+            )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
 
         # gather available database file names & pass to the ComboBox
-        self.directory_list = [os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
+        self.directory_list = [utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases")]
         self.db_files = []
         for directory in self.directory_list:
             if os.path.exists(directory):
@@ -82,8 +86,10 @@ class GeoDatabase(QtWidgets.QWidget):
         self.UI_connect_signals()
         self.val_new_relationship_checkBox = 0
         self.active_db = self.database_comboBox.currentText()
+        print(f"CONTROLLER: self.active_db = {self.active_db}")
         self.visualise_active_db()
 
+        self.export_db_controller = None
 
     def update_database_ComboBox(self):
         print(f"UPDATING DB COMBO BOX WITH NEW database!")
@@ -481,17 +487,22 @@ class GeoDatabase(QtWidgets.QWidget):
 
     def sigFunc_exportOptions_btn(self):
         try:
-            ui = export_db.export_DB_main()
+            # Show the ui & get the returned the controller
+            self.export_db_controller = export_database_main.export_db_main()
+        
+            # Access the view through the controller 
+            ui = self.export_db_controller.view
+            
             # connect the signal to the update db combobox function
             ui.databaseCreated.connect(self.update_database_ComboBox)
         except Exception as e:
-            print(f"Export button encounted an error: {e}")
+            print(f"Export button encounted an errors: {e}")
 
     # -- available databases --
     def sigFunc_dbFolderPath_btn(self):
         # below is the chosen path by the user
         directory = QtWidgets.QFileDialog.getExistingDirectory(
-            self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
+            self, "Select Directory", utils_os.create_directory("Jmvs_tool_box", "databases", "geo_databases"))
         self.directory_list.append(directory)
         self.update_database_ComboBox()
 
@@ -754,10 +765,10 @@ class GeoDatabase(QtWidgets.QWidget):
     ########## TREE VIEW FUNCTOINS ##########
     def gather_active_database_combined_dict(self):
             current_dir = os.path.dirname(os.path.abspath(__file__))
-            levels = os_custom_directory_utils.determine_levels_to_target(
+            levels = utils_os.determine_levels_to_target(
                 current_dir, "Jmvs_tool_box"
                 )
-            root_dir = os_custom_directory_utils.go_up_path_levels(current_dir, levels)
+            root_dir = utils_os.go_up_path_levels(current_dir, levels)
             try:
                 self.active_db_dir = utils.find_directory(self.active_db, root_dir)
                 #print(f"Directory of `{self.active_db}` is:  `{self.active_db_dir}`")
@@ -878,30 +889,11 @@ class GeoDatabase(QtWidgets.QWidget):
                 print(f"selected object: {found_obj}")
             else:
                 print("No object matches that given geo_uuid")
+                self.select_geo_with_no_custom_UUID(geo_uuid)
         else: 
-            # this will tend to mean the object hasn't been exported
-            # Checking the original file for match.
-            print("No objects have custom UUID, meaning geo has not been imported USD")
-            shape_nodes = cmds.ls(dag=1, type='mesh')
-            all_geo = []
-            if shape_nodes:
-                transforms = cmds.listRelatives(shape_nodes, parent=True, type='transform', fullPath=True)
-                all_geo = list(set(transforms))  # Remove duplicates if any
-                for obj in all_geo: # loop thru the objs and check their uuid
-                    obj_uuid = cmds.ls(obj, uuid=1)
-                    # obj_uuid = cmds.getAttr(f"{obj}.{self.custom_uuid_attr}", asString=1)
-                    if obj_uuid and obj_uuid[0] == geo_uuid:
-                        found_obj = obj
-                        break
-            # if found, select it
-            if found_obj:
-                cmds.select(found_obj)
-                print(f"selected object without cutom UUID: {found_obj}")
+            self.select_geo_with_no_custom_UUID(geo_uuid)
 
 
-            
-
-    
     def ui_joint_selects_scene_joint(self):
         joint_uuid = self.retrive_joint_uuid_of_selection()
         """
@@ -930,8 +922,7 @@ class GeoDatabase(QtWidgets.QWidget):
         
         else:
             print("No object matches that given geo_uuid")
-        
-
+     
 
     def retrive_geo_uuid_of_selection(self):
         # get the selection of the geo tree view
@@ -972,6 +963,7 @@ class GeoDatabase(QtWidgets.QWidget):
 
         return row_index, joint_uuid
 
+
     def get_sel_jnt_name_and_uuid(self):
         selected_index = utils.get_first_tree_index(self.joint_tree_view)
         joint_item = self.joint_model.itemFromIndex(selected_index)
@@ -979,6 +971,7 @@ class GeoDatabase(QtWidgets.QWidget):
         joint_uuid = joint_item.data(QtCore.Qt.UserRole)
 
         return joint_name, joint_uuid
+
 
     def get_geo_name_and_uuid_TreeSel(self):
         selected_index = utils.get_first_tree_index(self.geo_tree_view)
@@ -988,6 +981,30 @@ class GeoDatabase(QtWidgets.QWidget):
         geo_uuid = geo_item.data(QtCore.Qt.UserRole)
 
         return geom_name, geo_uuid
+
+    def select_geo_with_no_custom_UUID(self, geo_uuid):
+        # this will tend to mean the object hasn't been exported
+        # Checking the original file for match.
+        print("No objects have custom UUID, meaning geo has not been imported USD")
+        shape_nodes = cmds.ls(dag=1, type='mesh')
+        all_geo = []
+        found_obj = False
+        if shape_nodes:
+            transforms = cmds.listRelatives(shape_nodes, parent=True, type='transform', fullPath=True)
+            all_geo = list(set(transforms))  # Remove duplicates if any
+            for obj in all_geo: # loop thru the objs and check their uuid
+                obj_uuid = cmds.ls(obj, uuid=1)
+                # obj_uuid = cmds.getAttr(f"{obj}.{self.custom_uuid_attr}", asString=1)
+                if obj_uuid and obj_uuid[0] == geo_uuid:
+                    found_obj = obj
+                    break
+
+        if found_obj:
+            cmds.select(found_obj)
+            print(f"selected object without cutom UUID: {found_obj}")
+        else:
+            print("np object exists to select")
+
 
 def geoDB_main():
     app = QtWidgets.QApplication.instance()

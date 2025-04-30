@@ -1,6 +1,11 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+import sys
+import random
+import importlib
+import os
+import json
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -15,25 +20,21 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-import sys
-import random
-import importlib
-import os
-import json
-
 from databases.char_databases import database_schema_002
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils,
+    utils_os
 )
 from systems.sys_char_rig import (
     cr_guides, 
     cr_ctrl
 )
-
+# Model
 importlib.reload(database_schema_002)
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
+# All MVC
 importlib.reload(utils)
+# Controller 
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
 # For the time being, use this file to simply call the 'modular_char_ui.py'
@@ -58,8 +59,10 @@ class CharRigging(QtWidgets.QWidget):
         self.resize(400, 550)
         
         # style
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                       "..", "CSS", "char_style_sheet_001.css")
+        stylesheet_path = os.path.join(
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "char_style_sheet_001.css"
+            )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
@@ -97,8 +100,6 @@ class CharRigging(QtWidgets.QWidget):
     def UI_modules(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
         main_Vlayout.setObjectName("main_Layout")
-        
-        
 
         top_Hlayout = QtWidgets.QHBoxLayout() # db_vis & mdl_choose
         bottom_Vlayout = QtWidgets.QVBoxLayout() # add_blueprint & updating db
@@ -277,6 +278,7 @@ class CharRigging(QtWidgets.QWidget):
         self.cmo_stretch_lbl = QtWidgets.QLabel("Stretch: _ _")
         self.cmo_twist_lbl = QtWidgets.QLabel("Twist: _ _")
         
+        
         umo_lbl = QtWidgets.QLabel("Update >")
         umo_lbl.setObjectName("update_left_lbl")
         umo_rigType_lbl = QtWidgets.QLabel("Rig Type:")
@@ -432,6 +434,10 @@ class CharRigging(QtWidgets.QWidget):
 
         for widget in style_update_mdl_ui:
             widget.setProperty("update_UI", True)
+
+        for wid in [cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]:
+            wid.setEnabled(False)
+            wid.setProperty("Current_disabled", True)
 
 
     def UI_tab1_connect_signals(self):
@@ -744,6 +750,7 @@ class CharRigging(QtWidgets.QWidget):
                 self.constrain_guides_from_comp(unlock_rdy_component) 
         else: print(f"component checkbox is not checked")
 
+
     def func_unlocked_all(self):
         # establish components present in the scene!
         possible_comp_groups = "xfm_grp_*_component_*"
@@ -775,7 +782,7 @@ class CharRigging(QtWidgets.QWidget):
                 leg_output_mdl = "spine"
                 leg_output_uID = leg_output_comp.split('_')[4:][0]
                 leg_output_side = leg_output_comp.split('_')[4:][-1]
-                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_spine1_{leg_output_uID}_{leg_output_side}"
+                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_0_{leg_output_uID}_{leg_output_side}"
                 # spine1 >PointConAll> hip 
                 utils.constrain_2_items(leg_spine_output_name, leg_spine_input_name, "point", "all")
             else: print("spine component not in scene")
@@ -821,7 +828,7 @@ class CharRigging(QtWidgets.QWidget):
                 print(f"output_comp = {arm_output_comp}") # xfm_grp_spine_component_0_M
                 arm_output_uID = arm_output_comp.split('_')[4:][0]
                 arm_output_side = arm_output_comp.split('_')[4:][-1]
-                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_spine4_{arm_output_uID}_{arm_output_side}"
+                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_3_{arm_output_uID}_{arm_output_side}"
                 # spine4 >ParentConAll> clavicle
                 clavicle_input_name = f"offset_xfm_guide_bipedArm_clavicle_{working_comp_unique_id}_{working_comp_side}"
                 utils.constrain_2_items(arm_spine_output_name, clavicle_input_name, 
@@ -854,28 +861,26 @@ class CharRigging(QtWidgets.QWidget):
                 # cog >ParentConAll> spine1
                 utils.constrain_2_items(
                 f"{xfm}_COG",
-                f"{grpXfm}_{spine_output_mdl}_spine1_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine1 >ParentConAll> spine2
+            # spine0 > ParentConAll> spine1/2/3/4
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine1_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine2_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_1_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine2 >ParentConAll> spine3
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine2_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine3_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_2_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine3 >ParentConAll> spine4
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine3_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine4_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_3_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            # spine4 >ParentConAll> spine5
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_spine4_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_spine5_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_4_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
+            
 
     # -------------------------------------------------------------------------
     def load_rig_group(self):
@@ -918,7 +923,7 @@ class CharRigging(QtWidgets.QWidget):
             '''
             rig_folder_name = self.val_availableRigComboBox
             print(f"rig_folder_name = {rig_folder_name}")
-            rig_db_directory = os_custom_directory_utils.create_directory(
+            rig_db_directory = utils_os.create_directory(
                 "Jmvs_tool_box", "databases", "char_databases", 
                 self.db_rig_location, rig_folder_name
                 )
@@ -948,7 +953,7 @@ class CharRigging(QtWidgets.QWidget):
     def visualise_active_db(self):
         # get directory of current chosen rig folder!
         rig_folder_name = self.val_availableRigComboBox
-        rig_db_directory = os_custom_directory_utils.create_directory(
+        rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, rig_folder_name
             )
@@ -1011,7 +1016,7 @@ class CharRigging(QtWidgets.QWidget):
     # -- DB Rig folder functions --
     def get_available_DB_rig_folders(self, location):
             name_of_rig_fld = []
-            self.rig_db_storage_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
+            self.rig_db_storage_dir = utils_os.create_directory("Jmvs_tool_box", "databases", "char_databases", location)
             if os.path.exists(self.rig_db_storage_dir):
                 print(f"Dir does exist: {self.rig_db_storage_dir}")
                 for db_rig_folder in os.listdir(self.rig_db_storage_dir):
@@ -1041,7 +1046,7 @@ class CharRigging(QtWidgets.QWidget):
         # derive the `self.json_all_mdl_list` from the config folder!
         # self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
         json_mdl_list = []
-        json_config_dir = os_custom_directory_utils.create_directory("Jmvs_tool_box", "config", "char_config")
+        json_config_dir = utils_os.create_directory("Jmvs_tool_box", "config", "char_config")
         if os.path.exists(json_config_dir):
             for mdl_config_file in os.listdir(json_config_dir):
                 if mdl_config_file.endswith('.json'):
@@ -1181,14 +1186,14 @@ class CharRigging(QtWidgets.QWidget):
         try: # handle if it has no side
             side = split_names[2]
         except Exception:
-            side = "L" #use M to represent middle (but doesn't show up in scene)
+            side = "M" #use M to represent middle (but doesn't show up in scene)
             # Or whatever it needs to be in the database! 
         print(f"split_names: module = {module}, unique_id = {unique_id}, side = {side}")
         
         # gather dict from database!
         rig_folder_name = self.val_availableRigComboBox
         print(f"rig_folder_name = {rig_folder_name}")
-        rig_db_directory = os_custom_directory_utils.create_directory(
+        rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, rig_folder_name
             )

@@ -4,16 +4,17 @@ import importlib
 import sys
 import os
 
-from systems import (
-    os_custom_directory_utils,
-    utils
+from utils import (
+    utils,
+    utils_os
 )
-importlib.reload(os_custom_directory_utils)
+
+importlib.reload(utils_os)
 importlib.reload(utils)
 
 class CreateControl():
     def __init__(self, type, name):
-        self.import_directory = os_custom_directory_utils.create_directory(
+        self.import_directory = utils_os.create_directory(
             "Jmvs_tool_box", "imports" 
             )
         self.ctrl = self.circle_type(type, name)
@@ -21,108 +22,108 @@ class CreateControl():
     def circle_type(self, ctrl_type, ctrl_name):
         # create curve
         if ctrl_type == "circle":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_circle.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_circle", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create cube
         elif ctrl_type == "cube":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cube.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cube", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create pv
         elif ctrl_type == "pv":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_star.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_star", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create beveledSquare
         elif ctrl_type == "bvSquare":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_beveledSquare.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_beveledSquare", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create beveledRectangle
         elif ctrl_type == "bvRectangle":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_beveledRectangle.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_beveledRectangle", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create square
         elif ctrl_type == "square":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_square.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_square", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create orb
         elif ctrl_type == "orb":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_orb.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_orb", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         # create octogan
         elif ctrl_type == "octogan":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_octogan.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_octogan", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)  
         # create square
         elif ctrl_type == "cog":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cog_002.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cog_002", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         elif ctrl_type == "root":
-            guide_import_dir = os.path.join(self.import_directory, 
-                                            "imp_root_octagon.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            import_dir = os.path.join(self.import_directory, 
+                                            "imp_root_octagon_02.abc")
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_root_octagon", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
 
         elif ctrl_type == "imp_cg_arm_L":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cg_arm_L.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cg_arm_L", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)   
         elif ctrl_type == "imp_cg_arm_R":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cg_arm_R.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cg_arm_R", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)   
         elif ctrl_type == "imp_cg_leg_L":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cg_leg_L.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cg_leg_L", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)   
         elif ctrl_type == "imp_cg_leg_R":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cg_leg_R.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cg_leg_R", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)   
         elif ctrl_type == "imp_cg_spine":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cg_spine.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cg_spine", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
         elif ctrl_type == "imp_cg_root":
-            guide_import_dir = os.path.join(self.import_directory, 
+            import_dir = os.path.join(self.import_directory, 
                                             "imp_cg_root.abc")
-            imported_guide = cmds.file(guide_import_dir, i=1, 
+            imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cg_root", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name) 
         

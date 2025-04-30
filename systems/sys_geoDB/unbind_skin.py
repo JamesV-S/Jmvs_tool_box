@@ -2,7 +2,7 @@
 import maya.cmds as cmds
 
 import importlib
-from systems import utils
+from utils import utils
 importlib.reload(utils)
 
 custom_UUID = "custom_UUID"

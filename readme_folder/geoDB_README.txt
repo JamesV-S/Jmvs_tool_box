@@ -34,6 +34,15 @@ Achieved:
 selected relationship parent & also remove (delete) 
 relationship row from database!
 
+''''''
+MVC structure garbage collection fix with Parker. 
+- Only files changed: export_db_MEP.py & geo_db.py
+> export_db_MEP.py > got rid of 'app.exec() & ApplicationInstance becuase it is redundant when it happens in geo_fb.py & the current ui with MVC structure is shown when MEP is called.'
+    The controller is returned not controller.view.
+> geo_db.py stores the controller in a new variable in the init function of the class, which I assume gets around garbage collection. 
+''''''
+
+
 NEXT:
 > delete database, stop it being locked by Maya - (Don't need for submission!)
 > Replace jnt/geo on selected row in treeview - (Don't need for submission!)

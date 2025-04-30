@@ -1,6 +1,7 @@
 
 import maya.cmds as cmds
 from maya import OpenMayaUI
+from utils import utils_os
 
 try:
     from PySide6 import QtCore, QtWidgets, QtGui
@@ -15,18 +16,16 @@ except ModuleNotFoundError:
     from PySide2.QtWidgets import (QWidget)
     from shiboken2 import wrapInstance
 
-import sys
 import importlib
 import os.path
 
-from systems import (
-    os_custom_directory_utils,
+from utils import (
     utils
 )
 
 from usd_exports.systems import func_import_geometry_UUID_usd
 
-importlib.reload(os_custom_directory_utils)
+importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(func_import_geometry_UUID_usd)
 
@@ -51,8 +50,10 @@ class imnportDatabaseOptions(QtWidgets.QWidget):
         self.setWindowTitle(ui_window_name)
         self.resize(200, 100)
         
-        stylesheet_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
-                                       "..", "CSS", "geoDB_style_sheet_001.css")
+        stylesheet_path = os.path.join(
+            utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
+            "geoDB_style_sheet_001.css"
+            )
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         self.setStyleSheet(stylesheet)
@@ -166,7 +167,7 @@ class imnportDatabaseOptions(QtWidgets.QWidget):
             self.folderPath_text.setText("...\\Jmvs_ToolBox\\usd_exports\\geo_db_usd")
             self.folderPath_text.setEnabled(False)
             # gather the directory rather than just writing it. 
-            self.directory = os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
+            self.directory = utils_os.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd")
             print(f"database directory PRESET: {self.directory}")
             # self.directory = "C:\Docs\maya\scripts\Jmvs_tool_box\databases\geo_databases"
         else:
@@ -178,22 +179,12 @@ class imnportDatabaseOptions(QtWidgets.QWidget):
     def sigFunc_selectFolder(self):
         # Open a directory picker dialog
         self.directory = QtWidgets.QFileDialog.getExistingDirectory(
-        self, "Select Directory", os_custom_directory_utils.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd"))
+        self, "Select Directory", utils_os.create_directory("Jmvs_tool_box", "usd_exports", "geo_db_usd"))
         # C:\Docs\maya\scripts\Jmvs_tool_box\usd_exports\geo_db_usd
         if self.directory:
             self.folderPath_text.setText(self.directory)
             print(f"Selected Directory: {self.directory}")
         print(f"directory :: `{self.directory}`")
-
-
-    def layV_SPACER_func(self):
-        layH_spacer = QtWidgets.QHBoxLayout()
-        spacer = QtWidgets.QWidget()
-        spacer.setFixedSize(100,10)
-        spacer.setObjectName("Spacer")
-        layH_spacer.addWidget(spacer)
-
-        return layH_spacer
     
 
     def sigFunc_export(self):
@@ -219,7 +210,18 @@ class imnportDatabaseOptions(QtWidgets.QWidget):
             func_import_geometry_UUID_usd.ImporttGeometryUUID(usd_file=usd_save_dir, json_file=json_dir)
         else:
             cmds.error("CHOOSE A VALID GROUP PATH!")
+    
+    
+    def layV_SPACER_func(self):
+        layH_spacer = QtWidgets.QHBoxLayout()
+        spacer = QtWidgets.QWidget()
+        spacer.setFixedSize(100,10)
+        spacer.setObjectName("Spacer")
+        layH_spacer.addWidget(spacer)
 
+        return layH_spacer
+    
+    
 def import_UUID_usd_main():
     app = QtWidgets.QApplication.instance()
     if not app:
