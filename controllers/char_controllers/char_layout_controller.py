@@ -108,32 +108,35 @@ class CharLayoutController:
         print(f"available rig chosen: `{self.val_availableRigComboBox}`")
 
 
-    # define the 3 widget functions appropriatly, taking the `mdl_name` arg from lambda!
     def sigFunc_mdl_checkBox(self, mdl_name):
-        mdl_checkBox = self.view.mdl_choose_ui_dict[mdl_name][0]
+        # define the 3 widget functions appropriatly, taking the `mdl_name` arg from lambda!
+        mdl_checkBox = self.mdl_choose_ui_dict[mdl_name][0]
         self.val_mdl_checkBox = mdl_checkBox.isChecked()
-        # store the data! 
-        # - set `mdl_name` as the keyy
-        # - add checkbox & add temp value & string for remaining signals
-        if mdl_name == 'spine':
-            letter = "M"
-        else:
-            letter = "L"
+
+        # Change how the component 'side' is chosen!
+            # Read the config `user_settings` `side` attribute!
+        print(f"j :self.json_dict: `{self.json_dict['root.json']}`")
+        config_dict = self.json_dict[f'{mdl_name}.json']
+        config_user_settings = config_dict["user_settings"]
+        config_side = config_user_settings["side"]
+ 
         self.user_module_data[mdl_name] = {
             "mdl_checkBox": self.val_mdl_checkBox,
             "mdl_iteration": self.user_module_data.get(mdl_name, {}).get('iteration', 1),
-            "mdl_side": self.user_module_data.get(mdl_name, {}).get('side', letter)
+            "mdl_side": self.user_module_data.get(mdl_name, {}).get('side', config_side)
         }
 
         if self.val_mdl_checkBox: # Enable other widgets where neccesary
-            self.view.mdl_choose_ui_dict[mdl_name][1].setEnabled(True)
-            if mdl_name == "spine" or mdl_name == "root":
+            self.mdl_choose_ui_dict[mdl_name][1].setEnabled(True)
+            # if mdl_name == "spine" or mdl_name == "root":
+            #     pass
+            if config_side == "M":
                 pass
             else:
-                self.view.mdl_choose_ui_dict[mdl_name][2].setEnabled(True)
+                self.mdl_choose_ui_dict[mdl_name][2].setEnabled(True)
         else:
-            self.view.mdl_choose_ui_dict[mdl_name][1].setEnabled(False)             
-            self.view.mdl_choose_ui_dict[mdl_name][2].setEnabled(False)
+            self.mdl_choose_ui_dict[mdl_name][1].setEnabled(False)             
+            self.mdl_choose_ui_dict[mdl_name][2].setEnabled(False)
         print(f"MDL::{mdl_name} &  self.val_mdl_checkBox::{self.val_mdl_checkBox}")
     
 

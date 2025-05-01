@@ -37,15 +37,12 @@ importlib.reload(database_manager)
 # Temporary, this is already gathered automarically from the JSON
 # u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
 
-
 class CreateDatabase():
     def __init__(self, directory, mdl_name, side, placement_dict, user_settings_dict, controls_dict):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         db_name = os.path.join(db_directory, f'DB_{mdl_name}.db')
         
-        
-
         self.unique_id_tracker = {}
         try:
             with sqlite3.connect(db_name) as conn:
@@ -221,6 +218,7 @@ class retrieveModulesData():
 
 class retrieveSpecificComponentdata():
     def __init__(self, directory, module_name, unique_id, side):
+        print(f"Retrieve specific component data MODULE_NAME: {module_name} ")
         self.mdl_populate_tree_dict = {}
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
@@ -261,7 +259,7 @@ class retrieveSpecificComponentdata():
                 # use Python's 'json module' to load json dict into python dictionary's
                 component_pos_dict = json.loads(component_pos_json)
                 print(f"component_pos = {component_pos_dict}")
-            return component_pos_dict
+            return component_pos_dict              
 
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")

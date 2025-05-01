@@ -488,27 +488,29 @@ class CharRigging(QtWidgets.QWidget):
         print(f"available rig chosen: `{self.val_availableRigComboBox}`")
 
 
-    # define the 3 widget functions appropriatly, taking the `mdl_name` arg from lambda!
     def sigFunc_mdl_checkBox(self, mdl_name):
+        # define the 3 widget functions appropriatly, taking the `mdl_name` arg from lambda!
         mdl_checkBox = self.mdl_choose_ui_dict[mdl_name][0]
         self.val_mdl_checkBox = mdl_checkBox.isChecked()
 
-        # store the data! 
-        # - set `mdl_name` as the keyy
-        # - add checkbox & add temp value & string for remaining signals
-        if mdl_name == 'spine':
-            letter = "M"
-        else:
-            letter = "L"
+        # Change how the component 'side' is chosen!
+            # Read the config `user_settings` `side` attribute!
+        print(f"j :self.json_dict: `{self.json_dict['root.json']}`")
+        config_dict = self.json_dict[f'{mdl_name}.json']
+        config_user_settings = config_dict["user_settings"]
+        config_side = config_user_settings["side"]
+ 
         self.user_module_data[mdl_name] = {
             "mdl_checkBox": self.val_mdl_checkBox,
             "mdl_iteration": self.user_module_data.get(mdl_name, {}).get('iteration', 1),
-            "mdl_side": self.user_module_data.get(mdl_name, {}).get('side', letter)
+            "mdl_side": self.user_module_data.get(mdl_name, {}).get('side', config_side)
         }
 
         if self.val_mdl_checkBox: # Enable other widgets where neccesary
             self.mdl_choose_ui_dict[mdl_name][1].setEnabled(True)
-            if mdl_name == "spine" or mdl_name == "root":
+            # if mdl_name == "spine" or mdl_name == "root":
+            #     pass
+            if config_side == "M":
                 pass
             else:
                 self.mdl_choose_ui_dict[mdl_name][2].setEnabled(True)
@@ -545,6 +547,7 @@ class CharRigging(QtWidgets.QWidget):
     # -- Publish --
     def sigfunc_publish_btn(self): # cr a new dictionary to store the state of each module!
         print(f"sigfunc_publish_btn clicked")
+        print(f"J :: `{self.user_module_data}`")
         for mdl, signals in self.user_module_data.items():
             #print(f"MDL::{mdl} & signals::{signals}")
             print(f"MDL::{mdl} & checkbox::{signals['mdl_checkBox']}, iteration::{signals['mdl_iteration']}, side::{signals['mdl_side']}")
@@ -556,10 +559,12 @@ class CharRigging(QtWidgets.QWidget):
     def func_createXfmGuides(self, component_selection):
             for selection in component_selection:
                 parts = selection.split('_')
+                print(f"sel of component_selection: {selection} > {parts}")
                 if "root" in selection:
-                    obj_name = f"*_{parts[1]}"
+                    obj_name = f"*_{parts[1]}" # "*_root"
                 else:
                     obj_name = f"*_{parts[1]}_*_{parts[2]}_{parts[3]}"
+                
                 if cmds.objExists(obj_name):
                     exists = 1
                 else:
@@ -623,6 +628,9 @@ class CharRigging(QtWidgets.QWidget):
                 print(f"Adding blueprint for {mdl}: Iterations={iterations_value}, Side={side_value}")
         
         component_selection = self.get_all_component_name_in_TreeView()
+    
+        print(f" *J* Component selection = {component_selection}")
+
         self.func_createXfmGuides(component_selection)
 
         self.func_unlocked_all()
