@@ -86,7 +86,7 @@ class CharLayoutModel:
 
 
     # ---- TreeView functions ----
-    def record_component_change(self, component_selection, val_availableRigComboBox):
+    def record_component_change(self, component_selection):
         split_names = component_selection.split('_')[1:] #ignore 'mdl' prefix
         module = split_names[0]
         unique_id = split_names[1]
@@ -109,8 +109,9 @@ class CharLayoutModel:
             ''' got this dict `B` from selection in treeView '''
             ''' if ^ = {} cancel the operation below. '''
             ''' get this dict `A` from the correct row in the right db '''
-            ''' compare `B` to `A`, find the same name 'clavicle', ect, and put the new values in it.'''
-            rig_folder_name = val_availableRigComboBox
+            ''' compare `B` to `A`, find the same name 'clavicle', ect, and put the new values in it.
+            '''
+            rig_folder_name = self.val_availableRigComboBox
             print(f"rig_folder_name = {rig_folder_name}")
             rig_db_directory = utils_os.create_directory(
                 "Jmvs_tool_box", "databases", "char_databases", 
@@ -125,18 +126,24 @@ class CharLayoutModel:
             updated_existing_pos_dict = {}
             for key in existing_pos_dict.keys():
                 for new_key, new_value in new_component_pos_dict.items():
+                    print(f"if key:`{key}` in new_key:`{new_key}`")
                     if key in new_key:
                         updated_existing_pos_dict[key] = new_value
+                        updated_dict = True
                         break
-            print(f"Updated `existing_dict` : {updated_existing_pos_dict}")
-            ''' with new dict, update the database! '''
-            database_schema_002.updateSpecificPlacementPOSData(
-                rig_db_directory, module, unique_id, side, updated_existing_pos_dict
-                )
-
+                    else:
+                        updated_dict = False
+            if updated_dict:
+                print(f"Updated `existing_dict` : {updated_existing_pos_dict}")
+                ''' with new dict, update the database! '''
+                database_schema_002.updateSpecificPlacementPOSData(
+                    rig_db_directory, module, unique_id, side, updated_existing_pos_dict
+                    )
+            
         except Exception as e:
             print(f"No component exists in the scene of '{component_selection}'")
             print(f"error: {e}")
+        cmds.select(cl=1)
 
 
     def visualise_active_db(self, val_availableRigComboBox, mdl_tree_model):
@@ -276,30 +283,7 @@ class CharLayoutModel:
             else:
                 print(f"Not required module database creation for {mdl_name}")
 
-
-    # def get_modules_json_dict(self, config_type):
-    #     # derive the `self.json_all_mdl_list` from the config folder!
-    #     # self.json_all_mdl_list = ['biped_arm.json', 'biped_leg.json']
-    #     json_mdl_list = []
-    #     json_config_dir = utils_os.create_directory("Jmvs_tool_box", "config", "char_config")
-    #     if os.path.exists(json_config_dir):
-    #         for mdl_config_file in os.listdir(json_config_dir):
-    #             if mdl_config_file.endswith('.json'):
-    #                 json_mdl_list.append(mdl_config_file)
-        
-    #     # This dictionary contains nested dict of all possible json modules in `char_config` folder
-    #     json_dict = {}
-    #     for json_file in json_mdl_list:
-    #         # configer the json file
-    #         json_path = os.path.join(json_config_dir, json_file)
-    #         with open(json_path, 'r') as file:
-    #             # load the json data
-    #             json_data = json.load(file)
-    #             json_dict[json_file] = json_data
-    #     return json_dict 
     
-
-    # ---- Component constraints ----
     def func_unlocked_all(self):
         # establish components present in the scene!
         possible_comp_groups = "xfm_grp_*_component_*"
@@ -309,8 +293,9 @@ class CharLayoutModel:
         print(f"xfm_ancestorGrp = {xfm_ancestorGrp}")
         for component in xfm_ancestorGrp:
             self.constrain_guides_from_comp(component)
+        cmds.select(cl=1)
     
-    
+    # ---- Component constraints ----
     def constrain_guides_from_comp(self, component):
         # guide > parentOperation > guideGROUP(constrained)
         print(f"NNNNNNNNNORMAL UNLOCK component = {component}")
@@ -331,7 +316,7 @@ class CharLayoutModel:
                 leg_output_mdl = "spine"
                 leg_output_uID = leg_output_comp.split('_')[4:][0]
                 leg_output_side = leg_output_comp.split('_')[4:][-1]
-                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_0_{leg_output_uID}_{leg_output_side}"
+                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_{spine_output_mdl}0_{leg_output_uID}_{leg_output_side}"
                 # spine1 >PointConAll> hip 
                 utils.constrain_2_items(leg_spine_output_name, leg_spine_input_name, "point", "all")
             else: print("spine component not in scene")
@@ -377,7 +362,7 @@ class CharLayoutModel:
                 print(f"output_comp = {arm_output_comp}") # xfm_grp_spine_component_0_M
                 arm_output_uID = arm_output_comp.split('_')[4:][0]
                 arm_output_side = arm_output_comp.split('_')[4:][-1]
-                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_3_{arm_output_uID}_{arm_output_side}"
+                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_{spine_output_mdl}3_{arm_output_uID}_{arm_output_side}"
                 # spine4 >ParentConAll> clavicle
                 clavicle_input_name = f"offset_xfm_guide_bipedArm_clavicle_{working_comp_unique_id}_{working_comp_side}"
                 utils.constrain_2_items(arm_spine_output_name, clavicle_input_name, 
@@ -410,22 +395,23 @@ class CharLayoutModel:
                 # cog >ParentConAll> spine1
                 utils.constrain_2_items(
                 f"{xfm}_COG",
-                f"{grpXfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             # spine0 > ParentConAll> spine1/2/3/4
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_1_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}1_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_2_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}2_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_3_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}3_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_4_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}4_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
+            

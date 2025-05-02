@@ -209,6 +209,7 @@ class CharRigging(QtWidgets.QWidget):
             return mdl_checkBox, mdl_iterations, mdl_side
 
         # get mdl_name and side data for each module
+        # side set on the ui by config file. side on databases need to be set by the active ui!!
         try:
             mdl_list = []
             side_list = []
@@ -222,10 +223,8 @@ class CharRigging(QtWidgets.QWidget):
                     mdl_list.append(mdl_name)
                     if mdl_side == ['None']:
                         side_list.append([""])
-                        print(f"HAHAHAHHAHAH {side_list}")
                     else:
                         side_list.append(mdl_side)
-                        print(f">>> NONOONONONOON {side_list}")
             
             print(mdl_list) #['bipedArm', 'bipedLeg']
             print(side_list) #[['L', 'R'], ['L', 'R']]
@@ -475,6 +474,7 @@ class CharRigging(QtWidgets.QWidget):
     def sigFunc_rpl_live_component(self):
         # print selection in ui:
         component_selection = self.get_component_name_TreeSel()
+        print(f"J :component_selection: {component_selection} ")
         for component in component_selection:
             self.record_component_change(component)
 
@@ -495,10 +495,10 @@ class CharRigging(QtWidgets.QWidget):
 
         # Change how the component 'side' is chosen!
             # Read the config `user_settings` `side` attribute!
-        print(f"j :self.json_dict: `{self.json_dict['root.json']}`")
+        print(f"self.json_dict: `{self.json_dict}`")
         config_dict = self.json_dict[f'{mdl_name}.json']
         config_user_settings = config_dict["user_settings"]
-        config_side = config_user_settings["side"]
+        config_side = config_user_settings["side"][0]
  
         self.user_module_data[mdl_name] = {
             "mdl_checkBox": self.val_mdl_checkBox,
@@ -547,9 +547,10 @@ class CharRigging(QtWidgets.QWidget):
     # -- Publish --
     def sigfunc_publish_btn(self): # cr a new dictionary to store the state of each module!
         print(f"sigfunc_publish_btn clicked")
-        print(f"J :: `{self.user_module_data}`")
+        print(f"self.user_module_data :: `{self.user_module_data}`")
+        # self.user_module_data[mdl_name]["mdl_side"] = self.val_mdl_side
         for mdl, signals in self.user_module_data.items():
-            #print(f"MDL::{mdl} & signals::{signals}")
+            # self.user_module_data[mdl]["mdl_side"] = self.val_mdl_side
             print(f"MDL::{mdl} & checkbox::{signals['mdl_checkBox']}, iteration::{signals['mdl_iteration']}, side::{signals['mdl_side']}")
             self.cr_mdl_json_database(mdl, signals['mdl_checkBox'], signals['mdl_iteration'], signals['mdl_side'])
             self.visualise_active_db()
@@ -577,9 +578,10 @@ class CharRigging(QtWidgets.QWidget):
                 # parent the blueprints to hierarchy rig group properly
                 try:
                     cmds.parent("grp_component_misc", "grp_components")
+                    cmds.parent("grp_xfm_components", "grp_components")
                     cmds.parent("grp_ctrl_components", "grp_controls")
                 except Exception as e:
-                    print(f"parenting error: `grp_component_misc`, `grp_ctrl_components` to `grp_components` = {e}")
+                    print(f"parenting error: `grp_component_misc`, `grp_xfm_components` to `grp_components` = {e}")
             else:
                 print(f"component already exists in the scene: {selection}")
             self.controls_template_checkBox.setChecked(False)
@@ -768,6 +770,7 @@ class CharRigging(QtWidgets.QWidget):
         print(f"xfm_ancestorGrp = {xfm_ancestorGrp}")
         for component in xfm_ancestorGrp:
             self.constrain_guides_from_comp(component)
+        cmds.select(cl=1)
     
     
     def constrain_guides_from_comp(self, component):
@@ -790,7 +793,7 @@ class CharRigging(QtWidgets.QWidget):
                 leg_output_mdl = "spine"
                 leg_output_uID = leg_output_comp.split('_')[4:][0]
                 leg_output_side = leg_output_comp.split('_')[4:][-1]
-                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_0_{leg_output_uID}_{leg_output_side}"
+                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_{spine_output_mdl}0_{leg_output_uID}_{leg_output_side}"
                 # spine1 >PointConAll> hip 
                 utils.constrain_2_items(leg_spine_output_name, leg_spine_input_name, "point", "all")
             else: print("spine component not in scene")
@@ -836,7 +839,7 @@ class CharRigging(QtWidgets.QWidget):
                 print(f"output_comp = {arm_output_comp}") # xfm_grp_spine_component_0_M
                 arm_output_uID = arm_output_comp.split('_')[4:][0]
                 arm_output_side = arm_output_comp.split('_')[4:][-1]
-                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_3_{arm_output_uID}_{arm_output_side}"
+                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_{spine_output_mdl}3_{arm_output_uID}_{arm_output_side}"
                 # spine4 >ParentConAll> clavicle
                 clavicle_input_name = f"offset_xfm_guide_bipedArm_clavicle_{working_comp_unique_id}_{working_comp_side}"
                 utils.constrain_2_items(arm_spine_output_name, clavicle_input_name, 
@@ -869,24 +872,24 @@ class CharRigging(QtWidgets.QWidget):
                 # cog >ParentConAll> spine1
                 utils.constrain_2_items(
                 f"{xfm}_COG",
-                f"{grpXfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}", 
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             # spine0 > ParentConAll> spine1/2/3/4
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_1_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}1_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_2_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}2_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_3_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}3_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_4_{working_comp_unique_id}_{working_comp_side}", 
+                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}4_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             
 
@@ -944,19 +947,25 @@ class CharRigging(QtWidgets.QWidget):
             updated_existing_pos_dict = {}
             for key in existing_pos_dict.keys():
                 for new_key, new_value in new_component_pos_dict.items():
+                    print(f"if key:`{key}` in new_key:`{new_key}`")
                     if key in new_key:
                         updated_existing_pos_dict[key] = new_value
+                        updated_dict = True
                         break
-            print(f"Updated `existing_dict` : {updated_existing_pos_dict}")
-            ''' with new dict, update the database! '''
-            database_schema_002.updateSpecificPlacementPOSData(
-                rig_db_directory, module, unique_id, side, updated_existing_pos_dict
-                )
-
+                    else:
+                        updated_dict = False
+            if updated_dict:
+                print(f"Updated `existing_dict` : {updated_existing_pos_dict}")
+                ''' with new dict, update the database! '''
+                database_schema_002.updateSpecificPlacementPOSData(
+                    rig_db_directory, module, unique_id, side, updated_existing_pos_dict
+                    )
+            
         except Exception as e:
             print(f"No component exists in the scene of '{component_selection}'")
             print(f"error: {e}")
-        
+        cmds.select(cl=1)
+
 
     def visualise_active_db(self):
         # get directory of current chosen rig folder!

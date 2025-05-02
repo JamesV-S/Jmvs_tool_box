@@ -300,14 +300,15 @@ class CreateXfmGuides():
         spine_guides = []
         for x in range(num_of_cvs):
                 temp_guide = cmds.circle()
-                guide_name = f"xfm_guide_{module_name}_{x}_{unique_id}_{side}"
+                            # xfm_guide_spine_spine0_0_M
+                guide_name = f"xfm_guide_{module_name}_{module_name}{x}_{unique_id}_{side}"
                 spine_guides.append(cmds.rename(temp_guide[0], guide_name))
                 print(f"@@ > spine_guides IN LOOP = {guide_name}")
         print(f"spine_guides = {spine_guides}")
         
         # Replace control shapes
         for temp_gd in spine_guides:
-            parts = temp_gd.split('_')[-3]
+            parts = temp_gd.split('_')[-3][-1]
             print(f"PARTS of guide name = {parts}")
             if parts == "0":
                 utils.replace_control("imp_xfmSpine", temp_gd, 17, 1.5)

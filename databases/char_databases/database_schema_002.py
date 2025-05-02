@@ -65,7 +65,8 @@ class CreateDatabase():
                     user_settings_dict['stretch'], 
                     rig_options, 
                     user_settings_dict['rig_type']['default'], 
-                    user_settings_dict['size']
+                    user_settings_dict['size'],
+                    side
                     ))
                 ''''''
                 # table placement
@@ -112,7 +113,8 @@ class CreateDatabase():
             stretch FLOAT,
             rig_options TEXT,
             rig_default TEXT,
-            size INT
+            size INT, 
+            side text
         );""",
         """CREATE TABLE IF NOT EXISTS controls (
             db_id INTEGER PRIMARY KEY,
@@ -141,7 +143,7 @@ class CreateDatabase():
             cursor.execute(sql, values)
         elif table == 'user_settings':
             print(f"888888888888888888 H H user_settings VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, rig_options, rig_default, size) VALUES (?, ?, ?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, rig_options, rig_default, size, side) VALUES (?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'controls':
             print(f"888888888888888888 H H controls VALUES: {values}")
@@ -164,6 +166,7 @@ class CreateDatabase():
     # global so the dict can keep track over multiple calls, to generate new unique_ids as expected
     def get_unique_id_sequence(self, mdl_name, side):
         key = (mdl_name, side)
+        print(f"key = {key} / self.unique_id_tracker = {self.unique_id_tracker}" )
         if key not in self.unique_id_tracker:
             print(f">> `unique_id` existing database is empty:{self.unique_id_tracker}, so set to 0")
             self.unique_id_tracker[key] = 0
@@ -218,7 +221,7 @@ class retrieveModulesData():
 
 class retrieveSpecificComponentdata():
     def __init__(self, directory, module_name, unique_id, side):
-        print(f"Retrieve specific component data MODULE_NAME: {module_name} ")
+        print(f" Retrieve specific component data MODULE_NAME: {module_name} ")
         self.mdl_populate_tree_dict = {}
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)

@@ -196,9 +196,10 @@ class CharLayoutController:
                 # parent the blueprints to hierarchy rig group properly
                 try:
                     cmds.parent("grp_component_misc", "grp_components")
+                    cmds.parent("grp_xfm_components", "grp_components")
                     cmds.parent("grp_ctrl_components", "grp_controls")
                 except Exception as e:
-                    print(f"parenting error: `grp_component_misc`, `grp_ctrl_components` to `grp_components` = {e}")
+                    print(f"parenting error: `grp_component_misc`, `grp_xfm_components` to `grp_components` = {e}")
             else:
                 print(f"component already exists in the scene: {selection}")
             self.view.controls_template_checkBox.setChecked(False)
