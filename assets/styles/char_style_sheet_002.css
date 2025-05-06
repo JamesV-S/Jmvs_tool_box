@@ -598,7 +598,7 @@ QPushButton[style_lockUnlock_ui="true"]:hover{
 QPushButton[style_tab_1_ui="true"]:pressed,
 QPushButton[style_template_ui="true"]:pressed,
 QPushButton[style_lockUnlock_ui="true"]:pressed{
-    background-color: rgba(179, 80, 80, 0.39);
+    background-color: #2e2e3d;
     border-top-style:none;
     border-left-style:none;
     border-width: 3px;
