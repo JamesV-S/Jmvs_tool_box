@@ -118,7 +118,7 @@ class CharLayoutView(QtWidgets.QWidget):
         header = self.mdl_tree_view.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.mdl_tree_view.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Expanding)
-        self.mdl_tree_view.setMinimumSize(100, 100)
+        self.mdl_tree_view.setMinimumSize(100, 150)
         self.mdl_tree_view.setHeaderHidden(True)
         self.mdl_tree_view.setAnimated(True)
         self.mdl_tree_view.setUniformRowHeights(True)
