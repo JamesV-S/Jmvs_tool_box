@@ -181,13 +181,13 @@ class CharRigging(QtWidgets.QWidget):
             mdl_name_label = QtWidgets.QLabel(mdl_name)
             mdl_name_label.setFixedSize(70, 30)
             style_treeview_ui.append(mdl_name_label)
-            # style_treeview_ui.append(mdl_checkBox)
+            style_treeview_ui.append(mdl_checkBox)
             
             mdl_iterations = QtWidgets.QSpinBox()
             mdl_iterations.setMinimum(1)
             mdl_iterations.setEnabled(False)
             mdl_iterations.setFixedSize(50, 30)
-            # style_treeview_ui.append(mdl_iterations)
+            style_treeview_ui.append(mdl_iterations)
             
             
             mdl_h_layout.addWidget(mdl_checkBox)
