@@ -42,138 +42,118 @@ class CharLayoutView(QtWidgets.QWidget):
         ui_window_name = f"Jmvs_Char_Layout_{version}"
         utils_view.delete_existing_ui(ui_object_name)
         self.setObjectName(ui_object_name)
-
         self.setParent(main_window) 
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(ui_window_name)
-        self.resize(400, 550)
-
+        self.resize(500, 200)
+    
+        # Load the stylesheet
         stylesheet_path = os.path.join(
             utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "char_style_sheet_002.css"
             )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
-            stylesheet = file.read()
-        self.setStyleSheet(stylesheet)
-
+            self.stylesheet = file.read()
+        self.setStyleSheet(self.stylesheet)
+        
+        # Initialise the config file json dict!
         self.json_dict = utils_json.get_modules_json_dict('char_config')
-
-        self.init_ui()
-
-  
-    def init_ui(self):
-        main_Vlayout = QtWidgets.QVBoxLayout(self)
-        main_Vlayout.setObjectName("main_Layout")
-
-        top_Hlayout = QtWidgets.QHBoxLayout() # db_vis & mdl_choose
-        bottom_Vlayout = QtWidgets.QVBoxLayout() # add_blueprint & updating db
-
-        main_Vlayout.addLayout(top_Hlayout)
-        main_Vlayout.addLayout(bottom_Vlayout)
         
-        # style the labels
-        style_treeview_ui = [] 
-        # style_module_ui_labels = []
-        style_update_mdl_ui = []
-        style_addRemove_ui = []
-        style_template_ui = []
-        style_lockUnlock_ui = []
-        
-        #----------------------------------------------------------------------
-        # ---- database editor ----
-        layV_module_Tree = QtWidgets.QVBoxLayout()
-        
-        self.tree_view_name_lbl = QtWidgets.QLabel("Database: `Rig Name`")
-        self.tree_view_name_lbl.setObjectName("tree_DB_NAME_lbl")
-        style_treeview_ui.append(self.tree_view_name_lbl)
+        # Create the main layout
+        self.main_Vlay = QtWidgets.QVBoxLayout(self)
+        self.main_Vlay.setObjectName("main_Layout")
 
+        top_Hlay = QtWidgets.QHBoxLayout() # db_vis & mdl_choose
+        # db_actions_Hlay = QtWidgets.QHBoxLayout() # publish_mdl + replace_comp
+        management_options_Vlay = QtWidgets.QVBoxLayout() # management_options tabs
+        mdl_actions_Vlay = QtWidgets.QVBoxLayout() # module scene action buttons!
+
+        self.main_Vlay.addLayout(top_Hlay)
+        # self.main_Vlay.addLayout(db_actions_Hlay)
+        self.main_Vlay.addLayout(management_options_Vlay)
+        self.main_Vlay.addLayout(mdl_actions_Vlay)
+        
+        # style groups
+        self.style_treeview_ui = [] 
+        self.style_module_ui_labels = []
+        self.style_update_mdl_ui = []
+        self.style_container = []
+        self.style_tab_1_ui = []
+        self.style_template_ui = []
+        self.style_lockUnlock_ui = []
+
+        # Call the ui functions, passing the neccesary layout to each
+        self.module_visualisation_ui(top_Hlay)
+        self.module_additions_ui(top_Hlay)
+        # self.update_component_data()
+        self.management_options_ui(management_options_Vlay)
+        self.module_scene_actions_ui(mdl_actions_Vlay)
+
+        self.set_style_property_funcUI()
+        
+        # ---------------------------------------------------------------------
+        self.setLayout(self.main_Vlay)
+        # ---------------------------------------------------------------------
+
+
+    def module_visualisation_ui(self, widgets_layout):
+        layV_module_visualisation = QtWidgets.QVBoxLayout()
+        
+        # ---- comboBox ----        
+        self.available_rig_comboBox = QtWidgets.QComboBox()
+        self.available_rig_comboBox.setFixedSize(215,30)
+        self.val_availableRigComboBox = self.available_rig_comboBox.currentText()
+
+        # ---- treeView ----
         self.mdl_tree_model = QtGui.QStandardItemModel()
         self.mdl_tree_model.setColumnCount(1)
 
         self.mdl_tree_view = QtWidgets.QTreeView(self)
         self.mdl_tree_view.setModel(self.mdl_tree_model)
-        self.mdl_tree_view.setObjectName("mdl_treeview")
-        style_treeview_ui.append(self.mdl_tree_view)
-
+        self.mdl_tree_view.setObjectName("mdl_treeview")    
+            # -- treeView settings --
         # set selection mode to multiSelection
         self.mdl_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
-        layV_module_Tree.addWidget(self.tree_view_name_lbl)
-        layV_module_Tree.addWidget(self.mdl_tree_view)
-        
-        # -- treeView settings --
         header = self.mdl_tree_view.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.mdl_tree_view.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Maximum)
-        self.mdl_tree_view.setMinimumSize(150, 200)
+        self.mdl_tree_view.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Expanding)
+        self.mdl_tree_view.setMinimumSize(100, 100)
         self.mdl_tree_view.setHeaderHidden(True)
         self.mdl_tree_view.setAnimated(True)
         self.mdl_tree_view.setUniformRowHeights(True)
         self.mdl_tree_view.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
-        layV_module_Tree.setSpacing(5)
-        # from selection in treeView, just uses name to select the
-        top_Hlayout.addLayout(layV_module_Tree)
+        layV_module_visualisation.setSpacing(5)
 
-        #----------------------------------------------------------------------
-        # ---- choose modules ----        
-        layV_choose_mdl_ancestor = QtWidgets.QVBoxLayout()
-        #layV_choose_mdl_ancestor.setContentsMargins(40, 0, 0, 40)
-        #layV_choose_mdl_ancestor.setSpacing()
+        self.rpl_live_component = QtWidgets.QPushButton("Replace live Component")
         
-        # -- Available RIG --
-        layV_available_rig = QtWidgets.QVBoxLayout()
-        # layV_available_rig.setContentsMargins(0, 0, 0, 0)
+        # Assign layouts
+        container_layout = QtWidgets.QVBoxLayout()
+        container_layout.addWidget(self.available_rig_comboBox)
+        container_layout.addWidget(self.mdl_tree_view)
+        container_layout.addWidget(self.rpl_live_component)
+        module_visualisation_container = self.cr_container_funcUI("Character Database", container_layout, True)
 
-        available_rig_lbl = QtWidgets.QLabel("Available RIG:")
-        style_treeview_ui.append(available_rig_lbl)
+        # layV_module_visualisation.addWidget(module_visualisation_container)
+        # widgets_layout.addWidget(lbl)
+        widgets_layout.addLayout(module_visualisation_container)
 
-        available_rig_lbl.setFixedSize(200,20)
-        self.available_rig_comboBox = QtWidgets.QComboBox()
-        self.available_rig_comboBox.setFixedSize(225,30)
-        self.val_availableRigComboBox = self.available_rig_comboBox.currentText()
-        style_treeview_ui.append(self.available_rig_comboBox)
+        # Assign custom style:
+        utils_view.assign_style_ls(self.style_treeview_ui, [self.available_rig_comboBox, self.mdl_tree_view, self.rpl_live_component])
 
-        #layV_available_rig.addWidget(available_rig_lbl)
-        layV_available_rig.addWidget(self.available_rig_comboBox)
-        layV_choose_mdl_ancestor.addLayout(layV_available_rig)
-
-        # -- Add module editor --
-        layV_add_mdl_layout = QtWidgets.QVBoxLayout()
-
-        def module_choose_ui(mdl_name, side_items):
-            mdl_h_layout = QtWidgets.QHBoxLayout()
-            
-            mdl_checkBox = QtWidgets.QCheckBox()
-            mdl_name_label = QtWidgets.QLabel(mdl_name)
-            mdl_name_label.setFixedSize(70, 30)
-            style_treeview_ui.append(mdl_name_label)
-            style_treeview_ui.append(mdl_checkBox)
-            
-            mdl_iterations = QtWidgets.QSpinBox()
-            mdl_iterations.setMinimum(1)
-            mdl_iterations.setEnabled(False)
-            mdl_iterations.setFixedSize(50, 30)
-            style_treeview_ui.append(mdl_iterations)
-            
-            
-            mdl_h_layout.addWidget(mdl_checkBox)
-            mdl_h_layout.addWidget(mdl_name_label)
-            mdl_h_layout.addWidget(mdl_iterations)
-            
-            mdl_side = None
-            if side_items != "None":
-                mdl_side = QtWidgets.QComboBox()
-                mdl_side.addItems(side_items)
-                mdl_side.setEnabled(False)
-                mdl_h_layout.addWidget(mdl_side)
-                mdl_side.setFixedSize(55, 30)
-                style_treeview_ui.append(mdl_side)
-                
-            layV_add_mdl_layout.addLayout(mdl_h_layout)
-
-            return mdl_checkBox, mdl_iterations, mdl_side
-
-        # get mdl_name and side data for each module
+    
+    def module_additions_ui(self, widgets_layout):
+        layV_module_additions = QtWidgets.QVBoxLayout()
+        #layV_module_additions.setContentsMargins(40, 0, 0, 40)
+        #layV_module_additions.setSpacing()
+            # -- Scroll area --
+        scroll_area = QtWidgets.QScrollArea(self)
+        scroll_area.setWidgetResizable(True)
+        
+            # -- Container --
+        self.module_container_widget = QtWidgets.QWidget()
+        layV_add_mdl_layout = QtWidgets.QVBoxLayout(self.module_container_widget)
+            # get mdl_name and side data for each module
         try:
             mdl_list = []
             side_list = []
@@ -197,138 +177,69 @@ class CharLayoutView(QtWidgets.QWidget):
         except KeyError as e:
             print(f"{e} is not a key in {filename}")
         
-        # Create the ui components & store it in a dict
-        ''' Signal Functions are handled here! '''
+        # Create the ui components for each json file (config module) & store it in a dict.
         self.mdl_choose_ui_dict = {}
         for mdl, sides in zip(mdl_list, side_list):
-            mdl_choose_buttons = module_choose_ui(mdl, sides)
+            mdl_choose_buttons = self.module_choose_funcUI(layV_add_mdl_layout, mdl, sides)
             self.mdl_choose_ui_dict[mdl] = mdl_choose_buttons
-        print(f"self.mdl_choose_ui_dict = {self.mdl_choose_ui_dict}")
         
-        layV_choose_mdl_ancestor.addLayout(layV_add_mdl_layout)
+        # -- Publish module additions --
+        # layH_publish_btn = QtWidgets.QHBoxLayout()
+        self.publish_btn = QtWidgets.QPushButton("Publish Module +")
 
-        top_Hlayout.addLayout(layV_choose_mdl_ancestor)
-
-        #----------------------------------------------------------------------
-        # -- Selected mdl operations --
-        # self.layGRP_mdl_operations = QtWidgets.QGroupBox("GroupBoxTitle_001", self)
-        #font = QtGui.QFont("Times New Roman",  12)
-        #font.setBold(True)
-        #self.layGRP_mdl_operations.setFont(font)
-        layV_mdl_operations_ancestor = QtWidgets.QVBoxLayout()
-        # -- Pusblish module additions --
-        layH_publish_mdl_additons = QtWidgets.QHBoxLayout()
-        # update mdl with new positions!
-        self.rpl_live_component = QtWidgets.QPushButton("Replace live Component")
-        self.publish_btn = QtWidgets.QPushButton("+ Publish Module Additions")
-        layH_publish_mdl_additons.addWidget(self.rpl_live_component)
-        layH_publish_mdl_additons.addWidget(self.publish_btn)
-        style_treeview_ui.append(self.publish_btn)
-        style_treeview_ui.append(self.rpl_live_component)
-
-        layV_mdl_operations_ancestor.addLayout(layH_publish_mdl_additons)
-
-        mdl_data_lbl = QtWidgets.QLabel("Module Data:")
-        mdl_data_lbl.setObjectName("mdl_data_lbl")
-        style_update_mdl_ui.append(mdl_data_lbl)
-
-        # -- current_mdl_operations --
-        #layV_current_MO_parent = QtWidgets.QVBoxLayout()
-        layGrid_update = QtWidgets.QGridLayout()
-
-        cmo_lbl = QtWidgets.QLabel("Current >")
-        cmo_lbl.setObjectName("update_left_lbl")
-        self.cmo_rigType_lbl = QtWidgets.QLabel("Rig Type: _ _")
-        self.cmo_mirrorMdl_lbl = QtWidgets.QLabel("Mirror: _ _")
-        self.cmo_stretch_lbl = QtWidgets.QLabel("Stretch: _ _")
-        self.cmo_twist_lbl = QtWidgets.QLabel("Twist: _ _")
+        # Assign Widgets & Layouts
+        scroll_area.setWidget(self.module_container_widget)
         
-        
-        umo_lbl = QtWidgets.QLabel("Update >")
-        umo_lbl.setObjectName("update_left_lbl")
-        umo_rigType_lbl = QtWidgets.QLabel("Rig Type:")
-        style_update_mdl_ui.append(umo_rigType_lbl)
-        self.umo_rigType_comboBox = QtWidgets.QComboBox()
-        self.umo_rigType_comboBox.addItems(["FK", "IK", "IKFK"])
-        self.umo_mirrorMdl_checkBox = QtWidgets.QCheckBox("Mirror")
-        self.umo_stretch_checkBox = QtWidgets.QCheckBox("Stretch")
-        self.umo_twist_checkBox = QtWidgets.QCheckBox("Twist")
-        
-        cmo_ls = [cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]
-        umd_ls = [umo_lbl, self.umo_rigType_comboBox, self.umo_mirrorMdl_checkBox, self.umo_stretch_checkBox, self.umo_twist_checkBox]
-        cmo_pos_ls = [[0,0], [0,1], [0,2], [0,3], [0,4]]
-        umd_pos_ls = [[1,0], [1,1], [1,2], [1,3], [1,4]]
-        for x in range(len(cmo_ls)):
-            layGrid_update.addWidget(cmo_ls[x], cmo_pos_ls[x][0], cmo_pos_ls[x][1])
-            layGrid_update.addWidget(umd_ls[x], umd_pos_ls[x][0], umd_pos_ls[x][1])
-            style_update_mdl_ui.append(cmo_ls[x])
-            style_update_mdl_ui.append(umd_ls[x])
-        
-        def layH_SPACER_func():
-            # -- Horizontal Spacer --
-            layH_Spacer = QtWidgets.QHBoxLayout()
-            # Add the spacer QWidget
-            spacerH = QtWidgets.QLabel()# QtWidgets.QWidget()
-            #spacerH.setFixedSize(40,40)
-            spacerH.setObjectName("Spacer")
-            style_update_mdl_ui.append(spacerH)
-            layH_Spacer.addWidget(spacerH)
-            layH_Spacer.setContentsMargins(0, 0, 0, 0)
-            return layH_Spacer
+        # layV_module_additions.addWidget(self.component_list_lbl)
+        layV_module_additions.addWidget(scroll_area)
+        layV_module_additions.addWidget(self.publish_btn)
+        module_additions_container = self.cr_container_funcUI("Module List", layV_module_additions, True)
 
-        layH_upd_mdl_btn = QtWidgets.QHBoxLayout()
-        SpacerGraphic_0_layH = layH_SPACER_func()
-        self.update_btn = QtWidgets.QPushButton("Update Module Data")
-        style_update_mdl_ui.append(self.update_btn)
+        widgets_layout.addLayout(module_additions_container)
 
-        SpacerGraphic_1_layH = layH_SPACER_func()
-        layH_upd_mdl_btn.addLayout(SpacerGraphic_0_layH)
-        layH_upd_mdl_btn.addWidget(self.update_btn)
-        layH_upd_mdl_btn.addLayout(SpacerGraphic_1_layH)
+        # Assign custom style:
+        utils_view.assign_style_ls(self.style_treeview_ui, [self.publish_btn])
+    
+    
+    def management_options_ui(self, widgets_layout):
+        mop_tabs = QtWidgets.QTabWidget(self)
+        mop_tabs.setStyleSheet(self.stylesheet)
         
-        layV_mdl_operations_ancestor.addWidget(mdl_data_lbl)
-        layV_mdl_operations_ancestor.addLayout(layGrid_update)
-        layV_mdl_operations_ancestor.addLayout(layH_upd_mdl_btn)
+        tab_curve = QtWidgets.QWidget()
+        layH_tab_curve_ancestor = QtWidgets.QHBoxLayout(tab_curve)
+        layV_tab_curve_001 = QtWidgets.QVBoxLayout()
+        layV_tab_curve_002 = QtWidgets.QVBoxLayout()
+        layH_curve_child = QtWidgets.QHBoxLayout()
+        layH_tab_curve_ancestor.addLayout(layV_tab_curve_001)
+        layH_tab_curve_ancestor.addLayout(layV_tab_curve_002)
+        layV_tab_curve_001.addLayout(layH_curve_child)
+                
+        # ---- curve editing tab ----
+        self.expand_curve = QtWidgets.QPushButton("Expand")
+        self.collapse_curve = QtWidgets.QPushButton("Collapse")
+        self.mirror_curve_comp = QtWidgets.QPushButton("Mirror Curve Component")
+        self.store_curve_comp = QtWidgets.QPushButton("Store Curve Component")
+        layH_curve_child.addWidget(self.expand_curve)
+        layH_curve_child.addWidget(self.collapse_curve)
+        layV_tab_curve_001.addWidget(self.mirror_curve_comp)
+        layV_tab_curve_001.addWidget(self.store_curve_comp)
+
+        temp_dis_container = self.template_display_ui()
+        l_u_container = self.lock_unlock_ui()
         
-        bottom_Vlayout.addLayout(layV_mdl_operations_ancestor)
-
-        # ---------------------------------------------------------------------
-        # Updating modules and database
-        layV_deleteAdd_mdl_ancestor = QtWidgets.QVBoxLayout()
+        layV_tab_curve_002.addLayout(temp_dis_container)
+        layV_tab_curve_002.addLayout(l_u_container)
         
-        # -- delete mdl btns --
-        layH_mdl_delete = QtWidgets.QHBoxLayout()
-        self.delete_mdl_btn = QtWidgets.QPushButton("Remove module") # selected mdl
-        self.delete_blueprint_btn = QtWidgets.QPushButton("Delete Blueprint") # entire blueprint
-        layH_mdl_delete.addWidget(self.delete_mdl_btn)
-        layH_mdl_delete.addWidget(self.delete_blueprint_btn)
+        mop_tabs.addTab(tab_curve, "curves")
         
-        # -- add mdl btns --
-        layH_mdl_add = QtWidgets.QHBoxLayout()
-        self.add_mdl_btn = QtWidgets.QPushButton("Add module") # selected mdl
-        self.add_blueprint_btn = QtWidgets.QPushButton("Create Blueprint") # add entire blueprint(deletes old and remakes it)
-        layH_mdl_add.addWidget(self.add_mdl_btn)
-        layH_mdl_add.addWidget(self.add_blueprint_btn)
+        mop_container = self.cr_container_funcUI("Management Options", mop_tabs)
+        widgets_layout.addLayout(mop_container)
 
-        layV_deleteAdd_mdl_ancestor.addLayout(layH_mdl_delete)
-        layV_deleteAdd_mdl_ancestor.addLayout(layH_mdl_add)
+        utils_view.assign_style_ls(self.style_tab_1_ui, 
+             [self.expand_curve, self.collapse_curve, self.mirror_curve_comp, self.store_curve_comp])
+    
 
-        self.add_mdl_btn.setObjectName("add_mdl_btn")
-        self.add_blueprint_btn.setObjectName("add_blueprint_btn")
-        self.delete_mdl_btn.setObjectName("remove_mdl_btn")
-        self.delete_blueprint_btn.setObjectName("delete_blueprint_btn")
-
-        bottom_Vlayout.addLayout(layV_deleteAdd_mdl_ancestor)
-
-        # ---------------------------------------------------------------------
-        # ---- component editing ----
-        layH_componentEditing_ancestor = QtWidgets.QHBoxLayout()
-        
-        # -- Template Display -- 
-        self.grp_boxTempDisp = QtWidgets.QGroupBox("Template Display", self)
-        self.grp_boxTempDisp.setObjectName("grp_boxTempDisp")
-        self.grp_boxTempDisp.setObjectName("grp_boxTempDisp")
-
+    def template_display_ui(self):
         layV_tempDisp = QtWidgets.QVBoxLayout()
         
         self.guide_template_checkBox = QtWidgets.QCheckBox("Guides")
@@ -337,8 +248,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_tempDisp.addWidget(self.guide_template_checkBox)
         layV_tempDisp.addWidget(self.controls_template_checkBox)
         layV_tempDisp.addWidget(self.ddj_template_checkBox)
-
-        # set checkBox by default
+            # set checkBox by default
         self.controls_template_checkBox.setChecked(True)
         self.ddj_template_checkBox.setChecked(True)
 
@@ -348,20 +258,22 @@ class CharLayoutView(QtWidgets.QWidget):
         self.temp_Isolate_btn = QtWidgets.QPushButton("Isolate")
         self.temp_All_btn = QtWidgets.QPushButton("Template All")
         self.temp_AllVis_btn = QtWidgets.QPushButton("All Visible")
-
         layGrid_tempDisp.addWidget(self.temp_Toggle_btn, 0, 0)
         layGrid_tempDisp.addWidget(self.temp_Isolate_btn, 0, 1)
         layGrid_tempDisp.addWidget(self.temp_All_btn, 1, 0)
         layGrid_tempDisp.addWidget(self.temp_AllVis_btn, 1, 1)
-
         layV_tempDisp.addLayout(layGrid_tempDisp)
-
-        # layV_tempDisp.addLayout(layGrid_tempDisp)
         
-        # -- Lock/Unlock --
-        self.grp_boxUL = QtWidgets.QGroupBox("Lock/Unlock", self)
-        self.grp_boxUL.setObjectName("grp_boxUL")
+        template_display_container = self.cr_container_funcUI("Template Display", layV_tempDisp, True)
 
+        utils_view.assign_style_ls(self.style_template_ui, 
+             [self.guide_template_checkBox, self.controls_template_checkBox, self.ddj_template_checkBox, 
+              self.temp_Toggle_btn, self.temp_Isolate_btn, self.temp_All_btn, self.temp_AllVis_btn])
+        
+        return template_display_container
+
+
+    def lock_unlock_ui(self):
         layV_LU = QtWidgets.QVBoxLayout()
         
         self.compnent_checkBox = QtWidgets.QCheckBox("Component")
@@ -379,27 +291,199 @@ class CharLayoutView(QtWidgets.QWidget):
 
         layGrid_LU.addWidget(self.lock_btn, 0, 0)
         layGrid_LU.addWidget(self.unlock_btn, 0, 1)
-
         layV_LU.addLayout(layGrid_LU)
         
-        self.grp_boxTempDisp.setLayout(layV_tempDisp)
-        layH_componentEditing_ancestor.addWidget(self.grp_boxTempDisp)
-        
-        self.grp_boxUL.setLayout(layV_LU)
-        layH_componentEditing_ancestor.addWidget(self.grp_boxUL)
+        lock_unlock_container = self.cr_container_funcUI("Lock/Unlock", layV_LU, True)
 
-        bottom_Vlayout.addLayout(layH_componentEditing_ancestor)
-        
+        utils_view.assign_style_ls(self.style_lockUnlock_ui, 
+             [self.compnent_checkBox, self.inputComp_checkBox, self.OutputComp, self.lock_btn, self.unlock_btn])
+
+        return lock_unlock_container
+
+
+    def module_scene_actions_ui(self, widgets_layout):
         # ---------------------------------------------------------------------
-        self.setLayout(main_Vlayout)
+        # Updating modules and database
+        # self.cr_mdl_container = QtWidgets.QWidget()
+        # layV_deleteAdd_mdl_ancestor = QtWidgets.QVBoxLayout(self.cr_mdl_container)
+        layV_module_scene_actions = QtWidgets.QVBoxLayout()
 
+        # -- delete mdl btns --
+        layH_mdl_delete = QtWidgets.QHBoxLayout()
+        self.delete_mdl_btn = QtWidgets.QPushButton("Remove module") # selected mdl
+        self.delete_blueprint_btn = QtWidgets.QPushButton("Delete Blueprint") # entire blueprint
+        layH_mdl_delete.addWidget(self.delete_mdl_btn)
+        layH_mdl_delete.addWidget(self.delete_blueprint_btn)
+        
+        # -- add mdl btns --
+        layH_mdl_add = QtWidgets.QHBoxLayout()
+        self.add_mdl_btn = QtWidgets.QPushButton("Add module") # selected mdl
+        self.add_blueprint_btn = QtWidgets.QPushButton("Create Blueprint") # add entire blueprint(deletes old and remakes it)
+        layH_mdl_add.addWidget(self.add_mdl_btn)
+        layH_mdl_add.addWidget(self.add_blueprint_btn)
+
+        layV_module_scene_actions.addLayout(layH_mdl_delete)
+        layV_module_scene_actions.addLayout(layH_mdl_add)
+
+        self.add_mdl_btn.setObjectName("add_mdl_btn")
+        self.add_blueprint_btn.setObjectName("add_blueprint_btn")
+        self.delete_mdl_btn.setObjectName("remove_mdl_btn")
+        self.delete_blueprint_btn.setObjectName("delete_blueprint_btn")
+        
+        module_scene_actions_container = self.cr_container_funcUI("Module Actions", layV_module_scene_actions, True)
+    
+        widgets_layout.addLayout(module_scene_actions_container)
+        
+        utils_view.assign_style_ls(self.style_treeview_ui, 
+             [self.add_mdl_btn, self.add_blueprint_btn, self.delete_mdl_btn, self.delete_blueprint_btn])
+             
+
+    def module_choose_funcUI(self, widgets_layout, mdl_name, side_items):
+            mdl_h_layout = QtWidgets.QHBoxLayout()
+            
+            mdl_checkBox = QtWidgets.QCheckBox()
+
+            mdl_name_label = QtWidgets.QLabel(mdl_name)
+            mdl_name_label.setFixedSize(70, 30)
+            
+            mdl_iterations = QtWidgets.QSpinBox()
+            mdl_iterations.setMinimum(1)
+            mdl_iterations.setEnabled(False)
+            mdl_iterations.setFixedSize(50, 30)
+            
+            mdl_h_layout.addWidget(mdl_checkBox)
+            mdl_h_layout.addWidget(mdl_name_label)
+            mdl_h_layout.addWidget(mdl_iterations)
+            
+            mdl_side = None
+            if side_items != "None":
+                mdl_side = QtWidgets.QComboBox()
+                mdl_side.addItems(side_items)
+                mdl_side.setEnabled(False)
+                mdl_h_layout.addWidget(mdl_side)
+                mdl_side.setFixedSize(45, 30)
+                
+            widgets_layout.addLayout(mdl_h_layout)
+            
+            for widgets in [mdl_name_label, mdl_checkBox, mdl_iterations, mdl_side]:
+                widgets.setProperty("treeComponents_UI_01", True)
+                
+            return mdl_checkBox, mdl_iterations, mdl_side
+    
+
+    def set_style_property_funcUI(self):            
+        for container in self.style_container:
+            container.setProperty("style_container_qwidget", True)
+            container.style().unpolish(container)
+            container.style().polish(container)
+            container.update()
         # add module label style property here
-        for tree_widget in style_treeview_ui:
-            tree_widget.setProperty("treeComponents_UI_01", True)
+        for widget in self.style_treeview_ui:
+            widget.setProperty("treeComponents_UI_01", True)
+            
+        for mdl_widget in self.style_module_ui_labels:
+            mdl_widget.setProperty("treeComponents_UI_01", True)
 
-        for widget in style_update_mdl_ui:
+        for widget in self.style_update_mdl_ui:
             widget.setProperty("update_UI", True)
 
-        for wid in [cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]:
-            wid.setEnabled(False)
-            wid.setProperty("Current_disabled", True)
+        for widget in self.style_template_ui:
+            widget.setProperty("style_template_ui", True)
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
+            widget.update()
+
+            #style_lockUnlock_ui
+        for widget in self.style_lockUnlock_ui:
+            widget.setProperty("style_lockUnlock_ui", True)
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
+            widget.update()
+
+        for widget in self.style_tab_1_ui:
+            widget.setProperty("style_tab_1_ui", True)
+            widget.style().unpolish(widget)
+            widget.style().polish(widget)
+            widget.update()
+
+
+    def cr_container_funcUI(self, label_name, widget_to_add, layout=None):
+        container = QtWidgets.QWidget()
+        container_layV = QtWidgets.QVBoxLayout(container)
+        # container_layV.addWidget(container_lbl)
+        if layout == True:
+            container_layV.addLayout(widget_to_add)
+        else:
+            container_layV.addWidget(widget_to_add)
+        
+        # cr label & add to Vlayout to sit above the container 
+        container_lbl = QtWidgets.QLabel(label_name)
+        parent_container_layV = QtWidgets.QVBoxLayout()
+        parent_container_layV.addWidget(container_lbl)
+        parent_container_layV.addWidget(container)
+        
+        # Set the style to the container
+        for widget in [container, container_lbl]:
+             self.style_container.append(widget)
+             widget.setStyleSheet(self.stylesheet)
+
+        return parent_container_layV
+    
+
+    def layH_SPACER_funcUI(self):
+            # -- Horizontal Spacer --
+            layH_Spacer = QtWidgets.QHBoxLayout()
+            # Add the spacer QWidget
+            spacerH = QtWidgets.QLabel()# QtWidgets.QWidget()
+            #spacerH.setFixedSize(40,40)
+            spacerH.setObjectName("Spacer")
+            self.style_update_mdl_ui.append(spacerH)
+            layH_Spacer.addWidget(spacerH)
+            layH_Spacer.setContentsMargins(0, 0, 0, 0)
+            return layH_Spacer
+    
+    
+    def update_component_data(self, widgets_layout):
+        # -- current_mdl_operations --
+        #layV_current_MO_parent = QtWidgets.QVBoxLayout()
+        layGrid_update = QtWidgets.QGridLayout()
+
+        self.cmo_lbl = QtWidgets.QLabel("Current >")
+        self.cmo_lbl.setObjectName("update_left_lbl")
+        self.cmo_rigType_lbl = QtWidgets.QLabel("Rig Type: _ _")
+        self.cmo_mirrorMdl_lbl = QtWidgets.QLabel("Mirror: _ _")
+        self.cmo_stretch_lbl = QtWidgets.QLabel("Stretch: _ _")
+        self.cmo_twist_lbl = QtWidgets.QLabel("Twist: _ _")
+                
+        umo_lbl = QtWidgets.QLabel("Update >")
+        umo_lbl.setObjectName("update_left_lbl")
+        umo_rigType_lbl = QtWidgets.QLabel("Rig Type:")
+        self.style_update_mdl_ui.append(umo_rigType_lbl)
+        self.umo_rigType_comboBox = QtWidgets.QComboBox()
+        self.umo_rigType_comboBox.addItems(["FK", "IK", "IKFK"])
+        self.umo_mirrorMdl_checkBox = QtWidgets.QCheckBox("Mirror")
+        self.umo_stretch_checkBox = QtWidgets.QCheckBox("Stretch")
+        self.umo_twist_checkBox = QtWidgets.QCheckBox("Twist")
+        
+        cmo_ls = [self.cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]
+        umd_ls = [umo_lbl, self.umo_rigType_comboBox, self.umo_mirrorMdl_checkBox, self.umo_stretch_checkBox, self.umo_twist_checkBox]
+        cmo_pos_ls = [[0,0], [0,1], [0,2], [0,3], [0,4]]
+        umd_pos_ls = [[1,0], [1,1], [1,2], [1,3], [1,4]]
+        for x in range(len(cmo_ls)):
+            layGrid_update.addWidget(cmo_ls[x], cmo_pos_ls[x][0], cmo_pos_ls[x][1])
+            layGrid_update.addWidget(umd_ls[x], umd_pos_ls[x][0], umd_pos_ls[x][1])
+            self.style_update_mdl_ui.append(cmo_ls[x])
+            self.style_update_mdl_ui.append(umd_ls[x])
+
+        layH_upd_mdl_btn = QtWidgets.QHBoxLayout()
+        SpacerGraphic_0_layH = self.layH_SPACER_funcUI()
+        self.update_btn = QtWidgets.QPushButton("Update Module Data")
+        self.style_update_mdl_ui.append(self.update_btn)
+
+        SpacerGraphic_1_layH = self.layH_SPACER_funcUI()
+        layH_upd_mdl_btn.addLayout(SpacerGraphic_0_layH)
+        layH_upd_mdl_btn.addWidget(self.update_btn)
+        layH_upd_mdl_btn.addLayout(SpacerGraphic_1_layH)
+        
+        # db_actions_Hlay.addLayout(layV_database_actions)
+    

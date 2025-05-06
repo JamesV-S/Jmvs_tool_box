@@ -121,7 +121,7 @@ def cr_database(mdl_name, side, user_setting_dict): # ,
 
 
 u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
-cr_database("bipedLeg", "_R", u_s_dict)
+# cr_database("bipedLeg", "_R", u_s_dict)
 
 def return_unique_id():
     pass 

@@ -56,3 +56,8 @@ def set_button_size(btn_list, fixed_val_01, fixed_val_02):
         buttons.setMinimumSize(fixed_val_01, fixed_val_02)
         buttons.setIconSize(QtCore.QSize(fixed_val_01, fixed_val_02))  # Explicitly set icon size to button size
         buttons.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
+
+def assign_style_ls(style, ls):
+    for widgets in ls:
+            style.append(widgets)

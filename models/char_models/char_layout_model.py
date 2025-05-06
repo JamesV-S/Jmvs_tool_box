@@ -22,7 +22,7 @@ importlib.reload(utils_os)
 importlib.reload(utils_json)
 
 class CharLayoutModel:
-    def __init__(self):
+    def __init__(self):        
         self.db_rig_location = "db_rig_storage"
         self.rig_db_storage_dir = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", "db_rig_storage"
@@ -32,6 +32,7 @@ class CharLayoutModel:
     # ---- TreeView functions ----
     def load_rig_group(self, val_availableRigComboBox):
         # rig_syntax "jmvs_char*_rig" - DB_jmvs_cyborg_rig
+        print(f"GEORGE | val_availableRigComboBox == {val_availableRigComboBox}")
         rig_name = val_availableRigComboBox.replace("DB_", "")
         if not cmds.objExists(rig_name):
             try:
@@ -72,6 +73,7 @@ class CharLayoutModel:
         print(f"split_names: module = {module}, unique_id = {unique_id}, side = {side}")
         
         # gather dict from database!
+        print(f"MODEL | val_availableRigComboBox = {val_availableRigComboBox}")
         rig_folder_name = val_availableRigComboBox
         print(f"rig_folder_name = {rig_folder_name}")
         rig_db_directory = utils_os.create_directory(
@@ -86,22 +88,21 @@ class CharLayoutModel:
 
 
     # ---- TreeView functions ----
-    def record_component_change(self, component_selection):
+    def record_component_change(self, component_selection, val_availableRigComboBox):
         split_names = component_selection.split('_')[1:] #ignore 'mdl' prefix
         module = split_names[0]
         unique_id = split_names[1]
         try: # handle if it has no side
             side = split_names[2]
         except Exception:
-            side = "" #use M to represent middle (but doesn't show up in scene)
-            # Or whatever it needs to be in the database! 
-        print(f"split_names: module = {module}, unique_id = {unique_id}, side = {side}")
+            side = "" 
+        if "root" in module:
+            find_guide = f"xfm_guide_{module}_*"
+        else:
+            find_guide = f"xfm_guide_{module}_*_{unique_id}_{side}"
 
-        print(f"xfm_guide_{module}_*_{unique_id}_{side}")
-        #xfm_guide_bipedArm_*       _0_L
-        #xfm_guide_bipedArm_clavicle_0_L
         try:
-            cmds.select(f"xfm_guide_{module}_*_{unique_id}_{side}")
+            cmds.select(find_guide)
             guides = cmds.ls(sl=1, type="transform")
             # gather the positions of the selected
             new_component_pos_dict = utils.get_selection_trans_dict(guides, side)
@@ -111,7 +112,8 @@ class CharLayoutModel:
             ''' get this dict `A` from the correct row in the right db '''
             ''' compare `B` to `A`, find the same name 'clavicle', ect, and put the new values in it.
             '''
-            rig_folder_name = self.val_availableRigComboBox
+            print(f"MODEL | val_availableRigComboBox = {val_availableRigComboBox}")
+            rig_folder_name = val_availableRigComboBox
             print(f"rig_folder_name = {rig_folder_name}")
             rig_db_directory = utils_os.create_directory(
                 "Jmvs_tool_box", "databases", "char_databases", 
@@ -210,8 +212,7 @@ class CharLayoutModel:
 
     # ---- json data functions ----  
     def cr_mdl_json_database(self, val_availableRigComboBox, mdl_name, checkBox, iterations, side): # handles a single module at a time
-            print(f"OIIIIIIIIIIIIIII self.json_data  == {self.json_dict}, `mdl_name` = {mdl_name}")
-                        
+            print(f"OIIIIIIIIIIIIIII self.json_data  == {self.json_dict}, `mdl_name` = {mdl_name}")     
             placement_dict = {}
             user_settings_dict = {}
             controls_dict = {}
@@ -220,52 +221,7 @@ class CharLayoutModel:
                     placement_dict =  values['placement']
                     user_settings_dict =  values['user_settings']
                     controls_dict =  values['controls']
-            '''
-            {'bipedArm.json': 
-                {
-                'mdl_name': 'bipedArm', 
-                'names': ['clavicle', 'shoulder', 'elbow', 'wrist'], 
-                'placement': {
-                            'component_pos': {'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
-                                            'shoulder': [25.234529495239258, 225.57975769042972, -12.279715538024915], 
-                                            'elbow': [49.96195602416994, 192.91743469238278, -8.43144416809082], 
-                                            'wrist': [72.36534118652347, 164.23757934570304, 15.064828872680739]}, 
-                            'system_rot_xyz': {'clavicle': [-7.698626118758961, 34.531672095102785, -13.412947865931349], 
-                                            'shoulder': [7.042431639335459, -5.366417614476926, -52.87199475566795], 
-                                            'elbow': [3.4123575630188263, -32.847391136978814, -52.004681579832734], 
-                                            'wrist': [3.4123575630188263, -32.847391136978814, -52.004681579832734]}, 
-                            'system_rot_yzx': {'clavicle': [-101.01687892466634, -54.72478122395497, 0.0], 
-                                            'shoulder': [38.44191942754821, -81.34821938773749, 179.00497225409262], 
-                                            'elbow': [84.72265733457102, -56.99499092973047, 134.2807120402011], 
-                                            'wrist': [84.72265733457102, -56.99499092973047, 134.2807120402011]}
-                            }, 
-                'constant': {
-                            'space_swap': 
-                                        [['world', 'COG', 'shoulder', 'custom'], ['world', 'wrist'], ['world', 'clavicle'], ['world', 'spine']], 
-                            'ik_settings': 
-                                        {'start_joint': 'shoulder', 'end_joint': 'wrist', 'pv_joint': 'elbow', 'top_joint': 'clavicle'}
-                            }, 
-                'user_settings': {
-                                'mirror_rig': False, 'stretch': False, 
-                                'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 
-                                'size': 1, 'side': ['L', 'R']
-                                }, 
-                'controls': {
-                            'FK_ctrls': 
-                                    {'fk_clavicle': 'circle', 'fk_shoulder': 'circle', 'fk_elbow': 'circle', 'fk_wrist': 'circle'}, 
-                            'IK_ctrls': 
-                                    {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
-                            }
-                },
-            'bipedLeg.json': {'mdl_name': 'bipedLeg', 'names': ['hip', 'knee', 'ankle', 'ball', 'toe'], 'placement': {'component_pos': {'hip': [16.036325454711914, 147.7965545654297, 0.051486290991306305], 'knee': [20.133201599121104, 82.05242919921866, -0.4505884051322898], 'ankle': [24.197132110595703, 12.625909805297809, -3.493209123611452], 'ball': [24.084232330322262, -1.2434497875801753e-14, 17.988098144531257], 'toe': [24.084232330322276, -1.1379786002407858e-14, 29.18881988525391]}, 'system_rot_xyz': {'hip': [-0.206856730062026, 0.4367008200374581, -86.43419733389054], 'knee': [-0.20685673006202596, 0.43670082003745814, -86.43419733389054], 'ankle': [0.5942622188475634, -59.55357811140123, -90.0], 'ball': [-89.85408725528224, -89.99999999999997, 0.0], 'toe': [-89.85408725528225, -89.99999999999997, 0.0]}, 'system_rot_yzx': {'hip': [-0.43670082003745525, 0.0, -176.43419733389047], 'knee': [-2.5051019515754724, 0.0035324430433216728, -176.434], 'ankle': [59.55357811140115, 0.0, 180.0], 'ball': [89.99999999999993, 1.8636062586700292e-16, -180.0], 'toe': [89.99999999999996, -1.2424041724466862e-17, -180.0]}}, 'constant': {'space_swap': [['world', 'COG', 'hip', 'custom'], ['world', 'ankle'], ['world', 'spine_0']], 'ik_settings': {'start_joint': 'hip', 'end_joint': 'ankle', 'pv_joint': 'knee'}}, 'user_settings': {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1, 'side': ['L', 'R']}, 'controls': {'FK_ctrls': {'fk_hip': 'circle', 'fk_knee': 'circle', 'fk_ankle': 'circle', 'fk_ball': 'circle', 'fk_toe': 'circle'}, 'IK_ctrls': {'ik_hip': 'cube', 'ik_knee': 'pv', 'ik_ankle': 'cube', 'ik_ball': 'None', 'ik_toe': 'None'}}}, 
-            }
-            'finger.json': {'mdl_name': 'Finger', 'names': ['bipedPhalProximal', 'bipedPhalMiddle', 'bipedPhalDistal', 'bipedPhalDEnd'], 'placement': {'component_pos': {'bipedPhalProximal': [80.61004637463462, 151.7215423583185, 24.099996037467385], 'bipedPhalMiddle': [84.45979996338392, 145.8773481500665, 28.318845156262494], 'bipedPhalDistal': [87.13240797932576, 141.82014294780598, 31.24768974670393], 'bipedPhalDEnd': [89.18559525612636, 138.70326159035977, 33.49772656951928]}, 'system_rot_xyz': {'bipedPhalProximal': [5.910977623767589, -31.083474503917564, -56.62585344811804], 'bipedPhalMiddle': [5.910977623767589, -31.083474503917564, -56.62585344811804], 'bipedPhalDistal': [5.910977623767589, -31.08347450391755, -56.62585344811804], 'bipedPhalDEnd': [5.910977623767589, -31.08347450391755, -56.62585344811804]}, 'system_rot_yzx': {'bipedPhalProximal': [50.95891725101831, -56.98582204849474, 153.9365525662274], 'bipedPhalMiddle': [50.95891725101831, -56.98582204849474, 153.9365525662274], 'bipedPhalDistal': [50.95891725101831, -56.98582204849474, 153.9365525662274], 'bipedPhalDEnd': [50.95891725101831, -56.98582204849474, 153.9365525662274]}}, 'constant': {'space_swap': [['world', 'COG', 'wrist', 'custom'], ['world', 'bipedPhalDEnd'], ['world', 'bipedPhalProximal'], ['world', 'wirst']], 'ik_settings': {'start_joint': 'bipedPhalProximal', 'end_joint': 'bipedPhalDistal', 'pv_joint': 'bipedPhalMiddle', 'world_orientation': False, 'last_joint': 'bipedPhalDEnd'}}, 'user_settings': {'mirror_rig': False, 'stretch': True, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 0.15, 'side': ['L', 'R']}, 'controls': {'FK_ctrls': {'fk_bipedPhalProximal': 'circle', 'fk_bipedPhalMiddle': 'circle', 'fk_bipedPhalDistal': 'circle', 'fk_bipedPhalDEnd': 'circle'}, 'IK_ctrls': {'ik_bipedPhalProximal': 'cube', 'ik_bipedPhalMiddle': 'pv', 'ik_bipedPhalDistal': 'cube', 'ik_bipedPhalDEnd': 'cube'}}}, 
-            
-            'root.json': {'mdl_name': 'root', 'names': ['root', 'COG'], 'placement': {'component_pos': {'root': [0, 0, 0], 'COG': [0, 150, 0]}, 'system_rot_xyz': {'root': [0, 0, 0], 'COG': [0, 0, 0]}, 'system_rot_yzx': {'root': [0, 0, 0], 'COG': [0, 0, 0]}}, 'constant': {'space_swap': [], 'ik_settings': {}}, 'user_settings': {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK'], 'default': 'FK'}, 'size': 1, 'side': ['None']}, 'controls': {'FK_ctrls': {'fk_root': 'circle', 'fk_COG': 'circle'}, 'IK_ctrls': {}}}, 
-            
-            'spine.json': {'mdl_name': 'spine', 'names': ['spine_1', 'spine_2', 'spine_3', 'spine_4', 'spine_5'], 'placement': {'component_pos': {'spine_1': [0.0, 150.0, 0.0], 'spine_2': [-1.0302985026792348e-14, 165.3182830810547, 2.138536453247061], 'spine_3': [-2.3043808310802754e-14, 185.50926208496094, 2.8292100429534632], 'spine_4': [-3.3364796818449844e-14, 204.27308654785156, -0.3802546262741595], 'spine_5': [-5.1020985278054485e-14, 237.46397399902344, -8.25034904479989]}, 'system_rot_xyz': {'spine_1': [0.0, -7.947513469078512, 90.00000000000001], 'spine_2': [-1.9890093469260345e-16, -1.959155005957633, 90.00000000000001], 'spine_3': [0.0, 9.706246313394262, 90.00000000000001], 'spine_4': [-8.171859705486283e-16, 13.339396285991443, 90.0], 'spine_5': [-7.814945266275812e-14, -9.271752801444176, 89.99999999999991]}, 'system_rot_yzx': {'spine_1': [7.667038985618099, 0.0, 0.0], 'spine_2': [1.880673240761548, 0.0, 0.0], 'spine_3': [-9.496334372767544, 0.0, 0.0], 'spine_4': [-13.212290179161894, 0.0, 0.0], 'spine_5': [9.331941466846782, 0.0, 0.0]}}, 'constant': {'space_swap': [], 'ik_settings': {'start_joint': 'spine_1', 'end_joint': 'spine_5', 'pv_joint': None, 'world_orientation': True}}, 'user_settings': {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1, 'side': ['None']}, 'controls': {'FK_ctrls': {'fk_spine_1': 'circle', 'fk_spine_2': 'circle', 'fk_spine_3': 'circle', 'fk_spine_4': 'circle', 'fk_spine_5': 'circle'}, 'IK_ctrls': {'ik_spine_1': 'cube', 'ik_spine_2': None, 'ik_spine_3': 'cube', 'ik_spine_4': None, 'ik_spine_5': 'cube'}}}}
-            '''
-            
+                  
             print(f"placement_dict >> {placement_dict}")
             print(f"user_settings_dict >> {user_settings_dict}")
             print(f"controls_dict >> {controls_dict}")
@@ -306,6 +262,10 @@ class CharLayoutModel:
         working_comp_side =  parts[3]
         grpXfm = "offset_xfm_guide"
         xfm = "xfm_guide"
+
+        xfm_root = f"{xfm}_root_root_{working_comp_unique_id}_M"
+        xfm_cog = f"{xfm}_root_COG_{working_comp_unique_id}_M"
+
         if "bipedLeg" in component:
             print("bipedLeg unlocked configuration")
             if cmds.objExists("xfm_grp_spine_component_*_M"):
@@ -345,12 +305,12 @@ class CharLayoutModel:
                 # root >ParentCon_Y_> ankle
                 # offset_xfm_guide_root
                 utils.constrain_2_items(
-                f"{xfm}_root",
+                xfm_root,
                 f"{grpXfm}_bipedLeg_ankle_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", ["Y"])
                 # root >PointtConAll> foot
                 utils.constrain_2_items(
-                f"{xfm}_root",
+                xfm_root,
                 f"{grpXfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
                 "point", "all")
         elif "bipedArm" in component:
@@ -374,27 +334,27 @@ class CharLayoutModel:
                 if cmds.objExists("xfm_grp_root_component_*_M"):
                     # root >ParentCon_Y_> ankle
                     utils.constrain_2_items(
-                    f"{xfm}_root",
+                    xfm_root,
                     f"{grpXfm}_bipedArm_elbow_{working_comp_unique_id}_{working_comp_side}", 
                     "point", "all")
                     # root >PointtConAll> foot
                     utils.constrain_2_items(
-                    f"{xfm}_root",
+                    xfm_root,
                     f"{grpXfm}_bipedArm_wrist_{working_comp_unique_id}_{working_comp_side}", 
                     "point", "all")
         elif "root" in component:
             print("root unlocked configuration")
             # root >PointtConAll> COG
             utils.constrain_2_items(
-                f"{xfm}_root",
-                f"{grpXfm}_COG", 
+                f"{xfm}_root_root_{working_comp_unique_id}_{working_comp_side}",
+                f"{grpXfm}_root_COG_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
         elif "spine" in component:
             print("spine unlocked configuration")
             if cmds.objExists("xfm_grp_root_component_*_M"):
                 # cog >ParentConAll> spine1
                 utils.constrain_2_items(
-                f"{xfm}_COG",
+                xfm_cog,
                 f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
             # spine0 > ParentConAll> spine1/2/3/4

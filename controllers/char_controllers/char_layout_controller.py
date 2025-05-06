@@ -19,7 +19,8 @@ import importlib
 import os.path
 
 from utils import (
-    utils
+    utils,
+    utils_json
 )
 
 from systems.sys_char_rig import (
@@ -34,6 +35,7 @@ from views.char_views import char_layout_view
 
 # importlib.reload(utils_os)
 importlib.reload(utils)
+importlib.reload(utils_json)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
@@ -44,18 +46,26 @@ class CharLayoutController:
     def __init__(self): # class
         self.model = char_layout_model.CharLayoutModel()
         self.view = char_layout_view.CharLayoutView()
-
-        # self.json_dict = self.model.json_dict
+        
+        self.json_dict = utils_json.get_modules_json_dict('char_config')
         self.user_module_data = {}
 
         self.db_rig_location = "db_rig_storage"
         name_of_rig_fld = self.model.get_available_DB_rig_folders(self.db_rig_location)
         self.populate_available_rig(name_of_rig_fld)
-
         self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
-        print(f"AAAAAAAAAAAAAAAAA = {self.val_availableRigComboBox}")
 
         # Connect signals and slots
+        self.setup_connections()
+        
+        print(f"self.view.mdl_tree_model == {self.view.mdl_tree_model}")
+        self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
+        
+        tree_name = self.val_availableRigComboBox.replace("DB_", "")
+        # self.view.tree_view_name_lbl.setText(f"Database: `{tree_name}`")
+
+    
+    def setup_connections(self):
         # -- visualise database --
         self.view.rpl_live_component.clicked.connect(self.sigFunc_rpl_live_component)
 
@@ -73,6 +83,7 @@ class CharLayoutController:
             mdl_side.currentIndexChanged.connect(lambda _, name=mdl: self.sigFunc_mdl_SideCombobox(name))
         
         self.view.publish_btn.clicked.connect(self.sigfunc_publish_btn)
+        
         # -- add blueprints --
         self.view.add_mdl_btn.clicked.connect(self.sigfunc_add_module)
         self.view.add_blueprint_btn.clicked.connect(self.sigfunc_add_blueprint)
@@ -86,39 +97,41 @@ class CharLayoutController:
         self.view.compnent_checkBox.stateChanged.connect(self.sigFunc_compnent_checkBox)
         self.view.lock_btn.clicked.connect(self.sigFunc_lock_btn)
         self.view.unlock_btn.clicked.connect(self.sigFunc_unlock_btn)
-        
-        print(f"self.view.mdl_tree_model == {self.view.mdl_tree_model}")
-        self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
-    
+
+
+    def testing(self):
+        print("Publish button clicked")
+
 
     def sigFunc_rpl_live_component(self):
         # print selection in ui:
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
+        print(f"CONTROLLER | val_availableRigComboBox = {self.val_availableRigComboBox}")
         for component in component_selection:
-            self.model.record_component_change(component)
+            self.model.record_component_change(component, self.val_availableRigComboBox)
 
     
     # ------------ siFunc Choose modules functions ------------
     def sigFunc_availableRigComboBox(self):
         print("run available rig drop down")
-        # self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
-        tree_name = self.val_availableRigComboBox.replace("DB_", "")
-        self.view.tree_view_name_lbl.setText(f"Database: `{tree_name}`")
+        self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
+        # tree_name = self.val_availableRigComboBox.replace("DB_", "")
+        # self.view.tree_view_name_lbl.setText(f"Database: `{tree_name}`")
         self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
         print(f"available rig chosen: `{self.val_availableRigComboBox}`")
 
 
     def sigFunc_mdl_checkBox(self, mdl_name):
         # define the 3 widget functions appropriatly, taking the `mdl_name` arg from lambda!
-        mdl_checkBox = self.mdl_choose_ui_dict[mdl_name][0]
+        mdl_checkBox = self.view.mdl_choose_ui_dict[mdl_name][0]
         self.val_mdl_checkBox = mdl_checkBox.isChecked()
 
         # Change how the component 'side' is chosen!
             # Read the config `user_settings` `side` attribute!
-        print(f"j :self.json_dict: `{self.json_dict['root.json']}`")
+        print(f"j :self.json_dict: `{self.json_dict}`")
         config_dict = self.json_dict[f'{mdl_name}.json']
         config_user_settings = config_dict["user_settings"]
-        config_side = config_user_settings["side"]
+        config_side = config_user_settings["side"][0]
  
         self.user_module_data[mdl_name] = {
             "mdl_checkBox": self.val_mdl_checkBox,
@@ -127,16 +140,16 @@ class CharLayoutController:
         }
 
         if self.val_mdl_checkBox: # Enable other widgets where neccesary
-            self.mdl_choose_ui_dict[mdl_name][1].setEnabled(True)
+            self.view.mdl_choose_ui_dict[mdl_name][1].setEnabled(True)
             # if mdl_name == "spine" or mdl_name == "root":
             #     pass
             if config_side == "M":
                 pass
             else:
-                self.mdl_choose_ui_dict[mdl_name][2].setEnabled(True)
+                self.view.mdl_choose_ui_dict[mdl_name][2].setEnabled(True)
         else:
-            self.mdl_choose_ui_dict[mdl_name][1].setEnabled(False)             
-            self.mdl_choose_ui_dict[mdl_name][2].setEnabled(False)
+            self.view.mdl_choose_ui_dict[mdl_name][1].setEnabled(False)             
+            self.view.mdl_choose_ui_dict[mdl_name][2].setEnabled(False)
         print(f"MDL::{mdl_name} &  self.val_mdl_checkBox::{self.val_mdl_checkBox}")
     
 
@@ -172,8 +185,8 @@ class CharLayoutController:
         for mdl, signals in self.user_module_data.items():
             #print(f"MDL::{mdl} & signals::{signals}")
             print(f"MDL::{mdl} & checkbox::{signals['mdl_checkBox']}, iteration::{signals['mdl_iteration']}, side::{signals['mdl_side']}")
-            self.model.cr_mdl_json_database(mdl, self.view.val_availableRigComboBox, signals['mdl_checkBox'], signals['mdl_iteration'], signals['mdl_side'])
-            self.model.visualise_active_db(self.view.val_availableRigComboBox, self.view.mdl_tree_model)
+            self.model.cr_mdl_json_database(self.val_availableRigComboBox, mdl, signals['mdl_checkBox'], signals['mdl_iteration'], signals['mdl_side'])
+            self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
         
     
     # ---- add blueprint ----
@@ -188,7 +201,7 @@ class CharLayoutController:
                     exists = 1
                 else:
                     exists = 0
-                    mdl_component_dict = self.model.retrieve_component_dict_from_nameSel(self.view.val_availableRigComboBox, selection)
+                    mdl_component_dict = self.model.retrieve_component_dict_from_nameSel(self.val_availableRigComboBox, selection)
                     print(f"RETURNED DICT = {mdl_component_dict}")
                     cr_guides.CreateXfmGuides(mdl_component_dict)
             
@@ -209,7 +222,7 @@ class CharLayoutController:
 
 
     def sigfunc_add_module(self):
-        self.model.load_rig_group(self.view.val_availableRigComboBox)
+        self.model.load_rig_group(self.val_availableRigComboBox)
         print(f"What is mdl_choose_ui_dict? == {self.view.mdl_choose_ui_dict}") # output = {}
         # select the component(red) in the 
         # this dict comes from gathering data from active databases in active rig folder!
@@ -238,7 +251,7 @@ class CharLayoutController:
         
         
     def sigfunc_add_blueprint(self):
-        self.model.load_rig_group(self.view.val_availableRigComboBox)
+        self.model.load_rig_group(self.val_availableRigComboBox)
         # connect signals for module editor buttons
         for mdl, (checkBox, iterations, side) in self.view.mdl_choose_ui_dict.items():
             if checkBox.isChecked(): # checkbox is the master 

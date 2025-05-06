@@ -1,0 +1,43 @@
+
+/*------------------------------ QENTIREWIDGET ------------------------------*/
+
+QWidget {
+    /*rgba(65, 25, 25, 0.5)/rgb(24, 24, 28)/ rgb(19, 16, 43) / 948196 */
+    background-color:rgb(21, 18, 46);
+}
+
+QWidget[container="true"] {
+    border: 1px solid white
+}
+
+
+
+
+/*------------------------------ QSCROLLBAR ------------------------------*/
+
+/* QScrollArea {
+
+} */
+
+QScrollBar:vertical {
+    width: 10px;
+}
+
+QScrollBar:horizontal {
+    height: 10px;
+}
+
+/*------------------------------ style_treeView ------------------------------*/
+/* Base Styles */
+QPushButton[module_ui_labels="true"],
+QLabel[module_ui_labels="true"],
+QSpinBox[module_ui_labels="true"],
+QComboBox[module_ui_labels="true"],
+QTreeView[module_ui_labels="True"],
+QCheckBox[module_ui_labels="true"] {
+    background-color: #464661;
+    color: #fefefe; 
+    border: 1px solid #2d334f; 
+    padding: 5px;
+    font-size: 12px;
+}
