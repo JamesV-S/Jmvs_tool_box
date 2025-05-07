@@ -2,6 +2,7 @@
 import importlib
 import os.path
 import maya.cmds as cmds
+# import pymel.core as pm
 import json
 
 try:
@@ -92,10 +93,7 @@ class CharLayoutModel:
         split_names = component_selection.split('_')[1:] #ignore 'mdl' prefix
         module = split_names[0]
         unique_id = split_names[1]
-        try: # handle if it has no side
-            side = split_names[2]
-        except Exception:
-            side = "" 
+        side = split_names[2]
         if "root" in module:
             find_guide = f"xfm_guide_{module}_*"
         else:
@@ -193,14 +191,11 @@ class CharLayoutModel:
             try:
                 for db_name, rows in db_data_dict.items():
                     db_base_name = db_name.replace("DB_", "").replace(".db", "")
-                    db_item = QtGui.QStandardItem(f"{db_base_name}") # Orange
+                    db_item = QtGui.QStandardItem(f"{db_base_name}")
                     db_item.setData(True, QtCore.Qt.UserRole)
 
                     for unique_id, side in rows:
-                        if "root" in db_base_name:
-                            item_name = f"mdl_{db_base_name}_{unique_id}"
-                        else:
-                            item_name = f"mdl_{db_base_name}_{unique_id}_{side}"
+                        item_name = f"mdl_{db_base_name}_{unique_id}_{side}"
                         mdl_item = QtGui.QStandardItem(item_name)
                         mdl_item.setData(False, QtCore.Qt.UserRole)
                         db_item.appendRow(mdl_item)
@@ -263,7 +258,7 @@ class CharLayoutModel:
         grpXfm = "offset_xfm_guide"
         xfm = "xfm_guide"
 
-        xfm_root = f"{xfm}_root_root_{working_comp_unique_id}_M"
+        xfm_root = f"{xfm}_root_ROOT_{working_comp_unique_id}_M"
         xfm_cog = f"{xfm}_root_COG_{working_comp_unique_id}_M"
 
         if "bipedLeg" in component:
@@ -346,7 +341,7 @@ class CharLayoutModel:
             print("root unlocked configuration")
             # root >PointtConAll> COG
             utils.constrain_2_items(
-                f"{xfm}_root_root_{working_comp_unique_id}_{working_comp_side}",
+                f"{xfm}_root_ROOT_{working_comp_unique_id}_{working_comp_side}",
                 f"{grpXfm}_root_COG_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
         elif "spine" in component:
@@ -374,4 +369,63 @@ class CharLayoutModel:
                 f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
                 f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}4_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
-            
+
+    
+    # ---- Control data recording ----
+    def store_component_control_data(self, component_selection, val_availableRigComboBox):
+        split_names = component_selection.split('_')[1:]
+        module = split_names[0]
+        unique_id = split_names[1]
+        side = split_names[2]
+
+        ''' Might not need to do this here!
+        # need the controls linked to the component selection
+            #  func to return list of controls. Arg = component_selection
+                # Method: get dict from the database from 'curve_info' column (check if its empty or nah)
+                # focus on the keys only, and create the ctrl names and return a list '''
+        
+        # need to store the data of the correct controls (selct them from the keys in the curv_info dict gotten from db column)
+        # SO get curve data for each control
+        # then put this data that's returned back into the curve_info culimn, looking like this: 
+            # { }"fk_clavicle": {"degree": #, "Periodic": #, "cvs": #, "knot_vector": #, "int_B": #},
+            # "fk_shoulder": {"degree": #, "Periodic": #, "cvs": #, "knot_vector": #, "int_B": #},
+            # ... }
+        # Curve_info is checked on control creation!
+        # "cr_guides.py" needs to read curve_info column from database, and apply the data if there are values in the keys to each control!
+
+
+    def record_ctrl_data(self, control):
+        degree = cmds.getAttr(f"{control}.degree")# control.degree()
+        if isinstance(degree, list):
+            degree = degree[0]
+        form = cmds.getAttr(f"{control}.form")
+        if isinstance(form, list):
+            form = form[0]
+        periodic = True if form == 3 else False
+        cvs = cmds.getAttr(f"{control}.controlPoints[*]")
+        cvs = [(cv[0], cv[1], cv[2]) for cv in cvs]
+        print(f"degree: {degree}, form:{form}, periodic:{periodic}, cvs:{cvs}")
+        knot_vector = utils.knot_vector(periodic, cvs, degree)
+        scale = cmds.xform(control, q=1, s=1, worldSpace=1) 
+        
+        data = {"crv_name":control, "degree": degree, "periodic": periodic, 
+            "points": cvs, "knot": knot_vector, "scale": scale
+            }
+        
+        print(f"data = {data}")
+
+        return data
+
+
+    def rebuild_ctrl(self, control, data):
+        print(f"Name = {control}, data = {data}")
+        if data["crv_name"] == control:
+            cmds.setAttr(f"{control}.degree", data["degree"])
+            if data["periodic"]:
+                cmds.closeCurve(control, preserveShape=True)
+            for i, cv in enumerate(data["points"]):
+                cmds.setAttr(f"{control}.controlPoints[{i}]", cv[0], cv[1], cv[2])
+            cmds.rebuildCurve(control, degree=data["degree"], keepRange=0, keepControlPoints=True)
+            cmds.xform(control, s=data["scale"], worldSpace=1) 
+        else:
+            print("the provided curve doesn't match the crv_name in the given data")

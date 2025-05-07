@@ -1,17 +1,17 @@
 {
     "mdl_name": "root",
-    "names": ["root", "COG"],
+    "names": ["ROOT", "COG"],
     "placement": {
         "component_pos": {
-            "root": [0, 0, 0],
+            "ROOT": [0, 0, 0],
             "COG": [0, 150, 0]
         },
         "system_rot_xyz": {
-            "root": [0, 0, 0],
+            "ROOT": [0, 0, 0],
             "COG": [0, 0, 0]
         },
         "system_rot_yzx": {
-            "root": [0, 0, 0],
+            "ROOT": [0, 0, 0],
             "COG": [0, 0, 0]
         }
     },
@@ -31,7 +31,7 @@
     },
     "controls": {
         "FK_ctrls": {
-            "root": "root",
+            "ROOT": "root",
             "COG": "cog"
         },
         "IK_ctrls": {}

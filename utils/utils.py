@@ -25,7 +25,8 @@ def replace_ctrl_list(curve_list):
     cmds.parent(shapes[:1][0], shape_grp[1:], s=1, r=1)
     cmds.delete( shape_grp[0], shapes[1:][0] )
     cmds.select(cl=1)
-#[remain, delete] 
+#[remain, delete]
+
 
 def replace_control(new_ctrl, replace_ctrl, colour, scale=None):
             imp_dir = os.path.join(
@@ -38,6 +39,70 @@ def replace_control(new_ctrl, replace_ctrl, colour, scale=None):
             replace_ctrl_list([imp, replace_ctrl])
             cmds.setAttr(f"{replace_ctrl}.overrideEnabled", 1)
             cmds.setAttr(f"{replace_ctrl}.overrideColor", colour)
+
+
+# Open Uniform Knot vector function
+def get_open_uniform_kv(n, d): # n = num of cv & d = degree
+    '''
+    # Examples: # Maximum value of 'd' is 1 less than 'n'
+        core.get_open_uniform_kv(4,1)
+        core.get_open_uniform_kv(4,2) 
+        core.get_open_uniform_kv(4,3)
+
+    # Attributes:
+        n (int): num of control vertices
+        d (int): degree of outputs
+    '''
+    # contatonate list's together by edding them
+    # formula = [d+1 Zeroes] + [fraction] + [d+1 Ones]
+    return [0] * (d + 1) + [(i - d) / (n - d) for i in range(d + 1, n)] + [1] * (d + 1)
+    
+
+def get_periodic_uniform_kv(n, d): # Assume this is ALWAYS closed curve!
+    '''
+    # Get periodic uniform knot vector. Append 'd' values to the start and end for closed curve!
+
+    # Examples:
+        core.get_periodic_uniform_kv(4, 2)
+
+    # Attributes:
+        n (int): num of control vertices
+        d (int): degree of outputs
+    '''
+    # define step value
+    i = 1.0 / (n + d)
+    # define values at start. Must go backwards to determine this. 
+    return [-i * a for a in range(d, 0, -1)] + [i * a for a in range(n + d + 1)] + [i * a + 1 for a in range(1, d + 1)]
+
+
+def knot_vector(kv_type, cvs, d):
+    '''
+    # Example: 
+        core.knot_vector(False, ['a', 'b', 'c', 'd'], 2)
+        core.knot_vector(True, ['a', 'b', 'c', 'd'], 1)
+
+    # Attributes:
+        kv_type (bool): True == 'periodic' | False == 'open'
+        cvs (list): cvs, usually the joints
+        d (int): degree of outputs
+    '''
+    # copy of cvs
+    cvs_copy = cvs[:]
+    print(kv_type, cvs, d)
+
+    if kv_type == False:
+        print("OPEN:", len(cvs), d)
+        # kv = get_open_uniform_kv(len(cvs), d)
+        kv = ""
+    elif kv_type == True:
+        kv = get_periodic_uniform_kv(len(cvs), d)
+        # insert values into start & end for closed kv
+        for i in range(d):
+            # inserts last items to start of list
+            cvs_copy.insert(0, cvs[len(cvs)-i-1])
+            # append first items to end of the list
+            cvs_copy.append(cvs[i])
+    return kv, cvs_copy
 
 
 #--------------------------------- HIERARCHY ----------------------------------

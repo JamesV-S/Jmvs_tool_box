@@ -45,7 +45,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.setParent(main_window) 
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(ui_window_name)
-        self.resize(500, 200)
+        self.resize(510, 200)
     
         # Load the stylesheet
         stylesheet_path = os.path.join(
@@ -102,7 +102,7 @@ class CharLayoutView(QtWidgets.QWidget):
         
         # ---- comboBox ----        
         self.available_rig_comboBox = QtWidgets.QComboBox()
-        self.available_rig_comboBox.setFixedSize(215,30)
+        self.available_rig_comboBox.setMinimumSize(215, 30) # setFixedSize(215,30)
         self.val_availableRigComboBox = self.available_rig_comboBox.currentText()
 
         # ---- treeView ----
@@ -117,7 +117,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.mdl_tree_view.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
         header = self.mdl_tree_view.header()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.mdl_tree_view.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Expanding)
+        self.mdl_tree_view.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.mdl_tree_view.setMinimumSize(100, 150)
         self.mdl_tree_view.setHeaderHidden(True)
         self.mdl_tree_view.setAnimated(True)
@@ -215,14 +215,14 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_tab_curve_001.addLayout(layH_curve_child)
                 
         # ---- curve editing tab ----
-        self.expand_curve = QtWidgets.QPushButton("Expand")
-        self.collapse_curve = QtWidgets.QPushButton("Collapse")
-        self.mirror_curve_comp = QtWidgets.QPushButton("Mirror Curve Component")
-        self.store_curve_comp = QtWidgets.QPushButton("Store Curve Component")
-        layH_curve_child.addWidget(self.expand_curve)
-        layH_curve_child.addWidget(self.collapse_curve)
-        layV_tab_curve_001.addWidget(self.mirror_curve_comp)
-        layV_tab_curve_001.addWidget(self.store_curve_comp)
+        self.expand_curve_btn = QtWidgets.QPushButton("Expand")
+        self.collapse_curve_btn = QtWidgets.QPushButton("Collapse")
+        self.mirror_curve_comp_btn = QtWidgets.QPushButton("Mirror Curve Component")
+        self.store_curve_comp_btn = QtWidgets.QPushButton("Store Curve Component")
+        layH_curve_child.addWidget(self.expand_curve_btn)
+        layH_curve_child.addWidget(self.collapse_curve_btn)
+        layV_tab_curve_001.addWidget(self.mirror_curve_comp_btn)
+        layV_tab_curve_001.addWidget(self.store_curve_comp_btn)
 
         temp_dis_container = self.template_display_ui()
         l_u_container = self.lock_unlock_ui()
@@ -236,7 +236,7 @@ class CharLayoutView(QtWidgets.QWidget):
         widgets_layout.addLayout(mop_container)
 
         utils_view.assign_style_ls(self.style_tab_1_ui, 
-             [self.expand_curve, self.collapse_curve, self.mirror_curve_comp, self.store_curve_comp])
+             [self.expand_curve_btn, self.collapse_curve_btn, self.mirror_curve_comp_btn, self.store_curve_comp_btn])
     
 
     def template_display_ui(self):

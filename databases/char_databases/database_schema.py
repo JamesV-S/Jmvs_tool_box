@@ -37,6 +37,7 @@ from databases import database_manager
 importlib.reload(database_manager)
 
 
+
 def add_table(conn): 
     sql_cr_table_state = [
        """CREATE TABLE IF NOT EXISTS modules (

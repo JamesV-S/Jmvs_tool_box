@@ -31,8 +31,13 @@ print(f"target_dir : {target_dir}, project_root: {project_root}")
 sys.path.append(os.path.abspath(target_dir))
 '''
 
+from utils import (
+    utils_db
+)
+
 from databases import database_manager
 importlib.reload(database_manager)
+importlib.reload(utils_db)
 
 # Temporary, this is already gathered automarically from the JSON
 # u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
@@ -54,8 +59,10 @@ class CreateDatabase():
                 self.query_uniqueID_tracker(conn) # BEFORE processing new data.
                 self.unique_id = self.get_unique_id_sequence(mdl_name, side)
                 
+                # cr curve_info dictionary!
+                curve_info_dict = utils_db.cr_curve_info_dictionary(controls_dict['FK_ctrls'], controls_dict['IK_ctrls'], self.unique_id, side)
+                
                 # update the tables!
-                # table modules
                 self.update_db(conn, "modules", (self.unique_id, mdl_name, side))
                 # table user_settings
                 rig_options = ', '.join(user_settings_dict['rig_type']['options'])
@@ -82,6 +89,7 @@ class CreateDatabase():
                     self.unique_id, 
                     controls_dict['FK_ctrls'], 
                     controls_dict['IK_ctrls'], 
+                    curve_info_dict,
                     side
                     ))
                 ''''''
@@ -121,6 +129,7 @@ class CreateDatabase():
             unique_id INT,
             FK_ctrls TEXT,
             IK_ctrls TEXT,
+            curve_info TEXT,
             side text
         );"""
         ]
@@ -146,9 +155,9 @@ class CreateDatabase():
             sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, rig_options, rig_default, size, side) VALUES (?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'controls':
-            print(f"888888888888888888 H H controls VALUES: {values}")
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
-            sql = f""" INSERT INTO {table} (unique_id, FK_ctrls, IK_ctrls, side) VALUES (?, ?, ?, ?)"""
+            print(f"888888888888888888 H H controls VALUES: {values[3]}")
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
+            sql = f""" INSERT INTO {table} (unique_id, FK_ctrls, IK_ctrls, curve_info, side) VALUES (?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         conn.commit()
 
@@ -393,3 +402,5 @@ class updateSpecificPlacementPOSData():
             values = (json.dumps(values[0]), values[1], values[2])
             cursor.execute(sql, values)
         conn.commit()
+
+

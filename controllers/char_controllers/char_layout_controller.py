@@ -52,7 +52,7 @@ class CharLayoutController:
 
         self.db_rig_location = "db_rig_storage"
         name_of_rig_fld = self.model.get_available_DB_rig_folders(self.db_rig_location)
-        self.populate_available_rig(name_of_rig_fld)
+        self.populate_available_rig_comboBox(name_of_rig_fld)
         self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
 
         # Connect signals and slots
@@ -67,13 +67,9 @@ class CharLayoutController:
     
     def setup_connections(self):
         # -- visualise database --
-        self.view.rpl_live_component.clicked.connect(self.sigFunc_rpl_live_component)
-
-        # ------------ choose modules ------------
-        print(f"HI 'self.view.available_rig_comboBox'")
         self.view.available_rig_comboBox.currentIndexChanged.connect(self.sigFunc_availableRigComboBox)
-        print(f"HEREEE > {self.view.available_rig_comboBox.currentIndexChanged.connect(self.sigFunc_availableRigComboBox)}")
-
+        self.view.rpl_live_component.clicked.connect(self.sigFunc_rpl_live_component)
+        # ------------ choose modules ------------
         for mdl in self.view.mdl_choose_ui_dict:
             # unpack the elements of the dict containing the widgets dynamically built.  
             mdl_checkBox, mdl_iteration, mdl_side = self.view.mdl_choose_ui_dict[mdl]
@@ -88,30 +84,20 @@ class CharLayoutController:
         self.view.add_mdl_btn.clicked.connect(self.sigfunc_add_module)
         self.view.add_blueprint_btn.clicked.connect(self.sigfunc_add_blueprint)
 
-        # ------------ component editing ------------
-        # ---- Template Display ----
+        # ------------ Management options ------------
+            # ---- Tab1 - Curves ----
+                # ---- Template Display ----
+        self.view.store_curve_comp_btn.clicked.connect(self.sigFunc_store_curve_comp_btn)
+                # ---- Template Display ----
         self.view.guide_template_checkBox.stateChanged.connect(self.sigFunc_guide_template_checkBox)
         self.view.controls_template_checkBox.stateChanged.connect(self.sigFunc_controls_template_checkBox)
         self.view.ddj_template_checkBox.stateChanged.connect(self.sigFunc_ddj_template_checkBox)
-        # ---- Lock/Unlock ----
+                # ---- Lock/Unlock ----
         self.view.compnent_checkBox.stateChanged.connect(self.sigFunc_compnent_checkBox)
         self.view.lock_btn.clicked.connect(self.sigFunc_lock_btn)
         self.view.unlock_btn.clicked.connect(self.sigFunc_unlock_btn)
-
-
-    def testing(self):
-        print("Publish button clicked")
-
-
-    def sigFunc_rpl_live_component(self):
-        # print selection in ui:
-        component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
-        print(f"CONTROLLER | val_availableRigComboBox = {self.val_availableRigComboBox}")
-        for component in component_selection:
-            self.model.record_component_change(component, self.val_availableRigComboBox)
-
     
-    # ------------ siFunc Choose modules functions ------------
+    # ------------ module visulisation siFunc ------------
     def sigFunc_availableRigComboBox(self):
         print("run available rig drop down")
         self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
@@ -121,6 +107,14 @@ class CharLayoutController:
         print(f"available rig chosen: `{self.val_availableRigComboBox}`")
 
 
+    def sigFunc_rpl_live_component(self):
+        # print selection in ui:
+        component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
+        for component in component_selection:
+            self.model.record_component_change(component, self.val_availableRigComboBox)
+
+    # ------------ module additions siFunc ------------
+    
     def sigFunc_mdl_checkBox(self, mdl_name):
         # define the 3 widget functions appropriatly, taking the `mdl_name` arg from lambda!
         mdl_checkBox = self.view.mdl_choose_ui_dict[mdl_name][0]
@@ -265,14 +259,37 @@ class CharLayoutController:
 
         self.model.func_unlocked_all()
 
+    # ------------ management options siFunc ------------
+    # ---- Tab 1 - curves ----
+    def sigFunc_store_curve_comp_btn(self):
+        """ 
+        # for the selected component, record and replace the data for each curve. 
+        # NEED:
+        # add to database schema to include data that makes up a nurbs curve.
+        # in ctrl creation, once ctrl is imported, record its data & add to database with a dictionary [A].
+            # in ctrl creation, the ctrl is imported based on config data, 
+                # if database has no data on it, means the ctrl in dictionary hasen't got any data
+                    # it needs its current data stored.
+                # else database has got data on it,
+                    # must update the ctrl with that data.
+        # with this function, any changes to scale knots, ect will replace the [A] with new data. 
+        # So when the module is reloaded/created again the changes to the controls remain!
+        # """
+        try:
+            component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
+            for component in component_selection:
+                self.model.store_component_control_data(component, self.val_availableRigComboBox)
+        except TypeError as e:
+            cmds.error(f" Select a component in 'Character Database!' ")
 
-    # ---- Template Components! ----
+    # -- Template Components! --
     def sigFunc_guide_template_checkBox(self):
         try:
             self.val_guide_template_checkBox = self.view.guide_template_checkBox.isChecked()
             utils.select_set_displayType("xfm_guide_*", self.val_guide_template_checkBox, False)
         except ValueError:
                     pass
+
 
     def sigFunc_controls_template_checkBox(self):
         try:
@@ -281,6 +298,7 @@ class CharLayoutController:
         except ValueError:
             pass
 
+
     def sigFunc_ddj_template_checkBox(self):
         try:
             self.val_ddj_template_checkBox = self.view.ddj_template_checkBox.isChecked()
@@ -288,8 +306,7 @@ class CharLayoutController:
         except ValueError:
             pass
     
-
-    # --- Unlocked component configuration ---
+    # -- Unlocked component configuration --
     def sigFunc_compnent_checkBox(self):
         self.val_compnent_checkBox = self.view.compnent_checkBox.isChecked()
 
@@ -398,8 +415,8 @@ class CharLayoutController:
                 self.model.constrain_guides_from_comp(unlock_rdy_component) 
         else: print(f"component checkbox is not checked")
 
-
-    def populate_available_rig(self, name_of_rig_fld):
+    # ------------ Neccessary functions ------------
+    def populate_available_rig_comboBox(self, name_of_rig_fld):
         # `name_of_rig_fld` will populate the ComboBox
         # IF no(None) ^folder^ in `self.db_rig_location`, print(f"No rig name folder found in {self.db_rig_location}, please create one.")
         print(f"`self.name_of_rig_fld` :: {name_of_rig_fld}")
