@@ -105,6 +105,44 @@ def knot_vector(kv_type, cvs, d):
     return kv, cvs_copy
 
 
+
+def record_ctrl_data(control):
+    degree = cmds.getAttr(f"{control}.degree")
+
+    if isinstance(degree, list):
+        degree = degree[0]
+    form = cmds.getAttr(f"{control}.form")
+    if isinstance(form, list):
+        form = form[0]
+    periodic = True if form == 3 else False
+    
+    cvs = cmds.getAttr(f"{control}.controlPoints[*]")
+    cvs = [(cv[0], cv[1], cv[2]) for cv in cvs]
+    
+    kv = knot_vector(periodic, cvs, degree)
+    scale = cmds.xform(control, q=1, s=1, worldSpace=1) 
+    colour = cmds.getAttr(f"{control}.overrideColor")
+    data = {"degree": degree, "periodic": periodic, 
+        "points": cvs, "knot": kv, "scale": scale, "colour":colour
+        }
+
+    return data
+
+
+def rebuild_ctrl(control, curve_info_dict):
+    try:
+        cmds.setAttr(f"{control}.degree", curve_info_dict["degree"])
+        if curve_info_dict["periodic"]:
+            cmds.closeCurve(control, preserveShape=True)
+        for i, cv in enumerate(curve_info_dict["points"]):
+            cmds.setAttr(f"{control}.controlPoints[{i}]", cv[0], cv[1], cv[2])
+        cmds.rebuildCurve(control, degree=curve_info_dict["degree"], keepRange=0, keepControlPoints=True)
+        cmds.xform(control, s=curve_info_dict["scale"], worldSpace=1) 
+        cmds.setAttr(f"{control}.overrideColor", curve_info_dict["colour"])
+    except Exception as e:
+        print(f"Issue with rebuilding control `{control}` with `{curve_info_dict}`")
+
+
 #--------------------------------- HIERARCHY ----------------------------------
 def make_group_and_parent(grp_name, parent):
     cmds.group(n=grp_name, em=1)

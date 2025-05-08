@@ -11,13 +11,17 @@ from utils import (
 from systems.sys_char_rig import (
     cr_ctrl
 )
+from databases.char_databases import (
+    database_schema_002
+)
 
 importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
+importlib.reload(database_schema_002)
 
 class CreateXfmGuides():
-    def __init__(self, database_componment_dict):
+    def __init__(self, database_componment_dict, val_availableRigComboBox):
         # 1) write an example dictionary to pass to this to make it work, then 
         # 2) write funtions in `char_ui` to gather necessary data from database, 
         # based off the selection in the ui!
@@ -45,6 +49,7 @@ class CreateXfmGuides():
         self.side = database_componment_dict['side']
         self.component_pos_dict = database_componment_dict['component_pos']
         self.component_controls_dict = database_componment_dict['controls']
+        self.val_availableRigComboBox = val_availableRigComboBox
 
         print(f"Working on `self.module_name`: {self.module_name}, `self.unique_id`: {self.unique_id}, `self.side`: {self.side}, `self.component_pos_dict`:{self.component_pos_dict}")
         self.guides = self.build_guide_components(self.module_name, self.unique_id, self.side, self.component_pos_dict, self.component_controls_dict)
@@ -107,12 +112,19 @@ class CreateXfmGuides():
         ctrl_name_list = []
         ctrl_grp_list = []
         fk_ctrl_list = []
+
+        # get the dict: 
+        rig_folder_name = self.val_availableRigComboBox
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            "db_rig_storage", rig_folder_name
+            )
+        curve_info_data = database_schema_002.CurveInfoData(rig_db_directory, module_name, unique_id, side)
+        curve_info_dict = curve_info_data.return_curve_info_dict()
+
         for ctrl_type, ctrl_dict in component_ctrls.items():
             for ctrl_name, ctrl_shape in ctrl_dict.items():
-                if module_name == "root":
-                    whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}"
-                else:
-                    whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}" # ctrl_fk_clavicle_0_L
+                whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}" # ctrl_fk_clavicle_0_L
                 ctrl_name_list.append(whole_ctrl_name)
                 import_ctrl = cr_ctrl.CreateControl(type=ctrl_shape, name=whole_ctrl_name)
                 ctrl = import_ctrl.retrun_ctrl()
@@ -130,6 +142,20 @@ class CreateXfmGuides():
                         cmds.xform(ctrl, t=guide_pos, worldSpace=1)
                         break
                 
+                # colour
+                for x in range(len(ctrl_name_list)):
+                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
+                    if side == "L":
+                        cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
+                    elif side == "R":
+                        cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
+                    elif side == "M":
+                        cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
+
+                # Rebuild the control:
+                for key, value_dict in curve_info_dict.items():
+                    utils.rebuild_ctrl(key, value_dict)
+
                 # group all ctrls!
                 cmds.group(ctrl, n=f"gd_{whole_ctrl_name}")
                 ctrl_grp_list.append(f"gd_{whole_ctrl_name}")
@@ -155,20 +181,6 @@ class CreateXfmGuides():
             # match end ctrl's grp to parent ctrl orientation.
             cmds.matchTransform(f"gd_{fk_ctrl_list[-1]}", fk_ctrl_list[-2], pos=0, rot=1, scl=0)
             cmds.orientConstraint(fk_ctrl_list[-2], f"gd_{fk_ctrl_list[-1]}")
-
-        # colour
-        for x in range(len(ctrl_name_list)):
-            # if not module_name == "root":
-            if side == "L":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
-            elif side == "R":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
-            elif side == "M":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
-
         
         #----------------------------------------------------------------------
         # group ctrls

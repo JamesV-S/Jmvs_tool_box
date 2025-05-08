@@ -197,7 +197,7 @@ class CharLayoutController:
                     exists = 0
                     mdl_component_dict = self.model.retrieve_component_dict_from_nameSel(self.val_availableRigComboBox, selection)
                     print(f"RETURNED DICT = {mdl_component_dict}")
-                    cr_guides.CreateXfmGuides(mdl_component_dict)
+                    cr_guides.CreateXfmGuides(mdl_component_dict, self.val_availableRigComboBox)
             
             if not exists:
                 # parent the blueprints to hierarchy rig group properly
@@ -240,7 +240,6 @@ class CharLayoutController:
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
         # print(f"YAAAAAH component_selection = {component_selection[0]}")
         self.func_createXfmGuides(component_selection)
-
         self.model.func_unlocked_all()
         
         

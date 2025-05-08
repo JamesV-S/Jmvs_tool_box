@@ -390,23 +390,21 @@ class updateSpecificPlacementPOSData():
         conn.commit()
 
 
-class get_component_control_list():
+class CurveInfoData():
     def __init__(self, directory, module_name, unique_id, side):
         # To Find correct row use: `db_id`| `unique_id`| `side`
         db_path = utils_db.get_database_name_path(directory, module_name)
         self.module_name = module_name
         self.unique_id = unique_id
         self.side = side
-        
         try:
             with sqlite3.connect(db_path) as conn:
-                self.comp_control_ls = self.control_list_from_row(conn)
-                print(f"THE LIST :: self.comp_control_ls = {self.comp_control_ls}")
+                self.comp_control_ls, self.curve_info_dict = self.curve_info_from_row(conn)
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
     
 
-    def control_list_from_row(self, conn):
+    def curve_info_from_row(self, conn):
         cursor = conn.cursor()
         controls_sql = f"SELECT curve_info FROM controls WHERE unique_id = ? AND side = ? "
         try:
@@ -417,7 +415,8 @@ class get_component_control_list():
                 for row in rows:
                     ctrls_sjon =row[0]
                     controls_list = list(json.loads(ctrls_sjon).keys())
-            return controls_list
+                curv_info_dict = json.loads(ctrls_sjon)
+            return controls_list, curv_info_dict
 
         except sqlite3.Error as e:
             print(f"controls sqlite3.Error: {e}")
@@ -425,16 +424,21 @@ class get_component_control_list():
         
     
     def return_comp_ctrl_ls(self):
+        print(f" comp control list = {self.comp_control_ls}")
         return self.comp_control_ls
     
 
-class update_curve_info():
+    def return_curve_info_dict(self):
+        print(f" curve_info dict = {self.curve_info_dict}")
+        return self.curve_info_dict
+    
+
+class UpdateCurveInfo():
     def __init__(self, directory, module_name, unique_id, side, comp_ctrl_data):
         db_path = utils_db.get_database_name_path(directory, module_name)
         self.module_name = module_name
         self.unique_id = unique_id
         self.side = side
-
         try:
             with sqlite3.connect(db_path) as conn:
                 self.update_db(conn, "controls", (comp_ctrl_data, unique_id, side))
