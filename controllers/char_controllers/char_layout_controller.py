@@ -64,7 +64,7 @@ class CharLayoutController:
         tree_name = self.val_availableRigComboBox.replace("DB_", "")
         # self.view.tree_view_name_lbl.setText(f"Database: `{tree_name}`")
 
-    
+
     def setup_connections(self):
         # -- visualise database --
         self.view.available_rig_comboBox.currentIndexChanged.connect(self.sigFunc_availableRigComboBox)
@@ -96,7 +96,17 @@ class CharLayoutController:
         self.view.compnent_checkBox.stateChanged.connect(self.sigFunc_compnent_checkBox)
         self.view.lock_btn.clicked.connect(self.sigFunc_lock_btn)
         self.view.unlock_btn.clicked.connect(self.sigFunc_unlock_btn)
-    
+
+
+    def update_progress(self, value, operation_name=""):
+        # Update the progress bar with the given value and operation name
+        self.view.progress_bar.setValue(value)
+        if 'DONE:' in operation_name:
+            self.view.progress_bar.setFormat(f"{operation_name}")
+        else:    
+            self.view.progress_bar.setFormat(f"{operation_name} : {value}%")
+
+
     # ------------ module visulisation siFunc ------------
     def sigFunc_availableRigComboBox(self):
         print("run available rig drop down")
@@ -110,11 +120,17 @@ class CharLayoutController:
     def sigFunc_rpl_live_component(self):
         # print selection in ui:
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
-        for component in component_selection:
+        # for component in component_selection:
+        total_index = len(component_selection)
+        for stp, component in enumerate(component_selection):
             self.model.record_component_change(component, self.val_availableRigComboBox)
+            
+            progress_value = utils.progress_value(stp, total_index)
+            self.update_progress(progress_value, f"Replacing {component} positional data")
+        
+        self.update_progress(0, f"DONE: Replaced {component_selection} pos data")
 
     # ------------ module additions siFunc ------------
-    
     def sigFunc_mdl_checkBox(self, mdl_name):
         # define the 3 widget functions appropriatly, taking the `mdl_name` arg from lambda!
         mdl_checkBox = self.view.mdl_choose_ui_dict[mdl_name][0]
@@ -175,22 +191,24 @@ class CharLayoutController:
     
     # -- Publish --
     def sigfunc_publish_btn(self): # cr a new dictionary to store the state of each module!
-        print(f"sigfunc_publish_btn clicked")
-        for mdl, signals in self.user_module_data.items():
+        total_stp = len(self.user_module_data)
+        for stp, (mdl, signals) in enumerate(self.user_module_data.items()):
             #print(f"MDL::{mdl} & signals::{signals}")
             print(f"MDL::{mdl} & checkbox::{signals['mdl_checkBox']}, iteration::{signals['mdl_iteration']}, side::{signals['mdl_side']}")
             self.model.cr_mdl_json_database(self.val_availableRigComboBox, mdl, signals['mdl_checkBox'], signals['mdl_iteration'], signals['mdl_side'])
             self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
-        
+            
+            progress_value = utils.progress_value()
     
     # ---- add blueprint ----
     def func_createXfmGuides(self, component_selection):
-            for selection in component_selection:
+            total_stp = len(component_selection) 
+            for stp, selection in enumerate(component_selection):
                 parts = selection.split('_')
-                if "root" in selection:
-                    obj_name = f"*_{parts[1]}"
-                else:
-                    obj_name = f"*_{parts[1]}_*_{parts[2]}_{parts[3]}"
+                # if "root" in selection:
+                #     obj_name = f"*_{parts[1]}"
+                # else:
+                obj_name = f"*_{parts[1]}_*_{parts[2]}_{parts[3]}"
                 if cmds.objExists(obj_name):
                     exists = 1
                 else:
@@ -198,6 +216,9 @@ class CharLayoutController:
                     mdl_component_dict = self.model.retrieve_component_dict_from_nameSel(self.val_availableRigComboBox, selection)
                     print(f"RETURNED DICT = {mdl_component_dict}")
                     cr_guides.CreateXfmGuides(mdl_component_dict, self.val_availableRigComboBox)
+
+                progress_value = utils.progress_value(stp, total_stp)
+                self.update_progress(progress_value, f"create module {selection}")
             
             if not exists:
                 # parent the blueprints to hierarchy rig group properly
@@ -217,30 +238,13 @@ class CharLayoutController:
 
     def sigfunc_add_module(self):
         self.model.load_rig_group(self.val_availableRigComboBox)
-        print(f"What is mdl_choose_ui_dict? == {self.view.mdl_choose_ui_dict}") # output = {}
-        # select the component(red) in the 
         # this dict comes from gathering data from active databases in active rig folder!
-        '''example_component_dict = {
-            "module_name":"bipedArm", 
-            "unique_id":0,
-            "side":"L", 
-            "component_pos":{
-                'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
-                'shoulder': [28.9705319404602, 230.650634765625, 2.762230157852166], 
-                'elbow': [53.69795846939088, 197.98831176757807, 6.61050152778626], 
-                'wrist': [76.10134363174441, 169.30845642089832, 30.106774568557817]
-                },
-            "controls":{
-                        'FK_ctrls': 
-                                {'fk_clavicle': 'circle', 'fk_shoulder': 'circle', 'fk_elbow': 'circle', 'fk_wrist': 'circle'}, 
-                        'IK_ctrls': 
-                                {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
-                        }
-            }'''
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
         # print(f"YAAAAAH component_selection = {component_selection[0]}")
         self.func_createXfmGuides(component_selection)
         self.model.func_unlocked_all()
+        self.update_progress(0, f"DONE: Added {component_selection} to scene")
+
         
         
     def sigfunc_add_blueprint(self):
@@ -255,8 +259,9 @@ class CharLayoutController:
         
         component_selection = utils_QTree.get_all_component_name_in_TreeView(self.view.mdl_tree_model)
         self.func_createXfmGuides(component_selection)
-
         self.model.func_unlocked_all()
+        self.update_progress(0, f"DONE: '{self.val_availableRigComboBox}' Blueprint")
+
 
     # ------------ management options siFunc ------------
     # ---- Tab 1 - curves ----
@@ -276,10 +281,14 @@ class CharLayoutController:
         # """
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
         print(f"component_selection = {component_selection}")
-        # try:
-            
-        for component in component_selection:
+        total_index = len(component_selection)
+        # try: 
+        for stp, component in enumerate(component_selection):
             self.model.store_component_control_data(component, self.val_availableRigComboBox)
+
+            progress_value = utils.progress_value(stp, total_index)
+            self.update_progress(progress_value, f"Storing curve data: [{component}]")
+        self.update_progress(0, f"DONE: Stored Curve Data")
         # except TypeError as e:
         #     cmds.error(f" Select a component in 'Character Database!' {e}")
 

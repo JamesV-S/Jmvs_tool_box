@@ -68,11 +68,13 @@ class CharLayoutView(QtWidgets.QWidget):
         # db_actions_Hlay = QtWidgets.QHBoxLayout() # publish_mdl + replace_comp
         management_options_Vlay = QtWidgets.QVBoxLayout() # management_options tabs
         mdl_actions_Vlay = QtWidgets.QVBoxLayout() # module scene action buttons!
+        debugging_Vlay = QtWidgets.QVBoxLayout()
 
         self.main_Vlay.addLayout(top_Hlay)
         # self.main_Vlay.addLayout(db_actions_Hlay)
         self.main_Vlay.addLayout(management_options_Vlay)
         self.main_Vlay.addLayout(mdl_actions_Vlay)
+        self.main_Vlay.addLayout(debugging_Vlay)
         
         # style groups
         self.style_treeview_ui = [] 
@@ -89,6 +91,7 @@ class CharLayoutView(QtWidgets.QWidget):
         # self.update_component_data()
         self.management_options_ui(management_options_Vlay)
         self.module_scene_actions_ui(mdl_actions_Vlay)
+        self.debugging_ui(debugging_Vlay)
 
         self.set_style_property_funcUI()
         
@@ -302,10 +305,6 @@ class CharLayoutView(QtWidgets.QWidget):
 
 
     def module_scene_actions_ui(self, widgets_layout):
-        # ---------------------------------------------------------------------
-        # Updating modules and database
-        # self.cr_mdl_container = QtWidgets.QWidget()
-        # layV_deleteAdd_mdl_ancestor = QtWidgets.QVBoxLayout(self.cr_mdl_container)
         layV_module_scene_actions = QtWidgets.QVBoxLayout()
 
         # -- delete mdl btns --
@@ -337,6 +336,20 @@ class CharLayoutView(QtWidgets.QWidget):
         utils_view.assign_style_ls(self.style_treeview_ui, 
              [self.add_mdl_btn, self.add_blueprint_btn, self.delete_mdl_btn, self.delete_blueprint_btn])
              
+
+    def debugging_ui(self, widgets_layout):
+        layH_debugging = QtWidgets.QHBoxLayout()
+
+        # Progress Bar
+        self.progress_bar = QtWidgets.QProgressBar(self)
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setTextVisible(True)
+        self.progress_bar.setFormat("Operation Progress")
+        layH_debugging.addWidget(self.progress_bar)
+
+        widgets_layout.addLayout(layH_debugging)
+
 
     def module_choose_funcUI(self, widgets_layout, mdl_name, side_items):
             mdl_h_layout = QtWidgets.QHBoxLayout()
@@ -487,3 +500,4 @@ class CharLayoutView(QtWidgets.QWidget):
         
         # db_actions_Hlay.addLayout(layV_database_actions)
     
+

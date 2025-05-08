@@ -16,6 +16,11 @@ from utils import (
 importlib.reload(utils_os)
 importlib.reload(OPM)
 
+
+def progress_value(step, total_steps):
+    pv = (step + 1) * 100 / total_steps
+    return pv
+
 #---------------------------------- CTRL --------------------------------------
 def replace_ctrl_list(curve_list):
     # curve_list = cmds.ls(sl=1)
