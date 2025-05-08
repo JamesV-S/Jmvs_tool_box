@@ -8,23 +8,25 @@ from utils import (
 
 importlib.reload(utils)
 
-'''
-For each control, have its own dictionary, that either has 
+# '''
+# For each control, have its own dictionary, that either has 
 
-# Store the data with this structure!
-{
-    "fk_clavicle": {"degree": #, "Periodic": #, "cvs": #, "knot_vector": #, "int_B": #},
-    "fk_shoulder": {"degree": #, "Periodic": #, "cvs": #, "knot_vector": #, "int_B": #},
-    ...
-}
+# # Store the data with this structure!
+# {
+#     "ctrl_fk_clavicle_#_#": {"degree": #, "Periodic": #, "cvs": #, "knot_vector": #, "int_B": #},
+#     "ctrl_fk_shoulder_#_#": {"degree": #, "Periodic": #, "cvs": #, "knot_vector": #, "int_B": #},
+#     ...
+# }
 
-# IN database_schema:
-ADD 'curve_info' collunm to store the control data!
+{"ctrl_fk_hip_0_L": {}, "ctrl_fk_knee_0_L": {}, "ctrl_fk_ankle_0_L": {}, "ctrl_fk_ball_0_L": {}, "ctrl_fk_toe_0_L": {}, "ctrl_ik_hip_0_L": {}, "ctrl_ik_knee_0_L": {}, "ctrl_ik_ankle_0_L": {}, "ctrl_ik_ball_0_L": {}, "ctrl_ik_toe_0_L": {}}
 
-use component name : `mdl_bipedArm_0_L` to find `db_id`
-    To Find correct row use: `db_id`| `unique_id`| `side`
+# # IN database_schema:
+# ADD 'curve_info' collunm to store the control data!
 
-'''
+# use component name : `mdl_bipedArm_0_L` to find `db_id`
+#     To Find correct row use: `db_id`| `unique_id`| `side`
+
+# '''
 
 # ---- Component constraints ----
 def record_ctrl_data(control):

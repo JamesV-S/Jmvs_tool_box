@@ -302,26 +302,11 @@ class retrieveSpecificComponentdata():
 
     def return_mdl_component_dict(self):
         return self.mdl_component_dict
-    
-'''
-example_component_dict = {
-        "module_name":"bipedArm", 
-        "unique_id":0,
-        "side":"L", 
-        "component_pos":{
-            'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
-            'shoulder': [28.9705319404602, 230.650634765625, 2.762230157852166], 
-            'elbow': [53.69795846939088, 197.98831176757807, 6.61050152778626], 
-            'wrist': [76.10134363174441, 169.30845642089832, 30.106774568557817]
-            },
-        "controls":{
-                    'FK_ctrls': 
-                            {'fk_clavicle': 'circle', 'fk_shoulder': 'circle', 'fk_elbow': 'circle', 'fk_wrist': 'circle'}, 
-                    'IK_ctrls': 
-                            {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
-                    }
-        }
-'''
+
+
+
+
+
 
 class retrieveSpecificPlacementPOSData():
     def __init__(self, directory, module_name, unique_id, side):
@@ -394,6 +379,7 @@ class updateSpecificPlacementPOSData():
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
     
+
     def update_db(self, conn, table, values):
         cursor = conn.cursor()
         if table == 'placement':
@@ -404,3 +390,63 @@ class updateSpecificPlacementPOSData():
         conn.commit()
 
 
+class get_component_control_list():
+    def __init__(self, directory, module_name, unique_id, side):
+        # To Find correct row use: `db_id`| `unique_id`| `side`
+        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.module_name = module_name
+        self.unique_id = unique_id
+        self.side = side
+        
+        try:
+            with sqlite3.connect(db_path) as conn:
+                self.comp_control_ls = self.control_list_from_row(conn)
+                print(f"THE LIST :: self.comp_control_ls = {self.comp_control_ls}")
+        except sqlite3.Error as e:
+            print(f"module component retrieval sqlite3.Error: {e}")
+    
+
+    def control_list_from_row(self, conn):
+        cursor = conn.cursor()
+        controls_sql = f"SELECT curve_info FROM controls WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(controls_sql, (self.unique_id, self.side,))
+            rows = cursor.fetchall()
+            controls_list = []
+            if rows:
+                for row in rows:
+                    ctrls_sjon =row[0]
+                    controls_list = list(json.loads(ctrls_sjon).keys())
+            return controls_list
+
+        except sqlite3.Error as e:
+            print(f"controls sqlite3.Error: {e}")
+            return {}
+        
+    
+    def return_comp_ctrl_ls(self):
+        return self.comp_control_ls
+    
+
+class update_curve_info():
+    def __init__(self, directory, module_name, unique_id, side, comp_ctrl_data):
+        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.module_name = module_name
+        self.unique_id = unique_id
+        self.side = side
+
+        try:
+            with sqlite3.connect(db_path) as conn:
+                self.update_db(conn, "controls", (comp_ctrl_data, unique_id, side))
+                print(f"Updated database `curve_info`: DB_{module_name}.db with {comp_ctrl_data}, where its unique_id = {unique_id} & side = {side}")
+        except sqlite3.Error as e:
+            print(f"module component retrieval sqlite3.Error: {e}")
+
+    
+    def update_db(self, conn, table, values):
+        cursor = conn.cursor()
+        if table == 'controls':
+            sql = f'UPDATE {table} SET curve_info = ? WHERE unique_id = ? AND side = ?'
+            values = (json.dumps(values[0]), values[1], values[2])
+            cursor.execute(sql, values)
+        conn.commit()

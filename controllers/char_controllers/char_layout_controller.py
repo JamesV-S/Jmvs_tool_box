@@ -275,12 +275,14 @@ class CharLayoutController:
         # with this function, any changes to scale knots, ect will replace the [A] with new data. 
         # So when the module is reloaded/created again the changes to the controls remain!
         # """
-        try:
-            component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
-            for component in component_selection:
-                self.model.store_component_control_data(component, self.val_availableRigComboBox)
-        except TypeError as e:
-            cmds.error(f" Select a component in 'Character Database!' ")
+        component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
+        print(f"component_selection = {component_selection}")
+        # try:
+            
+        for component in component_selection:
+            self.model.store_component_control_data(component, self.val_availableRigComboBox)
+        # except TypeError as e:
+        #     cmds.error(f" Select a component in 'Character Database!' {e}")
 
     # -- Template Components! --
     def sigFunc_guide_template_checkBox(self):
