@@ -1,0 +1,61 @@
+
+{
+    "mdl_name": "arachnidLeg",
+    "names": ["coxae", "trochanter", "femur", "knee", "metatarsus", "tarsus"],
+    "placement":{
+        "component_pos": {
+            "coxae": [22.620569466817653, 144.1399044329108, -0.3245277273685474],
+            "trochanter": [22.584449316155787, 83.12080210962229, 1.399156957455773],
+            "femur": [22.56734558086405, 54.22683143805715, -34.46527139681592],
+            "knee": [22.54233003259439, 11.96714338110995, -31.719538725507462]
+        },
+        "system_rot_xyz": {
+            "coxae": [0.0, -1.6180766381813425, -90.03391613228942],
+            "trochanter": [0.0, 51.1435387994787, -90.03391613228945],
+            "femur": [0.0, -3.717444687739824, -90.03391613228942],
+            "knee": [0.0, -3.717444687739824, -90.03391613228942]
+        },
+        "system_rot_yzx": {
+            "coxae": [1.6184322628454946, 0.0, -180.0],
+            "trochanter": [-52.7619786368714, 0.0, 0.0],
+            "femur": [54.861151572516995, 0.0, 0.0],
+            "knee": [0.0, 0.0, 0.0]
+        }
+    },
+    "constant": {
+        "space_swap": [["world", "COG", "coxae", "custom"],
+            ["world", "knee"],
+            ["world", "spine_0"]],
+        "ik_settings": {
+            "start_joint": "coxae",
+            "end_joint": "knee",
+            "pv_joint": "trochanter",
+            "hock_joint": "femur"
+        }
+    }, 
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": false,
+        "rig_type": {
+            "options": ["FK", "IK", "IKFK"],
+            "default": "IKFK"
+        },
+        "size": 1, 
+        "side": ["L", "R"]
+        
+    },
+    "controls":{
+        "FK_ctrls": {
+            "fk_coxae":"circle",
+            "fk_trochanter": "circle",
+            "fk_femur": "circle",
+            "fk_knee": "circle"
+        },
+        "IK_ctrls": {
+            "ik_coxae":"cube",
+            "ik_trochanter": "pv",
+            "ik_femur": "cube",
+            "ik_knee": "cube"
+        }
+}
+}

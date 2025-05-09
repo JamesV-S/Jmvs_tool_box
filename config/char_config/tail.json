@@ -1,0 +1,60 @@
+{
+    "mdl_name": "tail",
+    "names": ["tail0", "tail1", "tail2", "tail3", "tail4"],
+    "placement": {
+        "component_pos": {
+            "tail0": [0.0, 240, 0.0], 
+            "tail1": [0.0, 250, 0.0], 
+            "tail2": [0.0, 260, 0.0],
+            "tail3": [0.0, 270, 0.0],
+            "tail4": [0.0, 280, 0.0]
+        },
+        "system_rot_xyz": {
+            "tail0": [0.0, 240, 90.0], 
+            "tail1": [0.0, 250, 90.0], 
+            "tail2": [0.0, 260, 90.0],
+            "tail3": [0.0, 270, 90.0],
+            "tail4": [0.0, 280, 90.0]
+        },
+        "system_rot_yzx": {
+            "tail0": [0.0, 0.0, 0.0], 
+            "tail1": [0.0, 0.0, 0.0], 
+            "tail2": [0.0, 0.0, 0.0],
+            "tail3": [0.0, 0.0, 0.0],
+            "tail4": [0.0, 0.0, 0.0]
+        }
+    },
+    "constant": {
+        "space_swap": ["world", "tailRoot"],
+        "ik_settings": {
+            "start_joint": "tail0",
+            "end_joint": "tail4",
+            "pv_joint": null,
+            "world_orientation": true
+        }
+    },
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": false,
+        "rig_type": {
+            "options": ["FK", "IK", "IKFK"],
+            "default": "IKFK"
+        },
+        "size": 1,
+        "side": ["M"]
+    },
+    "controls": {
+        "FK_ctrls": {
+            "tail0": "circle", 
+            "tail1": "circle", 
+            "tail2": "circle",
+            "tail3": "circle",
+            "tail4": "circle"
+        },
+        "IK_ctrls": {"tail0": "cube", 
+            "tail1": null, 
+            "tail2": "cube",
+            "tail3": null,
+            "tail4": "circle"}
+    }
+}

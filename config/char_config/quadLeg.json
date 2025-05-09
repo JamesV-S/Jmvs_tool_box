@@ -1,0 +1,61 @@
+
+{
+    "mdl_name": "quadLeg",
+    "names": ["hip", "knee", "calf", "ankle"],
+    "placement":{
+        "component_pos": {
+            "hip": [22.620569466817653, 144.1399044329108, -0.3245277273685474],
+            "knee": [22.584449316155787, 83.12080210962229, 1.399156957455773],
+            "calf": [22.56734558086405, 54.22683143805715, -34.46527139681592],
+            "ankle": [22.54233003259439, 11.96714338110995, -31.719538725507462]
+        },
+        "system_rot_xyz": {
+            "hip": [0.0, -1.6180766381813425, -90.03391613228942],
+            "knee": [0.0, 51.1435387994787, -90.03391613228945],
+            "calf": [0.0, -3.717444687739824, -90.03391613228942],
+            "ankle": [0.0, -3.717444687739824, -90.03391613228942]
+        },
+        "system_rot_yzx": {
+            "hip": [1.6184322628454946, 0.0, -180.0],
+            "knee": [-52.7619786368714, 0.0, 0.0],
+            "calf": [54.861151572516995, 0.0, 0.0],
+            "ankle": [0.0, 0.0, 0.0]
+        }
+    },
+    "constant": {
+        "space_swap": [["world", "COG", "hip", "custom"],
+            ["world", "ankle"],
+            ["world", "spine_0"]],
+        "ik_settings": {
+            "start_joint": "hip",
+            "end_joint": "ankle",
+            "pv_joint": "knee",
+            "hock_joint": "calf"
+        }
+    }, 
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": false,
+        "rig_type": {
+            "options": ["FK", "IK", "IKFK"],
+            "default": "IKFK"
+        },
+        "size": 1, 
+        "side": ["L", "R"]
+        
+    },
+    "controls":{
+        "FK_ctrls": {
+            "fk_hip":"circle",
+            "fk_knee": "circle",
+            "fk_calf": "circle",
+            "fk_ankle": "circle"
+        },
+        "IK_ctrls": {
+            "ik_hip":"cube",
+            "ik_knee": "pv",
+            "ik_calf": "cube",
+            "ik_ankle": "cube"
+        }
+}
+}

@@ -39,7 +39,7 @@
         "stretch": false,
         "rig_type": {
             "options": ["FK", "IK", "IKFK"],
-            "default": "FK"
+            "default": "IKFK"
         },
         "size": 1,
         "side": ["M"]

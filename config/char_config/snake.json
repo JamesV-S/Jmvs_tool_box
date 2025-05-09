@@ -1,0 +1,36 @@
+
+{
+    "mdl_name": "snake",
+    "names": ["head0", "cervical0", "thoracic0", "lumbar0", "tail0"],
+    "placement": {
+        "component_pos": {
+            "head0": [0.0, 0.0, 0.0], 
+            "cervicle0": [0.0, 0.0, 0.0], 
+            "thoracic0": [0.0, 0.0, 0.0],
+            "lumbar0": [0.0, 0.0, 0.0],
+            "tail0": [0.0, 0.0, 0.0]
+        },
+        "system_rot_xyz": {
+        },
+        "system_rot_yzx": {
+        }
+    },
+    "constant": {
+        "space_swap": [],
+        "ik_settings": {}
+    },
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": false,
+        "rig_type": {
+            "options": ["FK", "IK", "IKFK", "VariableFK"],
+            "default": "IKFK"
+        },
+        "size": 1,
+        "side": ["M"]
+    },
+    "controls": {
+        "FK_ctrls": {},
+        "IK_ctrls": {}
+    }
+}

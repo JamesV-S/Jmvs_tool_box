@@ -1,0 +1,43 @@
+{
+    "mdl_name": "neckHead",
+    "names": ["neck0", "neck1", "neck2"],
+    "placement": {
+        "component_pos": {
+            "neck0": [0.0, 240, 0.0], 
+            "neck1": [0.0, 250, 0.0], 
+            "neck2": [0.0, 260, 0.0]
+        },
+        "system_rot_xyz": {
+            "neck0": [0.0, 240, 90.0], 
+            "neck1": [0.0, 250, 90.0], 
+            "neck2": [0.0, 260, 90.0]
+        },
+        "system_rot_yzx": {
+            "neck0": [0.0, 0.0, 0.0], 
+            "neck1": [0.0, 0.0, 0.0], 
+            "neck2": [0.0, 0.0, 0.0]
+        }
+    },
+    "constant": {
+        "space_swap": ["world", "neckRoot"],
+        "ik_settings": {}
+    },
+    "user_settings": {
+        "mirror_rig": false,
+        "stretch": false,
+        "rig_type": {
+            "options": ["FK", "AutoFk"],
+            "default": "AutoFk"
+        },
+        "size": 1,
+        "side": ["M"]
+    },
+    "controls": {
+        "FK_ctrls": {
+            "neck0": "circle", 
+            "neck1": "circle", 
+            "neck2": "circle"
+        },
+        "IK_ctrls": {}
+    }
+}
