@@ -1,9 +1,11 @@
 
-/*------------------------------ QENTIREWIDGET ------------------------------*/
+/* https://doc.qt.io/qt-6/stylesheet-examples.html#customizing-qtabwidget-and-qtabbar */
+/*------------------------------ QWIDGET ------------------------------*/
+
+/*rgba(65, 25, 25, 0.5)/rgb(24, 24, 28)/ rgb(19, 16, 43) / 948196 */
 
 QWidget {
-    /*rgba(65, 25, 25, 0.5)/rgb(24, 24, 28)/ rgb(19, 16, 43) / 948196 */
-    background-color:rgb(21, 18, 46);
+    background-color:#15122e;
 }
 
 QWidget[style_container_qwidget="true"]{
@@ -22,6 +24,48 @@ QWidget:disabled {
     /*color: rgba(200, 200, 200, 0.5);  Dimmed text color */
     /*border: 1px solid rgba(100, 100, 100, 0.5); /* Optional: dimmed border */
 /*}*/
+
+/*------------------------------ QTabWidget ------------------------------*/
+QTabWidget::pane {
+    background: #15122e;
+    border-top: 2px solid #c5c5c5;
+    position: absolute;
+}
+QTabWidget::tab-bar {
+    left: 1px;
+}
+
+QTabBar::tab {
+    color:white;
+    border: 2px solid #676767;
+    /* border-bottom-color: #676767; */
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    /* border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px; */
+    min-width: 8ex;
+    padding: 3.5px;
+}
+
+QTabBar::tab:selected{
+
+}
+
+QTabBar::tab:hover {
+    background:#787878;
+}
+QTabBar::tab:selected {
+    border-color: #c5c5c5;
+    border-bottom-color: #c5c5c5; /* same as pane color */
+}
+QTabBar::tab:!selected {
+    color: #e3e3e3 ;
+    font-size: 10px;
+    margin-top: 4px; /* make non-selected tabs look smaller */
+    border-color: #929292;
+    border-bottom-color: #929292; /* same as pane color */
+    background:#525252;
+}
 
 /*------------------------------ QPUSHBUTTON ------------------------------*/
 /* QPushButton {
@@ -208,9 +252,9 @@ QComboBox {
 
 /*------------------------------ QObjectWidgets ------------------------------*/
 
-QWidget#main_layout {
+/* QWidget#main_layout {
     color: CRIMSON;
-}
+} */
 
 QWidget#Spacer {
     background-color: rgb(100, 100, 100);
@@ -279,27 +323,24 @@ QScrollArea {
     background-color: #1f1f2e;
     border-radius: 2.5px;
 }
-/* Vertical Scroll Bar */
-QScrollBar:vertical,
-QScrollBar:horizontal {
-    border: 1px solid #2d334f;
-    background-color: #2b2b3d;
-    width: 12px;
-    margin: 0px 0px 0px 0px;
-}
+
 QScrollBar::handle:vertical,
-QScrollBar::handle:horizontal {
+QScrollBar::handle:horizontal 
+{
     background-color: #727272;
     max-width: 10px;
     max-height: 10px;
     border-radius: 5px;
 }
+
 QScrollBar::add-line:vertical, 
 QScrollBar::sub-line:vertical,
 QScrollBar::add-line:horizontal,
-QScrollBar::sub-line:horizontal {
+QScrollBar::sub-line:horizontal 
+{
     background: none;
 }
+
 QScrollBar::corner {
     background: #2b2b3d;
 }
@@ -350,8 +391,6 @@ QLabel#update_left_lbl{
     min-width:1em;
     font-weight: bold; 
 }
-
-
 
 QLabel[update_UI="true"]{
     color:rgb(241, 255, 238) ;
@@ -688,3 +727,7 @@ QPushButton#delete_blueprint_btn:pressed {
     border-bottom-color: #565be8;
 }
 
+QTabWidget
+{
+    color: red;
+}

@@ -1,6 +1,6 @@
 
 {
-    "mdl_name": "arachnidLeg",
+    "mdl_name": "insectLeg",
     "names": ["coxae", "trochanter", "femur", "knee", "metatarsus", "tarsus"],
     "placement":{
         "component_pos": {

@@ -208,13 +208,23 @@ class CharLayoutView(QtWidgets.QWidget):
         mop_tabs = QtWidgets.QTabWidget(self)
         mop_tabs.setStyleSheet(self.stylesheet)
         
-        tab_curve = QtWidgets.QWidget()
-        layH_tab_curve_ancestor = QtWidgets.QHBoxLayout(tab_curve)
+        self.curve_tab_ui(mop_tabs)        
+        self.module_editing_ui(mop_tabs)
+
+        mop_container = self.cr_container_funcUI("Management Options", mop_tabs)
+        widgets_layout.addLayout(mop_container)
+
+        utils_view.assign_style_ls(self.style_tab_1_ui, 
+             [self.expand_curve_btn, self.collapse_curve_btn, self.mirror_curve_comp_btn, self.store_curve_comp_btn])
+    
+
+    def curve_tab_ui(self, tab):
+        parent_widget = QtWidgets.QWidget()
+
+        layH_tab_curve_ancestor = QtWidgets.QHBoxLayout(parent_widget)
         layV_tab_curve_001 = QtWidgets.QVBoxLayout()
         layV_tab_curve_002 = QtWidgets.QVBoxLayout()
         layH_curve_child = QtWidgets.QHBoxLayout()
-        layH_tab_curve_ancestor.addLayout(layV_tab_curve_001)
-        layH_tab_curve_ancestor.addLayout(layV_tab_curve_002)
         layV_tab_curve_001.addLayout(layH_curve_child)
                 
         # ---- curve editing tab ----
@@ -232,15 +242,20 @@ class CharLayoutView(QtWidgets.QWidget):
         
         layV_tab_curve_002.addLayout(temp_dis_container)
         layV_tab_curve_002.addLayout(l_u_container)
-        
-        mop_tabs.addTab(tab_curve, "curves")
-        
-        mop_container = self.cr_container_funcUI("Management Options", mop_tabs)
-        widgets_layout.addLayout(mop_container)
+        layH_tab_curve_ancestor.addLayout(layV_tab_curve_001)
+        layH_tab_curve_ancestor.addLayout(layV_tab_curve_002)
 
-        utils_view.assign_style_ls(self.style_tab_1_ui, 
-             [self.expand_curve_btn, self.collapse_curve_btn, self.mirror_curve_comp_btn, self.store_curve_comp_btn])
-    
+        tab.addTab(parent_widget, "curves")
+
+
+    def module_editing_ui(self, tab):
+        parent_widget = QtWidgets.QWidget()
+
+        tab.addTab(parent_widget, "Edit Module")
+
+
+        
+
 
     def template_display_ui(self):
         layV_tempDisp = QtWidgets.QVBoxLayout()
