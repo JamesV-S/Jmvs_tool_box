@@ -81,6 +81,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.style_module_ui_labels = []
         self.style_update_mdl_ui = []
         self.style_container = []
+        self.style_child_container = []
         self.style_tab_1_ui = []
         self.style_template_ui = []
         self.style_lockUnlock_ui = []
@@ -214,27 +215,42 @@ class CharLayoutView(QtWidgets.QWidget):
         mop_container = self.cr_container_funcUI("Management Options", mop_tabs)
         widgets_layout.addLayout(mop_container)
 
-        utils_view.assign_style_ls(self.style_tab_1_ui, 
-             [self.expand_curve_btn, self.collapse_curve_btn, self.mirror_curve_comp_btn, self.store_curve_comp_btn])
-    
 
     def curve_tab_ui(self, tab):
         parent_widget = QtWidgets.QWidget()
-
+        
+        # Initialise Layouts
         layH_tab_curve_ancestor = QtWidgets.QHBoxLayout(parent_widget)
         layV_tab_curve_001 = QtWidgets.QVBoxLayout()
         layV_tab_curve_002 = QtWidgets.QVBoxLayout()
-        layH_curve_child = QtWidgets.QHBoxLayout()
-        layV_tab_curve_001.addLayout(layH_curve_child)
-                
-        # ---- curve editing tab ----
+        layV_curve_editing = QtWidgets.QVBoxLayout()
+        layH_crv_edit_001 = QtWidgets.QHBoxLayout()
+        layH_crv_edit_002 = QtWidgets.QHBoxLayout()
+        
+        # ---- curve selection ----
+        self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Controls")
+        self.guide_crv_edit_checkbox = QtWidgets.QCheckBox("Guides")
+        layH_crv_edit_001.addWidget(self.controls_crv_edit_checkBox)
+        layH_crv_edit_001.addWidget(self.guide_crv_edit_checkbox)
+
+        self.select_all_in_comp_btn = QtWidgets.QPushButton("Select curves in component")        
         self.expand_curve_btn = QtWidgets.QPushButton("Expand")
         self.collapse_curve_btn = QtWidgets.QPushButton("Collapse")
-        self.mirror_curve_comp_btn = QtWidgets.QPushButton("Mirror Curve Component")
+        self.mirror_comp_btn = QtWidgets.QPushButton("Mirror Component") # Mirror control and/or guide positional data!
+        layH_crv_edit_002.addWidget(self.expand_curve_btn)
+        layH_crv_edit_002.addWidget(self.collapse_curve_btn)
+        layV_curve_editing.addLayout(layH_crv_edit_001)
+        layV_curve_editing.addLayout(self.layH_spacer_funcUI())
+        layV_curve_editing.addWidget(self.select_all_in_comp_btn)
+        layV_curve_editing.addLayout(layH_crv_edit_002)
+        layV_curve_editing.addLayout(self.layH_spacer_funcUI())
+        layV_curve_editing.addWidget(self.mirror_comp_btn)
+        crv_edit_container = self.cr_container_funcUI("Curve Editing", layV_curve_editing, True, True)
+        # ---- curve data management ----
         self.store_curve_comp_btn = QtWidgets.QPushButton("Store Curve Component")
-        layH_curve_child.addWidget(self.expand_curve_btn)
-        layH_curve_child.addWidget(self.collapse_curve_btn)
-        layV_tab_curve_001.addWidget(self.mirror_curve_comp_btn)
+        
+        layV_tab_curve_001.addLayout(crv_edit_container)
+        layV_tab_curve_001.addLayout(self.layH_spacer_funcUI())
         layV_tab_curve_001.addWidget(self.store_curve_comp_btn)
 
         temp_dis_container = self.template_display_ui()
@@ -247,14 +263,10 @@ class CharLayoutView(QtWidgets.QWidget):
 
         tab.addTab(parent_widget, "curves")
 
-
-    def module_editing_ui(self, tab):
-        parent_widget = QtWidgets.QWidget()
-
-        tab.addTab(parent_widget, "Edit Module")
-
-
-        
+        utils_view.assign_style_ls(self.style_tab_1_ui, 
+             [self.expand_curve_btn, self.collapse_curve_btn, 
+              self.mirror_comp_btn, self.store_curve_comp_btn, 
+              self.select_all_in_comp_btn])
 
 
     def template_display_ui(self):
@@ -282,7 +294,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layGrid_tempDisp.addWidget(self.temp_AllVis_btn, 1, 1)
         layV_tempDisp.addLayout(layGrid_tempDisp)
         
-        template_display_container = self.cr_container_funcUI("Template Display", layV_tempDisp, True)
+        template_display_container = self.cr_container_funcUI("Template Display", layV_tempDisp, True, True)
 
         utils_view.assign_style_ls(self.style_template_ui, 
              [self.guide_template_checkBox, self.controls_template_checkBox, self.ddj_template_checkBox, 
@@ -311,12 +323,18 @@ class CharLayoutView(QtWidgets.QWidget):
         layGrid_LU.addWidget(self.unlock_btn, 0, 1)
         layV_LU.addLayout(layGrid_LU)
         
-        lock_unlock_container = self.cr_container_funcUI("Lock/Unlock", layV_LU, True)
-
+        lock_unlock_container = self.cr_container_funcUI("Lock/Unlock", layV_LU, True, True)
+        
         utils_view.assign_style_ls(self.style_lockUnlock_ui, 
              [self.compnent_checkBox, self.inputComp_checkBox, self.OutputComp, self.lock_btn, self.unlock_btn])
 
         return lock_unlock_container
+
+
+    def module_editing_ui(self, tab):
+        parent_widget = QtWidgets.QWidget()
+
+        tab.addTab(parent_widget, "Edit Module")
 
 
     def module_scene_actions_ui(self, widgets_layout):
@@ -401,10 +419,15 @@ class CharLayoutView(QtWidgets.QWidget):
 
     def set_style_property_funcUI(self):            
         for container in self.style_container:
-            container.setProperty("style_container_qwidget", True)
+            container.setProperty("style_container", True)
             container.style().unpolish(container)
             container.style().polish(container)
             container.update()
+        for child_container in self.style_child_container:
+            child_container.setProperty("style_child_container", True)
+            child_container.style().unpolish(child_container)
+            child_container.style().polish(child_container)
+            child_container.update()
         # add module label style property here
         for widget in self.style_treeview_ui:
             widget.setProperty("treeComponents_UI_01", True)
@@ -435,7 +458,7 @@ class CharLayoutView(QtWidgets.QWidget):
             widget.update()
 
 
-    def cr_container_funcUI(self, label_name, widget_to_add, layout=None):
+    def cr_container_funcUI(self, label_name, widget_to_add, layout=None, child=None):
         container = QtWidgets.QWidget()
         container_layV = QtWidgets.QVBoxLayout(container)
         # container_layV.addWidget(container_lbl)
@@ -452,23 +475,26 @@ class CharLayoutView(QtWidgets.QWidget):
         
         # Set the style to the container
         for widget in [container, container_lbl]:
-             self.style_container.append(widget)
-             widget.setStyleSheet(self.stylesheet)
+            if child == True:
+                self.style_child_container.append(widget)
+            else:
+                self.style_container.append(widget)
+            widget.setStyleSheet(self.stylesheet)
 
         return parent_container_layV
     
 
-    def layH_SPACER_funcUI(self):
-            # -- Horizontal Spacer --
-            layH_Spacer = QtWidgets.QHBoxLayout()
-            # Add the spacer QWidget
-            spacerH = QtWidgets.QLabel()# QtWidgets.QWidget()
-            #spacerH.setFixedSize(40,40)
-            spacerH.setObjectName("Spacer")
-            self.style_update_mdl_ui.append(spacerH)
-            layH_Spacer.addWidget(spacerH)
-            layH_Spacer.setContentsMargins(0, 0, 0, 0)
-            return layH_Spacer
+    def layH_spacer_funcUI(self):
+        # -- Horizontal Spacer --
+        layH_spacer = QtWidgets.QHBoxLayout()
+        layH_spacer.setContentsMargins(0, 10, 0, 10)  # Left, Top, Right, Bottom
+        # Add the spacer QWidget
+        spacerH = QtWidgets.QWidget()# QtWidgets.QWidget()
+        spacerH.setObjectName("Spacer")
+        self.style_update_mdl_ui.append(spacerH)
+        layH_spacer.addWidget(spacerH)
+        
+        return layH_spacer
     
     
     def update_component_data(self, widgets_layout):
@@ -504,11 +530,11 @@ class CharLayoutView(QtWidgets.QWidget):
             self.style_update_mdl_ui.append(umd_ls[x])
 
         layH_upd_mdl_btn = QtWidgets.QHBoxLayout()
-        SpacerGraphic_0_layH = self.layH_SPACER_funcUI()
+        SpacerGraphic_0_layH = self.layH_spacer_funcUI()
         self.update_btn = QtWidgets.QPushButton("Update Module Data")
         self.style_update_mdl_ui.append(self.update_btn)
 
-        SpacerGraphic_1_layH = self.layH_SPACER_funcUI()
+        SpacerGraphic_1_layH = self.layH_spacer_funcUI()
         layH_upd_mdl_btn.addLayout(SpacerGraphic_0_layH)
         layH_upd_mdl_btn.addWidget(self.update_btn)
         layH_upd_mdl_btn.addLayout(SpacerGraphic_1_layH)

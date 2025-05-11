@@ -7,28 +7,41 @@
 QWidget {
     background-color:#15122e;
 }
-
-QWidget[style_container_qwidget="true"]{
-    border: 1px solid #c5c5c5;
+/*------------------------------ CONTAINER ------------------------------*/
+QWidget[style_container="true"],
+QWidget[style_child_container="true"]{
+    border: 1px solid #e5e5e5;
     border-radius: 3px;
 }
-QLabel[style_container_qwidget="true"] {
+QLabel[style_container="true"], 
+QLabel[style_child_container="true"] {
     color: black;
-    background-color: #c5c5c5;
+    background-color: #e5e5e5;
     font: 800 bold;
+    max-height: 15px;
+}
+QWidget[style_child_container="true"]{
+    /* color:white; */
+    border: 1px solid #9a9a9a;
+}
+QLabel[style_child_container="true"] {
+    /* color:white; */
+    background-color: #9a9a9a; /* #2e2e3d | #9a9a9a */
 }
 
-/*
-QWidget:disabled {
-    background-color: rgba(50, 50, 50, 0.5); /* Dimmed background  */ 
-    /*color: rgba(200, 200, 200, 0.5);  Dimmed text color */
-    /*border: 1px solid rgba(100, 100, 100, 0.5); /* Optional: dimmed border */
-/*}*/
+QWidget#Spacer {
+    background-color: #9a9a9a;
+    /* border-style: solid; */
+    border-radius: 5px;
+    max-height: .75px;
+    min-height: .75px;
+    /* padding: 10px; */
+}
 
 /*------------------------------ QTabWidget ------------------------------*/
 QTabWidget::pane {
     background: #15122e;
-    border-top: 2px solid #c5c5c5;
+    border-top: 2px solid #e5e5e5;
     position: absolute;
 }
 QTabWidget::tab-bar {
@@ -47,16 +60,12 @@ QTabBar::tab {
     padding: 3.5px;
 }
 
-QTabBar::tab:selected{
-
-}
-
-QTabBar::tab:hover {
+QTabBar::tab:!selected:hover {
     background:#787878;
 }
 QTabBar::tab:selected {
-    border-color: #c5c5c5;
-    border-bottom-color: #c5c5c5; /* same as pane color */
+    border-color: #e5e5e5;
+    border-bottom-color: #e5e5e5; /* same as pane color */
 }
 QTabBar::tab:!selected {
     color: #e3e3e3 ;
@@ -250,21 +259,6 @@ QComboBox {
     color: rgb(225, 225, 225);
 }
 
-/*------------------------------ QObjectWidgets ------------------------------*/
-
-/* QWidget#main_layout {
-    color: CRIMSON;
-} */
-
-QWidget#Spacer {
-    background-color: rgb(100, 100, 100);
-    border-style: solid;
-    border-radius: 3px;
-    border-width: 2px;
-    border-color: rgb(27, 7, 7)
-}
-
-
 /*------------------------------ QGROUPBOX ------------------------------*/
 /*
 QGroupBox {
@@ -402,12 +396,6 @@ QLabel[update_UI="true"]{
     font-size: 13px;
     font-family: "Arial", sans-serif;
     font-style:normal;
-}
-
-QLabel#Spacer{
-    background-color: #000000;
-    max-height: .5em;
-    min-height: .5em;
 }
 
 QLabel#mdl_data_lbl{
