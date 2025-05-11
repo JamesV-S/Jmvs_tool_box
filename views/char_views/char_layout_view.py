@@ -89,7 +89,6 @@ class CharLayoutView(QtWidgets.QWidget):
         # Call the ui functions, passing the neccesary layout to each
         self.module_visualisation_ui(top_Hlay)
         self.module_additions_ui(top_Hlay)
-        # self.update_component_data()
         self.management_options_ui(management_options_Vlay)
         self.module_scene_actions_ui(mdl_actions_Vlay)
         self.debugging_ui(debugging_Vlay)
@@ -233,24 +232,26 @@ class CharLayoutView(QtWidgets.QWidget):
         layH_crv_edit_001.addWidget(self.controls_crv_edit_checkBox)
         layH_crv_edit_001.addWidget(self.guide_crv_edit_checkbox)
 
-        self.select_all_in_comp_btn = QtWidgets.QPushButton("Select curves in component")        
+        self.select_all_in_comp_btn = QtWidgets.QPushButton("Select data in component")        
         self.expand_curve_btn = QtWidgets.QPushButton("Expand")
         self.collapse_curve_btn = QtWidgets.QPushButton("Collapse")
         self.mirror_comp_btn = QtWidgets.QPushButton("Mirror Component") # Mirror control and/or guide positional data!
         layH_crv_edit_002.addWidget(self.expand_curve_btn)
         layH_crv_edit_002.addWidget(self.collapse_curve_btn)
         layV_curve_editing.addLayout(layH_crv_edit_001)
-        layV_curve_editing.addLayout(self.layH_spacer_funcUI())
+        layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_curve_editing.addWidget(self.select_all_in_comp_btn)
         layV_curve_editing.addLayout(layH_crv_edit_002)
-        layV_curve_editing.addLayout(self.layH_spacer_funcUI())
+        layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_curve_editing.addWidget(self.mirror_comp_btn)
         crv_edit_container = self.cr_container_funcUI("Curve Editing", layV_curve_editing, True, True)
+        # ---- curve colour management ----
+        ''' ADD COLOUR OPTIONS WITH PICKER ETC '''
         # ---- curve data management ----
         self.store_curve_comp_btn = QtWidgets.QPushButton("Store Curve Component")
         
         layV_tab_curve_001.addLayout(crv_edit_container)
-        layV_tab_curve_001.addLayout(self.layH_spacer_funcUI())
+        layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
         layV_tab_curve_001.addWidget(self.store_curve_comp_btn)
 
         temp_dis_container = self.template_display_ui()
@@ -334,7 +335,86 @@ class CharLayoutView(QtWidgets.QWidget):
     def module_editing_ui(self, tab):
         parent_widget = QtWidgets.QWidget()
 
+        layV_module_editing = QtWidgets.QVBoxLayout(parent_widget)
+        layH_sel_options = QtWidgets.QHBoxLayout()
+
+        self.entire_comp_radioBtn = QtWidgets.QRadioButton("All components from module")
+        self.sel_comp_radioBtn =  QtWidgets.QRadioButton("Selected components")
+        self.selected_module_label = QtWidgets.QLabel("-> Module")
+        layH_sel_options.addWidget(self.entire_comp_radioBtn)
+        layH_sel_options.addWidget(self.sel_comp_radioBtn)
+        layH_sel_options.addWidget(self.selected_module_label)
+        
+        # update component options
+        layGrid_upd_comp = self.update_component_data()
+
+        # Joint & control options!!
+        layH_jnt_ctrl_editing = QtWidgets.QHBoxLayout()
+        layV_joint_editing = QtWidgets.QVBoxLayout()
+        layV_control_editing = QtWidgets.QVBoxLayout()
+        spcV_jnt_ctrl = self.lay_spacer_funcUI("V")
+        layH_jnt_ctrl_editing.addLayout(layV_joint_editing)
+        layH_jnt_ctrl_editing.addLayout(spcV_jnt_ctrl)
+        layH_jnt_ctrl_editing.addLayout(layV_control_editing)
+        
+            # jnt editing
+        layH_jnt_num = QtWidgets.QHBoxLayout()
+        jnt_lbl = QtWidgets.QLabel("Joint nom : ")
+        self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Defualt")
+        self.jnt_num_spinBox = QtWidgets.QSpinBox()
+        layH_jnt_num.addWidget(jnt_lbl)
+        layH_jnt_num.addWidget(self.controls_crv_edit_checkBox)
+        layH_jnt_num.addWidget(self.jnt_num_spinBox)
+        
+        layH_ik_op = QtWidgets.QHBoxLayout()
+        ik_operation_lbl = QtWidgets.QLabel("IK operations")
+        self.ik_operation_comboBox = QtWidgets.QComboBox() # Add items using config data!
+        layH_ik_op.addWidget(ik_operation_lbl)
+        layH_ik_op.addWidget(self.ik_operation_comboBox)
+        
+        layH_constraint_type = QtWidgets.QHBoxLayout()
+        constraint_type_lbl = QtWidgets.QLabel("constraint type : ")
+        self.constraint_type_comboBox = QtWidgets.QComboBox() # Add items using config data!
+        layH_constraint_type.addWidget(constraint_type_lbl)
+        layH_constraint_type.addWidget(self.constraint_type_comboBox)
+            
+        layV_joint_editing.addLayout(layH_jnt_num)
+        layV_joint_editing.addLayout(layH_ik_op)
+        layV_joint_editing.addLayout(layH_constraint_type)
+
+            # control editing
+        layH_ctrl_type = QtWidgets.QHBoxLayout()
+        ctrl_type_lbl = QtWidgets.QLabel("Control type : ")
+        self.ctrl_type_comboBox = QtWidgets.QComboBox() # Add items using config data!
+        layH_ctrl_type.addWidget(ctrl_type_lbl)
+        layH_ctrl_type.addWidget(self.ctrl_type_comboBox)
+
+        layH_ctrl_num = QtWidgets.QHBoxLayout()
+        ctrl_num_lbl = QtWidgets.QLabel("Control nom : ")
+        self.ctrl_num_checkBox = QtWidgets.QCheckBox("Defualt")
+        self.ctrl_num_spinBox = QtWidgets.QSpinBox()
+        layH_ctrl_num.addWidget(ctrl_num_lbl)
+        layH_ctrl_num.addWidget(self.ctrl_num_checkBox)
+        layH_ctrl_num.addWidget(self.ctrl_num_spinBox)
+
+        layV_control_editing.addLayout(layH_ctrl_type)
+        layV_control_editing.addLayout(layH_ctrl_num)
+
+        # Commit changes button!
+        self.commit_module_edits = QtWidgets.QPushButton("Commit Changes")
+        
+        # add these interfaces to the tab!
+        layV_module_editing.addLayout(layH_sel_options)
+        layV_module_editing.addLayout(layGrid_upd_comp)
+        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
+        layV_module_editing.addLayout(layH_jnt_ctrl_editing)
+        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
+        layV_module_editing.addWidget(self.commit_module_edits)
+
         tab.addTab(parent_widget, "Edit Module")
+
+        for spinBox in [self.jnt_num_spinBox, self.ctrl_num_spinBox]:
+            spinBox.setMinimum(0)
 
 
     def module_scene_actions_ui(self, widgets_layout):
@@ -436,7 +516,8 @@ class CharLayoutView(QtWidgets.QWidget):
             mdl_widget.setProperty("treeComponents_UI_01", True)
 
         for widget in self.style_update_mdl_ui:
-            widget.setProperty("update_UI", True)
+            pass
+            # widget.setProperty("update_UI", True)
 
         for widget in self.style_template_ui:
             widget.setProperty("style_template_ui", True)
@@ -484,20 +565,25 @@ class CharLayoutView(QtWidgets.QWidget):
         return parent_container_layV
     
 
-    def layH_spacer_funcUI(self):
+    def lay_spacer_funcUI(self, orientation):
         # -- Horizontal Spacer --
         layH_spacer = QtWidgets.QHBoxLayout()
-        layH_spacer.setContentsMargins(0, 10, 0, 10)  # Left, Top, Right, Bottom
-        # Add the spacer QWidget
-        spacerH = QtWidgets.QWidget()# QtWidgets.QWidget()
+        spacerH = QtWidgets.QWidget()
+        if orientation == "H":
+            spacerH.setMaximumHeight(1)
+            layH_spacer.setContentsMargins(0, 5, 0, 5)  # Left, Top, Right, Bottom
+        elif orientation == "V":
+            spacerH.setMaximumWidth(1)
+            layH_spacer.setContentsMargins(5, 0, 5, 0)
         spacerH.setObjectName("Spacer")
+        
         self.style_update_mdl_ui.append(spacerH)
         layH_spacer.addWidget(spacerH)
         
         return layH_spacer
     
     
-    def update_component_data(self, widgets_layout):
+    def update_component_data(self):
         # -- current_mdl_operations --
         #layV_current_MO_parent = QtWidgets.QVBoxLayout()
         layGrid_update = QtWidgets.QGridLayout()
@@ -529,16 +615,15 @@ class CharLayoutView(QtWidgets.QWidget):
             self.style_update_mdl_ui.append(cmo_ls[x])
             self.style_update_mdl_ui.append(umd_ls[x])
 
-        layH_upd_mdl_btn = QtWidgets.QHBoxLayout()
-        SpacerGraphic_0_layH = self.layH_spacer_funcUI()
-        self.update_btn = QtWidgets.QPushButton("Update Module Data")
-        self.style_update_mdl_ui.append(self.update_btn)
+        # layH_upd_mdl_btn = QtWidgets.QHBoxLayout()
+        # SpacerGraphic_0_layH = self.lay_spacer_funcUI("H")
+        # self.update_btn = QtWidgets.QPushButton("Update Module Data")
+        # self.style_update_mdl_ui.append(self.update_btn)
 
-        SpacerGraphic_1_layH = self.layH_spacer_funcUI()
-        layH_upd_mdl_btn.addLayout(SpacerGraphic_0_layH)
-        layH_upd_mdl_btn.addWidget(self.update_btn)
-        layH_upd_mdl_btn.addLayout(SpacerGraphic_1_layH)
-        
-        # db_actions_Hlay.addLayout(layV_database_actions)
-    
+        # SpacerGraphic_1_layH = self.lay_spacer_funcUI("H")
+        # layH_upd_mdl_btn.addLayout(SpacerGraphic_0_layH)
+        # layH_upd_mdl_btn.addWidget(self.update_btn)
+        # layH_upd_mdl_btn.addLayout(SpacerGraphic_1_layH)
+
+        return layGrid_update   
 

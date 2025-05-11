@@ -1,6 +1,6 @@
 
 {
-    "mdl_name": "quadLeg",
+    "mdl_name": "quadArm",
     "names": ["hip", "knee", "calf", "ankle"],
     "placement":{
         "component_pos": {

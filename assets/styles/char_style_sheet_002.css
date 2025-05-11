@@ -33,8 +33,6 @@ QWidget#Spacer {
     background-color: #9a9a9a;
     /* border-style: solid; */
     border-radius: 5px;
-    max-height: .75px;
-    min-height: .75px;
     /* padding: 10px; */
 }
 
