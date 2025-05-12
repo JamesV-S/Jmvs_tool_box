@@ -62,7 +62,7 @@ class CharLayoutController:
         print(f"self.view.mdl_tree_model == {self.view.mdl_tree_model}")
         self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
         
-        tree_name = self.val_availableRigComboBox.replace("DB_", "")
+        # tree_name = self.val_availableRigComboBox.replace("DB_", "")
         # self.view.tree_view_name_lbl.setText(f"Database: `{tree_name}`")
 
 
@@ -71,18 +71,30 @@ class CharLayoutController:
         self.view.guide_crv_edit_checkBox.setChecked(False)
         self.sig_ctrl_crv_edit_checkBox()
         self.sig_guide_crv_edit_checkBox()
-        
+        self.sig_entire_comp_radioBtn()
+        self.sig_sel_comp_radioBtn()
+
         self.view.controls_template_checkBox.setChecked(True)
         self.view.ddj_template_checkBox.setChecked(True)
 
         self.view.entire_comp_radioBtn.setChecked(True)
+        self.val_entire_comp_radioBtn = True
         self.view.jnt_num_checkBox.setChecked(True)
         self.view.ctrl_num_checkBox.setChecked(True)
         self.view.jnt_num_spinBox.setEnabled(False)
         self.view.ctrl_num_spinBox.setEnabled(False)
 
+        self.sig_umo_rigType_comboBox()
+        self.sig_umo_mirror_checkBox()
+        self.sig_umo_stretch_checkBox()
+        self.sig_umo_twist_checkBox()
+
+        # self.set_selected_module_label()
 
     def setup_connections(self):
+        # selection_model = self.view.mdl_tree_view.selectionModel()
+        # selection_model.selectionChanged.connect(self.set_selected_module_label)
+
         # -- visualise database --
         self.view.available_rig_comboBox.currentIndexChanged.connect(self.sig_availableRigComboBox)
         self.view.rpl_live_component.clicked.connect(self.sig_rpl_live_component)
@@ -116,9 +128,20 @@ class CharLayoutController:
         self.view.lock_btn.clicked.connect(self.sig_lock_btn)
         self.view.unlock_btn.clicked.connect(self.sig_unlock_btn)
 
+        # self.view.mirror_comp_btn.clicked.connect()
         self.view.store_curve_comp_btn.clicked.connect(self.sig_store_curve_comp_btn)
         
             # ---- Tab2 - Edit module ----
+        self.view.entire_comp_radioBtn.clicked.connect(self.sig_entire_comp_radioBtn)
+        self.view.sel_comp_radioBtn.clicked.connect(self.sig_sel_comp_radioBtn)
+
+        self.view.umo_rigType_comboBox.currentIndexChanged.connect(self.sig_umo_rigType_comboBox)
+        self.view.umo_mirror_checkBox.stateChanged.connect(self.sig_umo_mirror_checkBox)
+        self.view.umo_stretch_checkBox.stateChanged.connect(self.sig_umo_stretch_checkBox)
+        self.view.umo_twist_checkBox.stateChanged.connect(self.sig_umo_twist_checkBox)
+
+        self.view.commit_module_edits_btn.clicked.connect(self.sig_commit_module_edits_btn)
+
 
     def update_progress(self, value, operation_name=""):
         # Update the progress bar with the given value and operation name
@@ -220,7 +243,7 @@ class CharLayoutController:
             self.model.cr_mdl_json_database(self.val_availableRigComboBox, mdl, signals['mdl_checkBox'], signals['mdl_iteration'], signals['mdl_side'])
             self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
             
-            progress_value = utils.progress_value()
+            # progress_value = utils.progress_value()
     
     # ---- add blueprint ----
     def func_createXfmGuides(self, component_selection):
@@ -261,7 +284,7 @@ class CharLayoutController:
     def sig_add_module(self):
         self.model.load_rig_group(self.val_availableRigComboBox)
         # this dict comes from gathering data from active databases in active rig folder!
-        component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
+        component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view, self.view.mdl_tree_model)
         # print(f"YAAAAAH component_selection = {component_selection[0]}")
         self.func_createXfmGuides(component_selection)
         self.model.func_unlocked_all()
@@ -463,6 +486,65 @@ class CharLayoutController:
                 else: unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_{side}" 
                 self.model.constrain_guides_from_comp(unlock_rdy_component) 
         else: print(f"component checkbox is not checked")
+
+    # ---- Tab 2 - edit module ----
+    def sig_entire_comp_radioBtn(self):
+        self.val_entire_comp_radioBtn = self.view.entire_comp_radioBtn.isChecked()
+
+
+    def sig_sel_comp_radioBtn(self):
+        self.val_sel_comp_radioBtn = self.view.sel_comp_radioBtn.isChecked()
+        self.val_entire_comp_radioBtn = False
+
+    # current module data! -> this data will be passed to the database!
+    def sig_umo_rigType_comboBox(self):
+        self.val_umo_rigType_comboBox = self.view.umo_rigType_comboBox.currentText()
+    def sig_umo_mirror_checkBox(self):
+        self.val_umo_mirror_checkBox = self.view.umo_mirror_checkBox.isChecked()
+    def sig_umo_stretch_checkBox(self):
+        self.val_umo_stretch_checkBox = self.view.umo_stretch_checkBox.isChecked()
+    def sig_umo_twist_checkBox(self):
+        self.val_umo_twist_checkBox = self.view.umo_twist_checkBox.isChecked()
+
+    
+    def sig_commit_module_edits_btn(self):
+        # update the database with data for each module
+        component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view, self.view.mdl_tree_model)
+        if self.val_entire_comp_radioBtn:
+            # gives mdl name, need to extract all components within that!
+            temp_list = []
+            for mdl_list in component_selection:
+                output = utils_QTree.get_components_of_selected_module(self.view.mdl_tree_model, mdl_list)
+                temp_list.append(output)
+            comp_list = [item for sublist in temp_list for item in sublist]
+            print(f"comp_list = `{comp_list}`")
+        else:
+            comp_list = component_selection
+            print(f"Entire radioButton is not being read {self.val_entire_comp_radioBtn}")
+
+        umo_dict = {
+        "mirror_rig": self.val_umo_mirror_checkBox,
+        "stretch": self.val_umo_stretch_checkBox,
+        "rig_type": {
+            "default": self.val_umo_rigType_comboBox}
+        }
+        # print(f"umo_dict = { umo_dict }")
+
+        for stp, comp in enumerate(comp_list):
+            self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, umo_dict)
+
+    def set_selected_module_label(self):
+        pass
+        # from selection set the name of the module working on
+        # component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
+        # mdl_name_display = ""
+        # if self.val_sel_comp_radioBtn:
+        #     print(f"val_sel_comp_radioBtn")
+        #     parts = component_selection.split("_")
+        #     mdl_name_display = parts[1]
+        # print(f"J : comp_selection = {component_selection}")
+        # print(f"J : Module diplay name = {mdl_name_display}")
+        # self.view.selected_module_label.setText(f"Module: {mdl_name_display}")
 
     # ------------ Neccessary functions ------------
     def populate_available_rig_comboBox(self, name_of_rig_fld):

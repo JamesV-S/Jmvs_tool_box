@@ -340,7 +340,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.selected_module_label = QtWidgets.QLabel("-> Module")
         layH_sel_options.addWidget(self.entire_comp_radioBtn)
         layH_sel_options.addWidget(self.sel_comp_radioBtn)
-        layH_sel_options.addWidget(self.selected_module_label)
+        # layH_sel_options.addWidget(self.selected_module_label)
         
         # update component options
         layGrid_upd_comp = self.update_component_data()
@@ -398,15 +398,17 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_control_editing.addLayout(layH_ctrl_num)
 
         # Commit changes button!
-        self.commit_module_edits = QtWidgets.QPushButton("Commit Changes")
+        self.commit_module_edits_btn = QtWidgets.QPushButton("Commit Changes")
         
         # add these interfaces to the tab!
         layV_module_editing.addLayout(layH_sel_options)
+        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
+        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_module_editing.addLayout(layGrid_upd_comp)
         layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_module_editing.addLayout(layH_jnt_ctrl_editing)
         layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
-        layV_module_editing.addWidget(self.commit_module_edits)
+        layV_module_editing.addWidget(self.commit_module_edits_btn)
 
         tab.addTab(parent_widget, "Edit Module")
 
@@ -417,7 +419,7 @@ class CharLayoutView(QtWidgets.QWidget):
              [self.entire_comp_radioBtn, self.sel_comp_radioBtn, self.selected_module_label,
          self.jnt_num_checkBox, self.jnt_num_spinBox, self.ik_operation_comboBox, 
          self.constraint_type_comboBox, self.ctrl_type_comboBox, self.ctrl_num_checkBox, 
-         self.ctrl_num_spinBox, self.commit_module_edits])
+         self.ctrl_num_spinBox, self.commit_module_edits_btn])
 
 
     def module_scene_actions_ui(self, widgets_layout):
@@ -604,12 +606,12 @@ class CharLayoutView(QtWidgets.QWidget):
         self.style_update_mdl_ui.append(umo_rigType_lbl)
         self.umo_rigType_comboBox = QtWidgets.QComboBox()
         self.umo_rigType_comboBox.addItems(["FK", "IK", "IKFK"])
-        self.umo_mirrorMdl_checkBox = QtWidgets.QCheckBox("Mirror")
+        self.umo_mirror_checkBox = QtWidgets.QCheckBox("Mirror")
         self.umo_stretch_checkBox = QtWidgets.QCheckBox("Stretch")
         self.umo_twist_checkBox = QtWidgets.QCheckBox("Twist")
         
         cmo_ls = [self.cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]
-        umd_ls = [umo_lbl, self.umo_rigType_comboBox, self.umo_mirrorMdl_checkBox, self.umo_stretch_checkBox, self.umo_twist_checkBox]
+        umd_ls = [umo_lbl, self.umo_rigType_comboBox, self.umo_mirror_checkBox, self.umo_stretch_checkBox, self.umo_twist_checkBox]
         cmo_pos_ls = [[0,0], [0,1], [0,2], [0,3], [0,4]]
         umd_pos_ls = [[1,0], [1,1], [1,2], [1,3], [1,4]]
         for x in range(len(cmo_ls)):

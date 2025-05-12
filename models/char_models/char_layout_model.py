@@ -372,17 +372,13 @@ class CharLayoutModel:
 
     # ---- Control data recording ----
     def store_component_control_data(self, component_selection, val_availableRigComboBox):
-        split_names = component_selection.split('_')[1:]
-        module = split_names[0]
-        unique_id = split_names[1]
-        side = split_names[2]
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
         #  func to return list of controls. Arg = component_selection is handled in tge database operation
         # SO get curve data for each control
         # then put this data that's returned back into the 'curve_info' column, looking like this:  
-        rig_folder_name = val_availableRigComboBox
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
-            self.db_rig_location, rig_folder_name
+            self.db_rig_location, val_availableRigComboBox
             )
         get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
         control_names_ls = get_control_names.return_comp_ctrl_ls()
@@ -422,3 +418,23 @@ class CharLayoutModel:
 
                 # ctrl_ik_elbow_0_L | xfm_guide_bipedArm_elbow_0_L
             print(f"selecting the guides of {module}")
+
+    
+    def commit_module_edit_changes(self, component_selection, val_availableRigComboBox, umo_dict):
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        
+        print(f"Module = `{module}`, unique_id = `{unique_id}`, side = `{side}`")
+        print(f"model | umo_dict = {umo_dict}")
+
+        # update the user_settings
+
+        # update the joint number and/or control number IF the module is SPINE:SNAKE:TAIL
+        # instead of doing the below, add an attribute to the config files to determine whether it can change joints or control number
+        if module == "spine" or module == "tail" or module == "snake" or module == "neck" or module == "snake":
+            pass
+        # get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
+        # control_names_ls = get_control_names.return_comp_ctrl_ls()
