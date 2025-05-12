@@ -228,11 +228,11 @@ class CharLayoutView(QtWidgets.QWidget):
         
         # ---- curve selection ----
         self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Controls")
-        self.guide_crv_edit_checkbox = QtWidgets.QCheckBox("Guides")
+        self.guide_crv_edit_checkBox = QtWidgets.QCheckBox("Guides")
         layH_crv_edit_001.addWidget(self.controls_crv_edit_checkBox)
-        layH_crv_edit_001.addWidget(self.guide_crv_edit_checkbox)
+        layH_crv_edit_001.addWidget(self.guide_crv_edit_checkBox)
 
-        self.select_all_in_comp_btn = QtWidgets.QPushButton("Select data in component")        
+        self.select_data_in_comp_btn = QtWidgets.QPushButton("Select data in component")        
         self.expand_curve_btn = QtWidgets.QPushButton("Expand")
         self.collapse_curve_btn = QtWidgets.QPushButton("Collapse")
         self.mirror_comp_btn = QtWidgets.QPushButton("Mirror Component") # Mirror control and/or guide positional data!
@@ -240,7 +240,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layH_crv_edit_002.addWidget(self.collapse_curve_btn)
         layV_curve_editing.addLayout(layH_crv_edit_001)
         layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
-        layV_curve_editing.addWidget(self.select_all_in_comp_btn)
+        layV_curve_editing.addWidget(self.select_data_in_comp_btn)
         layV_curve_editing.addLayout(layH_crv_edit_002)
         layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_curve_editing.addWidget(self.mirror_comp_btn)
@@ -267,7 +267,7 @@ class CharLayoutView(QtWidgets.QWidget):
         utils_view.assign_style_ls(self.style_tab_1_ui, 
              [self.expand_curve_btn, self.collapse_curve_btn, 
               self.mirror_comp_btn, self.store_curve_comp_btn, 
-              self.select_all_in_comp_btn])
+              self.select_data_in_comp_btn])
 
 
     def template_display_ui(self):
@@ -279,9 +279,6 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_tempDisp.addWidget(self.guide_template_checkBox)
         layV_tempDisp.addWidget(self.controls_template_checkBox)
         layV_tempDisp.addWidget(self.ddj_template_checkBox)
-            # set checkBox by default
-        self.controls_template_checkBox.setChecked(True)
-        self.ddj_template_checkBox.setChecked(True)
 
         # - template gid buttons - 
         layGrid_tempDisp = QtWidgets.QGridLayout()
@@ -360,10 +357,10 @@ class CharLayoutView(QtWidgets.QWidget):
             # jnt editing
         layH_jnt_num = QtWidgets.QHBoxLayout()
         jnt_lbl = QtWidgets.QLabel("Joint nom : ")
-        self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Defualt")
+        self.jnt_num_checkBox = QtWidgets.QCheckBox("Defualt")
         self.jnt_num_spinBox = QtWidgets.QSpinBox()
         layH_jnt_num.addWidget(jnt_lbl)
-        layH_jnt_num.addWidget(self.controls_crv_edit_checkBox)
+        layH_jnt_num.addWidget(self.jnt_num_checkBox)
         layH_jnt_num.addWidget(self.jnt_num_spinBox)
         
         layH_ik_op = QtWidgets.QHBoxLayout()
@@ -371,7 +368,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.ik_operation_comboBox = QtWidgets.QComboBox() # Add items using config data!
         layH_ik_op.addWidget(ik_operation_lbl)
         layH_ik_op.addWidget(self.ik_operation_comboBox)
-        
+
         layH_constraint_type = QtWidgets.QHBoxLayout()
         constraint_type_lbl = QtWidgets.QLabel("constraint type : ")
         self.constraint_type_comboBox = QtWidgets.QComboBox() # Add items using config data!
@@ -415,6 +412,12 @@ class CharLayoutView(QtWidgets.QWidget):
 
         for spinBox in [self.jnt_num_spinBox, self.ctrl_num_spinBox]:
             spinBox.setMinimum(0)
+
+        utils_view.assign_style_ls(self.style_tab_1_ui, 
+             [self.entire_comp_radioBtn, self.sel_comp_radioBtn, self.selected_module_label,
+         self.jnt_num_checkBox, self.jnt_num_spinBox, self.ik_operation_comboBox, 
+         self.constraint_type_comboBox, self.ctrl_type_comboBox, self.ctrl_num_checkBox, 
+         self.ctrl_num_spinBox, self.commit_module_edits])
 
 
     def module_scene_actions_ui(self, widgets_layout):

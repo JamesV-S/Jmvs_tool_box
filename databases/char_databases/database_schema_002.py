@@ -424,12 +424,10 @@ class CurveInfoData():
         
     
     def return_comp_ctrl_ls(self):
-        print(f" comp control list = {self.comp_control_ls}")
         return self.comp_control_ls
     
 
     def return_curve_info_dict(self):
-        print(f" curve_info dict = {self.curve_info_dict}")
         return self.curve_info_dict
     
 

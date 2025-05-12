@@ -370,7 +370,6 @@ class CharLayoutModel:
                 f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}4_{working_comp_unique_id}_{working_comp_side}", 
                 "parent", "all")
 
-    
     # ---- Control data recording ----
     def store_component_control_data(self, component_selection, val_availableRigComboBox):
         split_names = component_selection.split('_')[1:]
@@ -397,3 +396,29 @@ class CharLayoutModel:
             database_schema_002.UpdateCurveInfo(rig_db_directory, module, unique_id, side, control_data_dict)
         else:
             cmds.warning(f"Make sure the component `{component_selection}` exists in the scene with the controls, cus CANNOT find any")
+
+
+    def select_component_data(self, comp, val_availableRigComboBox, control_checkbox, guide_checkbox):
+        module, unique_id, side = utils.get_name_id_data_from_component(comp)
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
+        control_names_ls = get_control_names.return_comp_ctrl_ls()
+
+        if control_checkbox:
+            print(f"selecting the controls of {module}")
+            for ctrl in control_names_ls:
+                cmds.select(ctrl, tgl=1)
+        if guide_checkbox: 
+            # update this in the future to select guide names from the 
+            # database so it's more reliable!
+            temp_guide_ls = []
+            for ctrl in control_names_ls:
+                if ctrl.startswith("ctrl_fk"):
+                    guide = ctrl.replace("ctrl_fk_", f"xfm_guide_{module}_")
+                    cmds.select(guide, tgl=1)
+
+                # ctrl_ik_elbow_0_L | xfm_guide_bipedArm_elbow_0_L
+            print(f"selecting the guides of {module}")

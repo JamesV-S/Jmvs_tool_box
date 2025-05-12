@@ -491,15 +491,30 @@ QComboBox[treeComponents_UI_01="true"]:hover{
 }
 
 /* Disabled State */
+QPushButton[style_tab_1_ui="true"]:disabled,
+QLabel[style_tab_1_ui="true"]:disabled,
+QSpinBox[style_tab_1_ui="true"]:disabled,
+QComboBox[style_tab_1_ui="true"]:disabled,
+QTreeView[style_tab_1_ui="True"]:disabled,
+QPushButton[style_template_ui="true"]:disabled,
+QLabel[style_template_ui="true"]:disabled,
+QSpinBox[style_template_ui="true"]:disabled,
+QComboBox[style_template_ui="true"]:disabled,
+QTreeView[style_template_ui="True"]:disabled,
+QPushButton[style_lockUnlock_ui="true"]:disabled,
+QLabel[style_lockUnlock_ui="true"]:disabled,
+QSpinBox[style_lockUnlock_ui="true"]:disabled,
+QComboBox[style_lockUnlock_ui="true"]:disabled,
+QTreeView[style_lockUnlock_ui="True"]:disabled,
 QPushButton[treeComponents_UI_01="true"]:disabled,
 QLabel[treeComponents_UI_01="true"]:disabled,
 QSpinBox[treeComponents_UI_01="true"]:disabled,
 QComboBox[treeComponents_UI_01="true"]:disabled,
 QLabel[Current_disabled="true"]:disabled,
 QTreeView[treeComponents_UI_01="true"]:disabled {
-    background-color: rgba(50, 50, 50, 0.5); /* Dimmed background */
-    color: rgba(254, 254, 254, 0.481); /* Dimmed text color */
-    border: 1px solid rgb(0, 0, 0); /* Dimmed border */
+    background-color: rgba(50, 50, 50, 0.5);
+    color: rgba(254, 254, 254, 0.481);
+    border: 1px solid rgb(0, 0, 0);
 }
 
 /* Pressed State */

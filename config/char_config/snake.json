@@ -23,8 +23,8 @@
         "mirror_rig": false,
         "stretch": false,
         "rig_type": {
-            "options": ["FK", "IK", "IKFK", "VariableFK"],
-            "default": "IKFK"
+            "options": ["FK", "IK", "IK,FK", "VariableFK"],
+            "default": "IK,FK"
         },
         "size": 1,
         "side": ["M"]

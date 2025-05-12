@@ -110,7 +110,6 @@ def knot_vector(kv_type, cvs, d):
     return kv, cvs_copy
 
 
-
 def record_ctrl_data(control):
     degree = cmds.getAttr(f"{control}.degree")
 
@@ -149,9 +148,17 @@ def rebuild_ctrl(control, curve_info_dict):
 
 
 #--------------------------------- HIERARCHY ----------------------------------
+def get_name_id_data_from_component(component_sel):
+    split_names = component_sel.split('_')[1:]
+    module_name = split_names[0]
+    unique_id = split_names[1]
+    side = split_names[2]
+    return module_name, unique_id, side
+
 def make_group_and_parent(grp_name, parent):
     cmds.group(n=grp_name, em=1)
     cmds.parent(grp_name, parent)
+
 
 def group_module(module_name, input_grp, output_grp, ctrl_grp, joint_grp=None, logic_grp=None):
         grp_module_name = f"grp_module_{module_name}"
@@ -223,11 +230,6 @@ def find_directory(db_name, root_directory):
                 if db_name in filenames:
                     return dirpath
             raise FileNotFoundError(f"Database '{db_name}' not found starting from '{root_directory}'.")
-
-
-def delete_existing_ui(ui_name):
-    if cmds.window(ui_name, exists=True):
-        cmds.deleteUI(ui_name, window=True)
 
 
 def create_rig_group(name):
@@ -588,49 +590,49 @@ def constrain_2_items(output_item, input_item, con_type, values):
 
 #------------------------------- GUIDES ---------------------------------------
 def connect_guide(start_guide, end_guide):
-        cmds.select(cl=1)
-        joint_1 = cmds.joint(n=f"ddj_start_{start_guide.replace('xfm_guide_', '')}")
-        joint_2 = cmds.joint(n=f"ddj_end_{start_guide.replace('xfm_guide_', '')}")
-        cmds.select(cl=1)
-        cmds.matchTransform(joint_1, start_guide, pos=1, scl=0, rot=0)
-        cmds.matchTransform(joint_2, end_guide, pos=1, scl=0, rot=0)
-        
-        jnt_1_xform = cmds.xform(joint_1, q=1, rotatePivot=1, ws=1)
-        jnt_2_xform = cmds.xform(joint_2, q=1, rotatePivot=1, ws=1)
-        
-        # constrain the joints!
-        cmds.pointConstraint(start_guide, joint_1, n=f"pointCon_str_{start_guide.replace('xfm_guide_', '')}", w=1)
-        cmds.pointConstraint(end_guide, joint_2, n=f"pointCon_end_{start_guide.replace('xfm_guide_', '')}", w=1)
+    cmds.select(cl=1)
+    joint_1 = cmds.joint(n=f"ddj_start_{start_guide.replace('xfm_guide_', '')}")
+    joint_2 = cmds.joint(n=f"ddj_end_{start_guide.replace('xfm_guide_', '')}")
+    cmds.select(cl=1)
+    cmds.matchTransform(joint_1, start_guide, pos=1, scl=0, rot=0)
+    cmds.matchTransform(joint_2, end_guide, pos=1, scl=0, rot=0)
+    
+    jnt_1_xform = cmds.xform(joint_1, q=1, rotatePivot=1, ws=1)
+    jnt_2_xform = cmds.xform(joint_2, q=1, rotatePivot=1, ws=1)
+    
+    # constrain the joints!
+    cmds.pointConstraint(start_guide, joint_1, n=f"pointCon_str_{start_guide.replace('xfm_guide_', '')}", w=1)
+    cmds.pointConstraint(end_guide, joint_2, n=f"pointCon_end_{start_guide.replace('xfm_guide_', '')}", w=1)
 
-        curve_name = f"cv_{start_guide.replace('xfm_', '')}"
-        cmds.curve(d=1, n=curve_name, p=[jnt_1_xform, jnt_2_xform])
-        cmds.setAttr(f"{curve_name}.overrideEnabled", 1)
-        cmds.setAttr(f"{curve_name}.overrideDisplayType", 2)
-        
-        if not cmds.objExists("grp_component_misc"):
-            cmds.group(n=f"grp_component_misc", em=1)
-        cmds.parent(curve_name, joint_1, "grp_component_misc")
+    curve_name = f"cv_{start_guide.replace('xfm_', '')}"
+    cmds.curve(d=1, n=curve_name, p=[jnt_1_xform, jnt_2_xform])
+    cmds.setAttr(f"{curve_name}.overrideEnabled", 1)
+    cmds.setAttr(f"{curve_name}.overrideDisplayType", 2)
+    
+    if not cmds.objExists("grp_component_misc"):
+        cmds.group(n=f"grp_component_misc", em=1)
+    cmds.parent(curve_name, joint_1, "grp_component_misc")
 
-        # cluster the curve
-        start_cluster = cmds.cluster(f"{curve_name}.cv[0]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv0")
-        end_cluster = cmds.cluster(f"{curve_name}.cv[1]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv1")
-        
-        #for x in range(2):
-        try:
-            cmds.parent(start_cluster, start_guide)
-            cmds.parent(end_cluster, end_guide)
-        except cmds.warning():
-            pass
-        
-        #clusters = cmds.ls(type="cluster")
-        #for x in clusters:
-        #    cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
-        #    cmds.hide(f"{x}Handle")
-        # arguments: 2 guides
-        # create: 2 joints / black linear curve / 
-        # methods: cr curve to go from start_guide to end_guide 
-        # > create cluster on each cv > parent correct cv to xfm_guide 
-        # > joint1 @ start_guide, joint2 @ end_guide > pointConstrain joint to xfm_guid
+    # cluster the curve
+    start_cluster = cmds.cluster(f"{curve_name}.cv[0]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv0")
+    end_cluster = cmds.cluster(f"{curve_name}.cv[1]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv1")
+    
+    #for x in range(2):
+    try:
+        cmds.parent(start_cluster, start_guide)
+        cmds.parent(end_cluster, end_guide)
+    except cmds.warning():
+        pass
+    
+    #clusters = cmds.ls(type="cluster")
+    #for x in clusters:
+    #    cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
+    #    cmds.hide(f"{x}Handle")
+    # arguments: 2 guides
+    # create: 2 joints / black linear curve / 
+    # methods: cr curve to go from start_guide to end_guide 
+    # > create cluster on each cv > parent correct cv to xfm_guide 
+    # > joint1 @ start_guide, joint2 @ end_guide > pointConstrain joint to xfm_guid
 
 
 
