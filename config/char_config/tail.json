@@ -36,10 +36,12 @@
     "user_settings": {
         "mirror_rig": false,
         "stretch": false,
-        "rig_type": {
+        "twist": true,
+        "rig_sys": {
             "options": ["FK", "IK", "IK,FK"],
             "default": "IK,FK"
         },
+        "joint_num": 8,
         "size": 1,
         "side": ["M"]
     },

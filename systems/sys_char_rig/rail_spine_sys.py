@@ -23,12 +23,12 @@ add squash float values to the joints!
 '''
 
 class rail_spine_setup():
-    def __init__(self, module_name, unique_id, side, component_pos, ctrl_dict):
+    def __init__(self, module_name, unique_id, side, component_pos):
         self.mdl_nm = module_name
         self.unique_id = unique_id
         self.side = side
         self.component_pos = component_pos
-        self.ctrl_dict = ctrl_dict
+        # self.ctrl_dict = ctrl_dict
 
         # Get number of spans based off the number of ctrls
 
@@ -154,7 +154,7 @@ def func_rail_spine_setup(module_name, unique_id, side, component_pos):
     # Example:
         # 5 joints -> -1 = 4 -> VAL = 1/4 = 0.25 -> first joint = VAL 0.25 -> rest of joints = previous value + 0.25 -> End joint = 1
     # Establish number of joints
-    temp_jnt_number = 10
+    temp_jnt_number = 5
     ddj_spine_jnts = []
     
     for x in range(temp_jnt_number):
@@ -277,7 +277,7 @@ def func_rail_spine_setup(module_name, unique_id, side, component_pos):
     
     return spine_guides
 
-# rail_spine_setup("spine", "0", "M", {'spine1': [0.0, 144.03905123892466, 0.0], 
+# func_rail_spine_setup("spine", "0", "M", {'spine1': [0.0, 144.03905123892466, 0.0], 
 #                     'spine2': [-1.2281763474396059e-14, 153.44444274902344, 0.0], 
 #                     'spine3': [-1.2281763474396059e-14, 159.88888549804688, 0.0], 
 #                     'spine4': [-1.2281763474396059e-14, 166.3333282470703, 0.0], 

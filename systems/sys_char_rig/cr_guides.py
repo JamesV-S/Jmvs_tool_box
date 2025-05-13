@@ -22,39 +22,23 @@ importlib.reload(database_schema_002)
 
 class CreateXfmGuides():
     def __init__(self, database_componment_dict, val_availableRigComboBox):
-        # 1) write an example dictionary to pass to this to make it work, then 
-        # 2) write funtions in `char_ui` to gather necessary data from database, 
-        # based off the selection in the ui!
-        '''
-        database_componment_dict = {
-            "module_name":"bipedArm", 
-            "unique_id":0,
-            "side":"L", 
-            "component_pos":{'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
-                            'shoulder': [28.9705319404602, 230.650634765625, 2.762230157852166], 
-                            'elbow': [49.96195602416994, 192.91743469238278, -8.43144416809082], 
-                            'wrist': [72.36534118652347, 164.23757934570304, 15.064828872680739]
-                            },
-            "controls":{'FK_ctrls': 
-                                {'fk_clavicle': 'circle', 'fk_shoulder': 'circle', 'fk_elbow': 'circle', 'fk_wrist': 'circle'}, 
-                        'IK_ctrls': 
-                                {'ik_clavicle': 'cube', 'ik_shoulder': 'cube', 'ik_elbow': 'pv', 'ik_wrist': 'cube'}
-                        }                
-            }'''
-        
+        rig_folder_name = val_availableRigComboBox
+        self.rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            "db_rig_storage", rig_folder_name
+            )
+
         print(f"crerating guide component for {database_componment_dict}")
-        # self.component_pos_dict = {} 
         self.module_name = database_componment_dict['module_name']
         self.unique_id = database_componment_dict['unique_id']
         self.side = database_componment_dict['side']
         self.component_pos_dict = database_componment_dict['component_pos']
         self.component_controls_dict = database_componment_dict['controls']
-        self.val_availableRigComboBox = val_availableRigComboBox
+        
 
         print(f"Working on `self.module_name`: {self.module_name}, `self.unique_id`: {self.unique_id}, `self.side`: {self.side}, `self.component_pos_dict`:{self.component_pos_dict}")
         self.guides = self.build_guide_components(self.module_name, self.unique_id, self.side, self.component_pos_dict, self.component_controls_dict)
         
-        # if not self.module_name == 'spine':
         self.build_control_components(self.guides, self.module_name, self.unique_id, self.side, self.component_controls_dict)
 
 
@@ -64,9 +48,9 @@ class CreateXfmGuides():
         # import the guide & distribbute it to all necessary guides!    
         # guides = []
         
-        if module_name == "spine":
+        if module_name == "spine" or module_name == "tail" or module_name == "neck":
             print(f"Spine module detected: {module_name}")
-            guides = self.spine_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
+            guides = self.rail_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
         else:
             guides = self.guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
 
@@ -113,13 +97,8 @@ class CreateXfmGuides():
         ctrl_grp_list = []
         fk_ctrl_list = []
 
-        # get the dict: 
-        rig_folder_name = self.val_availableRigComboBox
-        rig_db_directory = utils_os.create_directory(
-            "Jmvs_tool_box", "databases", "char_databases", 
-            "db_rig_storage", rig_folder_name
-            )
-        curve_info_data = database_schema_002.CurveInfoData(rig_db_directory, module_name, unique_id, side)
+        
+        curve_info_data = database_schema_002.CurveInfoData(self.rig_db_directory, module_name, unique_id, side)
         curve_info_dict = curve_info_data.return_curve_info_dict()
 
         for ctrl_type, ctrl_dict in component_ctrls.items():
@@ -245,7 +224,7 @@ class CreateXfmGuides():
         return guides
 
 
-    def spine_guide_setup(self, module_name, unique_id, side, component_pos, component_ctrls):
+    def rail_guide_setup(self, module_name, unique_id, side, component_pos, component_ctrls):
         gd_curve = f"crv_gd_{module_name}_{unique_id}_{side}"
         spine_shape = f"{gd_curve}Shape"
 
@@ -352,10 +331,10 @@ class CreateXfmGuides():
         # Example:
             # 5 joints -> -1 = 4 -> VAL = 1/4 = 0.25 -> first joint = VAL 0.25 -> rest of joints = previous value + 0.25 -> End joint = 1
         # Establish number of joints
-        temp_jnt_number = 10
+        db_data = database_schema_002.RetrieveSpecificData(self.rig_db_directory, module_name, unique_id, side)
+        jnt_num = db_data.return_get_jnt_num()
         ddj_spine_jnts = []
-        
-        for x in range(temp_jnt_number):
+        for x in range(jnt_num):
             joint_name = f"ddj_{x}{node_name_convention}"
             cmds.joint(n=joint_name)
             ddj_spine_jnts.append(joint_name)
@@ -445,39 +424,18 @@ class CreateXfmGuides():
         # Connect each ls_MM_ddj[x] to the previous joint's worldInverseMatrix
         for x in range(1, len(ddj_spine_jnts)):  
             utils.connect_attr(f"{ddj_spine_jnts[x-1]}.worldInverseMatrix[0]", f"{ls_MM_ddj[x]}.matrixIn[1]")
-
-        increment_value = 1.0 / (temp_jnt_number - 1)  # (10-1) = 9, so 1/9 = 0.111...
-        # Set attribute values progressively
-        print(f"NUM stretchMULT = {len(ls_strechMulth)}")
-        value_list = []
-        for x in range(len(ls_strechMulth)):
-            value = (x + 1) * increment_value  # First = 0.1, Second = 0.2, etc.
-            value_list.append(value) 
-            cmds.setAttr(f"{ls_strechMulth[x]}.input1X", value) # ls_remapVal
-            cmds.setAttr(f"{ls_remapVal[x]}.outputMax", value)
-            cmds.setAttr(f"{ls_condition[x]}.colorIfTrueR", value)
-        print(f"VALUE INCRMENT LIST == {value_list}")
-        '''
-        VALUE INCRMENT LIST == [
-            0.1111111111111111, 
-            0.2222222222222222, 
-            0.3333333333333333, 
-            0.4444444444444444, 
-            0.5555555555555556, 
-            0.6666666666666666, 
-            0.7777777777777777, 
-            0.8888888888888888, 
-            1.0, 
-            1.1111111111111112]
-
-        '''
-
-
-        # set value attribute
         
+        self.set_joint_values(jnt_num, ls_strechMulth, ls_remapVal, ls_condition)
         return spine_guides
-    
 
+    def set_joint_values(self, jnt_num, ls_strechMulth, ls_remapVal, ls_condition):
+        increment_value = 1.0/(jnt_num - 1)  # Calculate the correct increment
+
+        for x in range(1, jnt_num):  # Start from 1 to skip the root joint
+            value = x * increment_value
+            cmds.setAttr(f"{ls_strechMulth[x-1]}.input1X", value)
+            cmds.setAttr(f"{ls_remapVal[x-1]}.outputMax", value)
+            cmds.setAttr(f"{ls_condition[x-1]}.colorIfTrueR", value)
         '''
         
         spine_guides = ['xfm_guide_spine_0_0_M', 'xfm_guide_spine_1_0_M', 'xfm_guide_spine_2_0_M', 

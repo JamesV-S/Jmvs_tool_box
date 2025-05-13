@@ -335,8 +335,8 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_module_editing = QtWidgets.QVBoxLayout(parent_widget)
         layH_sel_options = QtWidgets.QHBoxLayout()
 
-        self.entire_comp_radioBtn = QtWidgets.QRadioButton("All components from module")
-        self.sel_comp_radioBtn =  QtWidgets.QRadioButton("Selected components")
+        self.entire_comp_radioBtn = QtWidgets.QRadioButton("Work on components within moduls")
+        self.sel_comp_radioBtn =  QtWidgets.QRadioButton("Work on individual components")
         self.selected_module_label = QtWidgets.QLabel("-> Module")
         layH_sel_options.addWidget(self.entire_comp_radioBtn)
         layH_sel_options.addWidget(self.sel_comp_radioBtn)
@@ -357,10 +357,10 @@ class CharLayoutView(QtWidgets.QWidget):
             # jnt editing
         layH_jnt_num = QtWidgets.QHBoxLayout()
         jnt_lbl = QtWidgets.QLabel("Joint nom : ")
-        self.jnt_num_checkBox = QtWidgets.QCheckBox("Defualt")
+        self.jnt_num_checkBox = QtWidgets.QCheckBox()
         self.jnt_num_spinBox = QtWidgets.QSpinBox()
-        layH_jnt_num.addWidget(jnt_lbl)
         layH_jnt_num.addWidget(self.jnt_num_checkBox)
+        layH_jnt_num.addWidget(jnt_lbl)
         layH_jnt_num.addWidget(self.jnt_num_spinBox)
         
         layH_ik_op = QtWidgets.QHBoxLayout()
@@ -486,7 +486,7 @@ class CharLayoutView(QtWidgets.QWidget):
             mdl_h_layout.addWidget(mdl_name_label)
             mdl_h_layout.addWidget(mdl_iterations)
             
-            mdl_side = None
+            mdl_side = None 
             if side_items != "None":
                 mdl_side = QtWidgets.QComboBox()
                 mdl_side.addItems(side_items)

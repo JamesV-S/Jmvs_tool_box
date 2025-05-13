@@ -79,8 +79,8 @@ class CharLayoutController:
 
         self.view.entire_comp_radioBtn.setChecked(True)
         self.val_entire_comp_radioBtn = True
-        self.view.jnt_num_checkBox.setChecked(True)
-        self.view.ctrl_num_checkBox.setChecked(True)
+        self.view.jnt_num_checkBox.setChecked(False)
+        self.view.ctrl_num_checkBox.setChecked(False)
         self.view.jnt_num_spinBox.setEnabled(False)
         self.view.ctrl_num_spinBox.setEnabled(False)
 
@@ -89,7 +89,8 @@ class CharLayoutController:
         self.sig_umo_stretch_checkBox()
         self.sig_umo_twist_checkBox()
 
-        # self.set_selected_module_label()
+        self.sig_jnt_num_checkBox()
+        self.sig_jnt_num_spinBox()
 
     def setup_connections(self):
         # selection_model = self.view.mdl_tree_view.selectionModel()
@@ -139,6 +140,9 @@ class CharLayoutController:
         self.view.umo_mirror_checkBox.stateChanged.connect(self.sig_umo_mirror_checkBox)
         self.view.umo_stretch_checkBox.stateChanged.connect(self.sig_umo_stretch_checkBox)
         self.view.umo_twist_checkBox.stateChanged.connect(self.sig_umo_twist_checkBox)
+
+        self.view.jnt_num_checkBox.stateChanged.connect(self.sig_jnt_num_checkBox)
+        self.view.jnt_num_spinBox.valueChanged.connect(self.sig_jnt_num_spinBox)
 
         self.view.commit_module_edits_btn.clicked.connect(self.sig_commit_module_edits_btn)
 
@@ -326,6 +330,7 @@ class CharLayoutController:
                 self.model.select_component_data(comp, self.val_availableRigComboBox, self.val_ctrl_crv_edit_checkbox, self.val_guide_crv_edit_checkBox)
         except TypeError as e:
             cmds.error(f"Select a component first!: |{e}|")
+
 
     def sig_store_curve_comp_btn(self):
         """ 
@@ -525,13 +530,50 @@ class CharLayoutController:
         umo_dict = {
         "mirror_rig": self.val_umo_mirror_checkBox,
         "stretch": self.val_umo_stretch_checkBox,
-        "rig_type": {
-            "default": self.val_umo_rigType_comboBox}
+        "twist": self.val_umo_twist_checkBox,
+        "rig_sys": self.val_umo_rigType_comboBox
         }
-        # print(f"umo_dict = { umo_dict }")
-
+        
+        # update the DB | pass joint number!
+        total_index = len(comp_list)
         for stp, comp in enumerate(comp_list):
-            self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, umo_dict)
+            self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, self.val_jnt_num_checkBox, umo_dict, self.val_jnt_num_spinBox)
+            
+            progress_value = utils.progress_value(stp, total_index)
+            self.update_progress(progress_value, f"Commiting data: [{comp}]")
+        self.update_progress(0, f"DONE: Updated module settings: {comp_list}")
+
+        # update the ui (current options + update options presets)
+        self.update_umo_label("Rig sys", self.view.cmo_rigType_lbl, umo_dict["rig_sys"])
+        self.update_umo_label("Mirror", self.view.cmo_mirrorMdl_lbl, umo_dict["mirror_rig"])
+        self.update_umo_label("Stretch", self.view.cmo_stretch_lbl, umo_dict["stretch"])
+        self.update_umo_label("Twist", self.view.cmo_twist_lbl, umo_dict["twist"])
+
+
+    def sig_jnt_num_checkBox(self):
+        self.val_jnt_num_checkBox = self.view.jnt_num_checkBox.isChecked()
+        if self.val_jnt_num_checkBox:
+            self.view.jnt_num_spinBox.setEnabled(True)
+        else:
+            self.view.jnt_num_spinBox.setEnabled(False)
+
+
+
+    def sig_jnt_num_spinBox(self):
+        try:
+            self.val_jnt_num_spinBox = float(self.view.jnt_num_spinBox.value())
+        except ValueError as e:
+            cmds.error(f"error in 'sig_jnt_numm_spinBox': {e}")
+
+
+    def update_umo_label(self, name, qlabel, value):
+        ''' Args: QLabel, name, value'''
+        if value == "True":
+            value = "Yes"
+        elif value == "False":
+            value = "No"
+        qlabel.setText(f"{name}: {value}")
+
 
     def set_selected_module_label(self):
         pass

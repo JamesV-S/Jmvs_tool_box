@@ -32,15 +32,17 @@ sys.path.append(os.path.abspath(target_dir))
 '''
 
 from utils import (
+    utils,
     utils_db
 )
 
 from databases import database_manager
 importlib.reload(database_manager)
+importlib.reload(utils)
 importlib.reload(utils_db)
 
 # Temporary, this is already gathered automarically from the JSON
-# u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_type': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
+# u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_sys': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
 
 class CreateDatabase():
     def __init__(self, directory, mdl_name, side, placement_dict, user_settings_dict, controls_dict):
@@ -65,13 +67,16 @@ class CreateDatabase():
                 # update the tables!
                 self.update_db(conn, "modules", (self.unique_id, mdl_name, side))
                 # table user_settings
-                rig_options = ', '.join(user_settings_dict['rig_type']['options'])
+                rig_options = ', '.join(user_settings_dict['rig_sys']['options'])
+                print(f"DB* user_settings_dict['twist']= `{user_settings_dict['twist']}`" )
                 self.update_db(conn, "user_settings", (
                     self.unique_id, 
                     user_settings_dict['mirror_rig'], 
                     user_settings_dict['stretch'], 
+                    user_settings_dict['twist'], 
                     rig_options, 
-                    user_settings_dict['rig_type']['default'], 
+                    user_settings_dict['rig_sys']['default'], 
+                    user_settings_dict['joint_num'],
                     user_settings_dict['size'],
                     side
                     ))
@@ -119,8 +124,10 @@ class CreateDatabase():
             unique_id INT,
             mirror_rig FLOAT,
             stretch FLOAT,
+            twist FLOAT,
             rig_options TEXT,
             rig_default TEXT,
+            joint_num INT,
             size INT, 
             side text
         );""",
@@ -152,7 +159,7 @@ class CreateDatabase():
             cursor.execute(sql, values)
         elif table == 'user_settings':
             print(f"888888888888888888 H H user_settings VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, rig_options, rig_default, size, side) VALUES (?, ?, ?, ?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, twist, rig_options, rig_default, joint_num, size, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'controls':
             print(f"888888888888888888 H H controls VALUES: {values[3]}")
@@ -231,12 +238,13 @@ class retrieveModulesData():
 class retrieveSpecificComponentdata():
     def __init__(self, directory, module_name, unique_id, side):
         print(f" Retrieve specific component data MODULE_NAME: {module_name} ")
-        self.mdl_populate_tree_dict = {}
-        db_directory = os.path.expanduser(directory)
-        os.makedirs(db_directory, exist_ok=1)
-        # db_name must include the entire path too!
-        database_name = f"DB_{module_name}.db"
-        db_name = os.path.join(db_directory, database_name)
+        # self.mdl_populate_tree_dict = {}
+        # db_directory = os.path.expanduser(directory)
+        # os.makedirs(db_directory, exist_ok=1)
+        # # db_name must include the entire path too!
+        # database_name = f"DB_{module_name}.db"
+        # db_name = os.path.join(db_directory, database_name)
+        db_path = utils_db.get_database_name_path(directory, module_name)
 
         # constants:
         self.module_name = module_name
@@ -244,7 +252,7 @@ class retrieveSpecificComponentdata():
         self.side = side
 
         try:
-            with sqlite3.connect(db_name) as conn:
+            with sqlite3.connect(db_path) as conn:
                 placement_dict = self.placement_dict_from_table(conn)
                 controls_dict = self.controls_dict_from_table(conn)
                 self.mdl_component_dict = {
@@ -302,10 +310,6 @@ class retrieveSpecificComponentdata():
 
     def return_mdl_component_dict(self):
         return self.mdl_component_dict
-
-
-
-
 
 
 class retrieveSpecificPlacementPOSData():
@@ -442,7 +446,7 @@ class UpdateCurveInfo():
                 self.update_db(conn, "controls", (comp_ctrl_data, unique_id, side))
                 print(f"Updated database `curve_info`: DB_{module_name}.db with {comp_ctrl_data}, where its unique_id = {unique_id} & side = {side}")
         except sqlite3.Error as e:
-            print(f"module component retrieval sqlite3.Error: {e}")
+            print(f"DB* module component retrieval sqlite3.Error: {e}")
 
     
     def update_db(self, conn, table, values):
@@ -452,3 +456,77 @@ class UpdateCurveInfo():
             values = (json.dumps(values[0]), values[1], values[2])
             cursor.execute(sql, values)
         conn.commit()
+
+
+class UpdateUserSettings():
+    def __init__(self, directory, module_name, unique_id, side, umo_dict):
+        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.unique_id = unique_id
+        self.side = side
+        try:
+            with sqlite3.connect(db_path) as conn:
+                self.update_user_setting(conn, "user_settings", umo_dict)
+        except sqlite3.Error as e:
+            print(f"DB* module umo update Error: {e}")
+
+
+    def update_user_setting(self, conn, table, umo_dict):
+        cursor = conn.cursor()
+        # get values!
+        if table == 'user_settings':
+            sql = f'UPDATE {table} SET mirror_rig = ?, stretch = ?, twist = ?, rig_default = ? WHERE unique_id = ? AND side = ?'
+            values = (umo_dict["mirror_rig"], umo_dict["stretch"], umo_dict["twist"], umo_dict["rig_sys"], self.unique_id, self.side)
+            cursor.execute(sql, values)
+
+
+class UpdateJointNum():
+    def __init__(self, directory, module_name, unique_id, side, jnt_num):
+        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.unique_id = unique_id
+        self.side = side
+        try:
+            with sqlite3.connect(db_path) as conn:
+                self.update_joint_num(conn, "user_settings", jnt_num)
+        except sqlite3.Error as e:
+            print(f"DB* module umo update Error: {e}")
+
+
+    def update_joint_num(self, conn, table, jnt_num):
+        cursor = conn.cursor()
+        if table == 'user_settings':
+            sql = f'UPDATE {table} SET joint_num = ? WHERE unique_id = ? AND side = ?'
+            values = (jnt_num, self.unique_id, self.side)
+            cursor.execute(sql, values)
+
+
+class RetrieveSpecificData():
+    def __init__(self, directory, module_name, unique_id, side):
+        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.unique_id = unique_id
+        self.side = side
+        try:
+            with sqlite3.connect(db_path) as conn:
+                self.jnt_num = self.get_jnt_num(conn, "user_settings")
+        except sqlite3.Error as e:
+            print(f"DB* module umo update Error: {e}")
+
+    def get_jnt_num(self, conn, table):
+        cursor = conn.cursor()
+        sql = f"SELECT joint_num FROM {table} WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(sql, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                jnt_num = row[0]
+                if jnt_num is None:
+                    return 'NULL'
+                else:
+                    return jnt_num
+            else:
+                return 'NULL'
+        except sqlite3.Error as e:
+            print(f"placement sqlite3.Error: {e}")
+            return {}
+        
+    def return_get_jnt_num(self):
+        return self.jnt_num

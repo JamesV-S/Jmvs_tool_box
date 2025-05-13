@@ -118,7 +118,7 @@ def spine_guide_setup(module_name, unique_id, side, component_pos):
     # Example:
         # 5 joints -> -1 = 4 -> VAL = 1/4 = 0.25 -> first joint = VAL 0.25 -> rest of joints = previous value + 0.25 -> End joint = 1
     # Establish number of joints
-    temp_jnt_number = 10
+    temp_jnt_number = 9
     ddj_spine_jnts = []
     
     for x in range(temp_jnt_number):

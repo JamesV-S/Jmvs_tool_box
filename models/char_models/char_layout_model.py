@@ -420,8 +420,8 @@ class CharLayoutModel:
             print(f"selecting the guides of {module}")
 
     
-    def commit_module_edit_changes(self, component_selection, val_availableRigComboBox, umo_dict):
-        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+    def commit_module_edit_changes(self, component, val_availableRigComboBox, val_jnt_num_checkBox, umo_dict, jnt_num):
+        module, unique_id, side = utils.get_name_id_data_from_component(component)
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, val_availableRigComboBox
@@ -429,12 +429,15 @@ class CharLayoutModel:
         
         print(f"Module = `{module}`, unique_id = `{unique_id}`, side = `{side}`")
         print(f"model | umo_dict = {umo_dict}")
-
-        # update the user_settings
-
-        # update the joint number and/or control number IF the module is SPINE:SNAKE:TAIL
-        # instead of doing the below, add an attribute to the config files to determine whether it can change joints or control number
-        if module == "spine" or module == "tail" or module == "snake" or module == "neck" or module == "snake":
-            pass
-        # get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
-        # control_names_ls = get_control_names.return_comp_ctrl_ls()
+ 
+        # update the user_settings DB
+        database_schema_002.UpdateUserSettings(rig_db_directory, module, unique_id, side, umo_dict)
+        
+        # get the value in the db!
+        user_settings_data = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
+        DB_joint_num = user_settings_data.return_get_jnt_num()
+        print(f"DB_joint_num = {DB_joint_num}")
+        if val_jnt_num_checkBox: # True if we want to proceed!
+            if not DB_joint_num == "NULL": # Don't manipulate the number of joints!
+                database_schema_002.UpdateJointNum(rig_db_directory, module, unique_id, side, jnt_num)
+            
