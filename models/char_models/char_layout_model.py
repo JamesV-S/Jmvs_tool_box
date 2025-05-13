@@ -436,7 +436,6 @@ class CharLayoutModel:
         # get the value in the db!
         user_settings_data = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
         DB_joint_num = user_settings_data.return_get_jnt_num()
-        print(f"DB_joint_num = {DB_joint_num}")
         if val_jnt_num_checkBox: # True if we want to proceed!
             if not DB_joint_num == "NULL": # Don't manipulate the number of joints!
                 database_schema_002.UpdateJointNum(rig_db_directory, module, unique_id, side, jnt_num)

@@ -425,17 +425,38 @@ class CreateXfmGuides():
         for x in range(1, len(ddj_spine_jnts)):  
             utils.connect_attr(f"{ddj_spine_jnts[x-1]}.worldInverseMatrix[0]", f"{ls_MM_ddj[x]}.matrixIn[1]")
         
-        self.set_joint_values(jnt_num, ls_strechMulth, ls_remapVal, ls_condition)
+        # -------
+        u_list = self.get_u_value_list(gd_curve, jnt_num, node_name_convention)
+        print(f"JJJJJJJ Module: `{module_name}` u_list = {u_list}")
+        self.set_joint_values(jnt_num, u_list, ls_strechMulth, ls_remapVal, ls_condition)
         return spine_guides
 
-    def set_joint_values(self, jnt_num, ls_strechMulth, ls_remapVal, ls_condition):
-        increment_value = 1.0/(jnt_num - 1)  # Calculate the correct increment
 
-        for x in range(1, jnt_num):  # Start from 1 to skip the root joint
-            value = x * increment_value
-            cmds.setAttr(f"{ls_strechMulth[x-1]}.input1X", value)
-            cmds.setAttr(f"{ls_remapVal[x-1]}.outputMax", value)
-            cmds.setAttr(f"{ls_condition[x-1]}.colorIfTrueR", value)
+    def set_joint_values(self, jnt_num, u_list, ls_strechMulth, ls_remapVal, ls_condition):
+        for x in range(jnt_num):
+            print(f"ls_strechMulth = {ls_strechMulth[x]} -> { u_list[x]}")
+            cmds.setAttr(f"{ls_strechMulth[x]}.input1X", u_list[x])
+            cmds.setAttr(f"{ls_remapVal[x]}.outputMax", u_list[x])
+            cmds.setAttr(f"{ls_condition[x]}.colorIfTrueR", u_list[x])
+
+
+    def get_u_value_list(self, curve, jnt_num, node_name_convention):
+        u_list = []
+        for x in range(0, jnt_num):
+            cmds.select(cl=1)
+            temp_jnt_name = f"temp_{x}{node_name_convention}"
+            cmds.joint(n=temp_jnt_name)
+            temp_moPath = cmds.pathAnimation( temp_jnt_name, c=curve, fractionMode=1 )
+            cmds.cutKey( temp_moPath + ".u", time=() )
+            cmds.setAttr((temp_moPath + ".u"), x * (1.0/(jnt_num-1)))
+            u_val = cmds.getAttr(temp_moPath + ".u")
+            u_list.append(u_val)
+            cmds.delete( temp_jnt_name + ".tx", icn=1 )
+            cmds.delete( temp_jnt_name + ".ty", icn=1 )
+            cmds.delete( temp_jnt_name + ".tz", icn=1 )
+            cmds.delete(temp_moPath)
+            cmds.delete(temp_jnt_name)
+        return u_list
         '''
         
         spine_guides = ['xfm_guide_spine_0_0_M', 'xfm_guide_spine_1_0_M', 'xfm_guide_spine_2_0_M', 
