@@ -231,12 +231,20 @@ class CreateXfmGuides():
             parts = temp_gd.split('_')[-3][-1]
             print(f"PARTS of guide name = {parts}")
             if parts == "0":
-                utils.replace_control("imp_xfmSpine", temp_gd, 17, 1.5)
+                if module_name == "tail":
+                    utils.replace_control("imp_xfmSpine", temp_gd, 7, 1.5)
+                else:
+                    utils.replace_control("imp_xfmSpine", temp_gd, 4, 1.5)
             elif parts == "1" or parts == "3":
-                print(f"#_Prism_# temp_gd == {temp_gd}")
-                utils.replace_control("imp_prism", temp_gd, 29, 0.5)
+                if module_name == "tail":
+                    utils.replace_control("imp_prism", temp_gd, 1, 0.5)
+                else:
+                    utils.replace_control("imp_prism", temp_gd, 8, 0.5)
             elif parts == "2" or parts == "4":
-                utils.replace_control("imp_orb", temp_gd, 25)
+                if module_name == "tail":
+                    utils.replace_control("imp_orb", temp_gd, 27)
+                else:
+                    utils.replace_control("imp_orb", temp_gd, 4)
 
         # position the guides to the spine_clusters
         for cluster, guide in zip(spine_clusters, rail_guides):
