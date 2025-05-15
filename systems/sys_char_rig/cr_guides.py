@@ -49,7 +49,7 @@ class CreateXfmGuides():
         # guides = []
         
         if module_name == "spine" or module_name == "tail" or module_name == "neck":
-            print(f"Spine module detected: {module_name}")
+            print(f"rail module detected: {module_name}")
             guides = self.rail_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
         else:
             guides = self.guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
@@ -97,69 +97,22 @@ class CreateXfmGuides():
         ctrl_grp_list = []
         fk_ctrl_list = []
 
-        
         curve_info_data = database_schema_002.CurveInfoData(self.rig_db_directory, module_name, unique_id, side)
         curve_info_dict = curve_info_data.return_curve_info_dict()
 
-        for ctrl_type, ctrl_dict in component_ctrls.items():
-            for ctrl_name, ctrl_shape in ctrl_dict.items():
-                whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}" # ctrl_fk_clavicle_0_L
-                ctrl_name_list.append(whole_ctrl_name)
-                import_ctrl = cr_ctrl.CreateControl(type=ctrl_shape, name=whole_ctrl_name)
-                ctrl = import_ctrl.retrun_ctrl()
-                # scale up the ctrl for time being
-                # cmds.scale(15, 15, 15, ctrl)
-                # cmds.makeIdentity(ctrl, a=1, t=0, r=0, s=1, n=0, pn=1)
+        # If the module is tail -> make fk ctrl for every joint. 
+        # cr a list fk name ctrls. 
 
-                if "root" in module_name:
-                    ctrl_suffix = f"{ctrl_name}_{unique_id}_{side}"
-                else:
-                    ctrl_suffix = f"{ctrl_name[3:]}_{unique_id}_{side}"
-                for guide in guides:
-                    if guide.endswith(ctrl_suffix):
-                        guide_pos = cmds.xform(guide, q=1, t=1, worldSpace=1)
-                        cmds.xform(ctrl, t=guide_pos, worldSpace=1)
-                        break
-                
-                # colour
-                for x in range(len(ctrl_name_list)):
-                    cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-                    if side == "L":
-                        cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
-                    elif side == "R":
-                        cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
-                    elif side == "M":
-                        cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
-
-                # Rebuild the control:
-                for key, value_dict in curve_info_dict.items():
-                    utils.rebuild_ctrl(key, value_dict)
-
-                # group all ctrls!
-                cmds.group(ctrl, n=f"gd_{whole_ctrl_name}")
-                ctrl_grp_list.append(f"gd_{whole_ctrl_name}")
-                # point constrain the groups to the guides to follow
-                # if not module_name == "root":
-                for guide in guides:
-                    if guide.endswith(ctrl_suffix):
-                        cmds.pointConstraint(guide, f"gd_{whole_ctrl_name}",  n=f"pCon_gd_{whole_ctrl_name}")
-                        # if ctrl_type == "FK_ctrls":
-                        #     print(f" fk ctrls = {ctrl}")
-                        break
-                if ctrl_type == "FK_ctrls":
-                    fk_ctrl_list.append(ctrl)
-
-        # xfm_guide_bipedArm
-        if not module_name == "root":
-            try:
-                # aim constraint the groups of ctrls to guides so fk controls keep correct positions!
-                for x in range(len(fk_ctrl_list)):
-                    cmds.aimConstraint(guides[x+1], f"gd_{fk_ctrl_list[:-1][x]}", n=f"pAim_{guides[x+1]}")
-            except:
-                pass
-            # match end ctrl's grp to parent ctrl orientation.
-            cmds.matchTransform(f"gd_{fk_ctrl_list[-1]}", fk_ctrl_list[-2], pos=0, rot=1, scl=0)
-            cmds.orientConstraint(fk_ctrl_list[-2], f"gd_{fk_ctrl_list[-1]}")
+        if module_name == "spine" or module_name == "neck" or module_name == "tail":
+            self.cr_ctrls_driven_by_curve("IK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
+            self.cr_ctrls_driven_by_curve("FK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
+            # elif module_name == "neck":
+            # self.cr_ctrls_driven_by_curve("IK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
+        else:
+            self.cr_ik_fk_controls(
+                component_ctrls, ctrl_name_list, ctrl_grp_list, fk_ctrl_list, 
+                guides, curve_info_dict, module_name, unique_id, side
+                )
         
         #----------------------------------------------------------------------
         # group ctrls
@@ -171,6 +124,13 @@ class CreateXfmGuides():
             cmds.group(n=master_group, em=1)
         cmds.parent(ctrl_grp_list, grp_name)
         cmds.parent(grp_name, master_group)
+        # try:
+        #     for x in range(len(ctrl_name_list)):
+        #         print(f"P {ctrl_name_list[x]} -> {ctrl_grp_list[x]}" )
+        #         cmds.parent(ctrl_name_list[x], ctrl_grp_list[x])
+        # except Exception as e:
+        #     print(f"P parenting error: `{e}`")
+
         cmds.select(cl=1)
         
 
@@ -400,7 +360,6 @@ class CreateXfmGuides():
             ls_MM_ddj.append(MM_ddj)
 
         # Connect signals
-        
         for x in range(len(ddj_spine_jnts)):
             utils.connect_attr(f"{lenRatio}.outputX", f"{ls_strechMulth[x]}.input2X")
             utils.connect_attr(f"{ls_strechMulth[x]}.outputX", f"{ls_remapVal[x]}.outputMin")
@@ -434,7 +393,6 @@ class CreateXfmGuides():
 
     def set_joint_values(self, jnt_num, u_list, ls_strechMulth, ls_remapVal, ls_condition):
         for x in range(jnt_num):
-            print(f"ls_strechMulth = {ls_strechMulth[x]} -> { u_list[x]}")
             cmds.setAttr(f"{ls_strechMulth[x]}.input1X", u_list[x])
             cmds.setAttr(f"{ls_remapVal[x]}.outputMax", u_list[x])
             cmds.setAttr(f"{ls_condition[x]}.colorIfTrueR", u_list[x])
@@ -468,18 +426,134 @@ class CreateXfmGuides():
                         [-5.1020985278054485e-14, 237.46397399902344, -8.25034904479989]]
         
         '''
-            
-        '''
-        // Cluster the CVs 
-        // Create 6 guides
-        // Match pos for each curve's CVs 
-        // Parent the spine_clusters to the guides
-        // Move the guides to deisred position
 
-        // Don't use 'connect_guide()', make the curve drive the ddj
-        // Curve drive the fk & ik ctrls
-        // the rail curve should be controled by 1 ctrl for the aiming of joints & ctrl orientation!
-        '''
-     
 
+    def cr_ctrls_driven_by_curve(self, typ, component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side):
+        gd_curve = f"crv_gd_{module_name}_{unique_id}_{side}"
+        node_name_convention = f"_{module_name}_{unique_id}_{side}"
+        ctrls_not_to_be_made = []
+        current_ctrl_list = []
+        current_grp_list = []
+        typ = f"{typ}_ctrls"
+        ctrl_dict = component_ctrls[typ]
+        for ctrl_name, ctrl_shape in ctrl_dict.items():
+            if ctrl_shape == None:
+                ctrls_not_to_be_made.append(ctrl_name)
+            else:
+                print(f"ctrl_shape:{ctrl_shape}")
+                whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}" # ctrl_fk_clavicle_0_L
+                ctrl_name_list.append(whole_ctrl_name)
+                import_ctrl = cr_ctrl.CreateControl(type=ctrl_shape, name=whole_ctrl_name)
+                ctrl = import_ctrl.retrun_ctrl()
+                current_ctrl_list.append(ctrl)                 
+                
+                # add Adjust_Pos attr!
+                utils.add_float_attrib(ctrl, [f"Adjust_Pos"], [0, 1], True)
+
+                moPath = f"MPATH_{ctrl_name}_{node_name_convention}"
+                utils.cr_node_if_not_exists(0, "motionPath", moPath)
+
+                compM = f"CM_{ctrl_name}_{node_name_convention}"
+                utils.cr_node_if_not_exists(0, "composeMatrix", compM)
+                
+                grp_name = n=f"gd_{whole_ctrl_name}"
+                cmds.group(n=grp_name, em=1)
+
+                # connect them (set uv value )
+                utils.connect_attr(f"{gd_curve}{utils.Plg.wld_space_plg}", f"{moPath}{utils.Plg.geopath_plg}")
+                utils.connect_attr(f"{moPath}{utils.Plg.cmpM_ac_plg}", f"{compM}{utils.Plg.inputT_plug}")
+                utils.connect_attr(f"{moPath}{utils.Plg.rot_plg}", f"{compM}{utils.Plg.inputR_plug}")
+                utils.connect_attr(f"{compM}{utils.Plg.out_mtx_plg}", f"{grp_name}{utils.Plg.opm_plg}")
+                utils.connect_attr(f"{ctrl}.Adjust_Pos", f"{moPath}{utils.Plg.u_plg}")
+                self.colour_ctrls(ctrl_name_list, side)
+                
+                if ctrl_shape == "circle" or ctrl_shape == "octogan":
+                    cmds.setAttr(f"{grp_name}.rotateZ", 90)
+
+                # for key, value_dict in curve_info_dict.items():
+                #     utils.rebuild_ctrl(key, value_dict)
+                
+                # cmds.group(ctrl, n=grp_name)
+                ctrl_grp_list.append(grp_name)
+                current_grp_list.append(grp_name)
+               
+        # get the u value and set it!
+        u_list = self.get_u_value_list(gd_curve, len(current_ctrl_list), node_name_convention)
+        for x in range(len(current_ctrl_list)):
+            cmds.setAttr(f"{current_ctrl_list[x]}.Adjust_Pos", u_list[x])
+            cmds.matchTransform(current_ctrl_list[x], current_grp_list[x], pos=1, rot=1, scl=0)
+            cmds.parent(current_ctrl_list[x], current_grp_list[x])
         
+        for key, value_dict in curve_info_dict.items():
+                utils.rebuild_ctrl(key, value_dict)
+
+    def cr_ik_fk_controls(
+            self, component_ctrls, ctrl_name_list, ctrl_grp_list, fk_ctrl_list, 
+            guides, curve_info_dict, module_name, unique_id, side
+            ):
+        for ctrl_type, ctrl_dict in component_ctrls.items():
+            for ctrl_name, ctrl_shape in ctrl_dict.items():
+                whole_ctrl_name = f"ctrl_{ctrl_name}_{unique_id}_{side}" # ctrl_fk_clavicle_0_L
+                ctrl_name_list.append(whole_ctrl_name)
+                import_ctrl = cr_ctrl.CreateControl(type=ctrl_shape, name=whole_ctrl_name)
+                ctrl = import_ctrl.retrun_ctrl()
+
+                ctrl_part = utils.get_last_two_items_of_name(ctrl_name)
+                ctrl_suffix = f"{ctrl_part}_{unique_id}_{side}"
+                print(f"guides = {guides}")
+                for guide in guides:
+                    if guide.endswith(ctrl_suffix):
+                        guide_pos = cmds.xform(guide, q=1, t=1, worldSpace=1)
+                        cmds.xform(ctrl, t=guide_pos, worldSpace=1)
+                        break
+                print(f"ctrl suffix = {ctrl_suffix}") # xfm_guide_*bipedLeg_hip_0_L*
+
+                self.colour_ctrls(ctrl_name_list, side)
+
+                # group all ctrls!
+                cmds.group(ctrl, n=f"gd_{whole_ctrl_name}")
+                ctrl_grp_list.append(f"gd_{whole_ctrl_name}")
+                # point constrain the groups to the guides to follow
+                # if not module_name == "root":
+                for guide in guides:
+                    if guide.endswith(ctrl_suffix):
+                        cmds.pointConstraint(guide, f"gd_{whole_ctrl_name}",  n=f"pCon_gd_{whole_ctrl_name}")
+                        # if ctrl_type == "FK_ctrls":
+                        #     print(f" fk ctrls = {ctrl}")
+                        break
+                if ctrl_type == "FK_ctrls":
+                    fk_ctrl_list.append(ctrl)
+
+        # Rebuild the control:
+        for key, value_dict in curve_info_dict.items():
+            utils.rebuild_ctrl(key, value_dict)
+
+        print(f"<>CTRL: without gd_{fk_ctrl_list[:-1]}") # gd_ctrl_fk_bpdHip_0_L
+        if not module_name == "root":
+            try:
+                # aim constraint the groups of ctrls to guides so fk controls keep correct positions!
+                for x in range(len(fk_ctrl_list)):
+                    cmds.aimConstraint(guides[x+1], f"gd_{fk_ctrl_list[:-1][x]}", n=f"pAim_{guides[x+1]}")
+            except:
+                pass
+            # match end ctrl's grp to parent ctrl orientation.
+            cmds.matchTransform(f"gd_{fk_ctrl_list[-1]}", fk_ctrl_list[-2], pos=0, rot=1, scl=0)
+            cmds.orientConstraint(fk_ctrl_list[-2], f"gd_{fk_ctrl_list[-1]}")
+
+
+    def colour_ctrls(self, ctrl_name_list, side):
+        for x in range(len(ctrl_name_list)):
+            cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
+            if side == "L":
+                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
+            elif side == "R":
+                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
+            elif side == "M":
+                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
+
+        '''
+        cmds.xform(control, s=[1.0, 2.0, 6.000000000000001], worldSpace=1) 
+        '''
+
+
+

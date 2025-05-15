@@ -47,16 +47,16 @@
     },
     "controls": {
         "FK_ctrls": {
-            "neck0": "circle", 
-            "neck1": "circle", 
-            "neck2": "circle",
-            "neck3": "circle",
-            "neck4": "circle"
+            "fk_neck_neck0": "circle", 
+            "fk_neck_neck1": "circle", 
+            "fk_neck_neck2": "circle",
+            "fk_neck_neck3": "circle",
+            "fk_neck_neck4": "circle"
         },
         "IK_ctrls": {"neck0": "cube", 
-            "neck1": null, 
-            "neck2": "cube",
-            "neck3": null,
-            "neck4": "circle"}
+            "ik_neck_neck1": null, 
+            "ik_neck_neck2": "cube",
+            "ik_neck_neck3": null,
+            "ik_neck_neck4": "circle"}
     }
 }

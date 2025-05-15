@@ -3,15 +3,15 @@
     "names": ["tail0", "tail1", "tail2", "tail3", "tail4"],
     "placement": {
         "component_pos": {
-            "tail0": [0.0, 240, 0.0], 
-            "tail1": [0.0, 250, 0.0], 
-            "tail2": [0.0, 260, 0.0],
-            "tail3": [0.0, 270, 0.0],
-            "tail4": [0.0, 280, 0.0]
+            "tail0": [0.0, 61.47634115657883, -38.91601282851165], 
+            "tail1": [0.0, 61.47634115657883, -54.91601282851165], 
+            "tail2": [0.0, 61.47634115657883, -70.91601282851164], 
+            "tail3": [0.0, 61.47634115657883, -86.91601282851164], 
+            "tail4": [0.0, 61.47634115657883, -102.91601282851164]
         },
         "system_rot_xyz": {
-            "tail0": [0.0, 240, 90.0], 
-            "tail1": [0.0, 250, 90.0], 
+            "tail0": [0.0, 240, 90.0],
+            "tail1": [0.0, 250, 90.0],
             "tail2": [0.0, 260, 90.0],
             "tail3": [0.0, 270, 90.0],
             "tail4": [0.0, 280, 90.0]
@@ -47,16 +47,22 @@
     },
     "controls": {
         "FK_ctrls": {
-            "tail0": "circle", 
-            "tail1": "circle", 
-            "tail2": "circle",
-            "tail3": "circle",
-            "tail4": "circle"
+            "fk_tail_tail0": "circle", 
+            "fk_tail_tail1": "circle", 
+            "fk_tail_tail2": "circle",
+            "fk_tail_tail3": "circle",
+            "fk_tail_tail4": "circle",
+            "fk_tail_tail5": "circle",
+            "fk_tail_tail6": "circle",
+            "fk_tail_tail7": "circle",
+            "fk_tail_tail8": "circle"
         },
-        "IK_ctrls": {"tail0": "cube", 
-            "tail1": null, 
-            "tail2": "cube",
-            "tail3": null,
-            "tail4": "circle"}
+        "IK_ctrls": {
+            "ik_tail_tail0": "octogan", 
+            "ik_tail_tail1": "octogan", 
+            "ik_tail_tail2": "octogan",
+            "ik_tail_tail3": "octogan",
+            "ik_tail_tail4": "octogan"
+        }
     }
 }

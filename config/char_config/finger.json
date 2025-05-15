@@ -49,16 +49,16 @@
     },
     "controls": {
         "FK_ctrls": {
-            "fk_bipedPhalProximal": "circle",
-            "fk_bipedPhalMiddle": "circle",
-            "fk_bipedPhalDistal": "circle",
-            "fk_bipedPhalDEnd": "circle"
+            "fk_finger_bipedPhalProximal": "circle",
+            "fk_finger_bipedPhalMiddle": "circle",
+            "fk_finger_bipedPhalDistal": "circle",
+            "fk_finger_bipedPhalDEnd": "circle"
         },
         "IK_ctrls": {
-            "ik_bipedPhalProximal": "cube",
-            "ik_bipedPhalMiddle": "pv",
-            "ik_bipedPhalDistal": "cube",
-            "ik_bipedPhalDEnd": "cube"
+            "ik_finger_bipedPhalProximal": "cube",
+            "ik_finger_bipedPhalMiddle": "pv",
+            "ik_finger_bipedPhalDistal": "cube",
+            "ik_finger_bipedPhalDEnd": "cube"
         }
     }
 }

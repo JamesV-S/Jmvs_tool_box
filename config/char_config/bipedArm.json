@@ -48,16 +48,16 @@
     },
     "controls":{
         "FK_ctrls": {
-            "fk_clavicle":"circle",
-            "fk_shoulder": "circle",
-            "fk_elbow": "circle",
-            "fk_wrist": "circle"
+            "fk_bipedArm_clavicle":"circle",
+            "fk_bipedArm_shoulder": "circle",
+            "fk_bipedArm_elbow": "circle",
+            "fk_bipedArm_wrist": "circle"
         },
         "IK_ctrls": {
-            "ik_clavicle":"cube",
-            "ik_shoulder": "cube",
-            "ik_elbow": "pv",
-            "ik_wrist": "cube"
+            "ik_bipedArm_clavicle":"cube",
+            "ik_bipedArm_shoulder": "cube",
+            "ik_bipedArm_elbow": "pv",
+            "ik_bipedArm_wrist": "cube"
         }
     }
 }

@@ -50,18 +50,18 @@
     },
     "controls":{
         "FK_ctrls": {
-            "fk_hip":"circle",
-            "fk_knee": "circle",
-            "fk_ankle": "circle",
-            "fk_ball": "circle",
-            "fk_toe": "circle"
+            "fk_bipedLeg_hip":"circle",
+            "fk_bipedLeg_knee": "circle",
+            "fk_bipedLeg_ankle": "circle",
+            "fk_bipedLeg_ball": "circle",
+            "fk_bipedLeg_toe": "circle"
         },
         "IK_ctrls": {
-            "ik_hip":"cube",
-            "ik_knee": "pv",
-            "ik_ankle": "cube",
-            "ik_ball": "None",
-            "ik_toe": "None"
+            "ik_bipedLeg_hip":"cube",
+            "ik_bipedLeg_knee": "pv",
+            "ik_bipedLeg_ankle": "cube",
+            "ik_bipedLeg_ball": "None",
+            "ik_bipedLeg_toe": "None"
         }
 }
 }

@@ -32,7 +32,7 @@
             "pv_joint": "trochanter",
             "hock_joint": "femur"
         }
-    }, 
+    },
     "user_settings": {
         "mirror_rig": false,
         "stretch": false,
@@ -44,20 +44,19 @@
         "joint_num": null,
         "size": 1, 
         "side": ["L", "R"]
-        
     },
     "controls":{
         "FK_ctrls": {
-            "fk_coxae":"circle",
-            "fk_trochanter": "circle",
-            "fk_femur": "circle",
-            "fk_knee": "circle"
+            "fk_insectLeg_coxae":"circle",
+            "fk_insectLeg_trochanter": "circle",
+            "fk_insectLeg_femur": "circle",
+            "fk_insectLeg_knee": "circle"
         },
         "IK_ctrls": {
-            "ik_coxae":"cube",
-            "ik_trochanter": "pv",
-            "ik_femur": "cube",
-            "ik_knee": "cube"
+            "ik_insectLeg_coxae":"cube",
+            "ik_insectLeg_trochanter": "pv",
+            "ik_insectLeg_femur": "cube",
+            "ik_insectLeg_knee": "cube"
         }
 }
 }

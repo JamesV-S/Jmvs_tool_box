@@ -22,6 +22,12 @@ def progress_value(step, total_steps):
     return pv
 
 #---------------------------------- CTRL --------------------------------------
+def get_last_two_items_of_name(name):
+    parts_list = name.split('_')[1:]
+    result = '_'.join(parts_list)
+    return result
+
+
 def replace_ctrl_list(curve_list):
     # curve_list = cmds.ls(sl=1)
     print(curve_list)
@@ -30,7 +36,6 @@ def replace_ctrl_list(curve_list):
     cmds.parent(shapes[:1][0], shape_grp[1:], s=1, r=1)
     cmds.delete( shape_grp[0], shapes[1:][0] )
     cmds.select(cl=1)
-#[remain, delete]
 
 
 def replace_control(new_ctrl, replace_ctrl, colour, scale=None):
@@ -141,10 +146,15 @@ def rebuild_ctrl(control, curve_info_dict):
         for i, cv in enumerate(curve_info_dict["points"]):
             cmds.setAttr(f"{control}.controlPoints[{i}]", cv[0], cv[1], cv[2])
         cmds.rebuildCurve(control, degree=curve_info_dict["degree"], keepRange=0, keepControlPoints=True)
+        
+        
         cmds.xform(control, s=curve_info_dict["scale"], worldSpace=1) 
+        
+        
         cmds.setAttr(f"{control}.overrideColor", curve_info_dict["colour"])
     except Exception as e:
-        print(f"Issue with rebuilding control `{control}` with `{curve_info_dict}`")
+        pass
+        # print(f"Issue with rebuilding control `{control}` with `{curve_info_dict}`:{e}")
 
 
 #--------------------------------- HIERARCHY ----------------------------------
@@ -154,6 +164,7 @@ def get_name_id_data_from_component(component_sel):
     unique_id = split_names[1]
     side = split_names[2]
     return module_name, unique_id, side
+
 
 def make_group_and_parent(grp_name, parent):
     cmds.group(n=grp_name, em=1)
@@ -183,7 +194,6 @@ def group_module(module_name, input_grp, output_grp, ctrl_grp, joint_grp=None, l
             else:
                 print(f"No module child group `{logic_grp}` exists in the scene")
 
-            
 
 # -----------------------------------------------------------------------------
 
@@ -397,6 +407,7 @@ class Plg():
 
     output_plg = ".output"
     inputT_plug = ".inputTranslate"
+    inputR_plug = ".inputRotate"
     mtx_sum_plg = ".matrixSum"
     wld_mtx_plg = ".worldMatrix[0]"
     wld_inv_mtx_plg = ".worldInverseMatrix[0]"
@@ -410,6 +421,10 @@ class Plg():
     arc_len_plg = ".arcLength"
     inp_curve_plg = ".inputCurve"
     blndr_plg = ".blender"
+    geopath_plg = ".geometryPath"
+    cmpM_ac_plg = ".allCoordinates"
+    rot_plg = ".rotate"
+    u_plg = ".uValue"
 
 
 def check_non_default_transforms(obj):

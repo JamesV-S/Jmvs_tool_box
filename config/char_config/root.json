@@ -33,8 +33,8 @@
     },
     "controls": {
         "FK_ctrls": {
-            "ROOT": "root",
-            "COG": "cog"
+            "fk_root_ROOT": "root",
+            "fk_root_COG": "cog"
         },
         "IK_ctrls": {}
     }

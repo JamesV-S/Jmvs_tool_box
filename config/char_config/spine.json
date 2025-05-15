@@ -48,18 +48,16 @@
     },
     "controls": {
         "FK_ctrls": {
-            "fk_spine0": "circle",
-            "fk_spine1": "circle",
-            "fk_spine2": "circle",
-            "fk_spine3": "circle",
-            "fk_spine4": "circle"
+            "fk_spine_spine0": "circle",
+            "fk_spine_spine1": "circle",
+            "fk_spine_spine2": "circle",
+            "fk_spine_spine3": "circle",
+            "fk_spine_spine4": "circle"
         },
         "IK_ctrls": {
-            "ik_spine0": "cube",
-            "ik_spine1": null,
-            "ik_spine2": "cube",
-            "ik_spine3": null,
-            "ik_spine4": "cube"
+            "ik_spine_spine0": "cube",
+            "ik_spine_spine1": "cube",
+            "ik_spine_spine2": "cube"
         }
     }
 }
