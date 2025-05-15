@@ -394,7 +394,7 @@ class CharLayoutModel:
             cmds.warning(f"Make sure the component `{component_selection}` exists in the scene with the controls, cus CANNOT find any")
 
 
-    def select_component_data(self, comp, val_availableRigComboBox, control_checkbox, guide_checkbox):
+    def select_component_data(self, comp, val_availableRigComboBox, all_checkbox, ik_checkbox, fk_checkbox):
         module, unique_id, side = utils.get_name_id_data_from_component(comp)
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
@@ -402,25 +402,31 @@ class CharLayoutModel:
             )
         get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
         control_names_ls = get_control_names.return_comp_ctrl_ls()
-
-        if control_checkbox:
-            print(f"selecting the controls of {module}")
+        if all_checkbox:
+            cmds.select(cl=1)
             for ctrl in control_names_ls:
                 cmds.select(ctrl, tgl=1)
-        if guide_checkbox: 
-            # update this in the future to select guide names from the 
-            # database so it's more reliable!
-            temp_guide_ls = []
-            for ctrl in control_names_ls:
-                if ctrl.startswith("ctrl_fk"):
-                    guide = ctrl.replace("ctrl_fk_", f"xfm_guide_{module}_")
-                    cmds.select(guide, tgl=1)
-
-                # ctrl_ik_elbow_0_L | xfm_guide_bipedArm_elbow_0_L
-            print(f"selecting the guides of {module}")
+        else:
+            # select ik or fk or both. 
+            for mode in [ik_checkbox, fk_checkbox]:
+                if mode == 'ik': # need to return this or 'None'
+                    for ctrl in control_names_ls:
+                        if ctrl.startswith("ctrl_ik"):
+                            cmds.select(ctrl, tgl=1)
+                elif mode == 'fk':
+                    for ctrl in control_names_ls:
+                        if ctrl.startswith("ctrl_fk"):
+                            cmds.select(ctrl, tgl=1)
+        # if guide_checkbox: 
+        #     pass
+            # temp_guide_ls = []
+            # for ctrl in control_names_ls:
+            #     if ctrl.startswith("ctrl_fk"):
+            #         guide = ctrl.replace("ctrl_fk_", f"xfm_guide_{module}_")
+            #         cmds.select(guide, tgl=1)
 
     
-    def commit_module_edit_changes(self, component, val_availableRigComboBox, val_jnt_num_checkBox, umo_dict, jnt_num):
+    def commit_module_edit_changes(self, component, val_availableRigComboBox, val_update_comp_data_checkBox, val_joint_editing_checkBox, val_ctrl_editing_checkBox, umo_dict, jnt_num):
         module, unique_id, side = utils.get_name_id_data_from_component(component)
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
@@ -431,12 +437,17 @@ class CharLayoutModel:
         print(f"model | umo_dict = {umo_dict}")
  
         # update the user_settings DB
-        database_schema_002.UpdateUserSettings(rig_db_directory, module, unique_id, side, umo_dict)
-        
+        if val_update_comp_data_checkBox:
+            print(f"update modu;e l editing model functions running")
+            database_schema_002.UpdateUserSettings(rig_db_directory, module, unique_id, side, umo_dict)
         # get the value in the db!
-        user_settings_data = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
-        DB_joint_num = user_settings_data.return_get_jnt_num()
-        if val_jnt_num_checkBox: # True if we want to proceed!
+        if val_joint_editing_checkBox:
+            print(f"joint editing model functions running")
+            user_settings_data = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
+            DB_joint_num = user_settings_data.return_get_jnt_num()
+            # True if we want to proceed!
             if not DB_joint_num == "NULL": # Don't manipulate the number of joints!
                 database_schema_002.UpdateJointNum(rig_db_directory, module, unique_id, side, jnt_num)
-            
+        if val_ctrl_editing_checkBox:
+            print(f"ctrl editing model functions running")
+        

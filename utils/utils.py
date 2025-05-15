@@ -22,6 +22,17 @@ def progress_value(step, total_steps):
     return pv
 
 #---------------------------------- CTRL --------------------------------------
+def colour_ctrls(ctrl_name_list, side):
+    for x in range(len(ctrl_name_list)):
+        cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
+        if side == "L":
+            cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
+        elif side == "R":
+            cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
+        elif side == "M":
+            cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
+
+
 def get_last_two_items_of_name(name):
     parts_list = name.split('_')[1:]
     result = '_'.join(parts_list)
@@ -131,7 +142,16 @@ def record_ctrl_data(control):
     kv = knot_vector(periodic, cvs, degree)
     scale = cmds.xform(control, q=1, s=1, worldSpace=1) 
     colour = cmds.getAttr(f"{control}.overrideColor")
-    data = {"degree": degree, "periodic": periodic, 
+    
+    adjust_attr = "Adjust_Pos"
+    result = cmds.attributeQuery("Adjust_Pos", node="ctrl_ik_tail_tail1_0_M", exists=True)
+    if result:
+        adjust_val = cmds.getAttr(f"{control}.{adjust_attr}")
+        data = {"degree": degree, "periodic": periodic, 
+        "points": cvs, "knot": kv, "scale": scale, "colour":colour, "adjust_attr":adjust_val
+        }
+    else:
+        data = {"degree": degree, "periodic": periodic, 
         "points": cvs, "knot": kv, "scale": scale, "colour":colour
         }
 
@@ -147,15 +167,23 @@ def rebuild_ctrl(control, curve_info_dict):
             cmds.setAttr(f"{control}.controlPoints[{i}]", cv[0], cv[1], cv[2])
         cmds.rebuildCurve(control, degree=curve_info_dict["degree"], keepRange=0, keepControlPoints=True)
         
-        
         cmds.xform(control, s=curve_info_dict["scale"], worldSpace=1) 
         
-        
         cmds.setAttr(f"{control}.overrideColor", curve_info_dict["colour"])
+
+        adjust_attr = "Adjust_Pos"
+        result = cmds.attributeQuery("Adjust_Pos", node="ctrl_ik_tail_tail1_0_M", exists=True)
+        if result:
+            cmds.setAttr(f"{control}.{adjust_attr}", curve_info_dict["adjust_attr"])
     except Exception as e:
         pass
         # print(f"Issue with rebuilding control `{control}` with `{curve_info_dict}`:{e}")
 
+
+def get_motionpath_u_value(moPath_list):
+    u_val = []
+    for mop in moPath_list:
+        u_val.append(cmds.getAttr(f"{mop}{Plg.u_plg}"))
 
 #--------------------------------- HIERARCHY ----------------------------------
 def get_name_id_data_from_component(component_sel):
@@ -412,6 +440,7 @@ class Plg():
     wld_mtx_plg = ".worldMatrix[0]"
     wld_inv_mtx_plg = ".worldInverseMatrix[0]"
     wld_space_plg = ".worldSpace[0]"
+    wld_up_mtx_plg = ".worldUpMatrix"
     inp_mtx_plg = ".inputMatrix"
     out_mtx_plg = ".outputMatrix"
     opm_plg = ".offsetParentMatrix"

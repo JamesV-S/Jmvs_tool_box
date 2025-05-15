@@ -28,7 +28,10 @@ QLabel[style_child_container="true"] {
     /* color:white; */
     background-color: #9a9a9a; /* #2e2e3d | #9a9a9a */
 }
-
+QCheckBox[style_child_container="true"] {
+    color:white;
+    /* background-color: #9a9a9a; */
+}
 QWidget#Spacer {
     background-color: #9a9a9a;
     /* border-style: solid; */

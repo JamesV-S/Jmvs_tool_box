@@ -67,30 +67,37 @@ class CharLayoutController:
 
 
     def set_prerequisite_signals(self):
+        self.view.all_crv_edit_checkBox.setChecked(True)
         self.view.controls_crv_edit_checkBox.setChecked(True)
         self.view.guide_crv_edit_checkBox.setChecked(False)
+        
+        self.sig_all_crv_edit_checkBox()
+        self.sig_ik_crv_edit_checkBox()
+        self.sig_fk_crv_edit_checkBox()
         self.sig_ctrl_crv_edit_checkBox()
         self.sig_guide_crv_edit_checkBox()
         self.sig_entire_comp_radioBtn()
         self.sig_sel_comp_radioBtn()
-
+        
+        # ----
         self.view.controls_template_checkBox.setChecked(True)
         self.view.ddj_template_checkBox.setChecked(True)
-
+        # ----
         self.view.entire_comp_radioBtn.setChecked(True)
         self.val_entire_comp_radioBtn = True
-        self.view.jnt_num_checkBox.setChecked(False)
-        self.view.ctrl_num_checkBox.setChecked(False)
-        self.view.jnt_num_spinBox.setEnabled(False)
-        self.view.ctrl_num_spinBox.setEnabled(False)
+        # ----
+        self.view.update_comp_data_checkBox.setChecked(False)
+        self.view.joint_editing_checkBox.setChecked(False)
+        self.view.ctrl_editing_checkBox.setChecked(False)
+    
+        self.sig_update_comp_data_checkBox()
+        self.sig_joint_editing_checkBox()
+        self.sig_ctrl_editing_checkBox()
 
         self.sig_umo_rigType_comboBox()
         self.sig_umo_mirror_checkBox()
         self.sig_umo_stretch_checkBox()
         self.sig_umo_twist_checkBox()
-
-        self.sig_jnt_num_checkBox()
-        self.sig_jnt_num_spinBox()
 
     def setup_connections(self):
         # selection_model = self.view.mdl_tree_view.selectionModel()
@@ -117,6 +124,10 @@ class CharLayoutController:
         # ------------ Management options ------------
             # ---- Tab1 - Curves ----
                 # ---- Curve Editing ----
+        self.view.all_crv_edit_checkBox.stateChanged.connect(self.sig_all_crv_edit_checkBox)
+        self.view.ik_crv_edit_checkBox.stateChanged.connect(self.sig_ik_crv_edit_checkBox)
+        self.view.fk_crv_edit_checkBox.stateChanged.connect(self.sig_fk_crv_edit_checkBox)
+        
         self.view.controls_crv_edit_checkBox.stateChanged.connect(self.sig_ctrl_crv_edit_checkBox)
         self.view.guide_crv_edit_checkBox.stateChanged.connect(self.sig_guide_crv_edit_checkBox)
         self.view.select_data_in_comp_btn.clicked.connect(self.sig_sl_data_in_comp_btn)
@@ -135,15 +146,14 @@ class CharLayoutController:
             # ---- Tab2 - Edit module ----
         self.view.entire_comp_radioBtn.clicked.connect(self.sig_entire_comp_radioBtn)
         self.view.sel_comp_radioBtn.clicked.connect(self.sig_sel_comp_radioBtn)
-
+        self.view.update_comp_data_checkBox.stateChanged.connect(self.sig_update_comp_data_checkBox)
         self.view.umo_rigType_comboBox.currentIndexChanged.connect(self.sig_umo_rigType_comboBox)
         self.view.umo_mirror_checkBox.stateChanged.connect(self.sig_umo_mirror_checkBox)
         self.view.umo_stretch_checkBox.stateChanged.connect(self.sig_umo_stretch_checkBox)
         self.view.umo_twist_checkBox.stateChanged.connect(self.sig_umo_twist_checkBox)
-
-        self.view.jnt_num_checkBox.stateChanged.connect(self.sig_jnt_num_checkBox)
+        self.view.joint_editing_checkBox.stateChanged.connect(self.sig_joint_editing_checkBox)
+        self.view.ctrl_editing_checkBox.stateChanged.connect(self.sig_ctrl_editing_checkBox)
         self.view.jnt_num_spinBox.valueChanged.connect(self.sig_jnt_num_spinBox)
-
         self.view.commit_module_edits_btn.clicked.connect(self.sig_commit_module_edits_btn)
 
 
@@ -312,25 +322,41 @@ class CharLayoutController:
 
     # ------------ management options siFunc ------------
     # ---- Tab 1 - curves ----
-    def sig_ctrl_crv_edit_checkBox(self):
-        self.val_ctrl_crv_edit_checkbox = self.view.controls_crv_edit_checkBox.isChecked()
-        print(f"> val_ctrl_crv_edit_checkbox == {self.val_ctrl_crv_edit_checkbox}")
-
-
-    def sig_guide_crv_edit_checkBox(self):
-        self.val_guide_crv_edit_checkBox = self.view.guide_crv_edit_checkBox.isChecked()
-        print(f"> val_guide_crv_edit_checkBox == {self.val_guide_crv_edit_checkBox}")
-    
+    def sig_all_crv_edit_checkBox(self):
+        self.val_all_crv_edit_checkBox = self.view.all_crv_edit_checkBox.isChecked()
+        if self.val_all_crv_edit_checkBox:
+            self.view.ik_crv_edit_checkBox.setEnabled(False)
+            self.view.fk_crv_edit_checkBox.setEnabled(False)
+        else:
+            self.view.ik_crv_edit_checkBox.setEnabled(True)
+            self.view.fk_crv_edit_checkBox.setEnabled(True)
+    def sig_ik_crv_edit_checkBox(self):
+        self.val_ik_crv_edit_checkBox = self.view.ik_crv_edit_checkBox.isChecked()
+        if self.val_ik_crv_edit_checkBox:
+            self.val_ik_crv_edit_checkBox = "ik"
+    def sig_fk_crv_edit_checkBox(self):
+        self.val_fk_crv_edit_checkBox = self.view.fk_crv_edit_checkBox.isChecked()
+        if self.val_fk_crv_edit_checkBox:
+            self.val_fk_crv_edit_checkBox = "fk"
+        
 
     def sig_sl_data_in_comp_btn(self):
         print(f"> Select data in chosen components!")
         comp_sel = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
         try:
             for comp in comp_sel:
-                self.model.select_component_data(comp, self.val_availableRigComboBox, self.val_ctrl_crv_edit_checkbox, self.val_guide_crv_edit_checkBox)
+                self.model.select_component_data(comp, self.val_availableRigComboBox, self.val_all_crv_edit_checkBox, self.val_ik_crv_edit_checkBox, self.val_fk_crv_edit_checkBox)
         except TypeError as e:
             cmds.error(f"Select a component first!: |{e}|")
 
+
+    def sig_ctrl_crv_edit_checkBox(self):
+        self.val_ctrl_crv_edit_checkbox = self.view.controls_crv_edit_checkBox.isChecked()
+
+
+    def sig_guide_crv_edit_checkBox(self):
+        self.val_guide_crv_edit_checkBox = self.view.guide_crv_edit_checkBox.isChecked()
+    
 
     def sig_store_curve_comp_btn(self):
         """ 
@@ -502,6 +528,21 @@ class CharLayoutController:
         self.val_entire_comp_radioBtn = False
 
     # current module data! -> this data will be passed to the database!
+    def sig_update_comp_data_checkBox(self):
+        self.val_update_comp_data_checkBox = self.view.update_comp_data_checkBox.isChecked()
+        print(f"update_comp_data_checkBox")
+        if self.val_update_comp_data_checkBox:
+            self.view.umo_rigType_comboBox.setEnabled(True)
+            self.view.umo_mirror_checkBox.setEnabled(True)
+            self.view.umo_stretch_checkBox.setEnabled(True)
+            self.view.umo_twist_checkBox.setEnabled(True)
+        else:
+            self.view.umo_rigType_comboBox.setEnabled(False)
+            self.view.umo_mirror_checkBox.setEnabled(False)
+            self.view.umo_stretch_checkBox.setEnabled(False)
+            self.view.umo_twist_checkBox.setEnabled(False)
+
+
     def sig_umo_rigType_comboBox(self):
         self.val_umo_rigType_comboBox = self.view.umo_rigType_comboBox.currentText()
     def sig_umo_mirror_checkBox(self):
@@ -526,37 +567,53 @@ class CharLayoutController:
         else:
             comp_list = component_selection
             print(f"Entire radioButton is not being read {self.val_entire_comp_radioBtn}")
-
-        umo_dict = {
-        "mirror_rig": self.val_umo_mirror_checkBox,
-        "stretch": self.val_umo_stretch_checkBox,
-        "twist": self.val_umo_twist_checkBox,
-        "rig_sys": self.val_umo_rigType_comboBox
-        }
+        if self.val_joint_editing_checkBox:
+            umo_dict = {
+            "mirror_rig": self.val_umo_mirror_checkBox,
+            "stretch": self.val_umo_stretch_checkBox,
+            "twist": self.val_umo_twist_checkBox,
+            "rig_sys": self.val_umo_rigType_comboBox
+            }
+        else:
+            umo_dict = {}
         
         # update the DB | pass joint number!
         total_index = len(comp_list)
         for stp, comp in enumerate(comp_list):
-            self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, self.val_jnt_num_checkBox, umo_dict, self.val_jnt_num_spinBox)
+            self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, self.val_update_comp_data_checkBox, self.val_joint_editing_checkBox, self.val_ctrl_editing_checkBox, umo_dict, self.val_jnt_num_spinBox)
             
             progress_value = utils.progress_value(stp, total_index)
             self.update_progress(progress_value, f"Commiting data: [{comp}]")
-        self.update_progress(0, f"DONE: Updated module settings: {comp_list}")
+        self.update_progress(0, f"DONE: Updated module options: {comp_list}")
 
         # update the ui (current options + update options presets)
-        self.update_umo_label("Rig sys", self.view.cmo_rigType_lbl, umo_dict["rig_sys"])
-        self.update_umo_label("Mirror", self.view.cmo_mirrorMdl_lbl, umo_dict["mirror_rig"])
-        self.update_umo_label("Stretch", self.view.cmo_stretch_lbl, umo_dict["stretch"])
-        self.update_umo_label("Twist", self.view.cmo_twist_lbl, umo_dict["twist"])
+        if self.val_joint_editing_checkBox:
+            self.update_umo_label("Rig sys", self.view.cmo_rigType_lbl, umo_dict["rig_sys"])
+            self.update_umo_label("Mirror", self.view.cmo_mirrorMdl_lbl, umo_dict["mirror_rig"])
+            self.update_umo_label("Stretch", self.view.cmo_stretch_lbl, umo_dict["stretch"])
+            self.update_umo_label("Twist", self.view.cmo_twist_lbl, umo_dict["twist"])
 
 
-    def sig_jnt_num_checkBox(self):
-        self.val_jnt_num_checkBox = self.view.jnt_num_checkBox.isChecked()
-        if self.val_jnt_num_checkBox:
+    def sig_joint_editing_checkBox(self):
+        self.val_joint_editing_checkBox = self.view.joint_editing_checkBox.isChecked()
+        if self.val_joint_editing_checkBox:
+            self.view.constraint_type_comboBox.setEnabled(True)
+            self.view.ik_operation_comboBox.setEnabled(True)
             self.view.jnt_num_spinBox.setEnabled(True)
         else:
+            self.view.constraint_type_comboBox.setEnabled(False)
+            self.view.ik_operation_comboBox.setEnabled(False)
             self.view.jnt_num_spinBox.setEnabled(False)
 
+
+    def sig_ctrl_editing_checkBox(self):
+        self.val_ctrl_editing_checkBox = self.view.ctrl_editing_checkBox.isChecked()
+        if self.val_joint_editing_checkBox:
+            self.view.ctrl_num_spinBox.setEnabled(True)
+            self.view.ctrl_type_comboBox.setEnabled(True)
+        else:
+            self.view.ctrl_num_spinBox.setEnabled(False)
+            self.view.ctrl_type_comboBox.setEnabled(False)
 
 
     def sig_jnt_num_spinBox(self):

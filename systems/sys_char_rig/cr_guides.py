@@ -37,9 +37,9 @@ class CreateXfmGuides():
         
 
         print(f"Working on `self.module_name`: {self.module_name}, `self.unique_id`: {self.unique_id}, `self.side`: {self.side}, `self.component_pos_dict`:{self.component_pos_dict}")
-        self.guides = self.build_guide_components(self.module_name, self.unique_id, self.side, self.component_pos_dict, self.component_controls_dict)
+        self.guides, jnt_u_list = self.build_guide_components(self.module_name, self.unique_id, self.side, self.component_pos_dict, self.component_controls_dict)
         
-        self.build_control_components(self.guides, self.module_name, self.unique_id, self.side, self.component_controls_dict)
+        self.build_control_components(self.guides, self.module_name, self.unique_id, self.side, self.component_controls_dict, jnt_u_list)
 
 
     def build_guide_components(self, module_name, unique_id, side, component_pos, component_ctrls):
@@ -50,10 +50,10 @@ class CreateXfmGuides():
         
         if module_name == "spine" or module_name == "tail" or module_name == "neck":
             print(f"rail module detected: {module_name}")
-            guides = self.rail_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
+            guides, jnt_u_list = self.rail_guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
         else:
             guides = self.guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
-
+            jnt_u_list = []
         #----------------------------------------------------------------------
         # lock & hide scale & visibilty
         for x in range(len(guides)):
@@ -87,10 +87,10 @@ class CreateXfmGuides():
         cmds.parent(gd_component_grp_name, gd_master_group)
         cmds.select(cl=1)
 
-        return guides
+        return guides, jnt_u_list
 
         
-    def build_control_components(self, guides, module_name, unique_id, side, component_ctrls):
+    def build_control_components(self, guides, module_name, unique_id, side, component_ctrls, jnt_u_list):
         # create controls ontop
         # have a function that given the name of the control, creates it!
         ctrl_name_list = []
@@ -103,11 +103,12 @@ class CreateXfmGuides():
         # If the module is tail -> make fk ctrl for every joint. 
         # cr a list fk name ctrls. 
 
-        if module_name == "spine" or module_name == "neck" or module_name == "tail":
-            self.cr_ctrls_driven_by_curve("IK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
-            self.cr_ctrls_driven_by_curve("FK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
-            # elif module_name == "neck":
-            # self.cr_ctrls_driven_by_curve("IK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
+        if module_name == "spine" or module_name == "neck":
+            self.cr_ctrls_rail_driven("IK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
+            self.cr_ctrls_rail_driven("FK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
+        elif module_name == "tail": # jnt_u_list
+            self.cr_ctrls_rail_driven("IK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
+            self.cr_ctrls_rail_driven("FK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side, jnt_u_list)
         else:
             self.cr_ik_fk_controls(
                 component_ctrls, ctrl_name_list, ctrl_grp_list, fk_ctrl_list, 
@@ -124,13 +125,6 @@ class CreateXfmGuides():
             cmds.group(n=master_group, em=1)
         cmds.parent(ctrl_grp_list, grp_name)
         cmds.parent(grp_name, master_group)
-        # try:
-        #     for x in range(len(ctrl_name_list)):
-        #         print(f"P {ctrl_name_list[x]} -> {ctrl_grp_list[x]}" )
-        #         cmds.parent(ctrl_name_list[x], ctrl_grp_list[x])
-        # except Exception as e:
-        #     print(f"P parenting error: `{e}`")
-
         cmds.select(cl=1)
         
 
@@ -223,17 +217,17 @@ class CreateXfmGuides():
             spine_clusters.append(cls_spine_handle)
         
         # Create the controls!
-        spine_guides = []
+        rail_guides = []
         for x in range(num_of_cvs):
                 temp_guide = cmds.circle()
                             # xfm_guide_spine_spine0_0_M
                 guide_name = f"xfm_guide_{module_name}_{module_name}{x}_{unique_id}_{side}"
-                spine_guides.append(cmds.rename(temp_guide[0], guide_name))
-                print(f"@@ > spine_guides IN LOOP = {guide_name}")
-        print(f"spine_guides = {spine_guides}")
+                rail_guides.append(cmds.rename(temp_guide[0], guide_name))
+                print(f"@@ > rail_guides IN LOOP = {guide_name}")
+        print(f"rail_guides = {rail_guides}")
         
         # Replace control shapes
-        for temp_gd in spine_guides:
+        for temp_gd in rail_guides:
             parts = temp_gd.split('_')[-3][-1]
             print(f"PARTS of guide name = {parts}")
             if parts == "0":
@@ -245,29 +239,29 @@ class CreateXfmGuides():
                 utils.replace_control("imp_orb", temp_gd, 25)
 
         # position the guides to the spine_clusters
-        for cluster, guide in zip(spine_clusters, spine_guides):
+        for cluster, guide in zip(spine_clusters, rail_guides):
             # cluster_pos = cmds.xform(cluster, q=True, ws=True, t=True)
             cmds.matchTransform(guide, cluster, pos=1, rot=0, scl=0)
 
         # parent spine_clusters under control
-        if spine_clusters and spine_guides:
+        if spine_clusters and rail_guides:
             try:
                 for x in range(num_of_cvs):
-                    cmds.parent(spine_clusters[x], spine_guides[x])
-                    cmds.parent(rail_clusters[x], spine_guides[x])
+                    cmds.parent(spine_clusters[x], rail_guides[x])
+                    cmds.parent(rail_clusters[x], rail_guides[x])
             except Exception as e:
                 print(f"Error during parenting: {e}")
         else:
-            print("Either spine_clusters or spine_guides list is empty.")
+            print("Either spine_clusters or rail_guides list is empty.")
         
         # position the guides:
         guide_pos = []
         for key, pos in component_pos.items():
                 guide_pos.append(pos)
         
-        print(f"guide_pos = {guide_pos} & spine_guides = {spine_guides}")
+        print(f"guide_pos = {guide_pos} & rail_guides = {rail_guides}")
         for x in range(num_of_cvs):
-                cmds.xform(spine_guides[x], translation=guide_pos[x], worldSpace=1)
+                cmds.xform(rail_guides[x], translation=guide_pos[x], worldSpace=1)
         
         # Build Joints
         node_name_convention = f"_{module_name}_{unique_id}_{side}"
@@ -308,7 +302,7 @@ class CreateXfmGuides():
         # first joint connection:
         mm_initialJoint = f"MD_0{node_name_convention}"
         utils.cr_node_if_not_exists(1, "multMatrix", mm_initialJoint)
-        utils.connect_attr(f"{spine_guides[0]}.worldMatrix[0]", f"{mm_initialJoint}.matrixIn[0]")
+        utils.connect_attr(f"{rail_guides[0]}.worldMatrix[0]", f"{mm_initialJoint}.matrixIn[0]")
         utils.connect_attr(f"{ddj_parent_grp}.worldInverseMatrix[0]", f"{mm_initialJoint}.matrixIn[1]") # matrixSum
         utils.connect_attr(f"{mm_initialJoint}.matrixSum", f"{ddj_spine_jnts[0]}.offsetParentMatrix")
         
@@ -388,7 +382,11 @@ class CreateXfmGuides():
         u_list = self.get_u_value_list(gd_curve, jnt_num, node_name_convention)
         print(f"JJJJJJJ Module: `{module_name}` u_list = {u_list}")
         self.set_joint_values(jnt_num, u_list, ls_strechMulth, ls_remapVal, ls_condition)
-        return spine_guides
+        
+        for curves in [gd_curve, rail_gd_curve]:
+            cmds.hide(curves)
+        
+        return rail_guides, u_list
 
 
     def set_joint_values(self, jnt_num, u_list, ls_strechMulth, ls_remapVal, ls_condition):
@@ -415,27 +413,22 @@ class CreateXfmGuides():
             cmds.delete(temp_moPath)
             cmds.delete(temp_jnt_name)
         return u_list
-        '''
-        
-        spine_guides = ['xfm_guide_spine_0_0_M', 'xfm_guide_spine_1_0_M', 'xfm_guide_spine_2_0_M', 
-                        'xfm_guide_spine_3_0_M', 'xfm_guide_spine_4_0_M', 'xfm_guide_spine_5_0_M']
-        guide_pos = [[0.0, 150.0, 0.0], 
-                        [-1.0302985026792348e-14, 165.3182830810547, 2.138536453247061], 
-                        [-2.3043808310802754e-14, 185.50926208496094, 2.8292100429534632], 
-                        [-3.3364796818449844e-14, 204.27308654785156, -0.3802546262741595], 
-                        [-5.1020985278054485e-14, 237.46397399902344, -8.25034904479989]]
-        
-        '''
 
 
-    def cr_ctrls_driven_by_curve(self, typ, component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side):
-        gd_curve = f"crv_gd_{module_name}_{unique_id}_{side}"
+    def cr_ctrls_rail_driven(
+            self, typ, component_ctrls, ctrl_name_list, ctrl_grp_list, 
+            curve_info_dict, module_name, unique_id, side, jnt_u_list=None):
+        typ = f"{typ}_ctrls"
+        ctrl_dict = component_ctrls[typ]
+
         node_name_convention = f"_{module_name}_{unique_id}_{side}"
+        gd_curve = f"crv_gd{node_name_convention}"
+        rail_gd_curve = f"crv_gdRail{node_name_convention}"
+        
         ctrls_not_to_be_made = []
         current_ctrl_list = []
         current_grp_list = []
-        typ = f"{typ}_ctrls"
-        ctrl_dict = component_ctrls[typ]
+        
         for ctrl_name, ctrl_shape in ctrl_dict.items():
             if ctrl_shape == None:
                 ctrls_not_to_be_made.append(ctrl_name)
@@ -451,34 +444,51 @@ class CreateXfmGuides():
                 utils.add_float_attrib(ctrl, [f"Adjust_Pos"], [0, 1], True)
 
                 moPath = f"MPATH_{ctrl_name}_{node_name_convention}"
-                utils.cr_node_if_not_exists(0, "motionPath", moPath)
+                rail_moPath = f"MPATH_rail_{ctrl_name}_{node_name_convention}"
+                utils.cr_node_if_not_exists(0, "motionPath", moPath, {"follow": 1, "worldUpType":1, "frontAxis": 0})
+                utils.cr_node_if_not_exists(0, "motionPath", rail_moPath)
 
                 compM = f"CM_{ctrl_name}_{node_name_convention}"
+                rail_compM = f"CM_rail_{ctrl_name}_{node_name_convention}"
                 utils.cr_node_if_not_exists(0, "composeMatrix", compM)
+                utils.cr_node_if_not_exists(0, "composeMatrix", rail_compM)
                 
                 grp_name = n=f"gd_{whole_ctrl_name}"
                 cmds.group(n=grp_name, em=1)
 
                 # connect them (set uv value )
+                print(f">> RAILmopath = {rail_moPath}")
+                utils.connect_attr(f"{ctrl}.Adjust_Pos", f"{moPath}{utils.Plg.u_plg}")
+                utils.connect_attr(f"{ctrl}.Adjust_Pos", f"{rail_moPath}{utils.Plg.u_plg}")
+
                 utils.connect_attr(f"{gd_curve}{utils.Plg.wld_space_plg}", f"{moPath}{utils.Plg.geopath_plg}")
+                utils.connect_attr(f"{rail_gd_curve}{utils.Plg.wld_space_plg}", f"{rail_moPath}{utils.Plg.geopath_plg}")
+                
+                utils.connect_attr(f"{rail_moPath}{utils.Plg.cmpM_ac_plg}", f"{rail_compM}{utils.Plg.inputT_plug}")
+                utils.connect_attr(f"{rail_compM}{utils.Plg.out_mtx_plg}", f"{moPath}{utils.Plg.wld_up_mtx_plg}")
+                
                 utils.connect_attr(f"{moPath}{utils.Plg.cmpM_ac_plg}", f"{compM}{utils.Plg.inputT_plug}")
                 utils.connect_attr(f"{moPath}{utils.Plg.rot_plg}", f"{compM}{utils.Plg.inputR_plug}")
+
                 utils.connect_attr(f"{compM}{utils.Plg.out_mtx_plg}", f"{grp_name}{utils.Plg.opm_plg}")
-                utils.connect_attr(f"{ctrl}.Adjust_Pos", f"{moPath}{utils.Plg.u_plg}")
-                self.colour_ctrls(ctrl_name_list, side)
+
+                utils.colour_ctrls(ctrl_name_list, side)
                 
                 if ctrl_shape == "circle" or ctrl_shape == "octogan":
-                    cmds.setAttr(f"{grp_name}.rotateZ", 90)
-
-                # for key, value_dict in curve_info_dict.items():
-                #     utils.rebuild_ctrl(key, value_dict)
+                    pass
+                    # cmds.setAttr(f"{grp_name}.rotateZ", 90)
                 
                 # cmds.group(ctrl, n=grp_name)
                 ctrl_grp_list.append(grp_name)
                 current_grp_list.append(grp_name)
                
         # get the u value and set it!
-        u_list = self.get_u_value_list(gd_curve, len(current_ctrl_list), node_name_convention)
+        if jnt_u_list:
+            print(f"o>>>>> CR ctrl typ = {typ} -> jnt_u_list == {jnt_u_list}")
+            u_list = jnt_u_list
+        else:
+            print(f"o>>>>> CR ctrl typ = {typ} -> jnt_u_list == {jnt_u_list}")
+            u_list = self.get_u_value_list(gd_curve, len(current_ctrl_list), node_name_convention)
         for x in range(len(current_ctrl_list)):
             cmds.setAttr(f"{current_ctrl_list[x]}.Adjust_Pos", u_list[x])
             cmds.matchTransform(current_ctrl_list[x], current_grp_list[x], pos=1, rot=1, scl=0)
@@ -486,6 +496,7 @@ class CreateXfmGuides():
         
         for key, value_dict in curve_info_dict.items():
                 utils.rebuild_ctrl(key, value_dict)
+
 
     def cr_ik_fk_controls(
             self, component_ctrls, ctrl_name_list, ctrl_grp_list, fk_ctrl_list, 
@@ -508,7 +519,7 @@ class CreateXfmGuides():
                         break
                 print(f"ctrl suffix = {ctrl_suffix}") # xfm_guide_*bipedLeg_hip_0_L*
 
-                self.colour_ctrls(ctrl_name_list, side)
+                utils.colour_ctrls(ctrl_name_list, side)
 
                 # group all ctrls!
                 cmds.group(ctrl, n=f"gd_{whole_ctrl_name}")
@@ -541,19 +552,8 @@ class CreateXfmGuides():
             cmds.orientConstraint(fk_ctrl_list[-2], f"gd_{fk_ctrl_list[-1]}")
 
 
-    def colour_ctrls(self, ctrl_name_list, side):
-        for x in range(len(ctrl_name_list)):
-            cmds.setAttr(f"{ctrl_name_list[x]}.overrideEnabled", 1)
-            if side == "L":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 13)
-            elif side == "R":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 6)
-            elif side == "M":
-                cmds.setAttr(f"{ctrl_name_list[x]}.overrideColor", 17)
 
-        '''
-        cmds.xform(control, s=[1.0, 2.0, 6.000000000000001], worldSpace=1) 
-        '''
 
+       
 
 

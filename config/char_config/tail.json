@@ -54,8 +54,7 @@
             "fk_tail_tail4": "circle",
             "fk_tail_tail5": "circle",
             "fk_tail_tail6": "circle",
-            "fk_tail_tail7": "circle",
-            "fk_tail_tail8": "circle"
+            "fk_tail_tail7": "circle"
         },
         "IK_ctrls": {
             "ik_tail_tail0": "octogan", 

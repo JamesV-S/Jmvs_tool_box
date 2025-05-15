@@ -135,7 +135,7 @@ class CharLayoutView(QtWidgets.QWidget):
         container_layout.addWidget(self.available_rig_comboBox)
         container_layout.addWidget(self.mdl_tree_view)
         container_layout.addWidget(self.rpl_live_component)
-        module_visualisation_container = self.cr_container_funcUI("Character Database", container_layout, True)
+        module_visualisation_container, chk_none = self.cr_container_funcUI("Character Database", container_layout, True)
 
         # layV_module_visualisation.addWidget(module_visualisation_container)
         # widgets_layout.addWidget(lbl)
@@ -196,7 +196,7 @@ class CharLayoutView(QtWidgets.QWidget):
         # layV_module_additions.addWidget(self.component_list_lbl)
         layV_module_additions.addWidget(scroll_area)
         layV_module_additions.addWidget(self.publish_btn)
-        module_additions_container = self.cr_container_funcUI("Module List", layV_module_additions, True)
+        module_additions_container, chk_none = self.cr_container_funcUI("Module List", layV_module_additions, True)
 
         widgets_layout.addLayout(module_additions_container)
 
@@ -211,7 +211,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.curve_tab_ui(mop_tabs)        
         self.module_editing_ui(mop_tabs)
 
-        mop_container = self.cr_container_funcUI("Management Options", mop_tabs)
+        mop_container, chk_none = self.cr_container_funcUI("Management Options", mop_tabs)
         widgets_layout.addLayout(mop_container)
 
 
@@ -225,26 +225,39 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_curve_editing = QtWidgets.QVBoxLayout()
         layH_crv_edit_001 = QtWidgets.QHBoxLayout()
         layH_crv_edit_002 = QtWidgets.QHBoxLayout()
+        layH_crv_edit_003 = QtWidgets.QHBoxLayout()
         
         # ---- curve selection ----
-        self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Controls")
-        self.guide_crv_edit_checkBox = QtWidgets.QCheckBox("Guides")
-        layH_crv_edit_001.addWidget(self.controls_crv_edit_checkBox)
-        layH_crv_edit_001.addWidget(self.guide_crv_edit_checkBox)
+        self.all_crv_edit_checkBox = QtWidgets.QCheckBox("All")
+        self.ik_crv_edit_checkBox = QtWidgets.QCheckBox("IK")
+        self.fk_crv_edit_checkBox = QtWidgets.QCheckBox("FK")
+        # layH_crv_edit_001.addWidget(self.controls_crv_edit_checkBox)
+        # layH_crv_edit_001.addWidget(self.guide_crv_edit_checkBox)
 
         self.select_data_in_comp_btn = QtWidgets.QPushButton("Select data in component")        
         self.expand_curve_btn = QtWidgets.QPushButton("Expand")
         self.collapse_curve_btn = QtWidgets.QPushButton("Collapse")
+       
+        self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Controls")
+        self.guide_crv_edit_checkBox = QtWidgets.QCheckBox("Guides")
         self.mirror_comp_btn = QtWidgets.QPushButton("Mirror Component") # Mirror control and/or guide positional data!
+        
+        layH_crv_edit_001.addWidget(self.all_crv_edit_checkBox)
+        layH_crv_edit_001.addWidget(self.ik_crv_edit_checkBox)
+        layH_crv_edit_001.addWidget(self.fk_crv_edit_checkBox)
         layH_crv_edit_002.addWidget(self.expand_curve_btn)
         layH_crv_edit_002.addWidget(self.collapse_curve_btn)
         layV_curve_editing.addLayout(layH_crv_edit_001)
-        layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_curve_editing.addWidget(self.select_data_in_comp_btn)
+        layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_curve_editing.addLayout(layH_crv_edit_002)
         layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
+        
+        layH_crv_edit_003.addWidget(self.controls_crv_edit_checkBox)
+        layH_crv_edit_003.addWidget(self.guide_crv_edit_checkBox)
+        layV_curve_editing.addLayout(layH_crv_edit_003)
         layV_curve_editing.addWidget(self.mirror_comp_btn)
-        crv_edit_container = self.cr_container_funcUI("Curve Editing", layV_curve_editing, True, True)
+        crv_edit_container, chk_none = self.cr_container_funcUI("Curve Editing", layV_curve_editing, True, True)
         # ---- curve colour management ----
         ''' ADD COLOUR OPTIONS WITH PICKER ETC '''
         # ---- curve data management ----
@@ -292,7 +305,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layGrid_tempDisp.addWidget(self.temp_AllVis_btn, 1, 1)
         layV_tempDisp.addLayout(layGrid_tempDisp)
         
-        template_display_container = self.cr_container_funcUI("Template Display", layV_tempDisp, True, True)
+        template_display_container, chk_none = self.cr_container_funcUI("Template Display", layV_tempDisp, True, True)
 
         utils_view.assign_style_ls(self.style_template_ui, 
              [self.guide_template_checkBox, self.controls_template_checkBox, self.ddj_template_checkBox, 
@@ -321,7 +334,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layGrid_LU.addWidget(self.unlock_btn, 0, 1)
         layV_LU.addLayout(layGrid_LU)
         
-        lock_unlock_container = self.cr_container_funcUI("Lock/Unlock", layV_LU, True, True)
+        lock_unlock_container, chk_none = self.cr_container_funcUI("Lock/Unlock", layV_LU, True, True)
         
         utils_view.assign_style_ls(self.style_lockUnlock_ui, 
              [self.compnent_checkBox, self.inputComp_checkBox, self.OutputComp, self.lock_btn, self.unlock_btn])
@@ -340,26 +353,23 @@ class CharLayoutView(QtWidgets.QWidget):
         self.selected_module_label = QtWidgets.QLabel("-> Module")
         layH_sel_options.addWidget(self.entire_comp_radioBtn)
         layH_sel_options.addWidget(self.sel_comp_radioBtn)
-        # layH_sel_options.addWidget(self.selected_module_label)
         
+        # ----------------------------------------------------------
         # update component options
+        # self.update_comp_data_checkBox = QtWidgets.QCheckBox()
         layGrid_upd_comp = self.update_component_data()
+        upd_comp_container, self.update_comp_data_checkBox = self.cr_container_funcUI(
+            label_name="Update comp data", widget_to_add=layGrid_upd_comp, 
+            layout=True, child=True, checkbox=True)
 
         # Joint & control options!!
         layH_jnt_ctrl_editing = QtWidgets.QHBoxLayout()
         layV_joint_editing = QtWidgets.QVBoxLayout()
         layV_control_editing = QtWidgets.QVBoxLayout()
-        spcV_jnt_ctrl = self.lay_spacer_funcUI("V")
-        layH_jnt_ctrl_editing.addLayout(layV_joint_editing)
-        layH_jnt_ctrl_editing.addLayout(spcV_jnt_ctrl)
-        layH_jnt_ctrl_editing.addLayout(layV_control_editing)
-        
             # jnt editing
         layH_jnt_num = QtWidgets.QHBoxLayout()
         jnt_lbl = QtWidgets.QLabel("Joint nom : ")
-        self.jnt_num_checkBox = QtWidgets.QCheckBox()
         self.jnt_num_spinBox = QtWidgets.QSpinBox()
-        layH_jnt_num.addWidget(self.jnt_num_checkBox)
         layH_jnt_num.addWidget(jnt_lbl)
         layH_jnt_num.addWidget(self.jnt_num_spinBox)
         
@@ -378,33 +388,43 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_joint_editing.addLayout(layH_jnt_num)
         layV_joint_editing.addLayout(layH_ik_op)
         layV_joint_editing.addLayout(layH_constraint_type)
+        
+        joint_editing_container, self.joint_editing_checkBox = self.cr_container_funcUI(
+            label_name="Edit joint data", widget_to_add=layV_joint_editing, 
+            layout=True, child=True, checkbox=True)
+        
+        layH_jnt_ctrl_editing.addLayout(joint_editing_container)
 
+        # ----------------------------------------------------------
             # control editing
+        layH_ctrl_num = QtWidgets.QHBoxLayout()
+        ctrl_num_lbl = QtWidgets.QLabel("Control nom :")
+        self.ctrl_num_spinBox = QtWidgets.QSpinBox()
+        layH_ctrl_num.addWidget(ctrl_num_lbl)
+        layH_ctrl_num.addWidget(self.ctrl_num_spinBox)
+
         layH_ctrl_type = QtWidgets.QHBoxLayout()
         ctrl_type_lbl = QtWidgets.QLabel("Control type : ")
         self.ctrl_type_comboBox = QtWidgets.QComboBox() # Add items using config data!
-        layH_ctrl_type.addWidget(ctrl_type_lbl)
+        # layH_ctrl_type.addWidget(ctrl_type_lbl)
         layH_ctrl_type.addWidget(self.ctrl_type_comboBox)
-
-        layH_ctrl_num = QtWidgets.QHBoxLayout()
-        ctrl_num_lbl = QtWidgets.QLabel("Control nom : ")
-        self.ctrl_num_checkBox = QtWidgets.QCheckBox("Defualt")
-        self.ctrl_num_spinBox = QtWidgets.QSpinBox()
-        layH_ctrl_num.addWidget(ctrl_num_lbl)
-        layH_ctrl_num.addWidget(self.ctrl_num_checkBox)
-        layH_ctrl_num.addWidget(self.ctrl_num_spinBox)
-
-        layV_control_editing.addLayout(layH_ctrl_type)
+        
         layV_control_editing.addLayout(layH_ctrl_num)
+        layV_control_editing.addWidget(ctrl_type_lbl)
+        layV_control_editing.addLayout(layH_ctrl_type)
 
+        control_editing_container, self.ctrl_editing_checkBox = self.cr_container_funcUI(
+            label_name="Edit control data", widget_to_add=layV_control_editing, 
+            layout=True, child=True, checkbox=True)
+        layH_jnt_ctrl_editing.addLayout(self.lay_spacer_funcUI("V"))
+        layH_jnt_ctrl_editing.addLayout(control_editing_container)
         # Commit changes button!
         self.commit_module_edits_btn = QtWidgets.QPushButton("Commit Changes")
         
+        # ----------------------------------------------------------
         # add these interfaces to the tab!
         layV_module_editing.addLayout(layH_sel_options)
-        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
-        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
-        layV_module_editing.addLayout(layGrid_upd_comp)
+        layV_module_editing.addLayout(upd_comp_container)
         layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_module_editing.addLayout(layH_jnt_ctrl_editing)
         layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
@@ -415,12 +435,15 @@ class CharLayoutView(QtWidgets.QWidget):
         for spinBox in [self.jnt_num_spinBox, self.ctrl_num_spinBox]:
             spinBox.setMinimum(0)
 
+        # Temporary:
+        self.ctrl_type_comboBox.addItem("all")
+        self.constraint_type_comboBox.addItem("matrix")
+        self.constraint_type_comboBox.addItem("rotate_solver")
+
         utils_view.assign_style_ls(self.style_tab_1_ui, 
              [self.entire_comp_radioBtn, self.sel_comp_radioBtn, self.selected_module_label,
-         self.jnt_num_checkBox, self.jnt_num_spinBox, self.ik_operation_comboBox, 
-         self.constraint_type_comboBox, self.ctrl_type_comboBox, self.ctrl_num_checkBox, 
-         self.ctrl_num_spinBox, self.commit_module_edits_btn])
-
+               self.jnt_num_spinBox, self.ik_operation_comboBox, self.constraint_type_comboBox, 
+               self.ctrl_type_comboBox, self.ctrl_num_spinBox, self.commit_module_edits_btn])
 
     def module_scene_actions_ui(self, widgets_layout):
         layV_module_scene_actions = QtWidgets.QVBoxLayout()
@@ -447,7 +470,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.delete_mdl_btn.setObjectName("remove_mdl_btn")
         self.delete_blueprint_btn.setObjectName("delete_blueprint_btn")
         
-        module_scene_actions_container = self.cr_container_funcUI("Module Actions", layV_module_scene_actions, True)
+        module_scene_actions_container, chk_none = self.cr_container_funcUI("Module Actions", layV_module_scene_actions, True)
     
         widgets_layout.addLayout(module_scene_actions_container)
         
@@ -544,19 +567,34 @@ class CharLayoutView(QtWidgets.QWidget):
             widget.update()
 
 
-    def cr_container_funcUI(self, label_name, widget_to_add, layout=None, child=None):
+    def cr_container_funcUI(self, label_name, widget_to_add, layout=None, child=None, checkbox=None):
         container = QtWidgets.QWidget()
         container_layV = QtWidgets.QVBoxLayout(container)
-        # container_layV.addWidget(container_lbl)
         if layout == True:
             container_layV.addLayout(widget_to_add)
         else:
             container_layV.addWidget(widget_to_add)
-        
+
         # cr label & add to Vlayout to sit above the container 
         container_lbl = QtWidgets.QLabel(label_name)
         parent_container_layV = QtWidgets.QVBoxLayout()
-        parent_container_layV.addWidget(container_lbl)
+
+        if checkbox:
+            layH_checkboc_lbl = QtWidgets.QHBoxLayout()
+            container_chckbox = QtWidgets.QCheckBox()
+            container_chckbox.setFixedSize(15, 15)
+            # container_chckbox.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+
+            layH_checkboc_lbl.addWidget(container_chckbox)
+            layH_checkboc_lbl.addWidget(container_lbl)
+            parent_container_layV.addLayout(layH_checkboc_lbl)
+            if child == True:
+                self.style_child_container.append(container_chckbox)
+            else:
+                self.style_container.append(container_chckbox)
+        else:
+            container_chckbox = None
+            parent_container_layV.addWidget(container_lbl)
         parent_container_layV.addWidget(container)
         
         # Set the style to the container
@@ -567,7 +605,7 @@ class CharLayoutView(QtWidgets.QWidget):
                 self.style_container.append(widget)
             widget.setStyleSheet(self.stylesheet)
 
-        return parent_container_layV
+        return parent_container_layV, container_chckbox
     
 
     def lay_spacer_funcUI(self, orientation):
