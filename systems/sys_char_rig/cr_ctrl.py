@@ -126,6 +126,12 @@ class CreateControl():
             imported_guide = cmds.file(import_dir, i=1, 
                                        ns="imp_cg_root", rnn=1)
             ctrl = cmds.rename(imported_guide[0], ctrl_name)
+        elif ctrl_type == "prism":
+            import_dir = os.path.join(self.import_directory, 
+                                            "imp_prism.abc")
+            imported_guide = cmds.file(import_dir, i=1, 
+                                       ns="imp_prism", rnn=1)
+            ctrl = cmds.rename(imported_guide[0], ctrl_name)
         elif ctrl_type == "None":
             import_dir = os.path.join(self.import_directory, 
                                             "imp_prism.abc")

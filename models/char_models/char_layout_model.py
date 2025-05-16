@@ -276,14 +276,14 @@ class CharLayoutModel:
                     print(f"other_comp_grp = {other_comp_grp}")
                     parts = other_comp_grp.split("_")
                     other_comp = f"mdl_{part}_{parts[4]}_{parts[5]}" # mdl_root_0_M
-                    other_mdl, other_unique_id, other_side = utils.get_name_id_data_from_component(other_comp)
+                    other_mdl, other_unique_id, mirror_side = utils.get_name_id_data_from_component(other_comp)
             
-                    print(f"xfm_guide_{other_mdl}_{other_unique_id}_{other_side}")
+                    print(f"xfm_guide_{other_mdl}_{other_unique_id}_{mirror_side}")
                     print(f"constraining `offset_xfm_guide_{module}_{constrained}_{unique_id}_{side}`")
                     print(f"with type = `{typ}`")
                     print(f"with values = `{values}`")
                     utils.constrain_2_items(
-                        f"xfm_guide_{key}_{other_unique_id}_{other_side}",
+                        f"xfm_guide_{key}_{other_unique_id}_{mirror_side}",
                         f"offset_xfm_guide_{module}_{constrained}_{unique_id}_{side}", 
                         f"{typ}", f"{values}")
                 else:
@@ -371,6 +371,67 @@ class CharLayoutModel:
             #         cmds.select(guide, tgl=1)
 
     
+    def mirror_component_data(self, component_selection, val_availableRigComboBox, mdl_tree_model, val_ctrl_crv_edit_checkbox, val_guide_crv_edit_checkBox):
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        
+        if side == 'M':
+            middle_comp = True
+        elif side == 'L':
+            middle_comp = False
+            mirror_side = "R"
+        elif side == 'R':
+            middle_comp = False
+            mirror_side = "L"
+
+        if not middle_comp:
+            # check if the databse exists:
+            # Check if the database component exists or not
+            get_db_data = database_schema_002.CheckMirrorData(rig_db_directory, module, unique_id, mirror_side)
+            mirror_comp_exists = get_db_data.return_mirror_database_exists()
+
+            print(f"Model > mirror database exists:  `{mirror_comp_exists}`")
+
+            if not mirror_comp_exists:
+                # placement_dict = {}
+                # user_settings_dict = {}
+                # controls_dict = {}
+                for key, values in self.json_dict.items():
+                    if key == f"{module}.json":
+                        mirror_placement_dict =  values['placement']
+                        mirror_constant_dict = values['constant']
+                        mirror_user_settings_dict =  values['user_settings']
+                        mirror_controls_dict =  values['controls']
+                        database_schema_002.CreateDatabase(
+                            rig_db_directory, module, mirror_side, mirror_placement_dict, 
+                            mirror_constant_dict, mirror_user_settings_dict, mirror_controls_dict)
+                        self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
+                    
+            # now update the databse with the gathered data!
+            # original data first!
+            if val_ctrl_crv_edit_checkbox:
+                # retirvs the colour too. i don't want the colour!
+                get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
+                curve_info_dict = get_control_names.return_curve_info_dict()
+                mirror_control_data_dict = {}
+                for key, value in curve_info_dict.items():
+                    new_key = key.replace(f"{unique_id}_{side}", f"{unique_id}_{mirror_side}")
+                    if 'colour' in value:
+                        value['colour'] = 6
+                    mirror_control_data_dict[new_key] = value
+                print(f"mirrored curve_info_dict = {mirror_control_data_dict}")
+                database_schema_002.UpdateCurveInfo(rig_db_directory, module, unique_id, mirror_side, mirror_control_data_dict)
+
+            elif val_guide_crv_edit_checkBox:
+                pass
+
+            else:
+                print(f"NONE OF THE CHECKBOXES WERE REGISTERED!")
+        
+
     def commit_module_edit_changes(self, component, val_availableRigComboBox, val_update_comp_data_checkBox, val_joint_editing_checkBox, val_ctrl_editing_checkBox, umo_dict, jnt_num):
         module, unique_id, side = utils.get_name_id_data_from_component(component)
         rig_db_directory = utils_os.create_directory(

@@ -140,7 +140,7 @@ class CharLayoutController:
         self.view.lock_btn.clicked.connect(self.sig_lock_btn)
         self.view.unlock_btn.clicked.connect(self.sig_unlock_btn)
 
-        # self.view.mirror_comp_btn.clicked.connect()
+        self.view.mirror_comp_btn.clicked.connect(self.sig_mirror_comp_btn)
         self.view.store_curve_comp_btn.clicked.connect(self.sig_store_curve_comp_btn)
         
             # ---- Tab2 - Edit module ----
@@ -357,6 +357,19 @@ class CharLayoutController:
     def sig_guide_crv_edit_checkBox(self):
         self.val_guide_crv_edit_checkBox = self.view.guide_crv_edit_checkBox.isChecked()
     
+
+    def sig_mirror_comp_btn(self, ):
+        component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
+        print(f"component_selection = {component_selection}")
+        total_index = len(component_selection)
+        # try: 
+        for stp, component in enumerate(component_selection):
+            self.model.mirror_component_data(component, self.val_availableRigComboBox, self.view.mdl_tree_model, self.val_ctrl_crv_edit_checkbox, self.val_guide_crv_edit_checkBox)
+
+            progress_value = utils.progress_value(stp, total_index)
+            self.update_progress(progress_value, f"Storing curve data: [{component}]")
+        self.update_progress(0, f"DONE: Mirrored component Data")
+
 
     def sig_store_curve_comp_btn(self):
         """ 

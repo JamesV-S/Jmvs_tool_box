@@ -144,7 +144,7 @@ def record_ctrl_data(control):
     colour = cmds.getAttr(f"{control}.overrideColor")
     
     adjust_attr = "Adjust_Pos"
-    result = cmds.attributeQuery("Adjust_Pos", node="ctrl_ik_tail_tail1_0_M", exists=True)
+    result = cmds.attributeQuery("Adjust_Pos", node=control, exists=True)
     if result:
         adjust_val = cmds.getAttr(f"{control}.{adjust_attr}")
         data = {"degree": degree, "periodic": periodic, 
@@ -170,9 +170,11 @@ def rebuild_ctrl(control, curve_info_dict):
         cmds.xform(control, s=curve_info_dict["scale"], worldSpace=1) 
         
         cmds.setAttr(f"{control}.overrideColor", curve_info_dict["colour"])
+        
+        print(f"AAAAAAA > control anem = {control}, scale = {curve_info_dict['scale']}")
 
         adjust_attr = "Adjust_Pos"
-        result = cmds.attributeQuery("Adjust_Pos", node="ctrl_ik_tail_tail1_0_M", exists=True)
+        result = cmds.attributeQuery("Adjust_Pos", node=control, exists=True)
         if result:
             cmds.setAttr(f"{control}.{adjust_attr}", curve_info_dict["adjust_attr"])
     except Exception as e:

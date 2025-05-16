@@ -531,6 +531,7 @@ class RetrieveSpecificData():
         except sqlite3.Error as e:
             print(f"DB* module umo update Error: {e}")
 
+
     def get_jnt_num(self, conn, table):
         cursor = conn.cursor()
         sql = f"SELECT joint_num FROM {table} WHERE unique_id = ? AND side = ? "
@@ -570,7 +571,7 @@ class RetrieveSpecificData():
         except sqlite3.Error as e:
             print(f"constant table sqlite3.Error: {e}")
             return None, None
-
+        
 
     def return_get_jnt_num(self):
         return self.jnt_num
@@ -582,3 +583,39 @@ class RetrieveSpecificData():
 
     def return_guides_follow(self):
         return self.guides_follow
+    
+
+
+
+class CheckMirrorData():
+    def __init__(self, directory, module_name, unique_id, side):
+        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.unique_id = unique_id
+        self.side = side
+        try:
+            with sqlite3.connect(db_path) as conn:
+                self.mirror_database_exists = self.get_database_side_exists(conn, "modules")
+        except sqlite3.Error as e:
+            print(f"DB* check mirror data Error: {e}")
+
+        
+    def get_database_side_exists(self, conn, table):
+        cursor = conn.cursor()
+        sql = f"SELECT module_name FROM {table} WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(sql, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                print(f"DB mirror Database does exist")
+                return True
+            else:
+                print(f"DB mirror Database does NOT exist")
+                return False
+        except sqlite3.Error as e:
+            print(f"placement sqlite3.Error: {e}")
+            return False
+
+
+
+    def return_mirror_database_exists(self):
+        return self.mirror_database_exists

@@ -67,7 +67,7 @@
             "fk_quadArm_metacarpus": "circle"
         },
         "IK_ctrls": {
-            "ik_quadArm_scapula":"orb",
+            "ik_quadArm_scapula":"prism",
             "ik_quadArm_humerus": "orb",
             "ik_quadArm_elbow": "pv",
             "ik_quadArm_carpus": "cube",
