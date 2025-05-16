@@ -34,7 +34,16 @@
             "end_joint": "metacarpus",
             "pv_joint": "humerus",
             "hock_joint": "elbow"
-        }
+        },
+        "guides_connection": [
+            {"key": "spine_spine4", "typ": "point", "constrained": "scapula", "attr": {"all": true}},
+            {"key": "root_ROOT", "typ": "point", "constrained": "elbow", "attr": {"all": true}},
+            {"key": "root_ROOT", "typ": "point", "constrained": "carpus", "attr": {"all": true}},
+            {"key": "root_ROOT", "typ": "point", "constrained": "metacarpus", "attr": {"all": true}}
+        ],
+        "guides_follow": [
+            {"key": "scapula", "typ": "point", "constrained": "humerus", "attr": {"all": true}}
+        ]
     }, 
     "user_settings": {
         "mirror_rig": false,

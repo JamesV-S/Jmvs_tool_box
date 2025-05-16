@@ -45,7 +45,7 @@ importlib.reload(utils_db)
 # u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_sys': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
 
 class CreateDatabase():
-    def __init__(self, directory, mdl_name, side, placement_dict, user_settings_dict, controls_dict):
+    def __init__(self, directory, mdl_name, side, placement_dict, constant_dict, user_settings_dict, controls_dict):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         db_name = os.path.join(db_directory, f'DB_{mdl_name}.db')
@@ -69,6 +69,22 @@ class CreateDatabase():
                 # table user_settings
                 rig_options = ', '.join(user_settings_dict['rig_sys']['options'])
                 print(f"DB* user_settings_dict['twist']= `{user_settings_dict['twist']}`" )
+                ''''''
+                # table placement
+                self.update_db(conn, "placement", (
+                    self.unique_id, 
+                    placement_dict['component_pos'], 
+                    placement_dict['system_rot_xyz'], 
+                    placement_dict['system_rot_yzx'], 
+                    side
+                    ))
+                # constant data
+                self.update_db(conn, "constant", (
+                    self.unique_id,
+                    constant_dict['guides_connection'], 
+                    constant_dict['guides_follow'],
+                    side
+                    ))
                 self.update_db(conn, "user_settings", (
                     self.unique_id, 
                     user_settings_dict['mirror_rig'], 
@@ -80,15 +96,6 @@ class CreateDatabase():
                     user_settings_dict['size'],
                     side
                     ))
-                ''''''
-                # table placement
-                self.update_db(conn, "placement", (
-                    self.unique_id, 
-                    placement_dict['component_pos'], 
-                    placement_dict['system_rot_xyz'], 
-                    placement_dict['system_rot_yzx'], 
-                    side
-                    ))
                 # module controls
                 self.update_db(conn, "controls", (
                     self.unique_id, 
@@ -97,6 +104,7 @@ class CreateDatabase():
                     curve_info_dict,
                     side
                     ))
+                
                 ''''''
                     
         except sqlite3.Error as e:
@@ -117,6 +125,13 @@ class CreateDatabase():
             component_pos TEXT,
             system_rot_xyz TEXT,
             system_rot_yzx TEXT,
+            side text
+        );""",
+        """CREATE TABLE IF NOT EXISTS constant (
+            db_id INTEGER PRIMARY KEY,
+            unique_id INT,
+            guides_connection TEXT,
+            guides_follow TEXT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS user_settings (
@@ -156,6 +171,11 @@ class CreateDatabase():
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
             print(f"888888888888888888 H H placement VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, component_pos, system_rot_xyz, system_rot_yzx, side) VALUES (?, ?, ?, ?, ?)"""
+            cursor.execute(sql, values)
+        elif table == 'constant':
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
+            print(f"H H constant VALUES: {values}")
+            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, side) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'user_settings':
             print(f"888888888888888888 H H user_settings VALUES: {values}")
@@ -507,6 +527,7 @@ class RetrieveSpecificData():
         try:
             with sqlite3.connect(db_path) as conn:
                 self.jnt_num = self.get_jnt_num(conn, "user_settings")
+                self.guides_connection, self.guides_follow = self.get_guide_data(conn, "constant")
         except sqlite3.Error as e:
             print(f"DB* module umo update Error: {e}")
 
@@ -528,5 +549,36 @@ class RetrieveSpecificData():
             print(f"placement sqlite3.Error: {e}")
             return {}
         
+    
+    def get_guide_data(self, conn, table):
+        cursor = conn.cursor()
+        sql= f"SELECT guides_connection, guides_follow FROM {table} WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(sql, (self.unique_id, self.side,))
+            rows = cursor.fetchall()
+            # controls_dict = {"FK_ctrls":{}, "IK_ctrls":{}}
+            if rows:
+                for row in rows:
+                    gd_con_json =row[0] 
+                    gd_fol_json = row[1]
+                    # use Python's 'json module' to load json list into python dictionary's
+                    guides_connection = json.loads(gd_con_json)
+                    guides_follow = json.loads(gd_fol_json)
+                    print(f"DB > guides_connection = {guides_connection}")
+                    print(f"DB > guides_follow = {guides_follow}")
+            return guides_connection, guides_follow
+        except sqlite3.Error as e:
+            print(f"constant table sqlite3.Error: {e}")
+            return None, None
+
+
     def return_get_jnt_num(self):
         return self.jnt_num
+    
+
+    def return_guides_connection(self):
+        return self.guides_connection
+    
+
+    def return_guides_follow(self):
+        return self.guides_follow

@@ -31,7 +31,14 @@
             "end_joint": "wrist", 
             "pv_joint": "elbow",
             "top_joint": "clavicle"
-        }
+        },
+        "guides_connection": [
+            {"key": "spine_spine3", "typ": "parent", "constrained": "clavicle", "attr": {"all": true}},
+            {"key": "spine_spine3", "typ": "parent", "constrained": "shoulder", "attr": {"all": true}},
+            {"key": "root_ROOT", "typ": "point", "constrained": "elbow", "attr": {"all": true}},
+            {"key": "root_ROOT", "typ": "point", "constrained": "wrist", "attr": {"all": true}}
+        ],
+        "guides_follow": []
     },
     "user_settings":{
         "mirror_rig": false,

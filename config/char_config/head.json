@@ -23,7 +23,15 @@
     },
     "constant": {
         "space_swap": ["world", "neckRoot"],
-        "ik_settings": {}
+        "ik_settings": {},
+        "guides_connection": [
+            {"key": "spine_spine4",  "typ":"parent", "constrained":"neck0", "attr": {"all": true}}
+        ],
+        "guides_follow": [
+            {"key": "neck0", "typ": "point", "constrained": "neck1", "attr": {"all": true}},
+            {"key": "neck0", "typ": "point", "constrained": "neck2", "attr": {"all": true}},
+            {"key": "neck0", "typ": "point", "constrained": "neck3", "attr": {"all": true}}
+        ]
     },
     "user_settings": {
         "mirror_rig": false,

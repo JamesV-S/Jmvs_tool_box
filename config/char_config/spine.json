@@ -32,7 +32,16 @@
             "end_joint": "spine4",
             "pv_joint": null,
             "world_orientation": true
-        }
+        },
+        "guides_connection": [
+            {"key": "root_COG", "typ": "parent", "constrained": "spine0", "attr": {"all":true}}
+            ],
+        "guides_follow": [
+            {"key": "spine0", "typ":"parent", "constrained":"spine1", "attr":{"all": true}},
+            {"key": "spine0", "typ":"parent", "constrained":"spine2", "attr":{"all": true}},
+            {"key": "spine0", "typ":"parent", "constrained":"spine3", "attr": {"all": true}},
+            {"key": "spine0", "typ":"parent", "constrained":"spine4", "attr": {"all": true}}
+        ]
     },
     "user_settings": {
         "mirror_rig": false,

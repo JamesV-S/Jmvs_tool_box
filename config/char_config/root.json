@@ -17,7 +17,11 @@
     },
     "constant": {
         "space_swap": [],
-        "ik_settings": {}
+        "ik_settings": {},
+        "guides_connection": [],
+        "guides_follow": [
+            {"key": "ROOT", "typ": "point", "constrained": "COG", "attr": {"all": true}}
+        ]
     },
     "user_settings": {
         "mirror_rig": false,

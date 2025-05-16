@@ -301,7 +301,7 @@ class CharLayoutController:
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view, self.view.mdl_tree_model)
         # print(f"YAAAAAH component_selection = {component_selection[0]}")
         self.func_createXfmGuides(component_selection)
-        self.model.func_unlocked_all()
+        self.model.func_unlocked_all(component_selection, self.val_availableRigComboBox)
         self.update_progress(0, f"DONE: Added {component_selection} to scene")
 
         
@@ -317,7 +317,7 @@ class CharLayoutController:
         
         component_selection = utils_QTree.get_all_component_name_in_TreeView(self.view.mdl_tree_model)
         self.func_createXfmGuides(component_selection)
-        self.model.func_unlocked_all()
+        self.model.func_unlocked_all(component_selection, self.val_availableRigComboBox)
         self.update_progress(0, f"DONE: '{self.val_availableRigComboBox}' Blueprint")
 
     # ------------ management options siFunc ------------
@@ -488,11 +488,7 @@ class CharLayoutController:
                 mdl = parts[0] # bipedArm
                 uID = parts[1] # 0
                 side = parts[2] # L
-                
-                if "mdl_root_0_M" in component:
-                    sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
-                else:
-                    sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
+                sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
                 cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
                 comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
                 print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
@@ -512,10 +508,8 @@ class CharLayoutController:
                 print(f"Comp_for selectionUNLOCK = {component}")
                 # NORM = xfm_grp_bipedLeg_component_0_L
                 # new = mdl_bipedLeg_0_L
-                if "mdl_root_0" in component:
-                    unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_M"
-                else: unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_{side}" 
-                self.model.constrain_guides_from_comp(unlock_rdy_component) 
+                unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_{side}" 
+                self.model.guide_connections_setup(unlock_rdy_component) 
         else: print(f"component checkbox is not checked")
 
     # ---- Tab 2 - edit module ----

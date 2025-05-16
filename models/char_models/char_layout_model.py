@@ -214,6 +214,7 @@ class CharLayoutModel:
             for key, values in self.json_dict.items():
                 if key == f"{mdl_name}.json":
                     placement_dict =  values['placement']
+                    constant_dict = values['constant']
                     user_settings_dict =  values['user_settings']
                     controls_dict =  values['controls']
                   
@@ -226,7 +227,7 @@ class CharLayoutModel:
                 for db in range(iterations):
                     database_schema = database_schema_002.CreateDatabase(
                         mdl_directory, mdl_name, side, 
-                        placement_dict, user_settings_dict, controls_dict)
+                        placement_dict, constant_dict, user_settings_dict, controls_dict)
                 
                 # unique_id = database_schema.get_unique_id()
                 # print(f"unique_id == {unique_id} for {mdl_name}_{side}")
@@ -235,140 +236,84 @@ class CharLayoutModel:
                 print(f"Not required module database creation for {mdl_name}")
 
     
-    def func_unlocked_all(self):
+    def func_unlocked_all(self, component_selection, val_availableRigComboBox):
         # establish components present in the scene!
-        possible_comp_groups = "xfm_grp_*_component_*"
-        cmds.select(possible_comp_groups)
-        xfm_ancestorGrp = cmds.ls(sl=1, type="transform")
-        # xfm_ancestorGrp = ['xfm_grp_bipedArm_component_0_L', 'xfm_grp_bipedLeg_component_0_L', 'xfm_grp_root_component_0_M', 'xfm_grp_spine_component_0_M'] 
-        print(f"xfm_ancestorGrp = {xfm_ancestorGrp}")
-        for component in xfm_ancestorGrp:
-            self.constrain_guides_from_comp(component)
-        cmds.select(cl=1)
+        # possible_comp_groups = "xfm_grp_*_component_*"
+        # cmds.select(possible_comp_groups)
+        # xfm_ancestorGrp = cmds.ls(sl=1, type="transform")
+        # # xfm_ancestorGrp = ['xfm_grp_bipedArm_component_0_L', 'xfm_grp_bipedLeg_component_0_L', 'xfm_grp_root_component_0_M', 'xfm_grp_spine_component_0_M'] 
+        # print(f"xfm_ancestorGrp = {xfm_ancestorGrp}")
+        for component in component_selection:
+            self.guide_connections_setup(component, val_availableRigComboBox)
     
-    # ---- Component constraints ----
-    def constrain_guides_from_comp(self, component):
-        # guide > parentOperation > guideGROUP(constrained)
-        print(f"NNNNNNNNNORMAL UNLOCK component = {component}")
-        spine_output_mdl = "spine"
-        parts = component.split('_')[2:]
-        print(f"PARTS == {parts}")
-        working_comp_unique_id = parts[2]
-        working_comp_side =  parts[3]
-        grpXfm = "offset_xfm_guide"
-        xfm = "xfm_guide"
 
-        xfm_root = f"{xfm}_root_ROOT_{working_comp_unique_id}_M"
-        xfm_cog = f"{xfm}_root_COG_{working_comp_unique_id}_M"
+    # ---- Component constraints ----   
+    def guide_connections_setup(self, component, val_availableRigComboBox):
+        module, unique_id, side = utils.get_name_id_data_from_component(component)
+        print(f"guide_connections :component: {component} ")
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        get_guides_connection = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
+        guides_connection_ls = get_guides_connection.return_guides_connection()
+        guides_follow_ls = get_guides_connection.return_guides_follow()
+        print(f"J > module = {module}")
+        print(f"J > guides_connection_ls = {guides_connection_ls}")
+        print(f"J > guides_follow_ls = {guides_follow_ls}")
+        
+        if guides_connection_ls:
+            for item in guides_connection_ls:
+                key = item["key"]
+                typ = item["typ"]
+                constrained = item["constrained"]
+                values = self.get_values(item["attr"])
+                
+                part = key.split('_')[0]
+                if cmds.objExists(f"xfm_grp_{part}_component_*_*"):
+                    print(f"J connections working")
+                    other_comp_grp = cmds.ls(f"xfm_grp_{part}_component_*_*")[0] # xfm_grp_root_component_0_M
+                    print(f"other_comp_grp = {other_comp_grp}")
+                    parts = other_comp_grp.split("_")
+                    other_comp = f"mdl_{part}_{parts[4]}_{parts[5]}" # mdl_root_0_M
+                    other_mdl, other_unique_id, other_side = utils.get_name_id_data_from_component(other_comp)
+            
+                    print(f"xfm_guide_{other_mdl}_{other_unique_id}_{other_side}")
+                    print(f"constraining `offset_xfm_guide_{module}_{constrained}_{unique_id}_{side}`")
+                    print(f"with type = `{typ}`")
+                    print(f"with values = `{values}`")
+                    utils.constrain_2_items(
+                        f"xfm_guide_{key}_{other_unique_id}_{other_side}",
+                        f"offset_xfm_guide_{module}_{constrained}_{unique_id}_{side}", 
+                        f"{typ}", f"{values}")
+                else:
+                    print(f"J connections NOT working")
 
-        if "bipedLeg" in component:
-            print("bipedLeg unlocked configuration")
-            if cmds.objExists("xfm_grp_spine_component_*_M"):
-                cmds.select("xfm_grp_spine_component_*_M")
-                leg_output_comp = cmds.ls(sl=1, type="transform")[0] # handles only 1 spine for time being
-                print(f"output_comp = {leg_output_comp}") # xfm_grp_spine_component_0_M
-                leg_spine_input_name = f"offset_xfm_guide_bipedLeg_hip_{working_comp_unique_id}_{working_comp_side}"
-                leg_output_mdl = "spine"
-                leg_output_uID = leg_output_comp.split('_')[4:][0]
-                leg_output_side = leg_output_comp.split('_')[4:][-1]
-                leg_spine_output_name =f"xfm_guide_{spine_output_mdl}_{spine_output_mdl}0_{leg_output_uID}_{leg_output_side}"
-                # spine1 >PointConAll> hip 
-                utils.constrain_2_items(leg_spine_output_name, leg_spine_input_name, "point", "all")
-            else: print("spine component not in scene")
-            # Hip >PointConAll> knee
-            utils.constrain_2_items(
-                f"{xfm}_bipedLeg_hip_{working_comp_unique_id}_{working_comp_side}", 
-                f"{grpXfm}_bipedLeg_knee_{working_comp_unique_id}_{working_comp_side}", 
-                "point", "all")
-            # knee > Nothing
-            # foot >PointConX_Z> ankle
-            utils.constrain_2_items(
-                f"{xfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
-                f"{grpXfm}_bipedLeg_ankle_{working_comp_unique_id}_{working_comp_side}", 
-                "point", ["X", "Z"])
-            # foot >ParentConAll> ball
-            utils.constrain_2_items(
-                f"{xfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
-                f"{grpXfm}_bipedLeg_ball_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
-            # foot >ParentConAll> toe
-            utils.constrain_2_items(
-                f"{xfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
-                f"{grpXfm}_bipedLeg_toe_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
-            if cmds.objExists("xfm_grp_root_component_*_M"):
-                # root >ParentCon_Y_> ankle
-                # offset_xfm_guide_root
+        '''{"key": "spine0", "typ":"parent", "constrained":"spine1", "attr":{"all": true}}'''
+        if guides_follow_ls:
+            for item in guides_follow_ls:
+                key = item["key"]
+                typ = item["typ"]
+                constrained = item["constrained"]
+                values = self.get_values(item["attr"])
+                
+                print(f"HERE > with values = `{values}`")
+
                 utils.constrain_2_items(
-                xfm_root,
-                f"{grpXfm}_bipedLeg_ankle_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", ["Y"])
-                # root >PointtConAll> foot
-                utils.constrain_2_items(
-                xfm_root,
-                f"{grpXfm}_bipedLeg_foot_{working_comp_unique_id}_{working_comp_side}", 
-                "point", "all")
-        elif "bipedArm" in component:
-            print("bipedArm unlocked configuration")
-            if cmds.objExists("xfm_grp_spine_component_*_M"):
-                print("Arm, spine IS component in scene")
-                cmds.select("xfm_grp_spine_component_*_M")
-                arm_output_comp = cmds.ls(sl=1, type="transform")[0] # handles only 1 spine for time being
-                print(f"output_comp = {arm_output_comp}") # xfm_grp_spine_component_0_M
-                arm_output_uID = arm_output_comp.split('_')[4:][0]
-                arm_output_side = arm_output_comp.split('_')[4:][-1]
-                arm_spine_output_name =f"xfm_guide_{spine_output_mdl}_{spine_output_mdl}3_{arm_output_uID}_{arm_output_side}"
-                # spine4 >ParentConAll> clavicle
-                clavicle_input_name = f"offset_xfm_guide_bipedArm_clavicle_{working_comp_unique_id}_{working_comp_side}"
-                utils.constrain_2_items(arm_spine_output_name, clavicle_input_name, 
-                                        "parent", "all")
-                # spine4 >ParentConAll> shoulder
-                shoulder_input_name = f"offset_xfm_guide_bipedArm_shoulder_{working_comp_unique_id}_{working_comp_side}"
-                utils.constrain_2_items(arm_spine_output_name, shoulder_input_name, 
-                                        "parent", "all")
-                if cmds.objExists("xfm_grp_root_component_*_M"):
-                    # root >ParentCon_Y_> ankle
-                    utils.constrain_2_items(
-                    xfm_root,
-                    f"{grpXfm}_bipedArm_elbow_{working_comp_unique_id}_{working_comp_side}", 
-                    "point", "all")
-                    # root >PointtConAll> foot
-                    utils.constrain_2_items(
-                    xfm_root,
-                    f"{grpXfm}_bipedArm_wrist_{working_comp_unique_id}_{working_comp_side}", 
-                    "point", "all")
-        elif "root" in component:
-            print("root unlocked configuration")
-            # root >PointtConAll> COG
-            utils.constrain_2_items(
-                f"{xfm}_root_ROOT_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_root_COG_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
-        elif "spine" in component:
-            print("spine unlocked configuration")
-            if cmds.objExists("xfm_grp_root_component_*_M"):
-                # cog >ParentConAll> spine1
-                utils.constrain_2_items(
-                xfm_cog,
-                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
-            # spine0 > ParentConAll> spine1/2/3/4
-            utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}1_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
-            utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}2_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
-            utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}3_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
-            utils.constrain_2_items(
-                f"{xfm}_{spine_output_mdl}_{spine_output_mdl}0_{working_comp_unique_id}_{working_comp_side}",
-                f"{grpXfm}_{spine_output_mdl}_{spine_output_mdl}4_{working_comp_unique_id}_{working_comp_side}", 
-                "parent", "all")
+                    f"xfm_guide_{module}_{key}_{unique_id}_{side}",
+                    f"offset_xfm_guide_{module}_{constrained}_{unique_id}_{side}", 
+                    f"{typ}", f"{values}")
+
+
+    def get_values(self, attr):
+        if attr.get('all', False):
+            return "all"
+        else:
+            # Extract the axes that are false and return the remaining axes
+            axes = ["X", "Y", "Z"]
+            skip_axes = [axis for axis in axes if not attr.get(axis, True)]
+            return skip_axes
+        
 
     # ---- Control data recording ----
     def store_component_control_data(self, component_selection, val_availableRigComboBox):
