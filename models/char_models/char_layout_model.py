@@ -117,10 +117,10 @@ class CharLayoutModel:
                 "Jmvs_tool_box", "databases", "char_databases", 
                 self.db_rig_location, rig_folder_name
                 )
-            retrieved_exisiting_dict = database_schema_002.retrieveSpecificPlacementPOSData(
+            retrieved_existing_dict = database_schema_002.retrieveSpecificPlacementPOSData(
                 rig_db_directory, module, unique_id, side
                 )
-            existing_pos_dict = retrieved_exisiting_dict.return_existing_pos_dict()
+            existing_pos_dict = retrieved_existing_dict.return_existing_pos_dict()
             print(f"existing_pos_dict = {existing_pos_dict}")
 
             updated_existing_pos_dict = {}
@@ -410,8 +410,7 @@ class CharLayoutModel:
                             mirror_constant_dict, mirror_user_settings_dict, mirror_controls_dict)
                         self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
                     
-            # now update the databse with the gathered data!
-            # original data first!
+            # update the databse with the gathered data!
             if val_ctrl_crv_edit_checkbox:
                 # retirvs the colour too. i don't want the colour!
                 get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
@@ -425,12 +424,18 @@ class CharLayoutModel:
                 print(f"mirrored curve_info_dict = {mirror_control_data_dict}")
                 database_schema_002.UpdateCurveInfo(rig_db_directory, module, unique_id, mirror_side, mirror_control_data_dict)
 
-            elif val_guide_crv_edit_checkBox:
-                pass
-
-            else:
-                print(f"NONE OF THE CHECKBOXES WERE REGISTERED!")
-        
+            if val_guide_crv_edit_checkBox:
+                # need the positional data of the current component!
+                print(f"running guide mirror too")
+                retrieved_existing_dict = database_schema_002.retrieveSpecificPlacementPOSData(
+                    rig_db_directory, module, unique_id, side)
+                existing_pos_dict = retrieved_existing_dict.return_existing_pos_dict()
+                
+                # apply these to the mirrored component
+                database_schema_002.updateSpecificPlacementPOSData(
+                    rig_db_directory, module, unique_id, mirror_side, existing_pos_dict
+                    )
+            
 
     def commit_module_edit_changes(self, component, val_availableRigComboBox, val_update_comp_data_checkBox, val_joint_editing_checkBox, val_ctrl_editing_checkBox, umo_dict, jnt_num):
         module, unique_id, side = utils.get_name_id_data_from_component(component)

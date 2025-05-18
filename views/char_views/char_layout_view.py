@@ -438,7 +438,7 @@ class CharLayoutView(QtWidgets.QWidget):
         # Temporary:
         self.ctrl_type_comboBox.addItem("all")
         self.constraint_type_comboBox.addItem("matrix")
-        self.constraint_type_comboBox.addItem("rotate_solver")
+        self.ik_operation_comboBox.addItem("rotate")
 
         utils_view.assign_style_ls(self.style_tab_1_ui, 
              [self.entire_comp_radioBtn, self.sel_comp_radioBtn, self.selected_module_label,
