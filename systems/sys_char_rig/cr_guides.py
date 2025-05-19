@@ -28,7 +28,7 @@ class CreateXfmGuides():
             "db_rig_storage", rig_folder_name
             )
 
-        print(f"crerating guide component for {database_componment_dict}")
+        print(f"creating guide component for {database_componment_dict}")
         self.module_name = database_componment_dict['module_name']
         self.unique_id = database_componment_dict['unique_id']
         self.side = database_componment_dict['side']
@@ -44,9 +44,6 @@ class CreateXfmGuides():
 
     def build_guide_components(self, module_name, unique_id, side, component_pos, component_ctrls):
         self.guide_import_dir =  os.path.join(utils_os.create_directory("Jmvs_tool_box", "imports" ), "imp_component_guide.abc")# 
-        
-        # import the guide & distribbute it to all necessary guides!    
-        # guides = []
         
         if module_name == "spine" or module_name == "tail" or module_name == "neck":
             print(f"rail module detected: {module_name}")
@@ -91,17 +88,12 @@ class CreateXfmGuides():
 
         
     def build_control_components(self, guides, module_name, unique_id, side, component_ctrls, jnt_u_list):
-        # create controls ontop
-        # have a function that given the name of the control, creates it!
         ctrl_name_list = []
         ctrl_grp_list = []
         fk_ctrl_list = []
 
         curve_info_data = database_schema_002.CurveInfoData(self.rig_db_directory, module_name, unique_id, side)
         curve_info_dict = curve_info_data.return_curve_info_dict()
-
-        # If the module is tail -> make fk ctrl for every joint. 
-        # cr a list fk name ctrls. 
 
         if module_name == "spine" or module_name == "neck":
             self.cr_ctrls_rail_driven("IK", component_ctrls, ctrl_name_list, ctrl_grp_list, curve_info_dict, module_name, unique_id, side)
@@ -133,14 +125,6 @@ class CreateXfmGuides():
         guides = []
         for key, pos in component_pos.items():
             imported_guide = cmds.file(self.guide_import_dir, i=1, ns="component_guide", rnn=1)
-            # esyablish guides, check for root module that acts differently
-            # if module_name == "root":
-            #     if cmds.objExists(f"xfm_guide_{module_name}_root"):
-            #         guide_name = f"xfm_guide_{module_name}_COG" # cog guide
-            #     else: # root guide
-            #         guide_name = f"xfm_guide_{module_name}_root"
-            # else:
-            #     guide_name = f"xfm_guide_{module_name}_{key}_{unique_id}_{side}"
             guide_name = f"xfm_guide_{module_name}_{key}_{unique_id}_{side}"
             guides.append(cmds.rename(imported_guide[0], guide_name))
             cmds.xform(guide_name, translation=pos, worldSpace=1)
@@ -160,9 +144,8 @@ class CreateXfmGuides():
             try:
                 cmds.setAttr(f"{guides[x]}.overrideEnabled", 1)
                 cmds.setAttr(f"{guides[x]}.overrideColor", 25)
-                # PARENTING THE GUIDES IS TEMPORARY!
-                # cmds.parent(guides[x+1], guides[x])
-                utils.connect_guide(guides[x], guides[x+1])
+                curve_name, joint_1 = utils.connect_guide(guides[x], guides[x+1])
+                utils.group_guide_misc_objects([curve_name, joint_1], module_name, unique_id, side)
             except:
                 pass
         
@@ -175,6 +158,8 @@ class CreateXfmGuides():
             cmds.setAttr(f"{ankle_helper_ctrl}.translateY", 0)
             guides.append(ankle_helper_ctrl)
         
+        
+
         return guides
 
 
@@ -301,17 +286,13 @@ class CreateXfmGuides():
             cmds.joint(n=joint_name)
             ddj_spine_jnts.append(joint_name)
         
-        # parent joint to a group " origin"
-        ddj_parent_grp = "grp_component_misc"
-        if not cmds.objExists(ddj_parent_grp):
-            cmds.group(n=ddj_parent_grp, em=1)
-        cmds.parent(rail_gd_curve, gd_curve, ddj_spine_jnts[0], ddj_parent_grp)
+        comp_misc_grp = utils.group_guide_misc_objects([rail_gd_curve, gd_curve, ddj_spine_jnts[0]], module_name, unique_id, side)
 
         # first joint connection:
         mm_initialJoint = f"MD_0{node_name_convention}"
         utils.cr_node_if_not_exists(1, "multMatrix", mm_initialJoint)
         utils.connect_attr(f"{rail_guides[0]}.worldMatrix[0]", f"{mm_initialJoint}.matrixIn[0]")
-        utils.connect_attr(f"{ddj_parent_grp}.worldInverseMatrix[0]", f"{mm_initialJoint}.matrixIn[1]") # matrixSum
+        utils.connect_attr(f"{comp_misc_grp}.worldInverseMatrix[0]", f"{mm_initialJoint}.matrixIn[1]") # matrixSum
         utils.connect_attr(f"{mm_initialJoint}.matrixSum", f"{ddj_spine_jnts[0]}.offsetParentMatrix")
         
         # Ignore the first joint:

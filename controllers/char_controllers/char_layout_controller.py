@@ -432,44 +432,34 @@ class CharLayoutController:
             component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
             # treeSel = ["mdl_bipedArm_0_L"]
             for component in component_selection:
-                # delete any constraints on the component's guides
-                # offset_xfm_guide_bipedArm_clavicle_0_L
-                # bipedArm_*_0_L
-                if "mdl_root_0" in component:
-                    component = "mdl_root_0_M"
-                parts = component.split('_')[1:] # bipedArm, 0, L
-                mdl = parts[0] # bipedArm
-                uID = parts[1] # 0
-                side = parts[2] # L
-                
-                # create the box:
-                if not cmds.objExists(f"cg_{mdl}_{uID}_{side}"):
-                    if 'bipedArm' in component:
-                        if side == "L": ctrl_type = "imp_cg_arm_L"
-                        else: ctrl_type = "imp_cg_arm_R"
-                    elif 'bipedLeg' in component:
-                        if side == "L": ctrl_type = "imp_cg_leg_L"
-                        else: ctrl_type = "imp_cg_leg_R"
-                    elif 'spine' in component:
-                        ctrl_type = "imp_cg_spine"
-                    elif 'root' in component:
-                        ctrl_type = "imp_cg_root"
-                    cube_imp_ctrl = cr_ctrl.CreateControl(type=ctrl_type, name=f"cg_{mdl}_{uID}_{side}")
-                    cube_locked_comp = cube_imp_ctrl.retrun_ctrl()
-                else: cube_locked_comp = f"cg_{mdl}_{uID}_{side}"
+                module, unique_id, side = utils.get_name_id_data_from_component(component)
+    
+                # create the arrow guide:
+                lock_guide_name = f"lock_{module}_{unique_id}_{side}"
+                if not cmds.objExists(lock_guide_name):
+                    cube_imp_ctrl = cr_ctrl.CreateControl(type="arrow", name=lock_guide_name)
+                    lock_guide_name = cube_imp_ctrl.retrun_ctrl()
+                    
+                    first_guide = utils.get_first_child(f"xfm_grp_{module}_component_{unique_id}_{side}") # xfm_grp_spine_component_0_M
+                    utils.mtrans_and_pivot_to_origin(target_obj=lock_guide_name, source_obj=first_guide, 
+                                                     translation_vector=(0, 15, 0), rotate={"X":180})
+                    cmds.parent(lock_guide_name, f"grp_misc_{module}_component_{unique_id}_{side}")
+                    utils.clean_opm(lock_guide_name)
+                    
                 cmds.select(cl=1)
-                cmds.showHidden("cg_*")
+                cmds.showHidden(lock_guide_name)
                 
                 try:
-                    cmds.setAttr(f"{cube_locked_comp}.overrideEnabled", 1)
-                    cmds.setAttr(f"{cube_locked_comp}.hiddenInOutliner", 1)
+                    cmds.setAttr(f"{lock_guide_name}.overrideEnabled", 1)
+                    cmds.setAttr(f"{lock_guide_name}.overrideColor", 14)
+                    
                 except Exception as e:
-                    print(f"Hiding CAGEE error: {e}")
+                    print(f"Hiding lock_guide error: {e}")
 
-                if "mdl_root_0_M" in component:
-                    sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
-                else:
-                    sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
+                # if "module_root_0_M" in component:
+                #     sel = f"offset_xfm_guide_root", f"offset_xfm_guide_COG"
+                # else:
+                sel = f"offset_xfm_guide_{module}_*_{unique_id}_{side}"
                 cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
                 comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
                 print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
@@ -483,25 +473,17 @@ class CharLayoutController:
                                 print(f"constraint : : {con}")
                                 cmds.delete(con)
                         # constrain grps to cage!
-                        utils.constrain_2_items(cube_locked_comp, grpXfm, "parent", "all")  
+                        utils.constrain_2_items(lock_guide_name, grpXfm, "parent", "all")  
+                cmds.select(cl=1)
         else: print(f"component checkbox is not checked")
 
 
     def sig_unlock_btn(self):
         if self.val_compnent_checkBox: #true
             component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
-            # treeSel = ["mdl_bipedArm_0_L"]
             for component in component_selection:
-                # delete any constraints on the component's guides
-                # offset_xfm_guide_bipedArm_clavicle_0_L
-                # bipedArm_*_0_L
-                if "mdl_root_0" in component:
-                    component = "mdl_root_0_M"
-                parts = component.split('_')[1:] # bipedArm, 0, L
-                mdl = parts[0] # bipedArm
-                uID = parts[1] # 0
-                side = parts[2] # L
-                sel = f"offset_xfm_guide_{mdl}_*_{uID}_{side}"
+                module, unique_id, side = utils.get_name_id_data_from_component(component)            
+                sel = f"offset_xfm_guide_{module}_*_{unique_id}_{side}"
                 cmds.select(sel) #"pointCon_xfm_guide_bipedArm_0_L")
                 comp_grpXfm_ls = cmds.ls(sl=1, type="transform")
                 print(f"comp_grpXfm_ls = {comp_grpXfm_ls}")
@@ -514,15 +496,9 @@ class CharLayoutController:
                             for con in constraints:
                                 print(f"constraint : : {con}")
                                 cmds.delete(con)
-                # hide the cages (make it specific in the future) 
-                cmds.hide("cg_*")
-
-                # add the normal following constraints!
-                print(f"Comp_for selectionUNLOCK = {component}")
-                # NORM = xfm_grp_bipedLeg_component_0_L
-                # new = mdl_bipedLeg_0_L
-                unlock_rdy_component = f"xfm_grp_{mdl}_component_{uID}_{side}" 
-                self.model.guide_connections_setup(unlock_rdy_component) 
+                cmds.hide(f"lock_{module}_{unique_id}_{side}")
+                self.model.guide_connections_setup(component, self.val_availableRigComboBox) 
+                cmds.select(cl=1)
         else: print(f"component checkbox is not checked")
 
     # ---- Tab 2 - edit module ----

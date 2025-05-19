@@ -188,6 +188,14 @@ def get_motionpath_u_value(moPath_list):
         u_val.append(cmds.getAttr(f"{mop}{Plg.u_plg}"))
 
 #--------------------------------- HIERARCHY ----------------------------------
+def get_first_child(group_name):
+    children = cmds.listRelatives(group_name, children=True)
+    if children:
+        return children[0]
+    else:
+        return None
+
+
 def get_name_id_data_from_component(component_sel):
     split_names = component_sel.split('_')[1:]
     module_name = split_names[0]
@@ -226,6 +234,22 @@ def group_module(module_name, input_grp, output_grp, ctrl_grp, joint_grp=None, l
 
 
 # -----------------------------------------------------------------------------
+def mtrans_and_pivot_to_origin(target_obj, source_obj, translation_vector=None, rotate=None):
+    cmds.matchTransform(target_obj, source_obj)
+    if rotate:
+        for key, value in rotate.items():
+            cmds.rotate(target_obj, )
+            cmds.setAttr(f"{target_obj}.rotate{key}", value)
+            cmds.makeIdentity(target_obj, a=1, t=0, r=1, s=0, n=0, pn=1)
+    if translation_vector:
+        cvs = cmds.ls(f"{target_obj}.cv[*]", flatten=True)
+        # Move each CV by the specified translation vector
+        for cv in cvs:
+            cmds.xform(cv, translation=translation_vector, relative=True)
+    
+   
+    cmds.xform(target_obj, pivots=(0,0,0), ws=True)
+
 
 def search_geometry_in_scene(custom_uuid_attr):
     '''
@@ -635,6 +659,21 @@ def constrain_2_items(output_item, input_item, con_type, values):
 
 
 #------------------------------- GUIDES ---------------------------------------
+def group_guide_misc_objects(object_list, module_name, unique_id, side):
+    parent_comp_grp = "grp_component_misc"
+    comp_misc_grp = f"grp_misc_{module_name}_component_{unique_id}_{side}" # xfm_grp_quadArm_component_0_L
+    
+    if not cmds.objExists(parent_comp_grp):
+        cmds.group(n=parent_comp_grp, em=1)
+    if not cmds.objExists(comp_misc_grp):
+        cmds.group(n=comp_misc_grp, em=1)
+    
+    cmds.parent(comp_misc_grp, parent_comp_grp)
+    for item in object_list:
+        cmds.parent(item, comp_misc_grp)
+    return comp_misc_grp
+    
+
 def connect_guide(start_guide, end_guide):
     cmds.select(cl=1)
     joint_1 = cmds.joint(n=f"ddj_start_{start_guide.replace('xfm_guide_', '')}")
@@ -655,9 +694,9 @@ def connect_guide(start_guide, end_guide):
     cmds.setAttr(f"{curve_name}.overrideEnabled", 1)
     cmds.setAttr(f"{curve_name}.overrideDisplayType", 2)
     
-    if not cmds.objExists("grp_component_misc"):
-        cmds.group(n=f"grp_component_misc", em=1)
-    cmds.parent(curve_name, joint_1, "grp_component_misc")
+    # if not cmds.objExists("grp_component_misc"):
+    #     cmds.group(n=f"grp_component_misc", em=1)
+    # cmds.parent(curve_name, joint_1, "grp_component_misc")
 
     # cluster the curve
     start_cluster = cmds.cluster(f"{curve_name}.cv[0]", n=f"cls_{start_guide.replace('xfm_guide_', '')}_cv0")
@@ -670,15 +709,7 @@ def connect_guide(start_guide, end_guide):
     except cmds.warning():
         pass
     
-    #clusters = cmds.ls(type="cluster")
-    #for x in clusters:
-    #    cmds.setAttr(f"{x}Handle.hiddenInOutliner", 1)
-    #    cmds.hide(f"{x}Handle")
-    # arguments: 2 guides
-    # create: 2 joints / black linear curve / 
-    # methods: cr curve to go from start_guide to end_guide 
-    # > create cluster on each cv > parent correct cv to xfm_guide 
-    # > joint1 @ start_guide, joint2 @ end_guide > pointConstrain joint to xfm_guid
+    return curve_name, joint_1
 
 
 

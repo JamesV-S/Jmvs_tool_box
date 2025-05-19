@@ -237,12 +237,6 @@ class CharLayoutModel:
 
     
     def func_unlocked_all(self, component_selection, val_availableRigComboBox):
-        # establish components present in the scene!
-        # possible_comp_groups = "xfm_grp_*_component_*"
-        # cmds.select(possible_comp_groups)
-        # xfm_ancestorGrp = cmds.ls(sl=1, type="transform")
-        # # xfm_ancestorGrp = ['xfm_grp_bipedArm_component_0_L', 'xfm_grp_bipedLeg_component_0_L', 'xfm_grp_root_component_0_M', 'xfm_grp_spine_component_0_M'] 
-        # print(f"xfm_ancestorGrp = {xfm_ancestorGrp}")
         for component in component_selection:
             self.guide_connections_setup(component, val_availableRigComboBox)
     
@@ -426,7 +420,6 @@ class CharLayoutModel:
 
             if val_guide_crv_edit_checkBox:
                 # need the positional data of the current component!
-                print(f"running guide mirror too")
                 retrieved_existing_dict = database_schema_002.retrieveSpecificPlacementPOSData(
                     rig_db_directory, module, unique_id, side)
                 existing_pos_dict = retrieved_existing_dict.return_existing_pos_dict()

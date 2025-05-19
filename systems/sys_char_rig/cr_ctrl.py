@@ -40,6 +40,8 @@ class CreateControl():
             ctrl = self.import_control("imp_cog_002", ctrl_name)
         elif ctrl_type == "root":
             ctrl = self.import_control("imp_root_octagon_02", ctrl_name)
+        elif ctrl_type == "arrow":
+            ctrl = self.import_control("imp_arrow", ctrl_name)
         elif ctrl_type == "imp_cg_arm_L":
             ctrl = self.import_control("imp_cg_arm_L", ctrl_name)
         elif ctrl_type == "imp_cg_arm_R":
