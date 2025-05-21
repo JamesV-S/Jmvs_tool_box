@@ -266,6 +266,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_tab_curve_001.addLayout(crv_edit_container)
         layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
         layV_tab_curve_001.addWidget(self.store_curve_comp_btn)
+        layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
 
         temp_dis_container = self.template_display_ui()
         l_u_container = self.lock_unlock_ui()
@@ -444,6 +445,7 @@ class CharLayoutView(QtWidgets.QWidget):
              [self.entire_comp_radioBtn, self.sel_comp_radioBtn, self.selected_module_label,
                self.jnt_num_spinBox, self.ik_operation_comboBox, self.constraint_type_comboBox, 
                self.ctrl_type_comboBox, self.ctrl_num_spinBox, self.commit_module_edits_btn])
+
 
     def module_scene_actions_ui(self, widgets_layout):
         layV_module_scene_actions = QtWidgets.QVBoxLayout()

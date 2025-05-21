@@ -42,17 +42,17 @@ class CharMasterView(QtWidgets.QWidget):
         self.setParent(main_window) 
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle(ui_window_name)
-        self.resize(300, 400)
+        self.resize(225, 125)
         
         # style
         stylesheet_path = os.path.join(
             utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
-            "char_style_sheet_001.css"
+            "toolBox_style_sheet.css"
             )
         print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
-        # self.setStyleSheet(stylesheet)
+        self.setStyleSheet(stylesheet)
         
         self.user_module_data = {} # to store user inputs from 'choose module ui'! 
         
