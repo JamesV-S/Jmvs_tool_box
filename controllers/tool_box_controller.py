@@ -47,16 +47,15 @@ class ToolBoxController(QtWidgets.QWidget):
 
 
     def sigFunc_character(self):
-        print("loading character MASTER Main")
         # Retrieve the initialised tool anywhere I want!
         char_master_controller = service_locator_pattern.ServiceLocator.get_service('char_master_main')
         if char_master_controller:
             char_master_controller.show_ui()
-            print(f"RETRIAVAL WORKEDDDDDDD")
+            print(f"run `char_master_main` window")
         else:
             print("char_master_controller NOT retrieved")
             print("Available services:", service_locator_pattern.ServiceLocator._services)
-        utils_view.delete_existing_ui(self.view.ui_object_name)
+        # utils_view.delete_existing_ui(self.view.ui_object_name)
 
 
     def sigFunc_other(self):
@@ -70,8 +69,8 @@ class ToolBoxController(QtWidgets.QWidget):
         geoDB_master_controller = service_locator_pattern.ServiceLocator.get_service('geoDB_master_main')
         if geoDB_master_controller:
             geoDB_master_controller.show_ui()
-            utils_view.delete_existing_ui(self.view.ui_object_name)
-       
+            # utils_view.delete_existing_ui(self.view.ui_object_name)
+            print(f"run `geoDB_master_main` window")
 
 # def MVC_calling_main():
 #     app = QtWidgets.QApplication.instance()

@@ -242,7 +242,7 @@ class retrieveModulesData():
         try:
             cursor.execute(query_param_state)
             rows = cursor.fetchall()
-            print(f"rows = {rows}")
+            # rows == [int(unique_id), string(side)]
             mdl_populate_tree_dict = {database_name: []}
             if rows:
                 for row in rows:
@@ -293,7 +293,6 @@ class retrieveSpecificComponentdata():
         try:
             cursor.execute(placement_sql, (self.unique_id, self.side,))
             row = cursor.fetchone()
-            print(f"rows = {row}")
             if row:
                 component_pos_json = row[0]
                 # use Python's 'json module' to load json dict into python dictionary's

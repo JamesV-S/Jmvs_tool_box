@@ -52,7 +52,6 @@ class CharLayoutView(QtWidgets.QWidget):
             utils_os.create_directory("Jmvs_tool_box", "assets", "styles"), 
             "char_style_sheet_002.css"
             )
-        print(stylesheet_path)
         with open(stylesheet_path, "r") as file:
             self.stylesheet = file.read()
         self.setStyleSheet(self.stylesheet)
@@ -170,13 +169,11 @@ class CharLayoutView(QtWidgets.QWidget):
                     mdl_list.append(mdl_name)
                     if mdl_side == ['None']:
                         side_list.append([""])
-                        print(f"HAHAHAHHAHAH {side_list}")
                     else:
                         side_list.append(mdl_side)
-                        print(f">>> NONOONONONOON {side_list}")
             
-            print(mdl_list) #['bipedArm', 'bipedLeg']
-            print(side_list) #[['L', 'R'], ['L', 'R']]
+            # print(mdl_list) #['bipedArm', 'bipedLeg']
+            # print(side_list) #[['L', 'R'], ['L', 'R']]
         except KeyError as e:
             print(f"{e} is not a key in {filename}")
         
@@ -659,16 +656,6 @@ class CharLayoutView(QtWidgets.QWidget):
             layGrid_update.addWidget(umd_ls[x], umd_pos_ls[x][0], umd_pos_ls[x][1])
             self.style_update_mdl_ui.append(cmo_ls[x])
             self.style_update_mdl_ui.append(umd_ls[x])
-
-        # layH_upd_mdl_btn = QtWidgets.QHBoxLayout()
-        # SpacerGraphic_0_layH = self.lay_spacer_funcUI("H")
-        # self.update_btn = QtWidgets.QPushButton("Update Module Data")
-        # self.style_update_mdl_ui.append(self.update_btn)
-
-        # SpacerGraphic_1_layH = self.lay_spacer_funcUI("H")
-        # layH_upd_mdl_btn.addLayout(SpacerGraphic_0_layH)
-        # layH_upd_mdl_btn.addWidget(self.update_btn)
-        # layH_upd_mdl_btn.addLayout(SpacerGraphic_1_layH)
 
         return layGrid_update   
 

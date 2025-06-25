@@ -59,7 +59,6 @@ class CharLayoutController:
         # Connect signals and slots
         self.setup_connections()
         
-        print(f"self.view.mdl_tree_model == {self.view.mdl_tree_model}")
         self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
         
         # tree_name = self.val_availableRigComboBox.replace("DB_", "")
@@ -513,7 +512,6 @@ class CharLayoutController:
     # current module data! -> this data will be passed to the database!
     def sig_update_comp_data_checkBox(self):
         self.val_update_comp_data_checkBox = self.view.update_comp_data_checkBox.isChecked()
-        print(f"update_comp_data_checkBox")
         if self.val_update_comp_data_checkBox:
             self.view.umo_rigType_comboBox.setEnabled(True)
             self.view.umo_mirror_checkBox.setEnabled(True)
@@ -632,7 +630,6 @@ class CharLayoutController:
     def populate_available_rig_comboBox(self, name_of_rig_fld):
         # `name_of_rig_fld` will populate the ComboBox
         # IF no(None) ^folder^ in `self.db_rig_location`, print(f"No rig name folder found in {self.db_rig_location}, please create one.")
-        print(f"`self.name_of_rig_fld` :: {name_of_rig_fld}")
         if name_of_rig_fld:
             print(f"Rig folder name found in {self.db_rig_location}, populating available rig option.")
             self.view.available_rig_comboBox.addItems(name_of_rig_fld)
