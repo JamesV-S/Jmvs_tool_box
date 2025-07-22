@@ -61,11 +61,14 @@ class BuildOrientation():
             cr_ctrl.CreateControl(type="orb", name=ori_guide)
             utils.colour_object(ori_guide, 1)
             ori_guide_list.append(ori_guide)
+            cmds.setAttr(f"{ori_guide}.displayLocalAxis", 1 )
 
             # group the ori guides idiviually
             ori_parent_grp = f"grp_ori_{self.module}_{key}_{self.unique_id}_{self.side}"
             cmds.group(ori_guide, n=ori_parent_grp)
             ori_parent_grp_list.append(ori_parent_grp)
+
+        
 
         return ori_parent_grp_list, ori_guide_list
 
