@@ -89,11 +89,8 @@ class CharLayoutModel:
 
 
     # ---- TreeView functions ----
-    def record_component_change(self, component_selection, val_availableRigComboBox):
+    def record_component_position(self, component_selection, val_availableRigComboBox):
         module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
-        # if "root" in module:
-        #     find_guide = f"xfm_guide_{module}_*"
-        # else:
         find_guide = f"xfm_guide_{module}_*_{unique_id}_{side}"
 
         try:
@@ -144,8 +141,61 @@ class CharLayoutModel:
 
 
     def record_compnonent_orientation(self, component_selection, val_availableRigComboBox):
-        pass
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+        # find_guide = f"ori_{module}_*_{unique_id}_{side}"
 
+        try:            
+            # need to get the list of available ori guides in correct order
+            rig_db_directory = utils_os.create_directory(
+                "Jmvs_tool_box", "databases", "char_databases", 
+                self.db_rig_location, val_availableRigComboBox
+                )
+            retrieve_rot_data = database_schema_002.retrieveSpecificComponentdata(
+            rig_db_directory, module, unique_id, side)
+            
+            # Establish the ori guides for the component
+            comp_rot_dict = retrieve_rot_data.return_rot_component_dict()
+            ori_guides_keys = [key for key, rot in list(comp_rot_dict.items())]
+            ori_guides = [f"ori_{module}_{ori_guides_keys[x]}_{unique_id}_{side}" for x in range(len(ori_guides_keys))]
+            print(f"ORI record: ori_guides = `{ori_guides}`")
+            
+            # Get rot  
+            new_component_rot_dict = utils.get_selection_rot_dict(ori_guides[:-1])
+            print(f"ORI recording: new_component_rot_dict = `{new_component_rot_dict}`")
+            """
+            new_component_rot_dict = {
+            'ori_bipedArm_clavicle_0_L': [0.0, 0.0, -25.14671680808026], 
+            'ori_bipedArm_shoulder_0_L': [-32.63938984529915, 34.55844334711877, -48.47071953609031], 
+            'ori_bipedArm_elbow_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723]
+            }
+            """
+            # Copy the data of 'second to last' ori guide and paste it to the last ori guide in the stored dict!
+            new_component_rot_dict[ori_guides[-1]] = new_component_rot_dict[ori_guides[-2]]
+            print(f"NEW ORI recording: new_component_rot_dict = `{new_component_rot_dict}`")
+            """
+            {
+            'ori_bipedArm_clavicle_0_L': [0.0, 0.0, -25.14671680808026], 
+            'ori_bipedArm_shoulder_0_L': [-32.63938984529915, 34.55844334711877, -48.47071953609031], 
+            'ori_bipedArm_elbow_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723], 
+            'ori_bipedArm_wrist_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723]}
+            """
+            
+            # Update the database with just the keys as the keys and not the name of ori!
+            updated_rot_dict = {}
+            for key in comp_rot_dict.keys():
+                for new_key, new_value in new_component_rot_dict.items():
+                    print(f"if key:`{key}` in new_key:`{new_key}`")
+                    if key in new_key:
+                        updated_rot_dict[key] = new_value
+            print(f"ORI UPDATE - updated_rot_dict = `{updated_rot_dict}`")
+            database_schema_002.UpdatePlacementROTData(
+                rig_db_directory, module, unique_id, side, updated_rot_dict
+                )
+
+        except Exception as e:
+            print(f"No component exists in the scene of '{component_selection}'")
+            print(f"error: {e}")
+        cmds.select(cl=1)
 
     def visualise_active_db(self, val_availableRigComboBox, mdl_tree_model):
         # get directory of current chosen rig folder!

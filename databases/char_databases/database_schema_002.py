@@ -414,12 +414,6 @@ class updateSpecificPlacementPOSData():
         # db_name must include the entire path too!
         database_name = f"DB_{module_name}.db"
         db_name = os.path.join(db_directory, database_name)
-
-        # constants:
-        self.module_name = module_name
-        self.unique_id = unique_id
-        self.side = side
-
         try:
             with sqlite3.connect(db_name) as conn:
                 self.update_db(conn, "placement", (updated_pos_dict, unique_id, side))
@@ -433,6 +427,30 @@ class updateSpecificPlacementPOSData():
         if table == 'placement':
             print(f"H H placement VALUES: {values}")
             sql = f'UPDATE {table} SET component_pos = ? WHERE unique_id = ? AND side = ?'
+            values = (json.dumps(values[0]), values[1], values[2])
+            cursor.execute(sql, values)
+        conn.commit()
+
+
+class UpdatePlacementROTData():
+    def __init__(self, directory, module_name, unique_id, side, updated_rot_dict):
+        db_directory = os.path.expanduser(directory)
+        os.makedirs(db_directory, exist_ok=1)
+        # db_name must include the entire path too!
+        database_name = f"DB_{module_name}.db"
+        db_name = os.path.join(db_directory, database_name)
+        try:
+            with sqlite3.connect(db_name) as conn:
+                self.update_db(conn, "placement", (updated_rot_dict, unique_id, side))
+                print(f"Updated database `component_rot_xyz`: {db_name} with {updated_rot_dict}, where its unique_id = {unique_id} & side = {side}")
+        except sqlite3.Error as e:
+            print(f"module component retrieval sqlite3.Error: {e}")
+    
+
+    def update_db(self, conn, table, values):
+        cursor = conn.cursor()
+        if table == 'placement':
+            sql = f'UPDATE {table} SET component_rot_xyz = ? WHERE unique_id = ? AND side = ?'
             values = (json.dumps(values[0]), values[1], values[2])
             cursor.execute(sql, values)
         conn.commit()

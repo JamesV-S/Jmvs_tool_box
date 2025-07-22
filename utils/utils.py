@@ -344,6 +344,15 @@ def get_selection_trans_dict(selection, side):
     
     return translation_pos
 
+
+def get_selection_rot_dict(selection):    
+    rotation_pos = {}
+    for sel in selection:
+        rot_ls = cmds.xform(sel, q=1, rotation=1, worldSpace=1)
+        rotation_pos[sel] = list(rot_ls)
+
+    return rotation_pos
+
 #--------------------------------- COLOUR -------------------------------------
 def colour_object(obj, colour):
     cmds.setAttr(f"{obj}.overrideEnabled", 1)

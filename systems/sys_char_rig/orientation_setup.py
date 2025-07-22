@@ -44,6 +44,8 @@ class BuildOrientation():
         ori_parent_grp_list, ori_guide_list = self.cr_ori_guide()
         self.position_ori_groups(ori_module_group, ori_parent_grp_list)
         self.constrain_ori_groups(ori_parent_grp_list)
+        self.ori_guide_attributes(ori_guide_list)
+        self.orient_guides(ori_guide_list)
         
         # parent module ori group to master ori grop in hierarchy!
         cmds.parent(ori_module_group, ori_master_grp)
@@ -52,8 +54,10 @@ class BuildOrientation():
     def cr_ori_guide(self):
         ori_parent_grp_list = []
         ori_guide_list = []
-        for key, rot in self.comp_rot_dict.items():
-            ori_guide = f"ori_{key}_{self.unique_id}_{self.side}"
+        # for key, rot in self.comp_rot_dict.items():
+        items = list(self.comp_rot_dict.items())
+        for key, rot in items[:-1]:
+            ori_guide = f"ori_{self.module}_{key}_{self.unique_id}_{self.side}"
             cr_ctrl.CreateControl(type="orb", name=ori_guide)
             utils.colour_object(ori_guide, 1)
             ori_guide_list.append(ori_guide)
@@ -80,12 +84,31 @@ class BuildOrientation():
             cmds.parent(ori_parent_grp_list[x], ori_module_group)
 
 
-    def constrain_ori_groups(self, ori_parent_grp_list):
-        pass
+    def constrain_ori_groups(self, ori_parent_grp_list):       
+        aim_guide_keys = [key for key, rot in list(self.comp_rot_dict.items())[1:]]
+        point_guide_keys = [key for key, rot in list(self.comp_rot_dict.items())[:-1]]
+        for x in range(len(ori_parent_grp_list)):
+            a_guide_name = f"xfm_guide_{self.module}_{aim_guide_keys[x]}_{self.unique_id}_{self.side}"
+            cmds.aimConstraint(a_guide_name, ori_parent_grp_list[x], n=f"pAim_{ori_parent_grp_list[x]}")
+
+            p_guide_name = f"xfm_guide_{self.module}_{point_guide_keys[x]}_{self.unique_id}_{self.side}"
+            cmds.pointConstraint(p_guide_name, ori_parent_grp_list[x],  n=f"pCon_gd_{ori_parent_grp_list[x]}")
 
 
-    def ori_guide_attributes(self):
-        pass
+    def ori_guide_attributes(self, ori_guide_list):
+        planes_attr_name = f"Planes_Scale"
+        for x in range(len(ori_guide_list)):
+            utils.add_locked_attrib(ori_guide_list[x], ["ORI"])
+            utils.add_float_attrib(ori_guide_list[x], [f"{planes_attr_name}"], [0.1, 999], True)
+            cmds.setAttr(f"{ori_guide_list[x]}.{planes_attr_name}", 6)
+
     
+    def orient_guides(self, ori_guide_list):
+        # if 
+        for ori_guide in ori_guide_list:
+            for key, rot in self.comp_rot_dict.items():
+                if not rot == [0.0, 0.0, 0.0]:
+                    if key in ori_guide:
+                        cmds.xform(ori_guide, rotation=rot, worldSpace=1)
 
         

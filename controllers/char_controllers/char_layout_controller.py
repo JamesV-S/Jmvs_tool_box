@@ -182,8 +182,9 @@ class CharLayoutController:
         # for component in component_selection:
         total_index = len(component_selection)
         for stp, component in enumerate(component_selection):
-            self.model.record_component_change(component, self.val_availableRigComboBox)
+            self.model.record_component_position(component, self.val_availableRigComboBox)
             # add 'record_compnonent_orientation'
+            self.model.record_compnonent_orientation(component, self.val_availableRigComboBox)
             progress_value = utils.progress_value(stp, total_index)
             self.update_progress(progress_value, f"Replacing {component} positional data")
         
