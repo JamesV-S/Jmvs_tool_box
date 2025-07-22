@@ -9,7 +9,8 @@ from utils import (
     utils_os
 )
 from systems.sys_char_rig import (
-    cr_ctrl
+    cr_ctrl, 
+    orientation_setup
 )
 from databases.char_databases import (
     database_schema_002
@@ -18,14 +19,14 @@ from databases.char_databases import (
 importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
+importlib.reload(orientation_setup)
 importlib.reload(database_schema_002)
 
 class CreateXfmGuides():
     def __init__(self, database_componment_dict, val_availableRigComboBox):
-        rig_folder_name = val_availableRigComboBox
         self.rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
-            "db_rig_storage", rig_folder_name
+            "db_rig_storage", val_availableRigComboBox
             )
 
         print(f"creating guide component for {database_componment_dict}")
@@ -43,7 +44,7 @@ class CreateXfmGuides():
 
 
     def build_guide_components(self, module_name, unique_id, side, component_pos, component_ctrls):
-        self.guide_import_dir =  os.path.join(utils_os.create_directory("Jmvs_tool_box", "imports" ), "imp_component_guide.abc")# 
+        self.guide_import_dir =  os.path.join(utils_os.create_directory("Jmvs_tool_box", "imports" ), "imp_component_guide.abc")
         
         if module_name == "spine" or module_name == "tail" or module_name == "neck":
             print(f"rail module detected: {module_name}")
@@ -51,7 +52,7 @@ class CreateXfmGuides():
         else:
             guides = self.guide_setup(module_name, unique_id, side, component_pos, component_ctrls)
             jnt_u_list = []
-        #----------------------------------------------------------------------
+        
         # lock & hide scale & visibilty
         for x in range(len(guides)):
             cmds.setAttr(f"{guides[x]}.sx", lock=1, keyable=0, channelBox=0)
@@ -83,6 +84,9 @@ class CreateXfmGuides():
         cmds.parent(guide_grp_list, gd_component_grp_name)
         cmds.parent(gd_component_grp_name, gd_master_group)
         cmds.select(cl=1)
+
+        # build orientation setup!
+        ori_setup_class = orientation_setup.BuildOrientation(component_pos, self.rig_db_directory, module_name, unique_id, side)        
 
         return guides, jnt_u_list
 
@@ -158,8 +162,6 @@ class CreateXfmGuides():
             cmds.setAttr(f"{ankle_helper_ctrl}.translateY", 0)
             guides.append(ankle_helper_ctrl)
         
-        
-
         return guides
 
 

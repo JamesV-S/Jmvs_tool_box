@@ -3,16 +3,16 @@
     "names": ["ROOT", "COG"],
     "placement": {
         "component_pos": {
-            "ROOT": [0, 0, 0],
+            "ROOT": [0.0, 0.0, 0.0],
             "COG": [0, 150, 0]
         },
-        "system_rot_xyz": {
-            "ROOT": [0, 0, 0],
-            "COG": [0, 0, 0]
+        "component_rot_xyz": {
+            "ROOT": [0.0, 0.0, 0.0],
+            "COG": [0.0, 0.0, 0.0]
         },
-        "system_rot_yzx": {
-            "ROOT": [0, 0, 0],
-            "COG": [0, 0, 0]
+        "component_rot_yzx": {
+            "ROOT": [0.0, 0.0, 0.0],
+            "COG": [0.0, 0.0, 0.0]
         }
     },
     "constant": {

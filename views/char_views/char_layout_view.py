@@ -223,22 +223,20 @@ class CharLayoutView(QtWidgets.QWidget):
         layH_crv_edit_001 = QtWidgets.QHBoxLayout()
         layH_crv_edit_002 = QtWidgets.QHBoxLayout()
         layH_crv_edit_003 = QtWidgets.QHBoxLayout()
+        layV_mirror_editing = QtWidgets.QVBoxLayout()
         
         # ---- curve selection ----
         self.all_crv_edit_checkBox = QtWidgets.QCheckBox("All")
         self.ik_crv_edit_checkBox = QtWidgets.QCheckBox("IK")
         self.fk_crv_edit_checkBox = QtWidgets.QCheckBox("FK")
         # layH_crv_edit_001.addWidget(self.controls_crv_edit_checkBox)
-        # layH_crv_edit_001.addWidget(self.guide_crv_edit_checkBox)
+        # layH_crv_edit_001.addWidget(self.gu=ide_crv_edit_checkBox)
 
         self.select_data_in_comp_btn = QtWidgets.QPushButton("Select data in component")        
         self.expand_curve_btn = QtWidgets.QPushButton("Expand")
         self.collapse_curve_btn = QtWidgets.QPushButton("Collapse")
-       
-        self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Controls")
-        self.guide_crv_edit_checkBox = QtWidgets.QCheckBox("Guides")
-        self.mirror_comp_btn = QtWidgets.QPushButton("Mirror Component") # Mirror control and/or guide positional data!
-        
+        self.store_curve_comp_btn = QtWidgets.QPushButton("Store Curve Component")
+
         layH_crv_edit_001.addWidget(self.all_crv_edit_checkBox)
         layH_crv_edit_001.addWidget(self.ik_crv_edit_checkBox)
         layH_crv_edit_001.addWidget(self.fk_crv_edit_checkBox)
@@ -249,21 +247,29 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_curve_editing.addLayout(layH_crv_edit_002)
         layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
+        layV_curve_editing.addWidget(self.store_curve_comp_btn)
         
-        layH_crv_edit_003.addWidget(self.controls_crv_edit_checkBox)
-        layH_crv_edit_003.addWidget(self.guide_crv_edit_checkBox)
-        layV_curve_editing.addLayout(layH_crv_edit_003)
-        layV_curve_editing.addWidget(self.mirror_comp_btn)
         crv_edit_container, chk_none = self.cr_container_funcUI("Curve Editing", layV_curve_editing, True, True)
         # ---- curve colour management ----
         ''' ADD COLOUR OPTIONS WITH PICKER ETC '''
         # ---- curve data management ----
-        self.store_curve_comp_btn = QtWidgets.QPushButton("Store Curve Component")
         
+        # ---- Mirror data management ----
+        self.controls_crv_edit_checkBox = QtWidgets.QCheckBox("Controls")
+        self.guide_crv_edit_checkBox = QtWidgets.QCheckBox("Guides")
+        self.mirror_comp_btn = QtWidgets.QPushButton("Mirror Component") # Mirror control and/or guide positional data!
+
+        layH_crv_edit_003.addWidget(self.controls_crv_edit_checkBox)
+        layH_crv_edit_003.addWidget(self.guide_crv_edit_checkBox)
+        layV_mirror_editing.addLayout(layH_crv_edit_003)
+        layV_mirror_editing.addWidget(self.mirror_comp_btn)
+        crv_mirror_container, chk_none = self.cr_container_funcUI("Mirror Editing", layV_mirror_editing, True, True)
+
+        # ----
         layV_tab_curve_001.addLayout(crv_edit_container)
+        # layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
         layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
-        layV_tab_curve_001.addWidget(self.store_curve_comp_btn)
-        layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
+        layV_tab_curve_001.addLayout(crv_mirror_container)
 
         temp_dis_container = self.template_display_ui()
         l_u_container = self.lock_unlock_ui()
@@ -287,9 +293,11 @@ class CharLayoutView(QtWidgets.QWidget):
         self.guide_template_checkBox = QtWidgets.QCheckBox("Guides")
         self.controls_template_checkBox = QtWidgets.QCheckBox("Controls")
         self.ddj_template_checkBox = QtWidgets.QCheckBox("Deform Diagnostics")
+        self.show_orientation_checkBox = QtWidgets.QCheckBox("Orientation Display")
         layV_tempDisp.addWidget(self.guide_template_checkBox)
         layV_tempDisp.addWidget(self.controls_template_checkBox)
         layV_tempDisp.addWidget(self.ddj_template_checkBox)
+        layV_tempDisp.addWidget(self.show_orientation_checkBox)
 
         # - template gid buttons - 
         layGrid_tempDisp = QtWidgets.QGridLayout()

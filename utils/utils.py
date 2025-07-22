@@ -712,7 +712,6 @@ def connect_guide(start_guide, end_guide):
     return curve_name, joint_1
 
 
-
 def get_selection_trans_rots_dictionary():
     selection = cmds.ls(sl=1, type="transform")
     
@@ -728,9 +727,6 @@ def get_selection_trans_rots_dictionary():
         
     print("Trans_dictionary: ", translation_pos)
     print("Rots_dictionary: ", rotation_pos)
-    
-    # system_pos = {"spine_1": [0,150,0],"spine_2": [0, 165, 3.771372431203975],"spine_3": [0, 185, 6.626589870023061],"spine_4": [0, 204, 5.4509520093959845],"spine_5": [0.0, 231.0, 0.0150903206755304]}
-    # system_rot = {"spine_1": [13.832579598094327, 0, 0],"spine_2":[8.04621385323777, 0, 0],"spine_3":[-3.330793760291316, 0, 0],"spine_4":[-11.225661138926666, 0, 0],"spine_5":[0,0,0]}
 
     return translation_pos, rotation_pos
 

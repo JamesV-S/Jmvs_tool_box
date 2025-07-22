@@ -10,9 +10,9 @@
             "lumbar0": [0.0, 0.0, 0.0],
             "tail0": [0.0, 0.0, 0.0]
         },
-        "system_rot_xyz": {
+        "component_rot_xyz": {
         },
-        "system_rot_yzx": {
+        "component_rot_yzx": {
         }
     },
     "constant": {

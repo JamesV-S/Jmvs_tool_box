@@ -98,6 +98,7 @@ class CharLayoutController:
         self.sig_umo_stretch_checkBox()
         self.sig_umo_twist_checkBox()
 
+
     def setup_connections(self):
         # selection_model = self.view.mdl_tree_view.selectionModel()
         # selection_model.selectionChanged.connect(self.set_selected_module_label)
@@ -134,6 +135,7 @@ class CharLayoutController:
         self.view.guide_template_checkBox.stateChanged.connect(self.sig_guide_template_checkBox)
         self.view.controls_template_checkBox.stateChanged.connect(self.sig_controls_template_checkBox)
         self.view.ddj_template_checkBox.stateChanged.connect(self.sig_ddj_template_checkBox)
+        self.view.show_orientation_checkBox.stateChanged.connect(self.sig_show_orientation_checkBox)
                 # ---- Lock/Unlock ----
         self.view.compnent_checkBox.stateChanged.connect(self.sig_compnent_checkBox)
         self.view.lock_btn.clicked.connect(self.sig_lock_btn)
@@ -162,8 +164,7 @@ class CharLayoutController:
         if 'DONE:' in operation_name:
             self.view.progress_bar.setFormat(f"{operation_name}")
         else:    
-            self.view.progress_bar.setFormat(f"{operation_name} : {value}%")
-
+            self.view.progress_bar.setFormat(f"{operation_name} : {value}%")     
 
     # ------------ module visulisation siFunc ------------
     def sig_availableRigComboBox(self):
@@ -182,7 +183,7 @@ class CharLayoutController:
         total_index = len(component_selection)
         for stp, component in enumerate(component_selection):
             self.model.record_component_change(component, self.val_availableRigComboBox)
-            
+            # add 'record_compnonent_orientation'
             progress_value = utils.progress_value(stp, total_index)
             self.update_progress(progress_value, f"Replacing {component} positional data")
         
@@ -259,7 +260,7 @@ class CharLayoutController:
             # progress_value = utils.progress_value()
     
     # ---- add blueprint ----
-    def func_createXfmGuides(self, component_selection):
+    def func_create_guides(self, component_selection):
             total_stp = len(component_selection) 
             for stp, selection in enumerate(component_selection):
                 parts = selection.split('_')
@@ -283,6 +284,7 @@ class CharLayoutController:
                 try:
                     cmds.parent("grp_component_misc", "grp_components")
                     cmds.parent("grp_xfm_components", "grp_components")
+                    cmds.parent("grp_ori_components", "grp_components")
                     cmds.parent("grp_ctrl_components", "grp_controls")
                 except Exception as e:
                     print(f"parenting error: `grp_component_misc`, `grp_xfm_components` to `grp_components` = {e}")
@@ -299,7 +301,7 @@ class CharLayoutController:
         # this dict comes from gathering data from active databases in active rig folder!
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view, self.view.mdl_tree_model)
         # print(f"YAAAAAH component_selection = {component_selection[0]}")
-        self.func_createXfmGuides(component_selection)
+        self.func_create_guides(component_selection)
         self.model.func_unlocked_all(component_selection, self.val_availableRigComboBox)
         self.update_progress(0, f"DONE: Added {component_selection} to scene")
 
@@ -315,7 +317,7 @@ class CharLayoutController:
                 print(f"Adding blueprint for {mdl}: Iterations={iterations_value}, Side={side_value}")
         
         component_selection = utils_QTree.get_all_component_name_in_TreeView(self.view.mdl_tree_model)
-        self.func_createXfmGuides(component_selection)
+        self.func_create_guides(component_selection)
         self.model.func_unlocked_all(component_selection, self.val_availableRigComboBox)
         self.update_progress(0, f"DONE: '{self.val_availableRigComboBox}' Blueprint")
 
@@ -418,6 +420,19 @@ class CharLayoutController:
         try:
             self.val_ddj_template_checkBox = self.view.ddj_template_checkBox.isChecked()
             utils.select_set_displayType("ddj_*", self.val_ddj_template_checkBox, False)
+        except ValueError:
+            pass
+    
+
+    def sig_show_orientation_checkBox(self):
+        try:
+            self.val_show_orientation_checkBox = self.view.show_orientation_checkBox.isChecked()
+            if self.val_show_orientation_checkBox:
+                print("Hide Orientation")
+                cmds.hide("grp_ori_components")
+            if not self.val_show_orientation_checkBox:
+                print("Show Orientation")
+                cmds.showHidden("grp_ori_components")
         except ValueError:
             pass
     

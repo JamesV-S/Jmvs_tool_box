@@ -74,8 +74,8 @@ class CreateDatabase():
                 self.update_db(conn, "placement", (
                     self.unique_id, 
                     placement_dict['component_pos'], 
-                    placement_dict['system_rot_xyz'], 
-                    placement_dict['system_rot_yzx'], 
+                    placement_dict['component_rot_xyz'], 
+                    placement_dict['component_rot_yzx'], 
                     side
                     ))
                 # constant data
@@ -123,8 +123,8 @@ class CreateDatabase():
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
             component_pos TEXT,
-            system_rot_xyz TEXT,
-            system_rot_yzx TEXT,
+            component_rot_xyz TEXT,
+            component_rot_yzx TEXT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS constant (
@@ -170,7 +170,7 @@ class CreateDatabase():
         elif table == 'placement':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
             print(f"888888888888888888 H H placement VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, component_pos, system_rot_xyz, system_rot_yzx, side) VALUES (?, ?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot_xyz, component_rot_yzx, side) VALUES (?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'constant':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
@@ -273,21 +273,23 @@ class retrieveSpecificComponentdata():
 
         try:
             with sqlite3.connect(db_path) as conn:
-                placement_dict = self.placement_dict_from_table(conn)
+                pos_dict = self.position_dict_from_table(conn)
+                self.rot_dict = self.rotation_dict_from_table(conn)
                 controls_dict = self.controls_dict_from_table(conn)
                 self.mdl_component_dict = {
                     "module_name":self.module_name, 
                     "unique_id":int(self.unique_id),
                     "side":self.side,
-                    "component_pos": placement_dict,
+                    "component_pos": pos_dict,
                     "controls": controls_dict
                     }
                 print(f"THE DICT :: self.mdl_component_dict = {self.mdl_component_dict}")
+                
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
     
 
-    def placement_dict_from_table(self, conn):
+    def position_dict_from_table(self, conn):
         cursor = conn.cursor()
         placement_sql = f"SELECT component_pos FROM placement WHERE unique_id = ? AND side = ? "
         try:
@@ -302,6 +304,24 @@ class retrieveSpecificComponentdata():
 
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")
+            return {}
+        
+
+    def rotation_dict_from_table(self, conn):
+        cursor = conn.cursor()
+        placement_sql = f"SELECT component_rot_xyz FROM placement WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(placement_sql, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                comp_rot_json = row[0]
+                # use Python's 'json module' to load json dict into python dictionary's
+                comp_rot_dict = json.loads(comp_rot_json)
+                print(f"component_pos = {comp_rot_dict}")
+            return comp_rot_dict              
+
+        except sqlite3.Error as e:
+            print(f"table placement, ROT sqlite3.Error: {e}")
             return {}
         
 
@@ -330,6 +350,10 @@ class retrieveSpecificComponentdata():
     def return_mdl_component_dict(self):
         return self.mdl_component_dict
 
+    
+    def return_rot_component_dict(self):
+        return self.rot_dict
+    
 
 class retrieveSpecificPlacementPOSData():
     def __init__(self, directory, module_name, unique_id, side):
@@ -378,6 +402,7 @@ class retrieveSpecificPlacementPOSData():
             print(f"placement sqlite3.Error: {e}")
             return {}
         
+
     def return_existing_pos_dict(self):
         return self.existing_pos_dict
     
@@ -583,8 +608,6 @@ class RetrieveSpecificData():
     def return_guides_follow(self):
         return self.guides_follow
     
-
-
 
 class CheckMirrorData():
     def __init__(self, directory, module_name, unique_id, side):

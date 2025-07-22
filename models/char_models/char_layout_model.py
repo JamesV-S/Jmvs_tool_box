@@ -90,19 +90,16 @@ class CharLayoutModel:
 
     # ---- TreeView functions ----
     def record_component_change(self, component_selection, val_availableRigComboBox):
-        split_names = component_selection.split('_')[1:] #ignore 'mdl' prefix
-        module = split_names[0]
-        unique_id = split_names[1]
-        side = split_names[2]
-        if "root" in module:
-            find_guide = f"xfm_guide_{module}_*"
-        else:
-            find_guide = f"xfm_guide_{module}_*_{unique_id}_{side}"
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+        # if "root" in module:
+        #     find_guide = f"xfm_guide_{module}_*"
+        # else:
+        find_guide = f"xfm_guide_{module}_*_{unique_id}_{side}"
 
         try:
             cmds.select(find_guide)
             guides = cmds.ls(sl=1, type="transform")
-            # gather the positions of the selected
+            # gather the positions of the live compnent!
             new_component_pos_dict = utils.get_selection_trans_dict(guides, side)
             print("new_component_pos: ", new_component_pos_dict)
             ''' got this dict `B` from selection in treeView '''
@@ -144,6 +141,10 @@ class CharLayoutModel:
             print(f"No component exists in the scene of '{component_selection}'")
             print(f"error: {e}")
         cmds.select(cl=1)
+
+
+    def record_compnonent_orientation(self, component_selection, val_availableRigComboBox):
+        pass
 
 
     def visualise_active_db(self, val_availableRigComboBox, mdl_tree_model):
