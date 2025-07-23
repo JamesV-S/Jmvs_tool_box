@@ -447,6 +447,15 @@ class Plg():
     for x in range(3):
         mtx_ins.append(f".matrixIn[{x}]")
         out_axis.append(f".output{axis[x]}")
+    
+    inMatrixs = []
+    for x in range(3):
+        # print(f"ORI: inMatrixs == `{inMatrixs}`")
+        # if x == 0:
+        #     x = 1 
+        # elif x == 1:
+        #     x = 2
+            inMatrixs.append(f".inMatrix{x}")
 
     input1_val = []   
     input2_val = []
@@ -489,6 +498,7 @@ class Plg():
     cmpM_ac_plg = ".allCoordinates"
     rot_plg = ".rotate"
     u_plg = ".uValue"
+    distance_plg = ".distance"
 
 
 def check_non_default_transforms(obj):
