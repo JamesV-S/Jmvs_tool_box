@@ -1,3 +1,4 @@
+
 import importlib
 import maya.cmds as cmds
 from utils import (
@@ -10,7 +11,7 @@ importlib.reload(utils)
 importlib.reload(cr_ctrl)
 
 
-class Spine_System():
+class SpineSystem():
     def __init__(self, module_name, root_outputs_grp, skeleton_dict, fk_dict, ik_dict):
         '''
         IN ESSENSE, with 3 types of controls active at once, 
@@ -80,7 +81,7 @@ class Spine_System():
         ''''''
         # ORDER: inp_out grps | ctrl mtx setup | logic setup
         # input & output groups
-        input_grp, output_grp = self.input_output_groups(num_jnts)
+        input_grp, output_grp = self.cr_input_output_groups(num_jnts)
         # CTRL connections for the spine setup!
         self.fk_ctrl_ls, self.inv_ctrl_ls, self.ik_ctrl_ls = self.wire_spine_ctrls(root_outputs_grp, input_grp, output_grp)
         
@@ -89,6 +90,7 @@ class Spine_System():
         self.wire_ctrl_to_jnt_logic()
         self.wire_ik_bott_top_logic_to_skn('skn')
         self.wire_ik_spline('skn', skeleton_pos, input_grp)
+        self.output_group_setup(output_grp, self.ik_pos, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
         utils.group_module(self.mdl_nm, input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}", f"grp_skn_joints_{self.mdl_nm}", f"grp_logic_{self.mdl_nm}")
         ''''''
     
@@ -202,7 +204,7 @@ class Spine_System():
 
     ''' I WANT same offset on cog ctrl for the last inv_ctrl '''
     # input & output groups ---------------------------------------------------
-    def input_output_groups(self, jnt_num):
+    def cr_input_output_groups(self, jnt_num):
             # create input & output groups
             inputs_grp = f"grp_{self.mdl_nm}Inputs"
             outputs_grp = f"grp_{self.mdl_nm}Outputs"
@@ -541,13 +543,44 @@ class Spine_System():
         utils.connect_attr(f"{self.ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
 
 
-    # def group_module(self, module_name, input_grp, output_grp, ctrl_grp, joint_grp, logic_grp):
-    #     grp_module_name = f"grp_module_{module_name}"
-    #     cmds.group(n=grp_module_name, em=1)
-    #     cmds.parent(input_grp, output_grp, ctrl_grp, joint_grp, logic_grp, 
-    #                 grp_module_name)
-    #     cmds.hide(logic_grp)
-        
+    def output_group_setup(self, mdl_output_grp, ik_pos_dict, ctrl_spine_top, ctrl_spine_bottom):
+        '''
+        # Explanation:
+            Connects the top & bottom ik controls to attributes on this module's
+            output group so another module's inpout group can have incoming plugs to allow it to follow!
+            Example: spine output grp (this module) plugs into arm input grp (external/other module) 
+                     so it arm can follow the spine! 
+
+        # Attributes:
+            mdl_output_grp (str): name of this module's output group
+            ik_pos_dict (dict): dict of the ik control's pos
+            ctrl_spine_top (str): control name of IK top (could be derived from the dict...)
+            ctrl_spine_bottom (str): control name of IK bottom (could be derived from the dict...)
+
+        # Future updates:
+            Problem -> Handle the attrib names on the Input & Output grps in a way that can be shared between the other modules.
+            Solution -> Store this data in the database & access it from there when neccessary by encoding it in a dictionary!
+        '''
+        # cr two multMatrixs
+        MM_output_top = f"MM_output_{ctrl_spine_top}"
+        MM_output_bot = f"MM_output_{ctrl_spine_bottom}"
+            # cr the MM nodes
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_bot)
+        # get the offset
+        # put the dict into a list & index the correct pos and make it negative
+        ik_pos_list = [value for value in list(ik_pos_dict.values())]
+        top_offset = [x if x == 0 else -x for x in ik_pos_list[-1]]
+        bottom_offset =  [x if x == 0 else -x for x in ik_pos_list[0]]
+        print(f"top_offset = {top_offset} | bottom_offset = {bottom_offset}")
+        # Plugs - connect ik ctrl's to MM's
+        utils.set_matrix(top_offset, f"{MM_output_top}{utils.Plg.mtx_ins[0]}")
+        utils.set_matrix(bottom_offset, f"{MM_output_bot}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{ctrl_spine_top}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{ctrl_spine_bottom}{utils.Plg.wld_mtx_plg}", f"{MM_output_bot}{utils.Plg.mtx_ins[1]}")
+        # Plugs - connect the MM to the spine output's attribs!  
+        utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_top_mtx")
+        utils.connect_attr(f"{MM_output_bot}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_bottom_mtx")
 
 # Basic spine example: 
 skeleton_dict = {
@@ -607,7 +640,7 @@ ik_spine_dict = {
         }
     }
 
-Spine_System("spine", "grp_rootOutputs", skeleton_dict, fk_spine_dict, ik_spine_dict)
+SpineSystem("spine", "grp_rootOutputs", skeleton_dict, fk_spine_dict, ik_spine_dict)
 
 # Snake middle body example:
 skel_midBody_dict = {
@@ -655,4 +688,4 @@ ik_midBody_dict = {
     "ik_rot":{'ctrl_ik_midBody_bottom': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_mid': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_top': [90.0, 0.0, 0.0]}
 
 }
-# Spine_System("midBody", "grp_rootOutputs", skel_midBody_dict, fk_midBody_dict, ik_midBody_dict)
+# SpineSystem("midBody", "grp_rootOutputs", skel_midBody_dict, fk_midBody_dict, ik_midBody_dict)
