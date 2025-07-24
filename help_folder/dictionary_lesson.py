@@ -124,8 +124,14 @@ print(get_all_fornatted_details())
     # 'Thuki Ragesvaran, Age: 20, Hair: black, Height: 5ft 9inch']
 
 
+# Access keys & values from two dicts simultaniously using a for loop:
+def access_items_from_two_dicts():
+    dict1 = {'a': 1, 'b': 2}
+    dict2 = {'x': 10, 'y': 20}
 
-
+    for (key1, value1), (key2, value2) in zip(dict1.items(), dict2.items()):
+        print(f"Dict1 - Key: {key1}, Value: {value1}")
+        print(f"Dict2 - Key: {key2}, Value: {value2}")
 
 
 
