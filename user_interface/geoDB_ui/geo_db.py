@@ -28,6 +28,9 @@ from main_entry_points.geoDB_mep import export_database_main
 from utils import (
     utils
 )
+from views import (
+    utils_view
+    )
 from systems.sys_geoDB import (
     uuid_handler, 
     bind_skin,
@@ -42,7 +45,7 @@ importlib.reload(utils)
 importlib.reload(uuid_handler)
 importlib.reload(bind_skin)
 importlib.reload(unbind_skin)
-
+importlib.reload(utils_view)
 
 # For the time being, use this file to simply call the 'modular_char_ui.py'
 maya_main_wndwPtr = OpenMayaUI.MQtUtil.mainWindow()
@@ -54,7 +57,7 @@ class GeoDatabase(QtWidgets.QWidget):
         version = "001"
         ui_object_name = f"JmvsGeoDatabase_{version}"
         ui_window_name = f"Jmvs_geo_database_{version}"
-        utils.delete_existing_ui(ui_object_name)
+        utils_view.delete_existing_ui(ui_object_name)
         self.setObjectName(ui_object_name)
 
         # Set flags & dimensions

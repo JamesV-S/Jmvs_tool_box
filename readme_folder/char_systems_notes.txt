@@ -1,0 +1,3 @@
+
+The hierarchy of module's input/output/ctrl/joints/logic groups SHOULD be organised
+in self contained module groups so I can write tools that search a module group and it can expect to find all the data concerning THAT module in that group. This shou;d 
