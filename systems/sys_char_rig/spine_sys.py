@@ -53,8 +53,6 @@ class SpineSystem():
             > GRP_jnt_fkInv_spine
                 jnt_fkInv_spine_0-3
         '''
-        self.mdl_nm = module_name
-
         skeleton_pos = skeleton_dict["skel_pos"]
         skeleton_rot = skeleton_dict["skel_rot"]
         self.fk_pos = fk_dict["fk_pos"]
@@ -62,6 +60,10 @@ class SpineSystem():
         self.fk_rot = fk_dict["fk_rot"]
         self.ik_rot = ik_dict["ik_rot"]
         
+        self.mdl_nm = module_name
+        unique_id = [key for key in self.fk_pos.keys()][0].split('_')[-2]
+        side = [key for key in self.fk_pos.keys()][0].split('_')[-1]
+
         # gather the number of values in the dict
         num_jnts = len(skeleton_pos.keys())
         print(f"num_jnts = {num_jnts}")
@@ -91,7 +93,7 @@ class SpineSystem():
         self.wire_ik_bott_top_logic_to_skn('skn')
         self.wire_ik_spline('skn', skeleton_pos, input_grp)
         self.output_group_setup(output_grp, self.ik_pos, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
-        utils.group_module(self.mdl_nm, input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}", f"grp_skn_joints_{self.mdl_nm}", f"grp_logic_{self.mdl_nm}")
+        utils.group_module(self.mdl_nm, unique_id, side ,input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}", f"grp_joints_{self.mdl_nm}", f"grp_logic_{self.mdl_nm}")
         ''''''
     
     # Temporary functions for skn joints & ctrl creation ----------------------
@@ -193,7 +195,7 @@ class SpineSystem():
 
 
     def group_jnts_skn(self, bott_name, top_name, skeleton_name):
-        joint_grp = f"grp_skn_joints_{self.mdl_nm}"
+        joint_grp = f"grp_joints_{self.mdl_nm}"
         skeleton_grp = f"grp_skeleton_{self.mdl_nm}"
         utils.cr_node_if_not_exists(0, "transform", joint_grp)
         utils.cr_node_if_not_exists(0, "transform", skeleton_grp)
@@ -616,76 +618,76 @@ skeleton_dict = {
 # I want this to be changable (3 by default)
 fk_spine_dict = {
     "fk_pos":{
-        'ctrl_fk_spine0': [0.0, 147.0, 0.0], 
-        'ctrl_fk_spine1': [0.0, 167.29999965429306, 0.0], 
-        'ctrl_fk_spine2': [0.0, 187.59999930858612, 0.0]
+        'ctrl_fk_spine_spine0_0_M': [0.0, 147.0, 0.0], 
+        'ctrl_fk_spine_spine1_0_M': [0.0, 167.29999965429306, 0.0], 
+        'ctrl_fk_spine_spine2_0_M': [0.0, 187.59999930858612, 0.0]
         },
     "fk_rot":{
-        'ctrl_fk_spine0': [0.0, 0.0, 0.0], 
-        'ctrl_fk_spine1': [0.0, 0.0, 0.0], 
-        'ctrl_fk_spine2': [0.0, 0.0, 0.0]
+        'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0], 
+        'ctrl_fk_spine_spine1_0_M': [0.0, 0.0, 0.0], 
+        'ctrl_fk_spine_spine2_0_M': [0.0, 0.0, 0.0]
         }
     }
 # Always 3 ctrls!
 ik_spine_dict = {
     "ik_pos":{
-        'ctrl_ik_spine_bottom': [0.0, 147.0, 0.0], 
-        'ctrl_ik_spine_middle': [0.0, 176.0, 0.0], 
-        'ctrl_ik_spine_top': [0.0, 205.0, 0.0]
+        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 147.0, 0.0], 
+        'ctrl_ik_spine_spine_middle_0_M': [0.0, 176.0, 0.0], 
+        'ctrl_ik_spine_spine_top_0_M': [0.0, 205.0, 0.0]
         },
     "ik_rot":{
-        'ctrl_ik_spine_bottom': [0.0, 0.0, 0.0], 
-        'ctrl_ik_spine_middle': [0.0, 0.0, 0.0], 
-        'ctrl_ik_spine_top': [0.0, 0.0, 0.0]
+        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 0.0, 0.0], 
+        'ctrl_ik_spine_spine_middle_0_M': [0.0, 0.0, 0.0], 
+        'ctrl_ik_spine_spine_top_0_M': [0.0, 0.0, 0.0]
         }
     }
 
 SpineSystem("spine", "grp_rootOutputs", skeleton_dict, fk_spine_dict, ik_spine_dict)
 
 # Snake middle body example:
-skel_midBody_dict = {
-    "skel_pos":{
-        'midBody0': [0.0, 0.0, -20.0], 
-        'midBody1': [0.0, 0.0, -18.0], 
-        'midBody2': [0.0, 0.0, -16.0], 
-        'midBody3': [0.0, 0.0, -14.0], 
-        'midBody4': [0.0, 0.0, -12.0], 
-        'midBody5': [0.0, 0.0, -10.0], 
-        'midBody6': [0.0, 0.0, -8.0], 
-        'midBody7': [0.0, 0.0, -6.0], 
-        'midBody8': [0.0, 0.0, -4.0], 
-        'midBody9': [0.0, 0.0, -2.0], 
-        'midBody10': [0.0, 0.0, 0.0], 
-        'midBody11': [0.0, 0.0, 2.0], 
-        'midBody12': [0.0, 0.0, 4.0], 
-        'midBody13': [0.0, 0.0, 6.0], 
-        'midBody14': [0.0, 0.0, 8.0], 
-        'midBody15': [0.0, 0.0, 10.0], 
-        'midBody16': [0.0, 0.0, 12.0], 
-        'midBody17': [0.0, 0.0, 14.0],
-        'midBody18': [0.0, 0.0, 16.0]
-        },
-    "skel_rot":{'midBody0': [90.0, 0.0, 0.0], 'midBody1': [90.0, 0.0, 0.0], 'midBody2': [90.0, 0.0, 0.0], 'midBody3': [90.0, 0.0, 0.0], 'midBody4': [90.0, 0.0, 0.0], 'midBody5': [90.0, 0.0, 0.0], 'midBody6': [90.0, 0.0, 0.0], 'midBody7': [90.0, 0.0, 0.0], 'midBody8': [90.0, 0.0, 0.0], 'midBody9': [90.0, 0.0, 0.0], 'midBody10': [90.0, 0.0, 0.0], 'midBody11': [90.0, 0.0, 0.0], 'midBody12': [90.0, 0.0, 0.0], 'midBody13': [90.0, 0.0, 0.0], 'midBody14': [90.0, 0.0, 0.0], 'midBody15': [90.0, 0.0, 0.0], 'midBody16': [90.0, 0.0, 0.0], 'midBody17': [90.0, 0.0, 0.0], 'midBody18': [90.0, 0.0, 0.0]}
-}
-fk_midBody_dict = { 
-    "fk_pos":{
-        'ctrl_fk_midBody0': [0.0, 0.0, -20.0], 
-        'ctrl_fk_midBody1': [0.0, 0.0, -16.0], 
-        'ctrl_fk_midBody2': [0.0, 0.0, -12.0], 
-        'ctrl_fk_midBody3': [0.0, 0.0, -8.0], 
-        'ctrl_fk_midBody4': [0.0, 0.0, -4.0], 
-        'ctrl_fk_midBody5': [0.0, 0.0, 0.0], 
-        'ctrl_fk_midBody6': [0.0, 0.0, 4.0], 
-        'ctrl_fk_midBody7': [0.0, 0.0, 8.0], 
-        'ctrl_fk_midBody8': [0.0, 0.0, 12.0], 
-        'ctrl_fk_midBody9': [0.0, 0.0, 16.0]
-        },
-    "fk_rot":{'ctrl_fk_midBody0': [90.0, 0.0, 0.0], 'ctrl_fk_midBody1': [90.0, 0.0, 0.0], 'ctrl_fk_midBody2': [90.0, 0.0, 0.0], 'ctrl_fk_midBody3': [90.0, 0.0, 0.0], 'ctrl_fk_midBody4': [90.0, 0.0, 0.0], 'ctrl_fk_midBody5': [90.0, 0.0, 0.0], 'ctrl_fk_midBody6': [90.0, 0.0, 0.0], 'ctrl_fk_midBody7': [90.0, 0.0, 0.0], 'ctrl_fk_midBody8': [90.0, 0.0, 0.0], 'ctrl_fk_midBody9': [90.0, 0.0, 0.0]}
+# skel_midBody_dict = {
+#     "skel_pos":{
+#         'midBody0': [0.0, 0.0, -20.0], 
+#         'midBody1': [0.0, 0.0, -18.0], 
+#         'midBody2': [0.0, 0.0, -16.0], 
+#         'midBody3': [0.0, 0.0, -14.0], 
+#         'midBody4': [0.0, 0.0, -12.0], 
+#         'midBody5': [0.0, 0.0, -10.0], 
+#         'midBody6': [0.0, 0.0, -8.0], 
+#         'midBody7': [0.0, 0.0, -6.0], 
+#         'midBody8': [0.0, 0.0, -4.0], 
+#         'midBody9': [0.0, 0.0, -2.0], 
+#         'midBody10': [0.0, 0.0, 0.0], 
+#         'midBody11': [0.0, 0.0, 2.0], 
+#         'midBody12': [0.0, 0.0, 4.0], 
+#         'midBody13': [0.0, 0.0, 6.0], 
+#         'midBody14': [0.0, 0.0, 8.0], 
+#         'midBody15': [0.0, 0.0, 10.0], 
+#         'midBody16': [0.0, 0.0, 12.0], 
+#         'midBody17': [0.0, 0.0, 14.0],
+#         'midBody18': [0.0, 0.0, 16.0]
+#         },
+#     "skel_rot":{'midBody0': [90.0, 0.0, 0.0], 'midBody1': [90.0, 0.0, 0.0], 'midBody2': [90.0, 0.0, 0.0], 'midBody3': [90.0, 0.0, 0.0], 'midBody4': [90.0, 0.0, 0.0], 'midBody5': [90.0, 0.0, 0.0], 'midBody6': [90.0, 0.0, 0.0], 'midBody7': [90.0, 0.0, 0.0], 'midBody8': [90.0, 0.0, 0.0], 'midBody9': [90.0, 0.0, 0.0], 'midBody10': [90.0, 0.0, 0.0], 'midBody11': [90.0, 0.0, 0.0], 'midBody12': [90.0, 0.0, 0.0], 'midBody13': [90.0, 0.0, 0.0], 'midBody14': [90.0, 0.0, 0.0], 'midBody15': [90.0, 0.0, 0.0], 'midBody16': [90.0, 0.0, 0.0], 'midBody17': [90.0, 0.0, 0.0], 'midBody18': [90.0, 0.0, 0.0]}
+# }
+# fk_midBody_dict = { 
+#     "fk_pos":{
+#         'ctrl_fk_midBody0': [0.0, 0.0, -20.0], 
+#         'ctrl_fk_midBody1': [0.0, 0.0, -16.0], 
+#         'ctrl_fk_midBody2': [0.0, 0.0, -12.0], 
+#         'ctrl_fk_midBody3': [0.0, 0.0, -8.0], 
+#         'ctrl_fk_midBody4': [0.0, 0.0, -4.0], 
+#         'ctrl_fk_midBody5': [0.0, 0.0, 0.0], 
+#         'ctrl_fk_midBody6': [0.0, 0.0, 4.0], 
+#         'ctrl_fk_midBody7': [0.0, 0.0, 8.0], 
+#         'ctrl_fk_midBody8': [0.0, 0.0, 12.0], 
+#         'ctrl_fk_midBody9': [0.0, 0.0, 16.0]
+#         },
+#     "fk_rot":{'ctrl_fk_midBody0': [90.0, 0.0, 0.0], 'ctrl_fk_midBody1': [90.0, 0.0, 0.0], 'ctrl_fk_midBody2': [90.0, 0.0, 0.0], 'ctrl_fk_midBody3': [90.0, 0.0, 0.0], 'ctrl_fk_midBody4': [90.0, 0.0, 0.0], 'ctrl_fk_midBody5': [90.0, 0.0, 0.0], 'ctrl_fk_midBody6': [90.0, 0.0, 0.0], 'ctrl_fk_midBody7': [90.0, 0.0, 0.0], 'ctrl_fk_midBody8': [90.0, 0.0, 0.0], 'ctrl_fk_midBody9': [90.0, 0.0, 0.0]}
 
-}
-ik_midBody_dict = {
-    "ik_pos":{'ctrl_ik_midBody_bottom': [0.0, 0.0, -20.0], 'ctrl_ik_midBody_mid': [0.0, 0.0, -2.0], 'ctrl_ik_midBody_top': [0.0, 0.0, 16.0]},
-    "ik_rot":{'ctrl_ik_midBody_bottom': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_mid': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_top': [90.0, 0.0, 0.0]}
+# }
+# ik_midBody_dict = {
+#     "ik_pos":{'ctrl_ik_midBody_bottom': [0.0, 0.0, -20.0], 'ctrl_ik_midBody_mid': [0.0, 0.0, -2.0], 'ctrl_ik_midBody_top': [0.0, 0.0, 16.0]},
+#     "ik_rot":{'ctrl_ik_midBody_bottom': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_mid': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_top': [90.0, 0.0, 0.0]}
 
-}
+# }
 # SpineSystem("midBody", "grp_rootOutputs", skel_midBody_dict, fk_midBody_dict, ik_midBody_dict)

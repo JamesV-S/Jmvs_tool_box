@@ -49,7 +49,7 @@ class root_system():
         self.cr_utilitys()
         self.add_custom_attributes()
         self.Wire_root_connections()
-        # group the module
+        # # group the module
         utils.group_module("root", self.root_input_grp, self.root_output_grp, grp_ctrl_name)
 
 
@@ -77,6 +77,7 @@ class root_system():
         grp_ctrl_name = f"grp_ctrls_root"
         cmds.group(n=grp_ctrl_name, em=1)
         cmds.parent(root_ctrl, centre_ctrl, cog_ctrl, grp_ctrl_name)
+        cmds.select(cl=1)
 
         return root_ctrl, centre_ctrl, cog_ctrl, grp_ctrl_name
         
@@ -89,7 +90,8 @@ class root_system():
         utils.cr_node_if_not_exists(0, "transform", root_output_grp)
         
         return root_input_grp, root_output_grp
-    
+
+
     def cr_utilitys(self):
         # create utility's
         self.fm_global_scale = f"FM_root_globalScale"
@@ -185,7 +187,7 @@ class root_system():
 # -----------------------------------------------------------------------------
 cog_position_dict = {
         "root": [0, 0, 0],
-        "COG": [0, 150, 0]
+        "COG": [0, 135.464, 0]
         }
 cog_pos = cog_position_dict["COG"]
 print(cog_pos)

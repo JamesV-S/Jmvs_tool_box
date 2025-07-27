@@ -209,15 +209,24 @@ def make_group_and_parent(grp_name, parent):
     cmds.parent(grp_name, parent)
 
 
-def group_module(module_name, input_grp, output_grp, ctrl_grp, joint_grp=None, logic_grp=None):
-        grp_module_name = f"grp_module_{module_name}"
-        cmds.group(n=grp_module_name, em=1)
+def group_module(module_name, unique_id, side, input_grp, output_grp, ctrl_grp=None, joint_grp=None, logic_grp=None):
+        grp_module_name = f"grp_mdl_{module_name}_{unique_id}_{side}"
+        if not cmds.objExists(grp_module_name):
+            print(f"grp_module_name NOT ")
+            cmds.group(n=grp_module_name, em=1)
+        
+        if cmds.objExists(input_grp) and cmds.objExists(output_grp):
+            cmds.parent(input_grp, output_grp, grp_module_name)
 
         # check if the ctrl grp name provided exists in the scene!
-        if cmds.objExists(ctrl_grp):
-            cmds.parent(input_grp, output_grp, ctrl_grp, grp_module_name)
-        else:
-            print(f"No module child group `{ctrl_grp}` exists in the scene")
+        if ctrl_grp:
+            if cmds.objExists(ctrl_grp):
+                try:
+                    cmds.parent(ctrl_grp, grp_module_name)
+                except Warning:
+                    pass
+            else:
+                print(f"No module child group `{ctrl_grp}` exists in the scene")
 
         if joint_grp:
             if cmds.objExists(joint_grp):
@@ -231,6 +240,7 @@ def group_module(module_name, input_grp, output_grp, ctrl_grp, joint_grp=None, l
                 cmds.hide(logic_grp)
             else:
                 print(f"No module child group `{logic_grp}` exists in the scene")
+        cmds.select(cl=1)
 
 
 # -----------------------------------------------------------------------------
