@@ -1,5 +1,6 @@
 
 import maya.cmds as cmds
+import math
 import maya.api.OpenMaya as om
 import maya.OpenMayaAnim as oma
 import importlib
@@ -534,7 +535,7 @@ def calculate_matrix_offset(previous_pos, pos):
     return offset
 
 
-def set_matrix(translation_ls, mtx):
+def set_matrix(translation_ls, mtx_attr):
     # cr a translation matrix
     translation_matrix = [
         1.0, 0.0, 0.0, 0.0,
@@ -542,7 +543,75 @@ def set_matrix(translation_ls, mtx):
         0.0, 0.0, 1.0, 0.0,
         translation_ls[0], translation_ls[1], translation_ls[2], 1.0
         ]
-    cmds.setAttr(mtx, *translation_matrix, type='matrix')
+    cmds.setAttr(mtx_attr, *translation_matrix, type='matrix')
+
+
+def matrix_to_trs(mtx):
+    '''
+    Explanation: Takes a flat matrix list and returns its list of translation values and
+    a list of rotation values. 
+
+    Args:
+    mtx (list): matrix float list 
+    '''
+    # Convert list to MMatrix
+    maya_mtx = om.MMatrix([mtx[i:i+4] for i in range(0, 16, 4)])
+    
+    # Create transformation matrix wrapper
+    transform = om.MTransformationMatrix(maya_mtx)
+    
+    # Get translation
+    translation = transform.translation(om.MSpace.kTransform)
+    translation_ls = [translation.x, translation.y, translation.z]
+    
+    # Get rotation as Euler (in radians), then convert to degrees
+    euler_rot = transform.rotation()
+    rotation_ls = [math.degrees(euler_rot.x),
+                   math.degrees(euler_rot.y),
+                   math.degrees(euler_rot.z)]
+    
+    return translation_ls, rotation_ls
+
+
+def trs_to_matrix(translation_ls, rotation_ls):
+    '''
+    Explanation: Takes a list of translation values and
+    a list of rotation values and converts them into a flattened matrix list.
+
+    Args:
+    translation_ls (list): translation float list [#.#, #.#, #.#] 
+    rotation_ls (list): rotation float list 
+    '''
+    # Convert rotation from degrees to radians
+    rx, ry, rz = [math.radians(x) for x in rotation_ls]
+    
+    # Create an MEulerRotation
+    euler_rot = om.MEulerRotation(rx, ry, rz)
+    
+    # Create an MTransformationMatrix
+    transform = om.MTransformationMatrix()
+    transform.setRotation(euler_rot)
+    transform.setTranslation(om.MVector(*translation_ls), om.MSpace.kTransform)
+    
+    # Flattern to MMatrix
+    flat_mtx = list(transform.asMatrix())
+    
+    return flat_mtx
+
+
+def set_transformation_matrix(translation_ls, rotation_ls, mtx_attr):
+    '''
+    Explanation: 
+    Sets the matrix of an object's matrix attribute with desired translation
+    and rotation values provided.
+
+    Args:
+    translation_ls (list): translation float list [#.#, #.#, #.#] 
+    rotation_ls (list): rotation float list
+    mtx_attr (object.matrix): object name and matrix attribute. 
+    '''
+    new_matrix = trs_to_matrix(translation_ls, rotation_ls)
+    cmds.setAttr(mtx_attr, new_matrix, type='matrix')
 
 
 def mtxCon_no_ofs(driver, driven):

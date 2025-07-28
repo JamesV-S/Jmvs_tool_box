@@ -240,7 +240,7 @@ class SpineSystem():
 
     # Ctrl mtx setup ----------------------------------------------------------
     def wire_spine_ctrls(self, root_outputs_grp, input_grp, output_grp):
-        # connect ghe root module to the spine module with inputs group nodes!
+        # connect the root module to the spine module with inputs group nodes!
         if cmds.objExists(root_outputs_grp):
             utils.connect_attr(f"{root_outputs_grp}.ctrl_centre_mtx", f"{input_grp}.base_mtx")
             utils.connect_attr(f"{root_outputs_grp}.ctrl_cog_mtx", f"{input_grp}.hook_mtx")
