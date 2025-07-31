@@ -66,13 +66,16 @@ class CharLayoutController:
 
 
     def set_prerequisite_signals(self):
-        self.view.all_crv_edit_checkBox.setChecked(True)
+        self.view.all_crv_sel_checkBox.setChecked(True)
         self.view.controls_crv_edit_checkBox.setChecked(True)
         self.view.guide_crv_edit_checkBox.setChecked(False)
         
-        self.sig_all_crv_edit_checkBox()
-        self.sig_ik_crv_edit_checkBox()
-        self.sig_fk_crv_edit_checkBox()
+        # Does this slow it down> -> Use the variable instead
+        self.sig_all_crv_sel_checkBox()
+        self.sig_ik_crv_sel_checkBox()
+        self.sig_fk_crv_sel_checkBox()
+        self.sig_ori_guide_sel_checkBoxx()
+        self.sig_xfm_guide_sel_checkBox()
         self.sig_ctrl_crv_edit_checkBox()
         self.sig_guide_crv_edit_checkBox()
         self.sig_entire_comp_radioBtn()
@@ -124,10 +127,15 @@ class CharLayoutController:
         # ------------ Management options ------------
             # ---- Tab1 - Curves ----
                 # ---- Curve Editing ----
-        self.view.all_crv_edit_checkBox.stateChanged.connect(self.sig_all_crv_edit_checkBox)
-        self.view.ik_crv_edit_checkBox.stateChanged.connect(self.sig_ik_crv_edit_checkBox)
-        self.view.fk_crv_edit_checkBox.stateChanged.connect(self.sig_fk_crv_edit_checkBox)
-        
+        self.view.all_crv_sel_checkBox.stateChanged.connect(self.sig_all_crv_sel_checkBox)
+        self.view.ik_crv_sel_checkBox.stateChanged.connect(self.sig_ik_crv_sel_checkBox)
+        self.view.fk_crv_sel_checkBox.stateChanged.connect(self.sig_fk_crv_sel_checkBox)
+        self.view.ori_guide_sel_checkBox.stateChanged.connect(self.sig_ori_guide_sel_checkBoxx)
+        self.view.xfm_guide_sel_checkBox.stateChanged.connect(self.sig_xfm_guide_sel_checkBox)
+
+        self.view.mirror_comp_btn.clicked.connect(self.sig_mirror_comp_btn)
+        self.view.store_curve_comp_btn.clicked.connect(self.sig_store_curve_comp_btn)
+
         self.view.controls_crv_edit_checkBox.stateChanged.connect(self.sig_ctrl_crv_edit_checkBox)
         self.view.guide_crv_edit_checkBox.stateChanged.connect(self.sig_guide_crv_edit_checkBox)
         self.view.select_data_in_comp_btn.clicked.connect(self.sig_sl_data_in_comp_btn)
@@ -140,9 +148,6 @@ class CharLayoutController:
         self.view.compnent_checkBox.stateChanged.connect(self.sig_compnent_checkBox)
         self.view.lock_btn.clicked.connect(self.sig_lock_btn)
         self.view.unlock_btn.clicked.connect(self.sig_unlock_btn)
-
-        self.view.mirror_comp_btn.clicked.connect(self.sig_mirror_comp_btn)
-        self.view.store_curve_comp_btn.clicked.connect(self.sig_store_curve_comp_btn)
         
             # ---- Tab2 - Edit module ----
         self.view.entire_comp_radioBtn.clicked.connect(self.sig_entire_comp_radioBtn)
@@ -323,23 +328,29 @@ class CharLayoutController:
         self.update_progress(0, f"DONE: '{self.val_availableRigComboBox}' Blueprint")
 
     # ------------ management options siFunc ------------
-    # ---- Tab 1 - curves ----
-    def sig_all_crv_edit_checkBox(self):
-        self.val_all_crv_edit_checkBox = self.view.all_crv_edit_checkBox.isChecked()
-        if self.val_all_crv_edit_checkBox:
-            self.view.ik_crv_edit_checkBox.setEnabled(False)
-            self.view.fk_crv_edit_checkBox.setEnabled(False)
+    # ---- Tab 1 - select data ----
+    def sig_all_crv_sel_checkBox(self):
+        self.val_all_crv_sel_checkBox = self.view.all_crv_sel_checkBox.isChecked()
+        if self.val_all_crv_sel_checkBox:
+            self.view.ik_crv_sel_checkBox.setEnabled(False)
+            self.view.fk_crv_sel_checkBox.setEnabled(False)
         else:
-            self.view.ik_crv_edit_checkBox.setEnabled(True)
-            self.view.fk_crv_edit_checkBox.setEnabled(True)
-    def sig_ik_crv_edit_checkBox(self):
-        self.val_ik_crv_edit_checkBox = self.view.ik_crv_edit_checkBox.isChecked()
-        if self.val_ik_crv_edit_checkBox:
-            self.val_ik_crv_edit_checkBox = "ik"
-    def sig_fk_crv_edit_checkBox(self):
-        self.val_fk_crv_edit_checkBox = self.view.fk_crv_edit_checkBox.isChecked()
-        if self.val_fk_crv_edit_checkBox:
-            self.val_fk_crv_edit_checkBox = "fk"
+            self.view.ik_crv_sel_checkBox.setEnabled(True)
+            self.view.fk_crv_sel_checkBox.setEnabled(True)
+    def sig_ik_crv_sel_checkBox(self):
+        self.val_ik_crv_sel_checkBox = self.view.ik_crv_sel_checkBox.isChecked()
+        if self.val_ik_crv_sel_checkBox:
+            self.val_ik_crv_sel_checkBox = "ik"
+    def sig_fk_crv_sel_checkBox(self):
+        self.val_fk_crv_sel_checkBox = self.view.fk_crv_sel_checkBox.isChecked()
+        if self.val_fk_crv_sel_checkBox:
+            self.val_fk_crv_sel_checkBox = "fk"
+    def sig_ori_guide_sel_checkBoxx(self):
+        self.val_ori_guide_sel_checkBoxx = self.view.ori_guide_sel_checkBox.isChecked()
+        print(f"val_ori_guide_sel_checkBoxx = {self.val_ori_guide_sel_checkBoxx}")
+    def sig_xfm_guide_sel_checkBox(self):
+        self.val_xfm_guide_sel_checkBox = self.view.xfm_guide_sel_checkBox.isChecked()
+        print(f"val_xfm_guide_sel_checkBox = {self.val_xfm_guide_sel_checkBox}")
         
 
     def sig_sl_data_in_comp_btn(self):
@@ -347,7 +358,10 @@ class CharLayoutController:
         comp_sel = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
         try:
             for comp in comp_sel:
-                self.model.select_component_data(comp, self.val_availableRigComboBox, self.val_all_crv_edit_checkBox, self.val_ik_crv_edit_checkBox, self.val_fk_crv_edit_checkBox)
+                self.model.select_component_data(
+                    comp, self.val_availableRigComboBox,  self.val_all_crv_sel_checkBox, 
+                    self.val_ik_crv_sel_checkBox, self.val_fk_crv_sel_checkBox, 
+                    self.val_ori_guide_sel_checkBoxx, self.val_xfm_guide_sel_checkBox)
         except TypeError as e:
             cmds.error(f"Select a component first!: |{e}|")
 

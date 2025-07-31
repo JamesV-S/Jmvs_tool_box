@@ -384,7 +384,7 @@ class CharLayoutModel:
             cmds.warning(f"Make sure the component `{component_selection}` exists in the scene with the controls, cus CANNOT find any")
 
 
-    def select_component_data(self, comp, val_availableRigComboBox, all_checkbox, ik_checkbox, fk_checkbox):
+    def select_component_data(self, comp, val_availableRigComboBox, all_checkbox, ik_checkbox, fk_checkbox, ori_guide_checkbox, xfm_guide_checkbox):
         module, unique_id, side = utils.get_name_id_data_from_component(comp)
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
@@ -392,10 +392,17 @@ class CharLayoutModel:
             )
         get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
         control_names_ls = get_control_names.return_comp_ctrl_ls()
+        print(control_names_ls)
+        access_data = database_schema_002.retrieveSpecificComponentdata(
+            rig_db_directory, module, unique_id, side)
+        comp_dict = access_data.return_mdl_component_dict()
+        get_names_dict = comp_dict["component_pos"]
+        
+        ctrl_name_ls = [ctrl for ctrl in control_names_ls]
         if all_checkbox:
-            cmds.select(cl=1)
-            for ctrl in control_names_ls:
-                cmds.select(ctrl, tgl=1)
+            cmds.select(ctrl_name_ls, add=1)
+        elif not all_checkbox:
+            cmds.select(ctrl_name_ls, d=1)
         else:
             # select ik or fk or both. 
             for mode in [ik_checkbox, fk_checkbox]:
@@ -407,13 +414,20 @@ class CharLayoutModel:
                     for ctrl in control_names_ls:
                         if ctrl.startswith("ctrl_fk"):
                             cmds.select(ctrl, tgl=1)
-        # if guide_checkbox: 
-        #     pass
-            # temp_guide_ls = []
-            # for ctrl in control_names_ls:
-            #     if ctrl.startswith("ctrl_fk"):
-            #         guide = ctrl.replace("ctrl_fk_", f"xfm_guide_{module}_")
-            #         cmds.select(guide, tgl=1)
+        
+        ori_name_ls = [f"ori_{module}_{ori}_{unique_id}_{side}" for ori in get_names_dict.keys()]
+        xfm_name_ls = [f"xfm_guide_{module}_{xfm}_{unique_id}_{side}" for xfm in get_names_dict.keys()]
+        # for ori in get_names_dict.keys():
+        #         ori_name = f"ori_{module}_{ori}_{unique_id}_{side}"
+
+        if ori_guide_checkbox:
+            cmds.select(ori_name_ls, add=1)
+        if not ori_guide_checkbox:
+            cmds.select(ori_name_ls, d=1)
+        if xfm_guide_checkbox:
+            cmds.select(xfm_name_ls, add=1)
+        if not xfm_guide_checkbox:
+            cmds.select(xfm_name_ls, d=1)
 
     
     def mirror_component_data(self, component_selection, val_availableRigComboBox, mdl_tree_model, val_ctrl_crv_edit_checkbox, val_guide_crv_edit_checkBox):
@@ -450,6 +464,7 @@ class CharLayoutModel:
                         mirror_constant_dict = values['constant']
                         mirror_user_settings_dict =  values['user_settings']
                         mirror_controls_dict =  values['controls']
+                        print(f"mirror_placement_dict = {mirror_placement_dict}")
                         database_schema_002.CreateDatabase(
                             rig_db_directory, module, mirror_side, mirror_placement_dict, 
                             mirror_constant_dict, mirror_user_settings_dict, mirror_controls_dict)
@@ -474,12 +489,24 @@ class CharLayoutModel:
                 retrieved_existing_dict = database_schema_002.retrieveSpecificPlacementPOSData(
                     rig_db_directory, module, unique_id, side)
                 existing_pos_dict = retrieved_existing_dict.return_existing_pos_dict()
+                existing_rot_dict = retrieved_existing_dict.return_existing_rot_dict()
+                # Must invert the x value!!
+                '''
+                {'clavicle': [0.0, 0.0, 0.0], 
+                'shoulder': [2.9407037031303735, -5.366417614476933, -52.87199475566796], 
+                'elbow': [1.4116820605103142, -32.847391136978864, -52.004681579832805], 
+                'wrist': [1.4116820605103142, -32.847391136978864, -52.004681579832805]}
+                '''
+
                 
+                print(f"MIRROR: ORI: existing_rot_dict = {existing_rot_dict}")
+                # mirror
                 # apply these to the mirrored component
                 database_schema_002.updateSpecificPlacementPOSData(
                     rig_db_directory, module, unique_id, mirror_side, existing_pos_dict
                     )
-            
+                database_schema_002.UpdatePlacementROTData(
+                    rig_db_directory, module, unique_id, mirror_side, existing_rot_dict)
 
     def commit_module_edit_changes(self, component, val_availableRigComboBox, val_update_comp_data_checkBox, val_joint_editing_checkBox, val_ctrl_editing_checkBox, umo_dict, jnt_num):
         module, unique_id, side = utils.get_name_id_data_from_component(component)

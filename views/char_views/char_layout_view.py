@@ -205,51 +205,70 @@ class CharLayoutView(QtWidgets.QWidget):
         mop_tabs = QtWidgets.QTabWidget(self)
         mop_tabs.setStyleSheet(self.stylesheet)
         
-        self.curve_tab_ui(mop_tabs)        
+        self.operations_tab_ui(mop_tabs)        
         self.module_editing_ui(mop_tabs)
 
         mop_container, chk_none = self.cr_container_funcUI("Management Options", mop_tabs)
         widgets_layout.addLayout(mop_container)
 
 
-    def curve_tab_ui(self, tab):
+    def operations_tab_ui(self, tab):
         parent_widget = QtWidgets.QWidget()
         
         # Initialise Layouts
-        layH_tab_curve_ancestor = QtWidgets.QHBoxLayout(parent_widget)
-        layV_tab_curve_001 = QtWidgets.QVBoxLayout()
-        layV_tab_curve_002 = QtWidgets.QVBoxLayout()
+        layH_tab_op_ancestor = QtWidgets.QHBoxLayout(parent_widget)
+        layV_tab_op_001 = QtWidgets.QVBoxLayout()
+        layV_tab_op_002 = QtWidgets.QVBoxLayout()
+        layV_sel_data = QtWidgets.QVBoxLayout()
+        layH_sl_data_001 = QtWidgets.QHBoxLayout()
+        layH_sl_data_002 = QtWidgets.QHBoxLayout()
+
         layV_curve_editing = QtWidgets.QVBoxLayout()
         layH_crv_edit_001 = QtWidgets.QHBoxLayout()
-        layH_crv_edit_002 = QtWidgets.QHBoxLayout()
+        # layH_crv_edit_002 = QtWidgets.QHBoxLayout()
         layH_crv_edit_003 = QtWidgets.QHBoxLayout()
         layV_mirror_editing = QtWidgets.QVBoxLayout()
         
-        # ---- curve selection ----
-        self.all_crv_edit_checkBox = QtWidgets.QCheckBox("All")
-        self.ik_crv_edit_checkBox = QtWidgets.QCheckBox("IK")
-        self.fk_crv_edit_checkBox = QtWidgets.QCheckBox("FK")
+        # -- curve selection --
+        crv_sel_lbl = QtWidgets.QLabel("  Controls: ")
+        self.all_crv_sel_checkBox = QtWidgets.QCheckBox("All")
+        self.ik_crv_sel_checkBox = QtWidgets.QCheckBox("IK")
+        self.fk_crv_sel_checkBox = QtWidgets.QCheckBox("FK")
+        self.ori_guide_sel_checkBox = QtWidgets.QCheckBox("orientation")
+        self.xfm_guide_sel_checkBox = QtWidgets.QCheckBox("guides")
         # layH_crv_edit_001.addWidget(self.controls_crv_edit_checkBox)
         # layH_crv_edit_001.addWidget(self.gu=ide_crv_edit_checkBox)
+        self.select_data_in_comp_btn = QtWidgets.QPushButton("Select data in component")
+        
+        layH_sl_data_001.addWidget(crv_sel_lbl)
+        layH_sl_data_001.addWidget(self.all_crv_sel_checkBox)
+        layH_sl_data_001.addWidget(self.ik_crv_sel_checkBox)
+        layH_sl_data_001.addWidget(self.fk_crv_sel_checkBox)
+        layH_sl_data_002.addWidget(self.xfm_guide_sel_checkBox)
+        layH_sl_data_002.addWidget(self.ori_guide_sel_checkBox)
+        layV_sel_data.addLayout(layH_sl_data_001)
+        layV_sel_data.addLayout(layH_sl_data_002)
+        # layV_sel_data.addWidget(self.ori_guide_sel_checkBox)
+        # layV_sel_data.addWidget(self.xfm_guide_sel_checkBox)
+        layV_sel_data.addWidget(self.select_data_in_comp_btn)
 
-        self.select_data_in_comp_btn = QtWidgets.QPushButton("Select data in component")        
+        crv_selData_container, sel_data_chk_none = self.cr_container_funcUI(
+            label_name="Select Data",widget_to_add=layV_sel_data, layout=True, child=True
+            )
+        
+        # -- Curve Editing --
         self.expand_curve_btn = QtWidgets.QPushButton("Expand")
         self.collapse_curve_btn = QtWidgets.QPushButton("Collapse")
         self.store_curve_comp_btn = QtWidgets.QPushButton("Store Curve Component")
-
-        layH_crv_edit_001.addWidget(self.all_crv_edit_checkBox)
-        layH_crv_edit_001.addWidget(self.ik_crv_edit_checkBox)
-        layH_crv_edit_001.addWidget(self.fk_crv_edit_checkBox)
-        layH_crv_edit_002.addWidget(self.expand_curve_btn)
-        layH_crv_edit_002.addWidget(self.collapse_curve_btn)
-        layV_curve_editing.addLayout(layH_crv_edit_001)
-        layV_curve_editing.addWidget(self.select_data_in_comp_btn)
-        layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
-        layV_curve_editing.addLayout(layH_crv_edit_002)
-        layV_curve_editing.addLayout(self.lay_spacer_funcUI("H"))
-        layV_curve_editing.addWidget(self.store_curve_comp_btn)
         
-        crv_edit_container, chk_none = self.cr_container_funcUI("Curve Editing", layV_curve_editing, True, True)
+        layH_crv_edit_001.addWidget(self.expand_curve_btn)
+        layH_crv_edit_001.addWidget(self.collapse_curve_btn)
+        layV_curve_editing.addLayout(layH_crv_edit_001)
+        layV_curve_editing.addWidget(self.store_curve_comp_btn)
+    
+        crv_edit_container, crv_edit_chk_none = self.cr_container_funcUI(
+            "Curve Editing", layV_curve_editing, True, True
+            )
         # ---- curve colour management ----
         ''' ADD COLOUR OPTIONS WITH PICKER ETC '''
         # ---- curve data management ----
@@ -266,18 +285,19 @@ class CharLayoutView(QtWidgets.QWidget):
         crv_mirror_container, chk_none = self.cr_container_funcUI("Mirror Editing", layV_mirror_editing, True, True)
 
         # ----
-        layV_tab_curve_001.addLayout(crv_edit_container)
-        # layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
-        layV_tab_curve_001.addLayout(self.lay_spacer_funcUI("H"))
-        layV_tab_curve_001.addLayout(crv_mirror_container)
+        layV_tab_op_001.addLayout(crv_selData_container)
+        layV_tab_op_001.addLayout(crv_edit_container)
+        # layV_tab_op_001.addLayout(self.lay_spacer_funcUI("H"))
+        # layV_tab_op_001.addLayout(self.lay_spacer_funcUI("H"))
+        layV_tab_op_001.addLayout(crv_mirror_container)
 
         temp_dis_container = self.template_display_ui()
         l_u_container = self.lock_unlock_ui()
         
-        layV_tab_curve_002.addLayout(temp_dis_container)
-        layV_tab_curve_002.addLayout(l_u_container)
-        layH_tab_curve_ancestor.addLayout(layV_tab_curve_001)
-        layH_tab_curve_ancestor.addLayout(layV_tab_curve_002)
+        layV_tab_op_002.addLayout(temp_dis_container)
+        layV_tab_op_002.addLayout(l_u_container)
+        layH_tab_op_ancestor.addLayout(layV_tab_op_001)
+        layH_tab_op_ancestor.addLayout(layV_tab_op_002)
 
         tab.addTab(parent_widget, "curves")
 

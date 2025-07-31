@@ -275,13 +275,13 @@ class retrieveSpecificComponentdata():
             with sqlite3.connect(db_path) as conn:
                 pos_dict = self.position_dict_from_table(conn)
                 self.rot_dict = self.rotation_dict_from_table(conn)
-                controls_dict = self.controls_dict_from_table(conn)
+                self.controls_dict = self.controls_dict_from_table(conn)
                 self.mdl_component_dict = {
                     "module_name":self.module_name, 
                     "unique_id":int(self.unique_id),
                     "side":self.side,
                     "component_pos": pos_dict,
-                    "controls": controls_dict
+                    "controls": self.controls_dict
                     }
                 print(f"THE DICT :: self.mdl_component_dict = {self.mdl_component_dict}")
                 
@@ -354,6 +354,9 @@ class retrieveSpecificComponentdata():
     def return_rot_component_dict(self):
         return self.rot_dict
     
+    def return_pos_dict(self):
+        return self.controls_dict
+    
 
 class retrieveSpecificPlacementPOSData():
     def __init__(self, directory, module_name, unique_id, side):
@@ -372,6 +375,7 @@ class retrieveSpecificPlacementPOSData():
         try:
             with sqlite3.connect(db_name) as conn:
                 self.existing_pos_dict = self.component_pos_dict_from_table(conn)
+                self.existing_rot_dict = self.component_rot_dict_from_table(conn)
                 '''
                 self.mdl_component_dict = {
                     "module_name":self.module_name, 
@@ -401,10 +405,31 @@ class retrieveSpecificPlacementPOSData():
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")
             return {}
-        
+    
+
+    def component_rot_dict_from_table(self, conn):
+        cursor = conn.cursor()
+        placement_sql = f"SELECT component_rot_xyz FROM placement WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(placement_sql, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                component_rot_json = row[0]
+                # use Python's 'json module' to load json dict into python dictionary's
+                component_rot_dict = json.loads(component_rot_json)
+            return component_rot_dict
+
+        except sqlite3.Error as e:
+            print(f"placement sqlite3.Error: {e}")
+            return {}
+
 
     def return_existing_pos_dict(self):
         return self.existing_pos_dict
+    
+
+    def return_existing_rot_dict(self):
+        return self.existing_rot_dict
     
 
 class updateSpecificPlacementPOSData():

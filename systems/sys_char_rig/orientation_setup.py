@@ -44,16 +44,17 @@ class BuildOrientation():
         ori_parent_grp_list, ori_guide_list = self.cr_ori_guide()
         self.position_ori_groups(ori_module_group, ori_parent_grp_list)
         self.constrain_ori_groups(ori_parent_grp_list)
-        ori_scale_attr = self.ori_guide_attributes(ori_guide_list)
+        self.constrain_end_ori_grp(ori_parent_grp_list[-1])
+        ori_scale_attr = self.ori_guide_attributes(ori_guide_list[:-1])
         self.orient_guides(ori_guide_list)
         
         # parent module ori group to master ori grop in hierarchy!
         cmds.parent(ori_module_group, ori_master_grp)
         
         planes_dict = self.cr_geo_planes()
-        plane_grp_list = self.group_geo_planes(planes_dict, ori_parent_grp_list)
-        self.geo_plane_orient_connection(ori_guide_list, plane_grp_list)
-        self.geo_planes_adjusting_length(planes_dict, ori_parent_grp_list, ori_scale_attr)
+        plane_grp_list = self.group_geo_planes(planes_dict, ori_parent_grp_list[:-1])
+        self.geo_plane_orient_connection(ori_guide_list[:-1], plane_grp_list)
+        self.geo_planes_adjusting_length(planes_dict, ori_parent_grp_list[:-1], ori_scale_attr)
         self.locking_objects(ori_guide_list, plane_grp_list)
 
     def cr_ori_guide(self):
@@ -61,7 +62,7 @@ class BuildOrientation():
         ori_guide_list = []
         # for key, rot in self.comp_rot_dict.items():
         items = list(self.comp_rot_dict.items())
-        for key, rot in items[:-1]:
+        for key, rot in items:#[:-1]:
             ori_guide = f"ori_{self.module}_{key}_{self.unique_id}_{self.side}"
             cr_ctrl.CreateControl(type="orb", name=ori_guide)
             utils.colour_object(ori_guide, 1)
@@ -90,7 +91,8 @@ class BuildOrientation():
             cmds.parent(ori_parent_grp_list[x], ori_module_group)
 
 
-    def constrain_ori_groups(self, ori_parent_grp_list):       
+    def constrain_ori_groups(self, ori_parent_grp_list): 
+        ori_parent_grp_list = ori_parent_grp_list[:-1]      
         aim_guide_keys = [key for key, rot in list(self.comp_rot_dict.items())[1:]]
         point_guide_keys = [key for key, rot in list(self.comp_rot_dict.items())[:-1]]
         for x in range(len(ori_parent_grp_list)):
@@ -99,6 +101,21 @@ class BuildOrientation():
 
             p_guide_name = f"xfm_guide_{self.module}_{point_guide_keys[x]}_{self.unique_id}_{self.side}"
             cmds.pointConstraint(p_guide_name, ori_parent_grp_list[x],  n=f"pCon_gd_{ori_parent_grp_list[x]}")
+        
+    
+    def constrain_end_ori_grp(self, end_ori_grp):
+        temp_list = list(self.comp_rot_dict.items())
+        print(f"ORI: temp-list = {temp_list}")
+        aim_guide_key = [key for key, rot in temp_list][-2]
+        print(f"ORI: aim_guide_key = {aim_guide_key}")
+
+        point_guide_key = [key for key, rot in temp_list][-1]
+        print(f"ORI: point_guide_key = {point_guide_key}")
+        a_guide_name = f"xfm_guide_{self.module}_{aim_guide_key}_{self.unique_id}_{self.side}"
+        cmds.aimConstraint(a_guide_name, end_ori_grp, n=f"pAim_{end_ori_grp}", aim=(-1, 0, 0))
+
+        p_guide_name = f"xfm_guide_{self.module}_{point_guide_key}_{self.unique_id}_{self.side}"
+        cmds.pointConstraint(p_guide_name, end_ori_grp,  n=f"pCon_gd_{end_ori_grp}")         
 
 
     def ori_guide_attributes(self, ori_guide_list):
@@ -221,8 +238,9 @@ class BuildOrientation():
             for x in range(len(AXIS)):
                 cmds.setAttr(f"{ori_guide}.translate{AXIS[x]}", lock=True, keyable=False, channelBox=False)
                 cmds.setAttr(f"{ori_guide}.scale{AXIS[x]}", lock=True, keyable=False, channelBox=False)
-            cmds.setAttr(f"{ori_guide}.rotateY", lock=True, keyable=False, channelBox=False)
-            cmds.setAttr(f"{ori_guide}.rotateZ", lock=True, keyable=False, channelBox=False)
+            if not ori_guide == ori_guide_list[-1]:
+                cmds.setAttr(f"{ori_guide}.rotateY", lock=True, keyable=False, channelBox=False)
+                cmds.setAttr(f"{ori_guide}.rotateZ", lock=True, keyable=False, channelBox=False)
             cmds.setAttr(f"{ori_guide}.visibility", lock=True, keyable=False, channelBox=False)
 
         for plane_grp in plane_grp_list:
