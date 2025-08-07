@@ -244,7 +244,7 @@ def group_module(module_name, unique_id, side, input_grp, output_grp, ctrl_grp=N
         cmds.select(cl=1)
 
 
-# -----------------------------------------------------------------------------
+# ------------------------------- GET DATA ------------------------------------
 def mtrans_and_pivot_to_origin(target_obj, source_obj, translation_vector=None, rotate=None):
     cmds.matchTransform(target_obj, source_obj)
     if rotate:
@@ -357,12 +357,26 @@ def get_selection_trans_dict(selection, side):
 
 
 def get_selection_rot_dict(selection):    
-    rotation_pos = {}
-    for sel in selection:
-        rot_ls = cmds.xform(sel, q=1, rotation=1, worldSpace=1)
-        rotation_pos[sel] = list(rot_ls)
+    # rotation_pos = {}
+    # for sel in selection:
+    #     rot_ls = cmds.xform(sel, q=1, rotation=1, worldSpace=1)
+    #     rotation_pos[sel] = list(rot_ls)
+    
+    rotation_pos = {
+        sel:list(cmds.xform(sel, q=1, rotation=1, worldSpace=1))
+        for sel in selection
+        }
 
     return rotation_pos
+
+
+def get_sel_ori_plane_dict(selection, attr_name):    
+    geo_plane_attrib = {
+        sel:float(cmds.getAttr(f"{sel}.{attr_name}")) 
+        for sel in selection
+        }
+
+    return geo_plane_attrib
 
 #--------------------------------- COLOUR -------------------------------------
 def colour_object(obj, colour):

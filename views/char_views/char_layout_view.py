@@ -299,7 +299,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layH_tab_op_ancestor.addLayout(layV_tab_op_001)
         layH_tab_op_ancestor.addLayout(layV_tab_op_002)
 
-        tab.addTab(parent_widget, "curves")
+        tab.addTab(parent_widget, "Operations") # "Comp Layout"
 
         utils_view.assign_style_ls(self.style_tab_1_ui, 
              [self.expand_curve_btn, self.collapse_curve_btn, 
@@ -456,7 +456,7 @@ class CharLayoutView(QtWidgets.QWidget):
         layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_module_editing.addWidget(self.commit_module_edits_btn)
 
-        tab.addTab(parent_widget, "Edit Module")
+        tab.addTab(parent_widget, "Edit Data")
 
         for spinBox in [self.jnt_num_spinBox, self.ctrl_num_spinBox]:
             spinBox.setMinimum(0)

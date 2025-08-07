@@ -18,16 +18,12 @@ importlib.reload(cr_ctrl)
 importlib.reload(database_schema_002)
 
 class BuildOrientation():
-    def __init__(self, comp_pos_dict, rig_db_directory, module, unique_id, side):
-        pass
+    def __init__(self, comp_pos_dict, rig_db_directory, ori_plane_dict, module, unique_id, side):
         # Need:
         # module name
         # unique id
         # side
         # component pos dict
-
-        # build group named grp_ori_*_*_*_* (grp_ori_bipedArm_clavicle_0_L)
-        # return this group!
 
         self.comp_pos_dict, self.rig_db_directory, self.module, self.unique_id, self.side = comp_pos_dict, rig_db_directory, module, unique_id, side
         retrieve_rot_data = database_schema_002.retrieveSpecificComponentdata(
@@ -45,7 +41,7 @@ class BuildOrientation():
         self.position_ori_groups(ori_module_group, ori_parent_grp_list)
         self.constrain_ori_groups(ori_parent_grp_list)
         self.constrain_end_ori_grp(ori_parent_grp_list[-1])
-        ori_scale_attr = self.ori_guide_attributes(ori_guide_list[:-1])
+        ori_scale_attr = self.ori_guide_attributes(ori_guide_list[:-1], ori_plane_dict)
         self.orient_guides(ori_guide_list)
         
         # parent module ori group to master ori grop in hierarchy!
@@ -56,6 +52,7 @@ class BuildOrientation():
         self.geo_plane_orient_connection(ori_guide_list[:-1], plane_grp_list)
         self.geo_planes_adjusting_length(planes_dict, ori_parent_grp_list[:-1], ori_scale_attr)
         self.locking_objects(ori_guide_list, plane_grp_list)
+
 
     def cr_ori_guide(self):
         ori_parent_grp_list = []
@@ -118,12 +115,18 @@ class BuildOrientation():
         cmds.pointConstraint(p_guide_name, end_ori_grp,  n=f"pCon_gd_{end_ori_grp}")         
 
 
-    def ori_guide_attributes(self, ori_guide_list):
+    def ori_guide_attributes(self, ori_guide_list, ori_plane_dict):
         planes_attr_name = f"Planes_Scale"
-        for x in range(len(ori_guide_list)):
-            utils.add_locked_attrib(ori_guide_list[x], ["ORI"])
-            utils.add_float_attrib(ori_guide_list[x], [f"{planes_attr_name}"], [0.1, 999], True)
-            cmds.setAttr(f"{ori_guide_list[x]}.{planes_attr_name}", 6)
+        print(f"ORI: ori_guide_list = `{ori_guide_list}`")
+        # `['ori_bipedArm_clavicle_0_L', 'ori_bipedArm_shoulder_0_L', 'ori_bipedArm_elbow_0_L']`
+        print(f"ORI_SETUP: ori_plane_dict = `{ori_plane_dict}`")
+        # ori_plane_dict = {"clavicle": 6, "shoulder": 6, "elbow": 6}
+        for name in ori_guide_list:
+            for key, attrtib_val in ori_plane_dict.items():
+                if key in name:
+                    utils.add_locked_attrib(name, ["ORI"])
+                    utils.add_float_attrib(name, [planes_attr_name], [0.1, 999], True)
+                    cmds.setAttr(f"{name}.{planes_attr_name}", attrtib_val)
 
         return planes_attr_name
 

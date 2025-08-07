@@ -142,8 +142,6 @@ class CharLayoutModel:
 
     def record_compnonent_orientation(self, component_selection, val_availableRigComboBox):
         module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
-        # find_guide = f"ori_{module}_*_{unique_id}_{side}"
-
         try:            
             # need to get the list of available ori guides in correct order
             rig_db_directory = utils_os.create_directory(
@@ -179,7 +177,7 @@ class CharLayoutModel:
             'ori_bipedArm_elbow_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723], 
             'ori_bipedArm_wrist_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723]}
             """
-            
+            # -- Orientation data --
             # Update the database with just the keys as the keys and not the name of ori!
             updated_rot_dict = {}
             for key in comp_rot_dict.keys():
@@ -188,10 +186,23 @@ class CharLayoutModel:
                     if key in new_key:
                         updated_rot_dict[key] = new_value
             print(f"ORI UPDATE - updated_rot_dict = `{updated_rot_dict}`")
-            database_schema_002.UpdatePlacementROTData(
-                rig_db_directory, module, unique_id, side, updated_rot_dict
-                )
+            
+            # -- Planes data --
+            # update the geo planes dict too!
+            plane_object_list = ori_guides[:-1]
+            new_geo_plane_dict = utils.get_sel_ori_plane_dict(plane_object_list, "Planes_Scale")
+            updated_plane_dict = {}
+            for key in comp_rot_dict.keys():
+                for new_key, new_value in new_geo_plane_dict.items():
+                    if key in new_key:
+                        updated_plane_dict[key] = new_value
 
+            # update the database with these two updated dictionary's!
+            database_schema_002.UpdatePlacementROTData(
+                rig_db_directory, module, unique_id, side, 
+                updated_rot_dict, updated_plane_dict
+                )
+            
         except Exception as e:
             print(f"No component exists in the scene of '{component_selection}'")
             print(f"error: {e}")
@@ -264,11 +275,12 @@ class CharLayoutModel:
             controls_dict = {}
             for key, values in self.json_dict.items():
                 if key == f"{mdl_name}.json":
+                    mdl_object_list = values['names']
                     placement_dict =  values['placement']
                     constant_dict = values['constant']
                     user_settings_dict =  values['user_settings']
                     controls_dict =  values['controls']
-                  
+            print(f"mdl_object_list >> {mdl_object_list}")
             print(f"placement_dict >> {placement_dict}")
             print(f"user_settings_dict >> {user_settings_dict}")
             print(f"controls_dict >> {controls_dict}")
@@ -277,16 +289,29 @@ class CharLayoutModel:
             if checkBox:
                 for db in range(iterations):
                     database_schema = database_schema_002.CreateDatabase(
-                        mdl_directory, mdl_name, side, 
+                        mdl_directory, mdl_name, side, mdl_object_list,
                         placement_dict, constant_dict, user_settings_dict, controls_dict)
-                
+            
+            
                 # unique_id = database_schema.get_unique_id()
                 # print(f"unique_id == {unique_id} for {mdl_name}_{side}")
                 # import and call the database maker 'database_schema'
             else:
                 print(f"Not required module database creation for {mdl_name}")
 
-    
+            '''
+            placement_dict >> 
+            {'component_pos': 
+                {'clavicle': [3.9705319404602006, 230.650634765625, 2.762230157852166], 
+                'shoulder': [28.9705319404602, 230.650634765625, 2.762230157852166], 
+                'elbow': [53.69795846939088, 197.98831176757807, 6.61050152778626], 
+                'wrist': [76.10134363174441, 169.30845642089832, 30.106774568557817]
+                }, 
+            'component_rot_xyz': {'clavicle': [0.0, 0.0, 0.0], 'shoulder': [0.0, 0.0, 0.0], 'elbow': [0.0, 0.0, 0.0], 'wrist': [0.0, 0.0, 0.0]}, 'component_rot_yzx': {'clavicle': [0.0, 0.0, 0.0], 'shoulder': [0.0, 0.0, 0.0], 'elbow': [0.0, 0.0, 0.0], 'wrist': [0.0, 0.0, 0.0]}}
+
+            '''
+
+
     def func_unlocked_all(self, component_selection, val_availableRigComboBox):
         for component in component_selection:
             self.guide_connections_setup(component, val_availableRigComboBox)
@@ -421,7 +446,7 @@ class CharLayoutModel:
         #         ori_name = f"ori_{module}_{ori}_{unique_id}_{side}"
 
         if ori_guide_checkbox:
-            cmds.select(ori_name_ls, add=1)
+            cmds.select(ori_name_ls[:-1], add=1)
         if not ori_guide_checkbox:
             cmds.select(ori_name_ls, d=1)
         if xfm_guide_checkbox:
@@ -460,13 +485,14 @@ class CharLayoutModel:
                 # controls_dict = {}
                 for key, values in self.json_dict.items():
                     if key == f"{module}.json":
+                        mdl_object_list = values['names']
                         mirror_placement_dict =  values['placement']
                         mirror_constant_dict = values['constant']
                         mirror_user_settings_dict =  values['user_settings']
                         mirror_controls_dict =  values['controls']
                         print(f"mirror_placement_dict = {mirror_placement_dict}")
                         database_schema_002.CreateDatabase(
-                            rig_db_directory, module, mirror_side, mirror_placement_dict, 
+                            rig_db_directory, module, mirror_side, mdl_object_list, mirror_placement_dict, 
                             mirror_constant_dict, mirror_user_settings_dict, mirror_controls_dict)
                         self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
                     
@@ -490,6 +516,7 @@ class CharLayoutModel:
                     rig_db_directory, module, unique_id, side)
                 existing_pos_dict = retrieved_existing_dict.return_existing_pos_dict()
                 existing_rot_dict = retrieved_existing_dict.return_existing_rot_dict()
+                existing_plane_dict = retrieved_existing_dict.return_existing_plane_dict()
                 # Must invert the x value!!
                 '''
                 {'clavicle': [0.0, 0.0, 0.0], 
@@ -506,7 +533,8 @@ class CharLayoutModel:
                     rig_db_directory, module, unique_id, mirror_side, existing_pos_dict
                     )
                 database_schema_002.UpdatePlacementROTData(
-                    rig_db_directory, module, unique_id, mirror_side, existing_rot_dict)
+                    rig_db_directory, module, unique_id, mirror_side, existing_rot_dict, existing_plane_dict)
+
 
     def commit_module_edit_changes(self, component, val_availableRigComboBox, val_update_comp_data_checkBox, val_joint_editing_checkBox, val_ctrl_editing_checkBox, umo_dict, jnt_num):
         module, unique_id, side = utils.get_name_id_data_from_component(component)

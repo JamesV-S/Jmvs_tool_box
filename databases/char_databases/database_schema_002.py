@@ -45,7 +45,7 @@ importlib.reload(utils_db)
 # u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_sys': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
 
 class CreateDatabase():
-    def __init__(self, directory, mdl_name, side, placement_dict, constant_dict, user_settings_dict, controls_dict):
+    def __init__(self, directory, mdl_name, side, object_list, placement_dict, constant_dict, user_settings_dict, controls_dict):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         db_name = os.path.join(db_directory, f'DB_{mdl_name}.db')
@@ -64,6 +64,9 @@ class CreateDatabase():
                 # cr curve_info dictionary!
                 curve_info_dict = utils_db.cr_curve_info_dictionary(controls_dict['FK_ctrls'], controls_dict['IK_ctrls'], self.unique_id, side)
                 
+                # cr ori plane dict
+                ori_plane_dict = utils_db.cr_ori_plane_dict(object_list[:-1], 10)
+
                 # update the tables!
                 self.update_db(conn, "modules", (self.unique_id, mdl_name, side))
                 # table user_settings
@@ -83,6 +86,7 @@ class CreateDatabase():
                     self.unique_id,
                     constant_dict['guides_connection'], 
                     constant_dict['guides_follow'],
+                    object_list,
                     side
                     ))
                 self.update_db(conn, "user_settings", (
@@ -102,11 +106,11 @@ class CreateDatabase():
                     controls_dict['FK_ctrls'], 
                     controls_dict['IK_ctrls'], 
                     curve_info_dict,
+                    ori_plane_dict,
                     side
                     ))
                 
                 ''''''
-                    
         except sqlite3.Error as e:
             print(e)
     
@@ -132,6 +136,7 @@ class CreateDatabase():
             unique_id INT,
             guides_connection TEXT,
             guides_follow TEXT,
+            items TEXT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS user_settings (
@@ -152,6 +157,7 @@ class CreateDatabase():
             FK_ctrls TEXT,
             IK_ctrls TEXT,
             curve_info TEXT,
+            ori_plane_info TEXT,
             side text
         );"""
         ]
@@ -173,9 +179,9 @@ class CreateDatabase():
             sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot_xyz, component_rot_yzx, side) VALUES (?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'constant':
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
             print(f"H H constant VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, side) VALUES (?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, items, side) VALUES (?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'user_settings':
             print(f"888888888888888888 H H user_settings VALUES: {values}")
@@ -183,8 +189,8 @@ class CreateDatabase():
             cursor.execute(sql, values)
         elif table == 'controls':
             print(f"888888888888888888 H H controls VALUES: {values[3]}")
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
-            sql = f""" INSERT INTO {table} (unique_id, FK_ctrls, IK_ctrls, curve_info, side) VALUES (?, ?, ?, ?, ?)"""
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), json.dumps(values[4]), values[5])
+            sql = f""" INSERT INTO {table} (unique_id, FK_ctrls, IK_ctrls, curve_info, ori_plane_info, side) VALUES (?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         conn.commit()
 
@@ -210,13 +216,7 @@ class CreateDatabase():
             print(f">> `unique_id` dict from existing database = {self.unique_id_tracker}, adding +1")
             self.unique_id_tracker[key] += 1
         return self.unique_id_tracker[key]
-    
-'''
-clavicle_Xyz TEXT,
-shoulder_Xyz TEXT,
-elbow_Xyz TEXT,
-wrist_Xyz TEXT,
-'''
+
 
 class retrieveModulesData():
     def __init__(self, directory, database_name):
@@ -376,16 +376,8 @@ class retrieveSpecificPlacementPOSData():
             with sqlite3.connect(db_name) as conn:
                 self.existing_pos_dict = self.component_pos_dict_from_table(conn)
                 self.existing_rot_dict = self.component_rot_dict_from_table(conn)
-                '''
-                self.mdl_component_dict = {
-                    "module_name":self.module_name, 
-                    "unique_id":int(self.unique_id),
-                    "side":self.side,
-                    "component_pos": placement_dict,
-                    "controls": controls_dict
-                    }
-                print(f"THE DICT :: self.mdl_component_dict = {self.mdl_component_dict}")
-                '''
+                self.existing_plane_dict = self.component_ori_plane_dict_from_table(conn)
+                
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
     
@@ -422,6 +414,22 @@ class retrieveSpecificPlacementPOSData():
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")
             return {}
+        
+
+    def component_ori_plane_dict_from_table(self, conn):
+        cursor = conn.cursor()
+        sql = f"SELECT ori_plane_info FROM controls WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(sql, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                comp_plane_json = row[0]
+                comp_plane_dict = json.loads(comp_plane_json)
+            return comp_plane_dict
+
+        except sqlite3.Error as e:
+            print(f"placement sqlite3.Error: {e}")
+            return {}
 
 
     def return_existing_pos_dict(self):
@@ -431,6 +439,8 @@ class retrieveSpecificPlacementPOSData():
     def return_existing_rot_dict(self):
         return self.existing_rot_dict
     
+    def return_existing_plane_dict(self):
+        return self.existing_plane_dict
 
 class updateSpecificPlacementPOSData():
     def __init__(self, directory, module_name, unique_id, side, updated_pos_dict):
@@ -458,7 +468,7 @@ class updateSpecificPlacementPOSData():
 
 
 class UpdatePlacementROTData():
-    def __init__(self, directory, module_name, unique_id, side, updated_rot_dict):
+    def __init__(self, directory, module_name, unique_id, side, updated_rot_dict, updated_plane_dict):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         # db_name must include the entire path too!
@@ -466,16 +476,25 @@ class UpdatePlacementROTData():
         db_name = os.path.join(db_directory, database_name)
         try:
             with sqlite3.connect(db_name) as conn:
-                self.update_db(conn, "placement", (updated_rot_dict, unique_id, side))
+                self.update_rot_data(conn, "placement", (updated_rot_dict, unique_id, side))
+                self.update_plane_data(conn, "controls", (updated_plane_dict, unique_id, side))
                 print(f"Updated database `component_rot_xyz`: {db_name} with {updated_rot_dict}, where its unique_id = {unique_id} & side = {side}")
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
     
 
-    def update_db(self, conn, table, values):
+    def update_rot_data(self, conn, table, values):
         cursor = conn.cursor()
         if table == 'placement':
             sql = f'UPDATE {table} SET component_rot_xyz = ? WHERE unique_id = ? AND side = ?'
+            values = (json.dumps(values[0]), values[1], values[2])
+            cursor.execute(sql, values)
+        conn.commit()
+    
+    def update_plane_data(self, conn, table, values):
+        cursor = conn.cursor()
+        if table == 'controls':
+            sql = f'UPDATE {table} SET ori_plane_info = ? WHERE unique_id = ? AND side = ?'
             values = (json.dumps(values[0]), values[1], values[2])
             cursor.execute(sql, values)
         conn.commit()
@@ -595,6 +614,7 @@ class RetrieveSpecificData():
             with sqlite3.connect(db_path) as conn:
                 self.jnt_num = self.get_jnt_num(conn, "user_settings")
                 self.guides_connection, self.guides_follow = self.get_guide_data(conn, "constant")
+                self.ori_plane_dict = self.get_ori_plane_data(conn, "controls")
         except sqlite3.Error as e:
             print(f"DB* module umo update Error: {e}")
 
@@ -640,6 +660,21 @@ class RetrieveSpecificData():
             return None, None
         
 
+    def get_ori_plane_data(self, conn, table):
+        cursor = conn.cursor()
+        sql= f"SELECT ori_plane_info FROM {table} WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(sql, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                ori_pln_dict = json.loads(row[0])
+                print(f"DB > ori_pln_dict = `{ori_pln_dict}`")
+            return ori_pln_dict
+        except sqlite3.Error as e:
+            print(f"controls table sqlite3.Error: {e}")
+            return None
+
+
     def return_get_jnt_num(self):
         return self.jnt_num
     
@@ -650,6 +685,9 @@ class RetrieveSpecificData():
 
     def return_guides_follow(self):
         return self.guides_follow
+    
+    def return_ori_plane_dict(self):
+        return self.ori_plane_dict
     
 
 class CheckMirrorData():

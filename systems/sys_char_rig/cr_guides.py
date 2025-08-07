@@ -86,7 +86,11 @@ class CreateXfmGuides():
         cmds.select(cl=1)
 
         # build orientation setup!
-        ori_setup_class = orientation_setup.BuildOrientation(component_pos, self.rig_db_directory, module_name, unique_id, side)        
+        temp_ori_plane_dict = {"clavicle": 20, "shoulder": 20, "elbow": 20}
+        ori_plane_data = database_schema_002.RetrieveSpecificData(self.rig_db_directory, module_name, unique_id, side)
+        ori_plane_dict = ori_plane_data.return_ori_plane_dict()
+        print(f"CR_GUIDE:: ori_plane_dict =`{ori_plane_dict}`")
+        ori_setup_class = orientation_setup.BuildOrientation(component_pos, self.rig_db_directory, ori_plane_dict, module_name, unique_id, side)       
 
         return guides, jnt_u_list
 
