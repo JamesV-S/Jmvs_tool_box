@@ -204,9 +204,10 @@ class CharLayoutView(QtWidgets.QWidget):
     def management_options_ui(self, widgets_layout):
         mop_tabs = QtWidgets.QTabWidget(self)
         mop_tabs.setStyleSheet(self.stylesheet)
-        
+
         self.operations_tab_ui(mop_tabs)        
         self.module_editing_ui(mop_tabs)
+        self.recover_module_ui(mop_tabs)
 
         mop_container, chk_none = self.cr_container_funcUI("Management Options", mop_tabs)
         widgets_layout.addLayout(mop_container)
@@ -307,67 +308,6 @@ class CharLayoutView(QtWidgets.QWidget):
               self.select_data_in_comp_btn])
 
 
-    def template_display_ui(self):
-        layV_tempDisp = QtWidgets.QVBoxLayout()
-        
-        self.guide_template_checkBox = QtWidgets.QCheckBox("Guides")
-        self.controls_template_checkBox = QtWidgets.QCheckBox("Controls")
-        self.ddj_template_checkBox = QtWidgets.QCheckBox("Deform Diagnostics")
-        self.show_orientation_checkBox = QtWidgets.QCheckBox("Orientation Display")
-        layV_tempDisp.addWidget(self.guide_template_checkBox)
-        layV_tempDisp.addWidget(self.controls_template_checkBox)
-        layV_tempDisp.addWidget(self.ddj_template_checkBox)
-        layV_tempDisp.addWidget(self.show_orientation_checkBox)
-
-        # - template gid buttons - 
-        layGrid_tempDisp = QtWidgets.QGridLayout()
-        self.temp_Toggle_btn = QtWidgets.QPushButton("Toggle")
-        self.temp_Isolate_btn = QtWidgets.QPushButton("Isolate")
-        self.temp_All_btn = QtWidgets.QPushButton("Template All")
-        self.temp_AllVis_btn = QtWidgets.QPushButton("All Visible")
-        layGrid_tempDisp.addWidget(self.temp_Toggle_btn, 0, 0)
-        layGrid_tempDisp.addWidget(self.temp_Isolate_btn, 0, 1)
-        layGrid_tempDisp.addWidget(self.temp_All_btn, 1, 0)
-        layGrid_tempDisp.addWidget(self.temp_AllVis_btn, 1, 1)
-        layV_tempDisp.addLayout(layGrid_tempDisp)
-        
-        template_display_container, chk_none = self.cr_container_funcUI("Template Display", layV_tempDisp, True, True)
-
-        utils_view.assign_style_ls(self.style_template_ui, 
-             [self.guide_template_checkBox, self.controls_template_checkBox, self.ddj_template_checkBox, 
-              self.temp_Toggle_btn, self.temp_Isolate_btn, self.temp_All_btn, self.temp_AllVis_btn])
-        
-        return template_display_container
-
-
-    def lock_unlock_ui(self):
-        layV_LU = QtWidgets.QVBoxLayout()
-        
-        self.compnent_checkBox = QtWidgets.QCheckBox("Component")
-        self.val_compnent_checkBox = 0
-        self.inputComp_checkBox = QtWidgets.QCheckBox("Input Components")
-        self.OutputComp = QtWidgets.QCheckBox("Output Components")
-        layV_LU.addWidget(self.compnent_checkBox)
-        layV_LU.addWidget(self.inputComp_checkBox)
-        layV_LU.addWidget(self.OutputComp)
-
-        # - lock gid buttons - 
-        layGrid_LU = QtWidgets.QGridLayout()
-        self.lock_btn = QtWidgets.QPushButton("Lock")
-        self.unlock_btn = QtWidgets.QPushButton("Unlock")
-
-        layGrid_LU.addWidget(self.lock_btn, 0, 0)
-        layGrid_LU.addWidget(self.unlock_btn, 0, 1)
-        layV_LU.addLayout(layGrid_LU)
-        
-        lock_unlock_container, chk_none = self.cr_container_funcUI("Lock/Unlock", layV_LU, True, True)
-        
-        utils_view.assign_style_ls(self.style_lockUnlock_ui, 
-             [self.compnent_checkBox, self.inputComp_checkBox, self.OutputComp, self.lock_btn, self.unlock_btn])
-
-        return lock_unlock_container
-
-
     def module_editing_ui(self, tab):
         parent_widget = QtWidgets.QWidget()
 
@@ -379,7 +319,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.selected_module_label = QtWidgets.QLabel("-> Module")
         layH_sel_options.addWidget(self.entire_comp_radioBtn)
         layH_sel_options.addWidget(self.sel_comp_radioBtn)
-        
+
         # ----------------------------------------------------------
         # update component options
         # self.update_comp_data_checkBox = QtWidgets.QCheckBox()
@@ -470,6 +410,73 @@ class CharLayoutView(QtWidgets.QWidget):
              [self.entire_comp_radioBtn, self.sel_comp_radioBtn, self.selected_module_label,
                self.jnt_num_spinBox, self.ik_operation_comboBox, self.constraint_type_comboBox, 
                self.ctrl_type_comboBox, self.ctrl_num_spinBox, self.commit_module_edits_btn])
+
+
+    def recover_module_ui(self, tab):
+        parent_widget = QtWidgets.QTabWidget(self)
+        
+        # Initialise the layouts
+        
+
+    def template_display_ui(self):
+        layV_tempDisp = QtWidgets.QVBoxLayout()
+        
+        self.guide_template_checkBox = QtWidgets.QCheckBox("Guides")
+        self.controls_template_checkBox = QtWidgets.QCheckBox("Controls")
+        self.ddj_template_checkBox = QtWidgets.QCheckBox("Deform Diagnostics")
+        self.show_orientation_checkBox = QtWidgets.QCheckBox("Orientation Display")
+        layV_tempDisp.addWidget(self.guide_template_checkBox)
+        layV_tempDisp.addWidget(self.controls_template_checkBox)
+        layV_tempDisp.addWidget(self.ddj_template_checkBox)
+        layV_tempDisp.addWidget(self.show_orientation_checkBox)
+
+        # - template gid buttons - 
+        layGrid_tempDisp = QtWidgets.QGridLayout()
+        self.temp_Toggle_btn = QtWidgets.QPushButton("Toggle")
+        self.temp_Isolate_btn = QtWidgets.QPushButton("Isolate")
+        self.temp_All_btn = QtWidgets.QPushButton("Template All")
+        self.temp_AllVis_btn = QtWidgets.QPushButton("All Visible")
+        layGrid_tempDisp.addWidget(self.temp_Toggle_btn, 0, 0)
+        layGrid_tempDisp.addWidget(self.temp_Isolate_btn, 0, 1)
+        layGrid_tempDisp.addWidget(self.temp_All_btn, 1, 0)
+        layGrid_tempDisp.addWidget(self.temp_AllVis_btn, 1, 1)
+        layV_tempDisp.addLayout(layGrid_tempDisp)
+        
+        template_display_container, chk_none = self.cr_container_funcUI("Template Display", layV_tempDisp, True, True)
+
+        utils_view.assign_style_ls(self.style_template_ui, 
+             [self.guide_template_checkBox, self.controls_template_checkBox, self.ddj_template_checkBox, 
+              self.temp_Toggle_btn, self.temp_Isolate_btn, self.temp_All_btn, self.temp_AllVis_btn])
+        
+        return template_display_container
+
+
+    def lock_unlock_ui(self):
+        layV_LU = QtWidgets.QVBoxLayout()
+        
+        self.compnent_checkBox = QtWidgets.QCheckBox("Component")
+        self.val_compnent_checkBox = 0
+        self.inputComp_checkBox = QtWidgets.QCheckBox("Input Components")
+        self.OutputComp = QtWidgets.QCheckBox("Output Components")
+        layV_LU.addWidget(self.compnent_checkBox)
+        layV_LU.addWidget(self.inputComp_checkBox)
+        layV_LU.addWidget(self.OutputComp)
+
+        # - lock gid buttons - 
+        layGrid_LU = QtWidgets.QGridLayout()
+        self.lock_btn = QtWidgets.QPushButton("Lock")
+        self.unlock_btn = QtWidgets.QPushButton("Unlock")
+
+        layGrid_LU.addWidget(self.lock_btn, 0, 0)
+        layGrid_LU.addWidget(self.unlock_btn, 0, 1)
+        layV_LU.addLayout(layGrid_LU)
+        
+        lock_unlock_container, chk_none = self.cr_container_funcUI("Lock/Unlock", layV_LU, True, True)
+        
+        utils_view.assign_style_ls(self.style_lockUnlock_ui, 
+             [self.compnent_checkBox, self.inputComp_checkBox, self.OutputComp, self.lock_btn, self.unlock_btn])
+
+        return lock_unlock_container
 
 
     def module_scene_actions_ui(self, widgets_layout):
