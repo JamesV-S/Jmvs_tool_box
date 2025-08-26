@@ -207,7 +207,7 @@ class CharLayoutView(QtWidgets.QWidget):
 
         self.operations_tab_ui(mop_tabs)        
         self.module_editing_ui(mop_tabs)
-        self.recover_module_ui(mop_tabs)
+        # self.recover_module_ui(mop_tabs)
 
         mop_container, chk_none = self.cr_container_funcUI("Management Options", mop_tabs)
         widgets_layout.addLayout(mop_container)
