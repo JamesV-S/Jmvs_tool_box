@@ -377,6 +377,26 @@ def get_sel_ori_plane_dict(selection, attr_name):
         }
 
     return geo_plane_attrib
+#------------------------------- DICTIONARY -----------------------------------
+def reverse_values_in_dict(dictionary):
+    # get a list of the current keys, then reverse it.
+    value_list = [value for value in dictionary.values()]
+    value_list.reverse()
+    # cr new dictionary now
+    rev_dict = {key: values for key, values in zip(dictionary.keys(), value_list)}
+    print(f"rev_dict = {rev_dict}")
+    return rev_dict
+
+def reverse_dict(dictionary):
+    # get a list of the current keys, then reverse it.
+    key_list = [value for value in dictionary.keys()]
+    value_list = [value for value in dictionary.values()]
+    key_list.reverse()
+    value_list.reverse()
+    # cr new dictionary now
+    rev_dict = {key: values for key, values in zip(key_list, value_list)}
+    print(f"rev_dict = {rev_dict}")
+    return rev_dict
 
 #--------------------------------- COLOUR -------------------------------------
 def colour_object(obj, colour):

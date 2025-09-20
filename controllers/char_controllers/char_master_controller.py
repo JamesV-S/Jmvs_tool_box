@@ -84,6 +84,6 @@ class CharMasterController:
 
     def sigfunc_char_skeleton_button(self):
         print(f"running 'char_skeleotn_controller'")
-        char_rig.char_main()
+        # char_rig.char_main()
 
     
