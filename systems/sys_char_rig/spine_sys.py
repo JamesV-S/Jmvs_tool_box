@@ -147,9 +147,20 @@ class SpineSystem():
     def build_ctrls(self, fk_pos, ik_pos):
         '''
         TO DO: Lock the middle ik control's 'twist attribute' & '' 
+        
+        # Description:
+            For temporary use; builds the 3 sets of controls for this module. 
+            FK / IK / InvFK. They are positioned at the world for the time being.
+        
+        # Returns:
+            List of FK / InvFK / IK controls.
+
+        # Attributes:
+            fk_pos (dict): key = fk ctrl name, value = positonal data.
+            ik_pos (dict): key = ik ctrl name, value = positonal data.
         '''
         inv_values = list(fk_pos.values())[::-1]
-        # Create a new dictionary with the reversed values
+        # Create a new dictionary with the reversed values.
         inv_fk_pos = {key: inv_values[i] for i, key in enumerate(fk_pos.keys())}
         
         print(f"inv_pos = {inv_fk_pos}")
@@ -198,6 +209,18 @@ class SpineSystem():
     
 
     def group_ctrls(self, fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls):
+        '''
+        # Description:
+            Creates control groups for the module.
+        
+        # Returns:
+            N/A
+
+        # Attributes:
+            fk_ctrl_ls (list): list of fk controls
+            inv_ctrl_ls (list): list of Invfk controls
+            ik_ctrl_ls (list): list of ik controls
+        '''
         ctrls_grp = f"grp_ctrls_{self.mdl_nm}"
         fk_grp = f"grp_ctrl_fk_{self.mdl_nm}"
         inv_grp = f"grp_ctrl_inv_{self.mdl_nm}"
@@ -211,8 +234,20 @@ class SpineSystem():
         cmds.parent(inv_ctrl_ls, inv_grp)
         cmds.parent(ik_ctrl_ls, ik_grp)
 
-    # joint creation & group functions!    
+    #  
     def cr_jnt_skn_ik(self, ik_pos):
+        '''
+        # Description:
+            Creates top & bottom skin joints which are intended to be driven by
+            their respective control & drive the geometry with skincluster.
+            
+        # Returns:
+            bott_name (string): bott skin joint name.
+            top_name (string): top skin joint name.
+
+        # Attributes:
+            ik_pos (dict): key = fk ctrl name, value = positonal data.
+        '''
         names = [key for key in ik_pos.keys()]
         pos = [value for value in ik_pos.values()]
         bott_name = names[0].replace("ctrl_ik_", "jnt_skn_")
@@ -220,16 +255,28 @@ class SpineSystem():
         bott_pos = pos[0]
         top_pos = pos[-1]
 
-        for jnt_nm, jnt_ps in zip([bott_name, top_name], [bott_pos, top_pos]):
+        for jnt_nm in [bott_name, top_name]:
             cmds.select(cl=True) 
             cmds.joint(n=jnt_nm)
-            cmds.xform(jnt_nm, translation=jnt_ps, worldSpace=True)
-            cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=1, n=0, pn=1)
-        
+
         return bott_name, top_name
 
 
     def cr_jnt_type_chain(self, pref, skeleton_pos, skeleton_rot, reverse_direction=False):
+        '''
+        # Description:
+           Creates a basic desired joint chain, naming, position and direction all 
+           taken care of. 
+            
+        # Returns:
+            jnt_ls (list): The list of joints within the chain. 
+
+        # Attributes:
+            pref (string): name of the joint chain type.
+            skeleton_pos (dict): key = name of spine iteration (spine#), value = positonal data.
+            skeleton_pos (dict): key = name of spine iteration (spine#), value = rotational data.
+            reverse_direction (bool): .
+        '''
         cmds.select(cl=True)
         jnt_ls = []
         # reverse the positon data
@@ -250,6 +297,7 @@ class SpineSystem():
                 cmds.xform(jnt_nm, rotation=skeleton_rot[name], worldSpace=True)
             cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
         utils.clean_opm(jnt_ls[0])
+
         return jnt_ls
 
 
