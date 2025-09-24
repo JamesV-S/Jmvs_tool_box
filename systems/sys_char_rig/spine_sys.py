@@ -152,6 +152,8 @@ class SpineSystem():
             cmds.makeIdentity(fk_name, a=1, t=0, r=1, s=1, n=0, pn=1)
             # cmds.xform(fk_name, translation=spn_pos, worldSpace=True)
             utils.colour_object(fk_name, 17)
+            for axis in (['x', 'y', 'z']):
+                cmds.setAttr(f"{ik_name}.s{axis}", lock=1, keyable=0, cb=0)
             
         for spn_name, spn_pos in inv_fk_pos.items():
             inv_name = spn_name.replace("_fk_", "_inv_")
@@ -163,6 +165,8 @@ class SpineSystem():
             cmds.makeIdentity(inv_name, a=1, t=0, r=1, s=1, n=0, pn=1)
             # cmds.xform(inv_name, translation=spn_pos, worldSpace=True)
             utils.colour_object(inv_name, 21)
+            for axis in (['x', 'y', 'z']):
+                cmds.setAttr(f"{ik_name}.s{axis}", lock=1, keyable=0, cb=0)
 
         # ik ctrls
         for spn_name, spn_pos in ik_pos.items():
@@ -176,11 +180,9 @@ class SpineSystem():
             cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=1, n=0, pn=1)
             # cmds.xform(ik_name, translation=spn_pos, worldSpace=True)
             utils.colour_object(ik_name, 17)
-            cmds.setAttr(f"{ik_name}.sx", lock=1, keyable=0, cb=0)
-            cmds.setAttr(f"{ik_name}.sy", lock=1, keyable=0, cb=0)
-            cmds.setAttr(f"{ik_name}.sz", lock=1, keyable=0, cb=0)
+            for axis in (['x', 'y', 'z']):
+                cmds.setAttr(f"{ik_name}.s{axis}", lock=1, keyable=0, cb=0)
 
-            
         return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
     
 
