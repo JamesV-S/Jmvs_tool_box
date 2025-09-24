@@ -121,7 +121,7 @@ class SpineSystem():
     def build_ctrls(self, fk_pos, ik_pos):
         '''
         TO DO: 
-            Lock the middle ik control's 'rotate twist attribute' 
+            hide the control's scale attributes' 
         # Description:
             For temporary use; builds the 3 sets of controls for this module. 
             FK / IK / InvFK. They are positioned at the world for the time being.
@@ -176,6 +176,10 @@ class SpineSystem():
             cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=1, n=0, pn=1)
             # cmds.xform(ik_name, translation=spn_pos, worldSpace=True)
             utils.colour_object(ik_name, 17)
+            cmds.setAttr(f"{ik_name}.sx", lock=1, keyable=0, cb=0)
+            cmds.setAttr(f"{ik_name}.sy", lock=1, keyable=0, cb=0)
+            cmds.setAttr(f"{ik_name}.sz", lock=1, keyable=0, cb=0)
+
             
         return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
     
