@@ -432,7 +432,7 @@ class SpineSystem():
 
         # proxy the stretch attributes to the other ikctrls!
         for remaining_ik_ctrl in ik_ctrl_ls[:-1]:
-            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"Attributes")
+            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, "attributes_dvdr")
             utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_State")
             utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_Anchor")
             utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_Volume")
