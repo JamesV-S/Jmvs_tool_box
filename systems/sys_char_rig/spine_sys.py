@@ -17,7 +17,7 @@ from Jmvs_tool_box.systems.sys_char_rig import spine_sys
 
 importlib.reload(spine_sys)
 
-ANother NEW MAC PUSH TEST!!!
+mac push test typ shi
 
 '''
 
