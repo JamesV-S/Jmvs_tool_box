@@ -979,7 +979,7 @@ class SpineSystem():
         utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_top_mtx")
         utils.connect_attr(f"{MM_output_bot}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_bottom_mtx")
         
-        print("TESTING WRITING CODE FROM MY LAPTOPP BECAUSE I HAVE VERTICAL MONITOR (HUION TABLET).")
+        print("2nd testtt.")
 
 # Basic spine example: 
 skeleton_dict = {
