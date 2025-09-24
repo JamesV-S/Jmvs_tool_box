@@ -120,8 +120,6 @@ class SpineSystem():
     # Temporary functions for skn joints & ctrl creation ----------------------
     def build_ctrls(self, fk_pos, ik_pos):
         '''
-        TO DO: 
-            hide the control's scale attributes' 
         # Description:
             For temporary use; builds the 3 sets of controls for this module. 
             FK / IK / InvFK. They are positioned at the world for the time being.
@@ -432,6 +430,11 @@ class SpineSystem():
         utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.mdl_nm}_Stretch_State"], [0, 1], True)
         utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.mdl_nm}_Stretch_Anchor"], [0, 1], True)
         utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.mdl_nm}_Stretch_Volume"], [0, 1], True)
+
+        # proxy the stretch attributes to the other ikctrls!
+        for remaining_ik_ctrl in ik_ctrl_ls[:-1]:
+            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, "Stretch_State")
+
             # Only IK_top ctrl needs its offset claculated!
         last_fk_pos = list(self.fk_pos.values())[-1]
         ik_top_ofs = utils.calculate_matrix_offset(last_fk_pos, list(self.ik_pos.values())[-1])
