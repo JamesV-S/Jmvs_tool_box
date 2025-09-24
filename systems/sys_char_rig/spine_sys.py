@@ -433,7 +433,7 @@ class SpineSystem():
 
         # proxy the stretch attributes to the other ikctrls!
         for remaining_ik_ctrl in ik_ctrl_ls[:-1]:
-            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, "Stretch_State")
+            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_State")
 
             # Only IK_top ctrl needs its offset claculated!
         last_fk_pos = list(self.fk_pos.values())[-1]
