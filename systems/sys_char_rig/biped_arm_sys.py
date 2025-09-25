@@ -166,7 +166,8 @@ class ArmSystem():
         self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
         # Group the controls!
-
+        self.group_ctrls(fk_ctrl_list, "fk")
+        self.group_ctrls(ik_ctrl_list, "ik")
 
         # # joint grp setup
         # self.cr_skeleton_grp(joint_grp)
@@ -218,19 +219,27 @@ class ArmSystem():
         utils.connect_attr(hook_mtx_plg, f"{inputs_grp}.hook_mtx")
 
 
-    def group_ctrls(self):
+    def group_ctrls(self, ctrl_ls, ctrl_type):
         '''
         # Description:
             Creates control group for a list of ctrls.
         # Attributes:
             ctrl_ls (list): list of given controls.
-            grp_name (string): Name of the ctrl_grp.
+            ctrl_type (string): Name for the ctrl_grp.
         # Returns:N/A
         '''
         # If the parent ctrl_grp doesn't exist make it:
-        module_control_grp = f"grp_ctrls_{self.mdl_nm}"
-    
+        module_control_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        if not cmds.objExists(module_control_grp):
+            utils.cr_node_if_not_exists(0, "transform", module_control_grp)
 
+        child_ctrl_grp = f"grp_ctrl_{ctrl_type}_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(0, "transform", child_ctrl_grp)
+        
+        for ctrl in ctrl_ls:
+            cmds.parent(ctrl, child_ctrl_grp)
+        cmds.parent(child_ctrl_grp, module_control_grp)
+    
 
     def cr_skeleton_grp(self, grp_name):
         utils.cr_node_if_not_exists(0, "transform", grp_name)
