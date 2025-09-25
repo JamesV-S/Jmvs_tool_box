@@ -302,8 +302,8 @@ class SpineSystem():
             outputs_grp (string): Group for Ouput data for this module.
         '''
         # create input & output groups
-        inputs_grp = f"grp_{self.mdl_nm}Inputs"
-        outputs_grp = f"grp_{self.mdl_nm}Outputs"
+        inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}""
+        outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}""
         utils.cr_node_if_not_exists(0, "transform", inputs_grp)
         utils.cr_node_if_not_exists(0, "transform", outputs_grp)
         
