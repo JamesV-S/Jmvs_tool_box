@@ -40,19 +40,30 @@ class ArmSystem():
             - Key 'hook_plg_atr' = the output attr from the module(spine) 
                 this module(arm) is following (arm hooking into the spine)
         grp_output:
-            This is has NO attributes but I will pug the wrist joint's worldSpace 
+            This is has NO attributes but I will plug the wrist joint's worldSpace 
             data to it so something like and object can follow it!
         
-        grp_ctrls: (Controls need to be setup within a scene correctly beforhand by my system tool).
+        grp_ctrls:
+            Controls for the module need to be present in the scene. They should 
+            be at the be at the origin of the world. 'Char_sys' tool should gather 
+            the control's from 'char_lay', keeping their shape & colour, so all 
+            the module class's like this one just have to positon the control and 
+            it should be perfect!
+
             > where does this data come from? = 'fk_dict','ik_dict'
             
             *Char_system tool should utalise a layer effect like this:
-            1. Check scene for the correct data, return True(continue process)/False(stop process).
-            2. Go through the data in the scene and clean it (group controls properly and clean values).
-            3. save scene named appropriatly to folder structure that make sense for rigging.
-            4. Gather the data in the neccesary scene (now it has been verified and cleaned).
-                Storing it in database(or however I want to pass the fk_dict & ik_dict to this class)
-            5. Run this system class that builds the arm system (or any other module system!)
+            1. Check scene for the correct data, return True(continue process)/
+                False(stop process).
+            2. Go through the data in the scene and clean it (group controls properly 
+                and be at the origin with no history!).
+            3. save scene named appropriatly to folder structure that make sense 
+                for rigging.
+            4. Gather the data in the neccesary scene (now it has been verified 
+                and cleaned). Storing it in database(or however I want to pass 
+                the fk_dict & ik_dict to this class)
+            5. Run this system class that builds the arm system (or any other 
+                module system!)
             
             example of 'fk_dict','ik_dict' data structure:
                 Containing control_name | control & joint position | 
@@ -90,7 +101,8 @@ class ArmSystem():
 
             (%) Arm shape controllers should be another class. So the creation 
                 function can be placed within a proceeding layer widget in 'char_systems'
-                -> the controlls are stored here in this group! 
+                -> the controlls are stored here in this group!
+                -> Could also utalise inheritance with oop now i know it. 
                         
         skeleton_grp:
             > where does this data come from? = 'fk_dict','ik_dict' & writing the equivilant joint names!
@@ -115,6 +127,8 @@ class ArmSystem():
             rig joints drive the ik system!
             fk is achieved with space matrix's parenting 
         '''
+        skeleton_pos = skeleton_dict["skel_pos"]
+        skeleton_rot = skeleton_dict["skel_rot"]
         # Get the pos & rot dicts for fk & ik
         fk_pos_dict = fk_dict["fk_pos"]
         fk_rot_dict = fk_dict["fk_rot"]
@@ -125,48 +139,58 @@ class ArmSystem():
         fk_ctrl_list = [key for key in fk_pos_dict.keys()]
         ik_ctrl_list = [key for key in ik_pos_dict.keys()]
         
-        unique_id = fk_ctrl_list[0].split('_')[-2]
-        side = fk_ctrl_list[0].split('_')[-1]
+        self.mdl_nm = module_name
+        self.unique_id = fk_ctrl_list[0].split('_')[-2]
+        self.side = fk_ctrl_list[0].split('_')[-1]
+
+        # Plg data from 'external_plg_dict'.
+        GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
+        BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}" # grp_Outputs_root_0_M.ctrl_centre_mtx
+        HOOK_MTX_PLG = f"{external_plg_dict['hook_plg_grp']}.{external_plg_dict['hook_plg_atr']}" # grp_Outputs_spine_0_M.ctrl_spine_top_mtx
         
         # initialise variables for clav & arm_root ctrls. (special controls in the system!) 
         ctrl_clav = ik_ctrl_list[0]
         ctrl_armRt = ik_ctrl_list[1]
         
         # Ini ggroup names!
-        ctrl_grp = f"grp_ctrl_{module_name}_{unique_id}_{side}"
-        joint_grp = f"grp_joints_{module_name}_{unique_id}_{side}"
-        logic_grp = f"grp_logic_{module_name}_{unique_id}_{side}"
+        ctrl_grp = f"grp_ctrl_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        joint_grp = f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        logic_grp = f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}"
 
         # print(f"fk_ctrl_list = `{fk_ctrl_list}` | ik_ctrl_list = `{ik_ctrl_list}`")
-        # print(f"unique_id = `{unique_id}` | side = `{side}`")
+        # print(f"self.unique_id = `{self.unique_id}` | self.side = `{self.side}`")
         # print(f"ctrl_clav = `{ctrl_clav}` | ctrl_armRt = `{ctrl_armRt}`")
         
         # Input & Output grp setup
-        inputs_grp, outputs_grp = self.cr_input_output_groups(module_name, unique_id, side)
-        self.wire_inputs_grp(inputs_grp, external_plg_dict)
+        inputs_grp, outputs_grp = self.cr_input_output_groups()
+        self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
+
+        print(GLOBAL_SCALE_PLG)
+        print(BASE_MTX_PLG)
+        print(HOOK_MTX_PLG)
         
-        # joint grp setup
-        self.cr_skeleton_grp(joint_grp)
-        skel_pos_dict, skel_rot_dict = self.cr_skeleton_pos_rot_dicts(ik_pos_dict, ik_rot_dict)
-        skn_jnt_clav, skn_jnt_wrist = self.cr_skin_clavicle_wrist_joints(ik_ctrl_list, skel_pos_dict, skel_rot_dict, joint_grp)
+        # # joint grp setup
+        # self.cr_skeleton_grp(joint_grp)
+        # skel_pos_dict, skel_rot_dict = self.cr_skeleton_pos_rot_dicts(ik_pos_dict, ik_rot_dict)
+        # skn_jnt_clav, skn_jnt_wrist = self.cr_skin_clavicle_wrist_joints(ik_ctrl_list, skel_pos_dict, skel_rot_dict, joint_grp)
         
-        # wire connections
-        self.wire_clav_armRt_setup(inputs_grp, [ctrl_clav, ctrl_armRt], skn_jnt_clav, ik_pos_dict, ik_rot_dict)
-        fk_blend_dict = {
-            "fk_base_plg": f"{inputs_grp}.base_mtx", 
-            "fk_mdlRt_plg":f"{ctrl_armRt}{utils.Plg.wld_mtx_plg}"
-            }
-        self.fk_logic_setup(fk_blend_dict, fk_ctrl_list, fk_pos_dict, fk_rot_dict, 
-                            module_name, unique_id, side)
-        # group the module
-        utils.group_module(module_name=module_name, unique_id=unique_id, 
-                           side=side ,input_grp=inputs_grp, output_grp=outputs_grp, 
-                           ctrl_grp=None, joint_grp=joint_grp, logic_grp=None)
+        # # wire connections
+        # self.wire_clav_armRt_setup(inputs_grp, [ctrl_clav, ctrl_armRt], skn_jnt_clav, ik_pos_dict, ik_rot_dict)
+        # fk_blend_dict = {
+        #     "fk_base_plg": f"{inputs_grp}.base_mtx", 
+        #     "fk_mdlRt_plg":f"{ctrl_armRt}{utils.Plg.wld_mtx_plg}"
+        #     }
+        # self.fk_logic_setup(fk_blend_dict, fk_ctrl_list, fk_pos_dict, fk_rot_dict, 
+        #                     module_name, self.unique_id, self.side)
+        # # group the module
+        # utils.group_module(module_name=module_name, unique_id=self.unique_id, 
+        #                    side=self.side ,input_grp=inputs_grp, output_grp=outputs_grp, 
+        #                    ctrl_grp=None, joint_grp=joint_grp, logic_grp=None)
     
 
-    def cr_input_output_groups(self, module_name, unique_id, side):
-        inputs_grp = f"grp_Inputs_{module_name}_{unique_id}_{side}"
-        outputs_grp = f"grp_Outputs_{module_name}_{unique_id}_{side}"
+    def cr_input_output_groups(self):
+        inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
         utils.cr_node_if_not_exists(0, "transform", inputs_grp)
         utils.cr_node_if_not_exists(0, "transform", outputs_grp)
 
@@ -180,27 +204,21 @@ class ArmSystem():
         cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
 
         # Output grp - for hand module to follow
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{module_name}_wrist_mtx", 
+        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_wrist_mtx", 
                                         'matrix', False)
         
         return inputs_grp, outputs_grp
     
 
-    def wire_inputs_grp(self, inputs_grp, external_plg_dict):
-        global_scale_grp = external_plg_dict["global_scale_grp"]
-        base_plg_grp = external_plg_dict["base_plg_grp"]
-        hook_plg_grp = external_plg_dict["hook_plg_grp"]
-        base_plg_atr = external_plg_dict["base_plg_atr"]
-        hook_plg_atr = external_plg_dict["hook_plg_atr"]
-        
+    def wire_inputs_grp(self, inputs_grp, global_scale_plg, base_mtx_plg, hook_mtx_plg):
         # connect the global scale
-        utils.connect_attr(f"{global_scale_grp}.globalScale", f"{inputs_grp}.globalScale")
+        utils.connect_attr(global_scale_plg, f"{inputs_grp}.globalScale")
         
         # connect the base plug
-        utils.connect_attr(f"{base_plg_grp}.{base_plg_atr}", f"{inputs_grp}.base_mtx")
+        utils.connect_attr(base_mtx_plg, f"{inputs_grp}.base_mtx")
 
         # connect the hook plug
-        utils.connect_attr(f"{hook_plg_grp}.{hook_plg_atr}", f"{inputs_grp}.hook_mtx")
+        utils.connect_attr(hook_mtx_plg, f"{inputs_grp}.hook_mtx")
 
 
     def cr_skeleton_grp(self, grp_name):
@@ -293,7 +311,7 @@ class ArmSystem():
         utils.connect_attr(f"{mm_ctrl_armRoot}{utils.Plg.mtx_sum_plg}", f"{ctrl_armRt}{utils.Plg.opm_plg}")
        
  
-    def fk_logic_setup(self, fk_blend_dict, fk_ctrl_list, pos_dict, rot_dict, module_name, unique_id, side):
+    def fk_logic_setup(self, fk_blend_dict, fk_ctrl_list, pos_dict, rot_dict):
         # cr a list of the 'jnt_rig_fk' items
         rig_jnt_list = [ctrl.replace('ctrl_fk_', 'jnt_rig_') for ctrl in fk_ctrl_list]
         print(f"rig_jnt_list = {rig_jnt_list} | fk_blend_dict = {fk_blend_dict}")
@@ -305,9 +323,9 @@ class ArmSystem():
             utils.connect_attr(f"{ctrl}.rotateZ", f"{jnt}.rotateZ")
 
         # cr MM x2 & BM
-        MM_base = f"MM_fk_base_{module_name}_{unique_id}_{side}"
-        MM_armRt = f"MM_fk_root_{module_name}_{unique_id}_{side}"
-        BM_ctrl_fk_blend = f"BM_fk_blend_{module_name}_{unique_id}_{side}"
+        MM_base = f"MM_fk_base_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        MM_armRt = f"MM_fk_root_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        BM_ctrl_fk_blend = f"BM_fk_blend_{self.mdl_nm}_{self.unique_id}_{self.side}"
         utils.cr_node_if_not_exists(1, 'multMatrix', MM_base)
         utils.cr_node_if_not_exists(1, 'multMatrix', MM_armRt)
         utils.cr_node_if_not_exists(1, 'blendMatrix', BM_ctrl_fk_blend)
@@ -351,15 +369,34 @@ class ArmSystem():
         utils.connect_attr(f"{MM_ctrl_fk_2}{utils.Plg.mtx_sum_plg}", f"{fk_ctrl_list[2]}{utils.Plg.opm_plg}")
         ''' Optimise '''
 
+'''
+'ex_external_plg_dict' is an important dictionary that should be intiilaised by 
+a seprate script just used for creating attributes. In the same script this 
+dctionary is sent to the databaase!
+'''
 ex_external_plg_dict = {
     "global_scale_grp":"grp_Outputs_root_0_M",
+    "global_scale_attr":"globalScale",
     "base_plg_grp":"grp_Outputs_root_0_M",
     "base_plg_atr":"ctrl_centre_mtx",
     "hook_plg_grp":"grp_Outputs_spine_0_M", 
     "hook_plg_atr":"ctrl_spine_top_mtx"
     }
 # Do I need 'skeleton_dict' arg?
-ex_skeleton_dict = {} # -> maybe if I want to be able to do deformations at any stage of the game. 
+ex_skeleton_dict = {
+    "skel_pos":{
+        "clavicle":[3.0937706746970637, 211.9463944293447, -3.981268190856912],
+        "shoulder":[47.19038675793399, 202.90135192871094, -8.067196952221522],
+        "elbow":[86.67167131661598, 202.90135192871094, -8.067196952221524],
+        "wrist":[122.01356659109904, 202.9013566591099, -8.067197667477195]
+    },
+    "skel_rot":{
+        "clavicle":[],
+        "shoulder":[],
+        "elbow":[],
+        "wrist":[]
+    }
+} # -> maybe if I want to be able to do deformations at any stage of the game. 
 
 ex_fk_dict = {
     "fk_pos":{
