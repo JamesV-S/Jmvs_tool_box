@@ -163,7 +163,7 @@ class ArmSystem():
         
         # Input & Output grp setup
         inputs_grp, outputs_grp = self.cr_input_output_groups()
-        # self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
+        self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
         print(GLOBAL_SCALE_PLG)
         print(BASE_MTX_PLG)
