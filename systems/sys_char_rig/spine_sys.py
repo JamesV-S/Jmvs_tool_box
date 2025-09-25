@@ -54,7 +54,9 @@ class SpineSystem():
         #----------------------------------------------------------------------
         # Create the controls temporarily (they will already exist with char_Layout tool)
         fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(self.fk_pos, self.ik_pos)
-        self.group_ctrls(fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls)
+        self.group_ctrls(fk_ctrl_ls, "fk")
+        self.group_ctrls(inv_ctrl_ls, "ik")
+        self.group_ctrls(ik_ctrl_ls, "inv")
         #----------------------------------------------------------------------
         
         #----------------------------------------------------------------------
@@ -184,28 +186,48 @@ class SpineSystem():
         return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
     
 
-    def group_ctrls(self, fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls):
+    # def group_ctrls(self, fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls):
+    #     '''
+    #     # Description:
+    #         Creates control groups for this module.
+    #     # Attributes:
+    #         fk_ctrl_ls (list): list of fk controls.
+    #         inv_ctrl_ls (list): list of Invfk controls.
+    #         ik_ctrl_ls (list): list of ik controls.
+    #     # Returns:N/A
+    #     '''
+    #     ctrls_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
+    #     fk_grp = f"grp_ctrl_fk_{self.mdl_nm}_{self.unique_id}_{self.side}"
+    #     inv_grp = f"grp_ctrl_inv_{self.mdl_nm}_{self.unique_id}_{self.side}"
+    #     ik_grp = f"grp_ctrl_ik_{self.mdl_nm}_{self.unique_id}_{self.side}" 
+    #     utils.cr_node_if_not_exists(0, "transform", ctrls_grp)
+    #     utils.cr_node_if_not_exists(0, "transform", fk_grp)
+    #     utils.cr_node_if_not_exists(0, "transform", inv_grp)
+    #     utils.cr_node_if_not_exists(0, "transform", ik_grp)
+    #     cmds.parent(fk_grp, inv_grp, ik_grp, ctrls_grp)
+    #     cmds.parent(fk_ctrl_ls, fk_grp)
+    #     cmds.parent(inv_ctrl_ls, inv_grp)
+    #     cmds.parent(ik_ctrl_ls, ik_grp)
+    def group_ctrls(self, ctrl_ls, ctrl_type):
         '''
         # Description:
-            Creates control groups for this module.
+            Creates control group for a list of ctrls.
         # Attributes:
-            fk_ctrl_ls (list): list of fk controls.
-            inv_ctrl_ls (list): list of Invfk controls.
-            ik_ctrl_ls (list): list of ik controls.
+            ctrl_ls (list): list of given controls.
+            ctrl_type (string): Name for the ctrl_grp.
         # Returns:N/A
         '''
-        ctrls_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        fk_grp = f"grp_ctrl_fk_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        inv_grp = f"grp_ctrl_inv_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        ik_grp = f"grp_ctrl_ik_{self.mdl_nm}_{self.unique_id}_{self.side}" 
-        utils.cr_node_if_not_exists(0, "transform", ctrls_grp)
-        utils.cr_node_if_not_exists(0, "transform", fk_grp)
-        utils.cr_node_if_not_exists(0, "transform", inv_grp)
-        utils.cr_node_if_not_exists(0, "transform", ik_grp)
-        cmds.parent(fk_grp, inv_grp, ik_grp, ctrls_grp)
-        cmds.parent(fk_ctrl_ls, fk_grp)
-        cmds.parent(inv_ctrl_ls, inv_grp)
-        cmds.parent(ik_ctrl_ls, ik_grp)
+        # If the parent ctrl_grp doesn't exist make it:
+        module_control_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        if not cmds.objExists(module_control_grp):
+            utils.cr_node_if_not_exists(0, "transform", module_control_grp)
+
+        child_ctrl_grp = f"grp_ctrl_{ctrl_type}_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(0, "transform", child_ctrl_grp)
+
+        for ctrl in ctrl_ls:
+            cmds.parent(ctrl, child_ctrl_grp)
+        cmds.parent(child_ctrl_grp, module_control_grp)
 
     
     def cr_jnt_skn_ik(self, ik_pos):
