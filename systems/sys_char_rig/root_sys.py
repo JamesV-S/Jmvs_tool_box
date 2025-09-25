@@ -50,7 +50,7 @@ class root_system():
         self.add_custom_attributes()
         self.Wire_root_connections()
         # # group the module
-        utils.group_module("root", self.root_input_grp, self.root_output_grp, grp_ctrl_name)
+        # utils.group_module("root", self.root_input_grp, self.root_output_grp, grp_ctrl_name)
 
 
     '''''' 

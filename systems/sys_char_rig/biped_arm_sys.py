@@ -163,17 +163,24 @@ class ArmSystem():
         
         # Input & Output grp setup
         inputs_grp, outputs_grp = self.cr_input_output_groups()
-        self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
+        if cmds.objExists(external_plg_dict['global_scale_grp']):
+            self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
         # Group the controls!
         self.group_ctrls(fk_ctrl_list, "fk")
         self.group_ctrls(ik_ctrl_list, "ik")
 
-        # # joint grp setup
-        # self.cr_skeleton_grp(joint_grp)
-        # skel_pos_dict, skel_rot_dict = self.cr_skeleton_pos_rot_dicts(ik_pos_dict, ik_rot_dict)
-        # skn_jnt_clav, skn_jnt_wrist = self.cr_skin_clavicle_wrist_joints(ik_ctrl_list, skel_pos_dict, skel_rot_dict, joint_grp)
-        
+        # cr skn joints
+        skn_jnt_clav, skn_jnt_wrist = self.cr_jnt_skn_start_end(ik_pos_dict)
+        # for the two joint chains that are used for twisting, I need to make new pos & rot dicts for them
+        upper_skel_pos = ""
+        upper_skel_rot = ""
+        lower_skel_pos = ""
+        lower_skel_rot = ""
+        ''' replace with custom one '''
+        # sknUpper_jnt_chain = self.cr_jnt_type_chain("skn_Upper", skeleton_pos, skeleton_rot)
+        # sknLower_jnt_chain = self.cr_jnt_type_chain("skn_lower", skeleton_pos, skeleton_rot)
+
         # # wire connections
         # self.wire_clav_armRt_setup(inputs_grp, [ctrl_clav, ctrl_armRt], skn_jnt_clav, ik_pos_dict, ik_rot_dict)
         # fk_blend_dict = {
@@ -199,14 +206,16 @@ class ArmSystem():
         cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
         utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
         utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
-        utils.add_float_attrib(inputs_grp, [f"Squash_Value"], [1.0, 1.0], False)
-        cmds.setAttr(f"{inputs_grp}.Squash_Value", keyable=1, channelBox=1)
-        cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
 
         # Output grp - for hand module to follow
         utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_wrist_mtx", 
                                         'matrix', False)
         
+        '''*module dependant data below (basically this data changes depending on the module)'''
+        utils.add_float_attrib(inputs_grp, [f"Squash_Value"], [1.0, 1.0], False)
+        cmds.setAttr(f"{inputs_grp}.Squash_Value", keyable=1, channelBox=1)
+        cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
+
         return inputs_grp, outputs_grp
     
 
@@ -241,61 +250,96 @@ class ArmSystem():
         cmds.parent(child_ctrl_grp, module_control_grp)
     
 
-    def cr_skeleton_grp(self, grp_name):
-        utils.cr_node_if_not_exists(0, "transform", grp_name)
-        cmds.select(cl=1)
-
+    def cr_jnt_skn_start_end(self, ik_pos):
+        '''
+        # Description:
+            Creates start & end skin joints which are intended to be driven by
+            their respective control & drive the geometry with skincluster.
+        # Attributes:
+            ik_pos (dict): key = fk ctrl name, value = positonal data.
+        # Returns:
+            skn_start_name (string): start skin joint name. 
+            skn_end_name (string): end skin joint name. 
+        '''
+        names = [key for key in ik_pos.keys()]
+        pos = [value for value in ik_pos.values()]
     
-    def cr_skeleton_pos_rot_dicts(self, ik_pos_dict, ik_rot_dict):
-        skel_pos = {}
-        skel_rot = {}
-        for (name_pos, pos), (name_rot, rot) in zip(ik_pos_dict.items(), ik_rot_dict.items()):
-            pos_name = name_pos.split('_')[3]
-            rot_name = name_rot.split('_')[3]
+        skn_start_name = names[0].replace("ctrl_ik_", "jnt_skn_")
+        skn_end_name = names[-1].replace("ctrl_ik_", "jnt_skn_")
+        skn_start_pos = pos[0]
+        skn_end_pos = pos[-1]
+
+        for jnt_nm in [skn_start_name, skn_end_name]:
+            cmds.select(cl=True)
+            cmds.joint(n=jnt_nm)
+
+        return skn_start_name, skn_end_name
+    
+    ''' 
+    *Needs to be its own function that:
+        - creates upper/lower chain.
+        - cr joints between the distance of shoulder & elbow
+        - use distance to provide a reasonable number of joints to put there, 
+            Must be even number!
+        - Their positon & orientation is determined by ik setup, similar to the 
+            StrFW or StrBW ik set up with a normal ikhandle.
             
-            skel_pos[pos_name] = pos
-            skel_rot[rot_name] = rot
+    '''
+    # def cr_jnt_type_chain(self, pref, skeleton_pos, skeleton_rot, reverse_direction=False):
+    #     '''
+    #     # Description:
+    #        Creates a basic desired joint chain, naming, position and direction all 
+    #        taken care of. 
+    #     # Attributes:
+    #         pref (string): name of the joint chain type.
+    #         skeleton_pos (dict): key = name of spine iteration (spine#), value = positonal data.
+    #         skeleton_rot (dict): key = name of spine iteration (spine#), value = rotational data.
+    #         reverse_direction (bool): If True, the joint chain is reversed.
+    #     # Returns:
+    #         jnt_ls (list): The list of joints within the chain.
+    #     '''
+    #     cmds.select(cl=True)
+    #     jnt_chain_ls = []
+    #     # reverse the positon data
+    #     # need to figure out how I need to flip or minus the rotate values (for when they have just 0.0 or a value.)
+    #     # That'll consist of flipping the primary axis & 
+    #     print(f"skeleton_rot = {skeleton_rot}")
+    #     rev_skel_pos = utils.reverse_pos_values_dict(skeleton_pos)
+    #     rev_skel_rot = utils.reverse_rot_values_dict(skeleton_rot)
+    #     for name in skeleton_pos:
+    #         jnt_nm = f"jnt_{pref}_{self.mdl_nm}_{name}_{self.unique_id}_{self.side}"
+    #         jnt_chain_ls.append(jnt_nm)
+    #         cmds.joint(n=jnt_nm)
+    #         if reverse_direction:
+    #             cmds.xform(jnt_nm, translation=rev_skel_pos[name], worldSpace=True)
+    #             cmds.xform(jnt_nm, rotation=skeleton_rot[name], worldSpace=True)
+    #         else:
+    #             cmds.xform(jnt_nm, translation=skeleton_pos[name], worldSpace=True)
+    #             cmds.xform(jnt_nm, rotation=skeleton_rot[name], worldSpace=True)
+    #         cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
+    #     utils.clean_opm(jnt_chain_ls[0])
 
-        print(f"skel_pos = `{skel_pos}` | skel_rot = `{skel_rot}`")
-        return skel_pos, skel_rot
+    #     return jnt_chain_ls
 
+
+    def group_jnts_skn(self, skn_start_end_ls, skn_jnt_chain):
         '''
-        skel_pos = `{
-        'clavicle': [3.0937706746970637, 211.9463944293447, -3.981268190856912], 
-        'shoulder': [47.19038675793399, 202.90135192871094, -8.067196952221522], 
-        'elbow': [86.67167131661598, 202.90135192871094, -8.067196952221524], 
-        'wrist': [122.01356659109904, 202.9013566591099, -8.067197667477195]
-        }` | 
-        skel_rot = `{
-        'clavicle': [0.0, 0.0, 0.0], 'shoulder': [0.0, 0.0, 0.0], 
-        'elbow': [0.0, 0.0, 0.0], 'wrist': [0.0, 0.0, 0.0]}`
-
+        # Description:
+            Creates joint group for this module.
+        # Attributes:
+            skn_start_end_ls (list): skin start and end oints.
+            skn_jnt_chain (list): list of skin joint chain.
+        # Returns:
+            joint_grp (string): Joint group.
         '''
+        joint_grp = f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(0, "transform", joint_grp)
+        for skn in skn_start_end_ls:
+            cmds.parent(skn, joint_grp)
+        cmds.parent(skn_jnt_chain[0], joint_grp)
 
+        return joint_grp
 
-    def cr_skin_clavicle_wrist_joints(self, ik_ctrl_list, skel_pos, skel_rot, joints_grp):
-        skn_jnt_clav = f"{ik_ctrl_list[0].replace('ctrl_ik_', 'jnt_skn_')}" # ctrl_ik_bipedArm_clavicle_0_L
-        skn_jnt_wrist = f"{ik_ctrl_list[-1].replace('ctrl_ik_', 'jnt_skn_')}" # ctrl_ik_bipedArm_clavicle_0_L
-        
-        print(f"skn_jnt_clav = `{skn_jnt_clav}` | skn_jnt_wrist = `{skn_jnt_wrist}`" )
-        
-        for (key, pos), (key, rot) in zip(skel_pos.items(), skel_rot.items()):
-            if "clavicle" in key:
-                cmds.joint(n=skn_jnt_clav)
-                cmds.xform(skn_jnt_clav, translation=pos, ws=1)
-                cmds.xform(skn_jnt_clav, rotation=rot, ws=1)
-                utils.clean_opm(skn_jnt_clav)
-            elif "wrist" in key:
-                cmds.joint(n=skn_jnt_wrist)
-                cmds.xform(skn_jnt_wrist, translation=pos, ws=1)
-                cmds.xform(skn_jnt_wrist, rotation=rot, ws=1)
-                utils.clean_opm(skn_jnt_wrist)
-            cmds.select(cl=1)
-        cmds.parent(skn_jnt_clav, skn_jnt_wrist, joints_grp)
-
-        return skn_jnt_clav, skn_jnt_wrist
-        
-    
     # Ctrl mtx setup
     def wire_clav_armRt_setup(self, inputs_grp, ctrl_list, skn_jnt_clav, pos_dict, rot_dict):
         ctrl_clav = ctrl_list[0]

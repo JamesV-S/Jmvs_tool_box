@@ -19,7 +19,7 @@ importlib.reload(spine_sys)
 '''
 
 class SpineSystem():
-    def __init__(self, module_name, root_outputs_grp, skeleton_dict, fk_dict, ik_dict, prim_axis):
+    def __init__(self, module_name, external_plg_dict, skeleton_dict, fk_dict, ik_dict, prim_axis):
         '''
         # Description:
             Class Module: Creates a spine 3 states: fk/Inverse fk/ik. The two fk 
@@ -51,17 +51,30 @@ class SpineSystem():
         num_jnts = len(skeleton_pos.keys())
         print(f"num_jnts = {num_jnts}")
 
+        # Plg data from 'external_plg_dict'.
+        GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
+        BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}" # grp_Outputs_root_0_M.ctrl_centre_mtx
+        HOOK_MTX_PLG = f"{external_plg_dict['hook_plg_grp']}.{external_plg_dict['hook_plg_atr']}" # grp_Outputs_spine_0_M.ctrl_spine_top_mtx
+        
         #----------------------------------------------------------------------
         # Create the controls temporarily (they will already exist with char_Layout tool)
         fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(self.fk_pos, self.ik_pos)
+        #----------------------------------------------------------------------
+
+        # ORDER: inp_out grps | ctrl mtx setup | logic setup
+        # input & output groups
+        input_grp, output_grp = self.cr_input_output_groups(num_jnts)
+        if cmds.objExists(external_plg_dict['global_scale_grp']):
+            self.wire_inputs_grp(input_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
+
         self.group_ctrls(fk_ctrl_ls, "fk")
         self.group_ctrls(inv_ctrl_ls, "ik")
         self.group_ctrls(ik_ctrl_ls, "inv")
-        #----------------------------------------------------------------------
         
         #----------------------------------------------------------------------
         # create skn the joints temporarily for testing
-        bott_name, top_name = self.cr_jnt_skn_ik(self.ik_pos)
+        skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.ik_pos)
+        #----------------------------------------------------------------------
         
         # cr StrFw_jnt / nonStrFw / StrBw_jnt / nonStrBw in this script.
         strFw_jnt_chain = self.cr_jnt_type_chain("StrFw", skeleton_pos, skeleton_rot)
@@ -72,14 +85,10 @@ class SpineSystem():
         nonStrRig_jnt_chain = self.cr_jnt_type_chain("nonStrRig", skeleton_pos, skeleton_rot)
         skn_jnt_chain = self.cr_jnt_type_chain("skn", skeleton_pos, skeleton_rot)
         # Temporarily cr skin_jnt chain!
-        joint_grp = self.group_jnts_skn(bott_name, top_name, skn_jnt_chain)
-        #----------------------------------------------------------------------
-        
-        # ORDER: inp_out grps | ctrl mtx setup | logic setup
-        # input & output groups
-        input_grp, output_grp = self.cr_input_output_groups(num_jnts)
+        joint_grp = self.group_jnts_skn([skn_bott_name, skn_top_name], skn_jnt_chain)
+            
         # CTRL connections for the spine setup!
-        self.fk_ctrl_ls, self.inv_ctrl_ls, self.ik_ctrl_ls = self.wire_spine_ctrls(root_outputs_grp, input_grp)
+        self.fk_ctrl_ls, self.inv_ctrl_ls, self.ik_ctrl_ls = self.wire_spine_ctrls(input_grp)
         
         # Logic setup (joints and hdl_spine_names)
         
@@ -186,28 +195,55 @@ class SpineSystem():
         return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
     
 
-    # def group_ctrls(self, fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls):
-    #     '''
-    #     # Description:
-    #         Creates control groups for this module.
-    #     # Attributes:
-    #         fk_ctrl_ls (list): list of fk controls.
-    #         inv_ctrl_ls (list): list of Invfk controls.
-    #         ik_ctrl_ls (list): list of ik controls.
-    #     # Returns:N/A
-    #     '''
-    #     ctrls_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
-    #     fk_grp = f"grp_ctrl_fk_{self.mdl_nm}_{self.unique_id}_{self.side}"
-    #     inv_grp = f"grp_ctrl_inv_{self.mdl_nm}_{self.unique_id}_{self.side}"
-    #     ik_grp = f"grp_ctrl_ik_{self.mdl_nm}_{self.unique_id}_{self.side}" 
-    #     utils.cr_node_if_not_exists(0, "transform", ctrls_grp)
-    #     utils.cr_node_if_not_exists(0, "transform", fk_grp)
-    #     utils.cr_node_if_not_exists(0, "transform", inv_grp)
-    #     utils.cr_node_if_not_exists(0, "transform", ik_grp)
-    #     cmds.parent(fk_grp, inv_grp, ik_grp, ctrls_grp)
-    #     cmds.parent(fk_ctrl_ls, fk_grp)
-    #     cmds.parent(inv_ctrl_ls, inv_grp)
-    #     cmds.parent(ik_ctrl_ls, ik_grp)
+    def cr_input_output_groups(self, jnt_num):
+        '''
+        # Description:
+            Creates the 'Input' & 'Output' groups for this module. These are 
+            specialised nodes that store custom matrix data to allow the module 
+            to be driven(Input) or be the driver(Output) for other modules, etc. 
+        # Attributes:
+            jnt_num (int): number of joints in the module - used for the 
+            stretchVolume attr on Input group.
+        # Returns:
+            inputs_grp (string): Group for input data for this module.
+            outputs_grp (string): Group for Ouput data for this module.
+        '''
+        # create input & output groups
+        inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(0, "transform", inputs_grp)
+        utils.cr_node_if_not_exists(0, "transform", outputs_grp)
+        
+        # Input grp
+        utils.add_float_attrib(inputs_grp, ["globalScale"], [0.01, 999], True) 
+        cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
+        utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
+        utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
+
+        # Output grp
+        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_bottom_mtx", 
+                                    'matrix', False) # for upper body module to follow
+        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_top_mtx", 
+                                    'matrix', False) # for lower body module to follow
+
+        '''*module dependant data below (basically this data changes depending on the module)'''
+        for x in range(jnt_num):
+            utils.add_float_attrib(inputs_grp, [f"{self.mdl_nm}{x}_Stretch_Volume"], [1.0, 1.0], False)
+            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", keyable=1, channelBox=1)
+            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", -0.5)
+
+        return inputs_grp, outputs_grp
+
+
+    def wire_inputs_grp(self, inputs_grp, global_scale_plg, base_mtx_plg, hook_mtx_plg):
+        # connect the global scale
+        utils.connect_attr(global_scale_plg, f"{inputs_grp}.globalScale")
+        # connect the base plug
+        utils.connect_attr(base_mtx_plg, f"{inputs_grp}.base_mtx")
+        # connect the hook plug
+        utils.connect_attr(hook_mtx_plg, f"{inputs_grp}.hook_mtx")
+
+
     def group_ctrls(self, ctrl_ls, ctrl_type):
         '''
         # Description:
@@ -230,30 +266,31 @@ class SpineSystem():
         cmds.parent(child_ctrl_grp, module_control_grp)
 
     
-    def cr_jnt_skn_ik(self, ik_pos):
+    def cr_jnt_skn_start_end(self, ik_pos):
         '''
         # Description:
-            Creates top & bottom skin joints which are intended to be driven by
+            Creates start & end skin joints which are intended to be driven by
             their respective control & drive the geometry with skincluster.
         # Attributes:
             ik_pos (dict): key = fk ctrl name, value = positonal data.
         # Returns:
-            bott_name (string): bott skin joint name.
-            top_name (string): top skin joint name.
+            skn_start_name (string): start skin joint name. 
+            skn_end_name (string): end skin joint name. 
         '''
         names = [key for key in ik_pos.keys()]
         pos = [value for value in ik_pos.values()]
-        bott_name = names[0].replace("ctrl_ik_", "jnt_skn_")
-        top_name = names[-1].replace("ctrl_ik_", "jnt_skn_")
-        bott_pos = pos[0]
-        top_pos = pos[-1]
+    
+        skn_start_name = names[0].replace("ctrl_ik_", "jnt_skn_")
+        skn_end_name = names[-1].replace("ctrl_ik_", "jnt_skn_")
+        skn_start_pos = pos[0]
+        skn_end_pos = pos[-1]
 
-        for jnt_nm in [bott_name, top_name]:
-            cmds.select(cl=True) 
+        for jnt_nm in [skn_start_name, skn_end_name]:
+            cmds.select(cl=True)
             cmds.joint(n=jnt_nm)
 
-        return bott_name, top_name
-
+        return skn_start_name, skn_end_name
+        
 
     def cr_jnt_type_chain(self, pref, skeleton_pos, skeleton_rot, reverse_direction=False):
         '''
@@ -292,70 +329,26 @@ class SpineSystem():
         return jnt_chain_ls
 
 
-    def group_jnts_skn(self, bott_name, top_name, skn_jnt_chain):
+    def group_jnts_skn(self, skn_start_end_ls, skn_jnt_chain):
         '''
         # Description:
             Creates joint group for this module.
         # Attributes:
-            bott_name (string): skin bottom joint.
-            top_name (string): skin top joint. 
+            skn_start_end_ls (list): skin start and end oints.
             skn_jnt_chain (list): list of skin joint chain.
         # Returns:
             joint_grp (string): Joint group.
         '''
         joint_grp = f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}"
         utils.cr_node_if_not_exists(0, "transform", joint_grp)
-        cmds.parent(bott_name, top_name, skn_jnt_chain[0], joint_grp)
+        for skn in skn_start_end_ls:
+            cmds.parent(skn, joint_grp)
+        cmds.parent(skn_jnt_chain[0], joint_grp)
 
         return joint_grp
 
 
-    def cr_input_output_groups(self, jnt_num):
-        '''
-        # Description:
-            Creates the 'Input' & 'Output' groups for this module. These are 
-            specialised nodes that store custom matrix data to allow the module 
-            to be driven(Input) or be the driver(Output) for other modules, etc. 
-        # Attributes:
-            jnt_num (int): number of joints in the module - used for the 
-            stretchVolume attr on Input group.
-        # Returns:
-            inputs_grp (string): Group for input data for this module.
-            outputs_grp (string): Group for Ouput data for this module.
-        '''
-        # create input & output groups
-        inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        utils.cr_node_if_not_exists(0, "transform", inputs_grp)
-        utils.cr_node_if_not_exists(0, "transform", outputs_grp)
-        
-        # custom atr on 'input group'
-            # - "Global_Scale" (flt)
-            # - "Base_Matrix" (matrix)
-            # - "Hook_Matrix" (matrix)
-            # - "Spine0-9_Stretch_Volume" (flt) = -0.5
-
-        # custom atr on 'output group'
-            # - "ctrl_spine_bottom" (matrix)
-            # - "ctrl_spine_top" (matrix)
-        utils.add_float_attrib(inputs_grp, ["globalScale"], [0.01, 999], True) 
-        cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
-        utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
-        utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
-        for x in range(jnt_num):
-            utils.add_float_attrib(inputs_grp, [f"{self.mdl_nm}{x}_Stretch_Volume"], [1.0, 1.0], False)
-            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", keyable=1, channelBox=1)
-            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", -0.5)
-
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_bottom_mtx", 
-                                    'matrix', False) # for upper body module to follow
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_top_mtx", 
-                                    'matrix', False) # for lower body module to follow
-
-        return inputs_grp, outputs_grp
-
-
-    def wire_spine_ctrls(self, root_outputs_grp, input_grp):
+    def wire_spine_ctrls(self, input_grp):
         '''
         TO DO:
             Add rotation data too w/ 'self.fk_rot (dict)' & 'self.ik_rot (dict)'.
@@ -370,20 +363,12 @@ class SpineSystem():
             This works by using the data of 'self.fk_pos (dict)' & 'self.ik_pos (dict)'
             but not any rotation values are applied atm. 
         # Attributes:
-            root_outputs_grp (string): 'Output' grp from other module for this one to follow.
             input_grp (string): Group for input data for this module.
         # Returns:
             fk_ctrl_ls (list): list of fk controls.
             inv_ctrl_ls (list): list of fkInv controls.
             ik_ctrl_ls (list): list of ik controls.
         '''
-        # connect the root module to the spine module with inputs group nodes!
-        if cmds.objExists(root_outputs_grp):
-            utils.connect_attr(f"{root_outputs_grp}.ctrl_centre_mtx", f"{input_grp}.base_mtx")
-            utils.connect_attr(f"{root_outputs_grp}.ctrl_cog_mtx", f"{input_grp}.hook_mtx")
-            utils.connect_attr(f"{root_outputs_grp}.globalScale", f"{input_grp}.globalScale")
-        
-        # ---------------------------------------------------------------------------------
         ''' This is my first attempt at making controls follow without parenting, 
          Using their matrix's & adding the offset to keep their distance!!! '''
         # fk ctrl setup = Constraining the controls in canon, with MMs to achieve the neccesary offset: 
@@ -1014,7 +999,16 @@ class SpineSystem():
         
         print("3rd test type shit.")
 
-# Basic spine example: 
+# Basic spine example:
+external_plg_dict = {
+    "global_scale_grp":"grp_Outputs_root_0_M",
+    "global_scale_attr":"globalScale",
+    "base_plg_grp":"grp_Outputs_root_0_M",
+    "base_plg_atr":"ctrl_centre_mtx",
+    "hook_plg_grp":"grp_Outputs_root_0_M", 
+    "hook_plg_atr":"ctrl_cog_mtx"
+    }
+
 skeleton_dict = {
     "skel_pos":{
         'spine0' : [0.0, 147.00000000000003, 0.0], 
@@ -1136,8 +1130,8 @@ ik_spine_dict_002 = {
         }
     }
 
-SpineSystem("spine", "grp_rootOutputs", skeleton_dict, fk_spine_dict, ik_spine_dict, "Y")
-# SpineSystem("spine", "grp_rootOutputs", skeleton_dict_002, fk_spine_dict_002, ik_spine_dict_002, "X")
+SpineSystem("spine", external_plg_dict, skeleton_dict, fk_spine_dict, ik_spine_dict, "Y")
+# SpineSystem("spine", external_plg_dict, skeleton_dict_002, fk_spine_dict_002, ik_spine_dict_002, "X")
 
 '''
 correct ori backwards{
