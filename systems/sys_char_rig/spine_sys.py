@@ -114,7 +114,7 @@ class SpineSystem():
         self.output_group_setup(output_grp, self.ik_pos, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
 
         # group the module into a consitent hierarchy structure for my modules.
-        utils.group_module(self.mdl_nm, self.unique_id, self.side ,input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}", f"grp_joints_{self.mdl_nm}", f"grp_logic_{self.mdl_nm}")
+        utils.group_module(self.mdl_nm, self.unique_id, self.side ,input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}", f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}", f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
         ''''''
     
     # Temporary functions for skn joints & ctrl creation ----------------------
@@ -194,10 +194,10 @@ class SpineSystem():
             ik_ctrl_ls (list): list of ik controls.
         # Returns:N/A
         '''
-        ctrls_grp = f"grp_ctrls_{self.mdl_nm}"
-        fk_grp = f"grp_ctrl_fk_{self.mdl_nm}"
-        inv_grp = f"grp_ctrl_inv_{self.mdl_nm}"
-        ik_grp = f"grp_ctrl_ik_{self.mdl_nm}" 
+        ctrls_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        fk_grp = f"grp_ctrl_fk_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        inv_grp = f"grp_ctrl_inv_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        ik_grp = f"grp_ctrl_ik_{self.mdl_nm}_{self.unique_id}_{self.side}" 
         utils.cr_node_if_not_exists(0, "transform", ctrls_grp)
         utils.cr_node_if_not_exists(0, "transform", fk_grp)
         utils.cr_node_if_not_exists(0, "transform", inv_grp)
@@ -281,7 +281,7 @@ class SpineSystem():
         # Returns:
             joint_grp (string): Joint group.
         '''
-        joint_grp = f"grp_joints_{self.mdl_nm}"
+        joint_grp = f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}"
         utils.cr_node_if_not_exists(0, "transform", joint_grp)
         cmds.parent(bott_name, top_name, skn_jnt_chain[0], joint_grp)
 
@@ -512,10 +512,10 @@ class SpineSystem():
         # inv_pos = {key: inv_pos_values[i] for i, key in enumerate(fk_pos.keys())}
         # inv_rot = {key: inv_rot_values[i] for i, key in enumerate(fk_pos.keys())}
         # cr 6 groups to organise the joints into:
-        logic_grp = f"grp_logic_{self.mdl_nm}"
-        fk_grp = f"grp_jnts_fk_{self.mdl_nm}"
-        inv_grp = f"grp_jnts_inv_{self.mdl_nm}"
-        ik_grp = f"grp_jnts_ik_{self.mdl_nm}"
+        logic_grp = f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        fk_grp = f"grp_jnts_fk_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        inv_grp = f"grp_jnts_inv_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        ik_grp = f"grp_jnts_ik_{self.mdl_nm}_{self.unique_id}_{self.side}"
         ikFw_grp = f"grp_ikFw_{self.mdl_nm}_{self.unique_id}_{self.side}"
         ikBw_grp = f"grp_ikBw_{self.mdl_nm}_{self.unique_id}_{self.side}"
         utils.cr_node_if_not_exists(0, "transform", logic_grp)
@@ -575,7 +575,7 @@ class SpineSystem():
         # Returns:
             logic_curve (string): The name of the new curve created. 
         '''
-        logic_curve = f"crv_{pref}_{self.mdl_nm}"
+        logic_curve = f"crv_{pref}_{self.mdl_nm}_{self.unique_id}_{self.side}"
         positions = list(skeleton_pos.values())
         cmds.curve(n=logic_curve, d=3, p=positions)
         cmds.rebuildCurve(logic_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=1, d=3, tol=0.01)
@@ -791,7 +791,7 @@ class SpineSystem():
         
         hdl_spine_name = f"hdl_{jnt_pref}_{self.mdl_nm}_spline_{self.unique_id}_{self.side}"
         cmds.ikHandle( n=hdl_spine_name, sol="ikSplineSolver", c=logic_curve, sj=jnt_skeleton_ls[0], ee=jnt_skeleton_ls[-1], ccv=False, pcv=False)
-        cmds.parent(hdl_spine_name, f"grp_logic_{self.mdl_nm}")
+        cmds.parent(hdl_spine_name, f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
         # Enable advanced twist options on hdl_spine_name
         cmds.setAttr(  f"{hdl_spine_name}.dTwistControlEnable", 1 )
         cmds.setAttr( f"{hdl_spine_name}.dWorldUpType", 4 )              

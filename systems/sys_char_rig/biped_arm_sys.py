@@ -165,10 +165,9 @@ class ArmSystem():
         inputs_grp, outputs_grp = self.cr_input_output_groups()
         self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
-        print(GLOBAL_SCALE_PLG)
-        print(BASE_MTX_PLG)
-        print(HOOK_MTX_PLG)
-        
+        # Group the controls!
+
+
         # # joint grp setup
         # self.cr_skeleton_grp(joint_grp)
         # skel_pos_dict, skel_rot_dict = self.cr_skeleton_pos_rot_dicts(ik_pos_dict, ik_rot_dict)
@@ -213,12 +212,24 @@ class ArmSystem():
     def wire_inputs_grp(self, inputs_grp, global_scale_plg, base_mtx_plg, hook_mtx_plg):
         # connect the global scale
         utils.connect_attr(global_scale_plg, f"{inputs_grp}.globalScale")
-        
         # connect the base plug
         utils.connect_attr(base_mtx_plg, f"{inputs_grp}.base_mtx")
-
         # connect the hook plug
         utils.connect_attr(hook_mtx_plg, f"{inputs_grp}.hook_mtx")
+
+
+    def group_ctrls(self):
+        '''
+        # Description:
+            Creates control group for a list of ctrls.
+        # Attributes:
+            ctrl_ls (list): list of given controls.
+            grp_name (string): Name of the ctrl_grp.
+        # Returns:N/A
+        '''
+        # If the parent ctrl_grp doesn't exist make it:
+        module_control_grp = f"grp_ctrls_{self.mdl_nm}"
+    
 
 
     def cr_skeleton_grp(self, grp_name):
