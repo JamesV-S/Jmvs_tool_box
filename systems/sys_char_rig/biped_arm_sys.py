@@ -10,6 +10,12 @@ from systems.sys_char_rig import (
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
 
+'''
+import importlib
+from Jmvs_tool_box.systems.sys_char_rig import biped_arm_sys
+
+importlib.reload(biped_arm_sys)
+'''
 
 class ArmSystem():
     def __init__(self, module_name, external_plg_dict, skeleton_dict, fk_dict, ik_dict):
