@@ -135,4 +135,14 @@ def access_items_from_two_dicts():
 
 
 
-
+dict2 = {'x': 10, 'y': 20, 'z':30}
+def reverse_values_in_dict(dictionary):
+    # get a list of the current keys, then reverse it.
+    value_list = [value for value in dictionary.values()]
+    value_list.reverse()
+    # cr new dictionary now
+    rev_dict = {key: values for key, values in zip(dictionary.keys(), value_list)}
+    print(f"rev_dict = {rev_dict}")
+    return rev_dict
+# Output: 
+    # new_dict = {'x': 20, 'y': 10}
