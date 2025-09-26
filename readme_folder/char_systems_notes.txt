@@ -1,3 +1,25 @@
 
 The hierarchy of module's input/output/ctrl/joints/logic groups SHOULD be organised
-in self contained module groups so I can write tools that search a module group and it can expect to find all the data concerning THAT module in that group. This shou;d 
+    in self contained module groups so I can write tools that search a module group 
+        and it can expect to find all the data concerning THAT module in that group. 
+This should help with error handling and updates for rigs and animation issuse. 
+
+Example: 
+ - grp_modules
+    |-- grp_body_modules
+    |    |-- grp_bipedArm_module
+    |         |-- grp_bipedArm_0_L_component
+    |         |-- grp_bipedArm_0_R_component
+    |    |-- grp_bipedLeg_module
+    |    |-- grp_spine_module
+    |    |-- grp_root_module
+    |-- grp_face_modules
+    |-- grp_jiggle_modules
+
+
+- 'grp_bipedArm_0_L_component'
+    |-- grp_inputs
+    |-- grp_outputs
+    |-- grp_controls
+    |-- grp_skeleton
+    |-- grp_logic
