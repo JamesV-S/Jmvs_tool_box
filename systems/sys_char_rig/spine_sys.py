@@ -58,8 +58,11 @@ class SpineSystem():
         
         #----------------------------------------------------------------------
         # Create the controls temporarily (they will already exist with char_Layout tool)
-        fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls = self.build_ctrls(self.fk_pos, self.ik_pos)
+        self.build_ctrls(self.fk_pos, self.ik_pos)
         #----------------------------------------------------------------------
+        fk_ctrl_ls = [key for key in self.fk_pos.keys()]
+        ik_ctrl_ls = [key for key in self.ik_pos.keys()]
+        inv_ctrl_ls = [key.replace("_fk_", "_inv_") for key in self.fk_pos.keys()]
 
         # ORDER: inp_out grps | ctrl mtx setup | logic setup
         # input & output groups
@@ -68,8 +71,8 @@ class SpineSystem():
             self.wire_inputs_grp(input_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
         self.group_ctrls(fk_ctrl_ls, "fk")
-        self.group_ctrls(inv_ctrl_ls, "ik")
-        self.group_ctrls(ik_ctrl_ls, "inv")
+        self.group_ctrls(ik_ctrl_ls, "ik")
+        self.group_ctrls(inv_ctrl_ls, "inv")
         
         #----------------------------------------------------------------------
         # create skn the joints temporarily for testing
@@ -137,8 +140,7 @@ class SpineSystem():
         # Attributes:
             fk_pos (dict): key = fk ctrl name, value = positonal data.
             ik_pos (dict): key = ik ctrl name, value = positonal data.
-        # Returns:
-            List of FK / InvFK / IK controls.
+        # Returns:N/A
         '''
         inv_values = list(fk_pos.values())[::-1]
         # Create a new dictionary with the reversed values.
@@ -191,8 +193,6 @@ class SpineSystem():
             utils.colour_object(ik_name, 17)
             for axis in (['x', 'y', 'z']):
                 cmds.setAttr(f"{ik_name}.s{axis}", lock=1, keyable=0, cb=0)
-
-        return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
     
 
     def cr_input_output_groups(self, jnt_num):

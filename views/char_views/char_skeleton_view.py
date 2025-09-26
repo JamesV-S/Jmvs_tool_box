@@ -56,12 +56,11 @@ class CharSkeletonView(QtWidgets.QWidget):
         with open(stylesheet_path, "r") as file:
             stylesheet = file.read()
         # self.setStyleSheet(stylesheet)
-        
-        self.user_module_data = {} # to store user inputs from 'choose module ui'! 
-        
-        # -- CONTROL paramaters --
+            
+        self.main_Vlay = QtWidgets.QVBoxLayout(self)
+        self.main_Vlay.setObjectName("main_Layout")
 
-    def init_ui(self):
+    def treeView_ui_test(self):
         main_Vlayout = QtWidgets.QVBoxLayout(self)
         #----------------------------------------------------------------------
         

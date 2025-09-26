@@ -9,8 +9,15 @@ from systems.sys_char_rig import (
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
 
+'''
+import importlib
+from Jmvs_tool_box.systems.sys_char_rig import root_sys
+
+importlib.reload(root_sys)
+'''
+
 class root_system():
-    def __init__(self, cog_pos):
+    def __init__(self, module_name, external_plg_dict, skeleton_dict, fk_dict, ik_dict, prim_axis):
         '''
         With this MM system, there's opportunity to add dynamic pivots to the cog's 
         ctrl for different types of posing around the character's centre of gravity
@@ -24,40 +31,43 @@ class root_system():
             grp_rootInputs
             grp_rootOutputs
         '''
-        # cog matrix val
-        self.cog_x = cog_pos[0]
-        self.cog_y = cog_pos[1]
-        self.cog_z = cog_pos[2]
-        self.cog_mtxVal = [
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        self.cog_x, self.cog_y, self.cog_z, 1
-        ]
-        self.minus_cog_mtxVal = [
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        -self.cog_x, -self.cog_y, -self.cog_z, 1
-        ]
+        skeleton_pos = skeleton_dict["skel_pos"]
+        skeleton_rot = skeleton_dict["skel_rot"]
+        fk_pos_dict = fk_dict["fk_pos"]
+        fk_rot_dict = fk_dict["fk_rot"]
+        ik_pos_dict = ik_dict["ik_pos"]
+        ik_rot_dict = ik_dict["ik_rot"]
+        
+        fk_ctrl_list = [key for key in fk_pos_dict.keys()]
+        ik_ctrl_list = [key for key in ik_pos_dict.keys()]
 
-        self.offset_piv__attr_list = ["Offset_pivot_X", "Offset_pivot_Y", "Offset_pivot_Z"]
+        self.mdl_nm = module_name
+        self.unique_id = fk_ctrl_list[0].split('_')[-2]
+        self.side = fk_ctrl_list[0].split('_')[-1]
 
-        # ctrl creation
-        self.root_ctrl, self.centre_ctrl, self.cog_ctrl, grp_ctrl_name = self.cr_root_ctrls()
-        self.root_input_grp, self.root_output_grp = self.cr_input_outputs_nodes()
-        self.cr_utilitys()
-        self.add_custom_attributes()
-        self.Wire_root_connections()
+        GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}"
+        BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}"
+        HOOK_MTX_PLG = f"{external_plg_dict['hook_plg_grp']}.{external_plg_dict['hook_plg_atr']}"
+
+        #----------------------------------------------------------------------
+        self.cr_root_ctrls("fk")
+        #----------------------------------------------------------------------
+
+        self.root_input_grp, self.root_output_grp = self.cr_input_output_groups()
+
+        self.group_ctrls(fk_ctrl_list, "fk")
+        # self.cr_utilitys()
+        # cog_offset_list = self.add_custom_attributes()
+        # self.Wire_root_connections(cog_offset_list)
         # # group the module
         # utils.group_module("root", self.root_input_grp, self.root_output_grp, grp_ctrl_name)
 
 
     '''''' 
-    def cr_root_ctrls(self):
-        root_ctrl = f"ctrl_root"
-        centre_ctrl = f"ctrl_centre"
-        cog_ctrl = f"ctrl_cog"
+    def cr_root_ctrls(self, pref):
+        root_ctrl = f"ctrl_{pref}_{self.mdl_nm}_root_{self.unique_id}_{self.side}"
+        centre_ctrl = f"ctrl_{pref}_{self.mdl_nm}_centre_{self.unique_id}_{self.side}"
+        cog_ctrl = f"ctrl_{pref}_{self.mdl_nm}_COG_{self.unique_id}_{self.side}"
 
         root_import_ctrl = cr_ctrl.CreateControl(type="root", name=root_ctrl)
         root_import_ctrl.retrun_ctrl()
@@ -74,22 +84,89 @@ class root_system():
         cmds.setAttr(f"{centre_ctrl}.overrideEnabled", 1)
         cmds.setAttr(f"{centre_ctrl}.overrideColor", 25)
         utils.colour_COG_control(cog_ctrl)
-        grp_ctrl_name = f"grp_ctrls_root"
-        cmds.group(n=grp_ctrl_name, em=1)
-        cmds.parent(root_ctrl, centre_ctrl, cog_ctrl, grp_ctrl_name)
-        cmds.select(cl=1)
-
-        return root_ctrl, centre_ctrl, cog_ctrl, grp_ctrl_name
+        
+        # grp_ctrl_name = f"grp_ctrls_root"
+        # cmds.group(n=grp_ctrl_name, em=1)
+        # cmds.parent(root_ctrl, centre_ctrl, cog_ctrl, grp_ctrl_name)
+        # cmds.select(cl=1)
         
 
-    def cr_input_outputs_nodes(self):
-        # create input & output groups
-        root_input_grp = f"grp_rootInputs"
-        root_output_grp = f"grp_rootOutputs"
-        utils.cr_node_if_not_exists(0, "transform", root_input_grp)
-        utils.cr_node_if_not_exists(0, "transform", root_output_grp)
+    # def cr_input_outputs_nodes(self):
+    #     # create input & output groups
+    #     root_input_grp = f"grp_rootInputs"
+    #     root_output_grp = f"grp_rootOutputs"
+    #     utils.cr_node_if_not_exists(0, "transform", root_input_grp)
+    #     utils.cr_node_if_not_exists(0, "transform", root_output_grp)
         
-        return root_input_grp, root_output_grp
+    #     return root_input_grp, root_output_grp
+    
+    def cr_input_output_groups(self):
+        inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(0, "transform", inputs_grp)
+        utils.cr_node_if_not_exists(0, "transform", outputs_grp)
+
+        # Input grp
+        utils.add_float_attrib(inputs_grp, ["globalScale"], [0.01, 999], True)
+        cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
+        utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
+        utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
+
+        # Output grp - for hand module to follow
+        utils.add_float_attrib(outputs_grp, ["globalScale"], [0.01, 999], True)
+        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_centre_mtx", 
+                                        'matrix', False)
+        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_cog_mtx", 
+                                        'matrix', False)
+
+        return inputs_grp, outputs_grp
+
+
+    def group_ctrls(self, ctrl_ls, ctrl_type):
+        '''
+        # Description:
+            Creates control group for a list of ctrls.
+        # Attributes:
+            ctrl_ls (list): list of given controls.
+            ctrl_type (string): Name for the ctrl_grp.
+        # Returns:N/A
+        '''
+        print(f"ctrl_ls = `{ctrl_ls}`")
+        # If the parent ctrl_grp doesn't exist make it:
+        module_control_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        if not cmds.objExists(module_control_grp):
+            utils.cr_node_if_not_exists(0, "transform", module_control_grp)
+
+        child_ctrl_grp = f"grp_ctrl_{ctrl_type}_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(0, "transform", child_ctrl_grp)
+        
+        for ctrl in ctrl_ls:
+            cmds.parent(ctrl, child_ctrl_grp)
+        cmds.parent(child_ctrl_grp, module_control_grp)
+
+
+    def cog_matrix_values(self, skeleton_pos):
+        # cog matrix val
+        cog_x = skeleton_pos["COG"][0]
+        cog_y = skeleton_pos["COG"][1]
+        cog_z = skeleton_pos["COG"][2]
+        
+        print(f"cog_x: {cog_x}, cog_y: {cog_y}, cog_z: {cog_z}")
+        # cog_x = cog_pos[0]
+        # cog_y = cog_pos[1]
+        # cog_z = cog_pos[2]
+        cog_mtxVal = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        cog_x, cog_y, cog_z, 1
+        ]
+        minus_cog_mtxVal = [
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        -cog_x, -cog_y, -cog_z, 1
+        ]
 
 
     def cr_utilitys(self):
@@ -104,73 +181,65 @@ class root_system():
         MM_list = [self.MM_centre, self.MM_cog, self.MM_centre_outputs, self.MM_cog_outputs]
         for node_name in MM_list:
             utils.cr_node_if_not_exists(1, "multMatrix", node_name)
-        cmds.setAttr(f"{self.MM_cog}{utils.Plg.mtx_ins[0]}", *self.cog_mtxVal, type="matrix")
-        cmds.setAttr(f"{self.MM_cog_outputs}{utils.Plg.mtx_ins[0]}", *self.minus_cog_mtxVal, type="matrix")
+        cmds.setAttr(f"{self.MM_cog}{utils.Plg.mtx_ins[0]}", *cog_mtxVal, type="matrix")
+        cmds.setAttr(f"{self.MM_cog_outputs}{utils.Plg.mtx_ins[0]}", *minus_cog_mtxVal, type="matrix")
 
             # Cog offset ctrls
         self.MD_cog_ofs = f"MD_ctrl_cog_offset"
         self.MD_rev_cog_ofs = f"MD_ctrl_cog_offset_rev"
         self.CM_cog_ofs = f"CM_ctrl_cog_offset"
         self.CM_inv_cog_ofs = f"CM_inv_ctrl_cog_offset"
-        utils.cr_node_if_not_exists(1, "multiplyDivide", self.MD_cog_ofs, {"input1Y" : self.cog_y})
+        utils.cr_node_if_not_exists(1, "multiplyDivide", self.MD_cog_ofs, {"input1Y" : cog_y})
         utils.cr_node_if_not_exists(1, "multiplyDivide", self.MD_rev_cog_ofs, {"input1X":-1, "input1Y":-1, "input1Z":-1})
         utils.cr_node_if_not_exists(1, "composeMatrix", self.CM_cog_ofs)
         utils.cr_node_if_not_exists(1, "composeMatrix", self.CM_inv_cog_ofs)
-        if self.cog_x == 0:
+        if cog_x == 0:
             cmds.setAttr(f"{self.MD_cog_ofs}.input1X", 10)
         else:
-            cmds.setAttr(f"{self.MD_cog_ofs}.input1X", self.cog_x)
-        if self.cog_z == 0:
+            cmds.setAttr(f"{self.MD_cog_ofs}.input1X", cog_x)
+        if cog_z == 0:
             cmds.setAttr(f"{self.MD_cog_ofs}.input1Z", 10)
         else:
-            cmds.setAttr(f"{self.MD_cog_ofs}.input1Z", self.cog_z)
+            cmds.setAttr(f"{self.MD_cog_ofs}.input1Z", cog_z)
 
     
     def add_custom_attributes(self):
         # add custom attributes
-            # Input & Output groups
-        utils.add_float_attrib(self.root_input_grp, ["globalScale"], [0.01, 999], True) 
-        utils.add_float_attrib(self.root_output_grp, ["globalScale"], [0.01, 999], True)
-        cmds.setAttr(f"{self.root_input_grp}.globalScale", 1, keyable=0, channelBox=0)
-        cmds.setAttr(f"{self.root_output_grp}.globalScale", 1, keyable=0, channelBox=0)
-        utils.add_attr_if_not_exists(self.root_output_grp, "ctrl_centre_mtx", 'matrix', False)
-        utils.add_attr_if_not_exists(self.root_output_grp, "ctrl_cog_mtx", 'matrix', False)
-            # ctrls
-        utils.add_locked_attrib(self.root_ctrl, ["Attributes"])
-        utils.add_float_attrib(self.root_ctrl, ["globalScale"], [0.01, 999], True)
-        cmds.setAttr(f"{self.root_ctrl}.globalScale", 1)
-            # cog offset
-        utils.add_locked_attrib(self.cog_ctrl, ["Cog_Pivot"])
-        utils.add_float_attrib(self.cog_ctrl, [self.offset_piv__attr_list[0]], [0, 1], False)
-        utils.add_float_attrib(self.cog_ctrl, [self.offset_piv__attr_list[1]], [0, 1], False)
-        utils.add_float_attrib(self.cog_ctrl, [self.offset_piv__attr_list[2]], [0, 1], False)
-        cmds.setAttr(f"{self.cog_ctrl}.{self.offset_piv__attr_list[1]}", 1)
+        cog_offset_list = ["Offset_pivot_X", "Offset_pivot_Y", "Offset_pivot_Z"]
+
+        utils.add_locked_attrib(cog_ctrl, ["Cog_Pivot"])
+        utils.add_float_attrib(cog_ctrl, [cog_offset_list[0]], [0, 1], False)
+        utils.add_float_attrib(cog_ctrl, [cog_offset_list[1]], [0, 1], False)
+        utils.add_float_attrib(cog_ctrl, [cog_offset_list[2]], [0, 1], False)
+        cmds.setAttr(f"{cog_ctrl}.{cog_offset_list[1]}", 1)
+
+        return cog_offset_list
     
     
-    def Wire_root_connections(self):
+    def Wire_root_connections(self, cog_offset_list):
         # connections
         utils.connect_attr(f"{self.root_input_grp}.globalScale", f"{self.fm_global_scale}{utils.Plg.flt_A}")
-        utils.connect_attr(f"{self.root_ctrl}.globalScale", f"{self.fm_global_scale}{utils.Plg.flt_B}")
+        utils.connect_attr(f"{root_ctrl}.globalScale", f"{self.fm_global_scale}{utils.Plg.flt_B}")
 
         # root
         for x in range(3):
-            utils.connect_attr(f"{self.fm_global_scale}{utils.Plg.out_flt}", f"{self.root_ctrl}.scale{utils.Plg.axis[x]}")
+            utils.connect_attr(f"{self.fm_global_scale}{utils.Plg.out_flt}", f"{root_ctrl}.scale{utils.Plg.axis[x]}")
 
         # centre
-        utils.connect_attr(f"{self.root_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_centre}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{self.MM_centre}{utils.Plg.mtx_sum_plg}", f"{self.centre_ctrl}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{root_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_centre}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{self.MM_centre}{utils.Plg.mtx_sum_plg}", f"{centre_ctrl}{utils.Plg.opm_plg}")
 
         # cog
-        utils.connect_attr(f"{self.centre_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_cog}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{self.MM_cog}{utils.Plg.mtx_sum_plg}", f"{self.cog_ctrl}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{centre_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_cog}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{self.MM_cog}{utils.Plg.mtx_sum_plg}", f"{cog_ctrl}{utils.Plg.opm_plg}")
 
         # centre outputs
-        utils.connect_attr(f"{self.centre_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_centre_outputs}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{self.cog_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_cog_outputs}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{centre_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_centre_outputs}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{cog_ctrl}{utils.Plg.wld_mtx_plg}", f"{self.MM_cog_outputs}{utils.Plg.mtx_ins[1]}")
 
         # cog offset option]
         for x in range(3):
-            utils.connect_attr(f"{self.cog_ctrl}.{self.offset_piv__attr_list[x]}", f"{self.MD_cog_ofs}{utils.Plg.input2_val[x]}")
+            utils.connect_attr(f"{cog_ctrl}.{cog_offset_list[x]}", f"{self.MD_cog_ofs}{utils.Plg.input2_val[x]}")
         utils.connect_attr(f"{self.MD_cog_ofs}{utils.Plg.output_plg}", f"{self.CM_cog_ofs}{utils.Plg.inputT_plug}")
         utils.connect_attr(f"{self.CM_cog_ofs}{utils.Plg.out_mtx_plg}", f"{self.MM_cog}{utils.Plg.mtx_ins[0]}")
             # reverse
@@ -186,9 +255,57 @@ class root_system():
     ''''''
 # -----------------------------------------------------------------------------
 cog_position_dict = {
-        "root": [0, 0, 0],
+        "root": [0.0, 0.0, 0.0],
         "COG": [0, 135.464, 0]
         }
 cog_pos = cog_position_dict["COG"]
 print(cog_pos)
-root_system(cog_pos)
+
+skeleton_dict = {
+    "skel_pos":{
+        "root":[0.0, 0.0, 0.0],
+        "centre": [0.0, 0.0, 0.0],
+        "COG":[0.0, 135.464, 0.0]
+    },
+    "skel_rot":{
+        "root":[0.0, 0.0, 0.0],
+        "centre": [0.0, 0.0, 0.0],
+        "COG":[0.0, 0.0, 0.0]
+    }
+}
+
+fk_dict = {
+    "fk_pos":{
+        "ctrl_fk_root_root_0_M":[0.0, 0.0, 0.0],
+        "ctrl_fk_root_centre_0_M": [0.0, 0.0, 0.0],
+        "ctrl_fk_root_COG_0_M":[0.0, 135.464, 0.0]
+    },
+    "fk_rot":{
+        "ctrl_fk_root_root_0_M":[0.0, 0.0, 0.0],
+        "ctrl_fk_root_centre_0_M": [0.0, 0.0, 0.0],
+        "ctrl_fk_root_COG_0_M":[0.0, 0.0, 0.0]
+    }
+    }
+ik_dict = {
+    "ik_pos":{
+        "ctrl_fk_root_root_0_M": False,
+        "ctrl_fk_root_centre_0_M": False,
+        "ctrl_fk_root_COG_0_M": False
+    },
+    "ik_rot":{
+        "ctrl_fk_root_root_0_M": False,
+        "ctrl_fk_root_centre_0_M": False,
+        "ctrl_fk_root_COG_0_M": False
+    }
+    }
+
+external_plg_dict = {
+    "global_scale_grp":"grp_Outputs_root_0_M",
+    "global_scale_attr":"globalScale",
+    "base_plg_grp":"grp_Outputs_root_0_M",
+    "base_plg_atr":"ctrl_root_centre_mtx",
+    "hook_plg_grp":"grp_Outputs_spine_0_M",
+    "hook_plg_atr":"ctrl_root_COG_mtx"
+    }
+
+root_system("root", external_plg_dict, skeleton_dict, fk_dict, ik_dict, "Y")
