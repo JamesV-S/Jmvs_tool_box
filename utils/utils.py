@@ -213,7 +213,6 @@ def make_group_and_parent(grp_name, parent):
 def group_module(module_name, unique_id, side, input_grp, output_grp, ctrl_grp=None, joint_grp=None, logic_grp=None):
         grp_module_name = f"grp_mdl_{module_name}_{unique_id}_{side}"
         if not cmds.objExists(grp_module_name):
-            print(f"grp_module_name NOT ")
             cmds.group(n=grp_module_name, em=1)
         
         if cmds.objExists(input_grp) and cmds.objExists(output_grp):
@@ -245,6 +244,29 @@ def group_module(module_name, unique_id, side, input_grp, output_grp, ctrl_grp=N
 
 
 # ------------------------------- GET DATA ------------------------------------
+def round_to_even(num: float) -> int:
+    # Standard rounding to nearest integer
+    rounded = round(num)
+    
+    # If it's already even, return it
+    if rounded % 2 == 0:
+        return rounded
+    
+    # If not, adjust toward the closer even
+    lower = rounded - 1
+    upper = rounded + 1
+    
+    # In the rare case: exactly halfway -> go up to even num. 
+    if abs(num - rounded) == 0.5:
+        return upper
+
+    # Pick whichever is closer to the original number
+    if abs(num - lower) <= abs(num - upper):
+        return lower
+    else:
+        return upper
+
+
 def mtrans_and_pivot_to_origin(target_obj, source_obj, translation_vector=None, rotate=None):
     cmds.matchTransform(target_obj, source_obj)
     if rotate:

@@ -35,21 +35,24 @@ class SpineSystem():
             ik_dict (dict): (dict): key="ik_pos/rot"(string), value="ik_pos/rot"(dict).
         # Returns:N/A
         '''
-        skeleton_pos = skeleton_dict["skel_pos"]
-        skeleton_rot = skeleton_dict["skel_rot"]
-        self.fk_pos = fk_dict["fk_pos"]
-        self.ik_pos = ik_dict["ik_pos"]
-        self.fk_rot = fk_dict["fk_rot"]
-        self.ik_rot = ik_dict["ik_rot"]
+        skeleton_pos_dict = skeleton_dict["skel_pos"]
+        skeleton_rot_dict = skeleton_dict["skel_rot"]
+        self.fk_pos_dict = fk_dict["fk_pos"]
+        self.ik_pos_dict = ik_dict["ik_pos"]
+        self.fk_rot_dict = fk_dict["fk_rot"]
+        self.ik_rot_dict = ik_dict["ik_rot"]
         self.prim_axis = prim_axis
         
+        fk_ctrl_ls = [key for key in self.fk_pos_dict.keys()]
+        ik_ctrl_ls = [key for key in self.ik_pos_dict.keys()]
+        inv_ctrl_ls = [key.replace("_fk_", "_inv_") for key in self.fk_pos_dict.keys()]
+
         self.mdl_nm = module_name
-        self.unique_id = [key for key in self.fk_pos.keys()][0].split('_')[-2]
-        self.side = [key for key in self.fk_pos.keys()][0].split('_')[-1]
+        self.unique_id = fk_ctrl_ls[0].split('_')[-2]
+        self.side = fk_ctrl_ls[0].split('_')[-1]
 
         # gather the number of values in the dict
-        num_jnts = len(skeleton_pos.keys())
-        print(f"num_jnts = {num_jnts}")
+        num_jnts = len(skeleton_pos_dict.keys())
 
         # Plg data from 'external_plg_dict'.
         GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
@@ -58,12 +61,9 @@ class SpineSystem():
         
         #----------------------------------------------------------------------
         # Create the controls temporarily (they will already exist with char_Layout tool)
-        self.build_ctrls(self.fk_pos, self.ik_pos)
+        self.build_ctrls(self.fk_pos_dict, self.ik_pos_dict)
         #----------------------------------------------------------------------
-        fk_ctrl_ls = [key for key in self.fk_pos.keys()]
-        ik_ctrl_ls = [key for key in self.ik_pos.keys()]
-        inv_ctrl_ls = [key.replace("_fk_", "_inv_") for key in self.fk_pos.keys()]
-
+        
         # ORDER: inp_out grps | ctrl mtx setup | logic setup
         # input & output groups
         input_grp, output_grp = self.cr_input_output_groups(num_jnts)
@@ -76,46 +76,46 @@ class SpineSystem():
         
         #----------------------------------------------------------------------
         # create skn the joints temporarily for testing
-        skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.ik_pos)
+        skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.ik_pos_dict)
         #----------------------------------------------------------------------
         
         # cr StrFw_jnt / nonStrFw / StrBw_jnt / nonStrBw in this script.
-        strFw_jnt_chain = self.cr_jnt_type_chain("StrFw", skeleton_pos, skeleton_rot)
-        nonstrFw_jnt_chain = self.cr_jnt_type_chain("nonStrFw", skeleton_pos, skeleton_rot)
-        strBw_jnt_chain = self.cr_jnt_type_chain("StrBw", skeleton_pos, skeleton_rot, True)
-        nonstrBw_jnt_chain = self.cr_jnt_type_chain("nonStrBw", skeleton_pos, skeleton_rot, True)
-        strRig_jnt_chain = self.cr_jnt_type_chain("StrRig", skeleton_pos, skeleton_rot)
-        nonStrRig_jnt_chain = self.cr_jnt_type_chain("nonStrRig", skeleton_pos, skeleton_rot)
-        skn_jnt_chain = self.cr_jnt_type_chain("skn", skeleton_pos, skeleton_rot)
+        strFw_jnt_chain = self.cr_jnt_type_chain("StrFw", skeleton_pos_dict, skeleton_rot_dict)
+        nonstrFw_jnt_chain = self.cr_jnt_type_chain("nonStrFw", skeleton_pos_dict, skeleton_rot_dict)
+        strBw_jnt_chain = self.cr_jnt_type_chain("StrBw", skeleton_pos_dict, skeleton_rot_dict, True)
+        nonstrBw_jnt_chain = self.cr_jnt_type_chain("nonStrBw", skeleton_pos_dict, skeleton_rot_dict, True)
+        strRig_jnt_chain = self.cr_jnt_type_chain("StrRig", skeleton_pos_dict, skeleton_rot_dict)
+        nonStrRig_jnt_chain = self.cr_jnt_type_chain("nonStrRig", skeleton_pos_dict, skeleton_rot_dict)
+        skn_jnt_chain = self.cr_jnt_type_chain("skn", skeleton_pos_dict, skeleton_rot_dict)
         # Temporarily cr skin_jnt chain!
-        joint_grp = self.group_jnts_skn([skn_bott_name, skn_top_name], skn_jnt_chain)
+        self.group_jnts_skn([skn_bott_name, skn_top_name], [skn_jnt_chain])
             
         # CTRL connections for the spine setup!
         self.fk_ctrl_ls, self.inv_ctrl_ls, self.ik_ctrl_ls = self.wire_spine_ctrls(input_grp)
         
         # Logic setup (joints and hdl_spine_names)
         
-        self.logic_grp, self.fk_logic_ls, self.inv_logic_ls, self.ik_logic_ls, self.jnt_mid_hold = self.cr_logic_elements(self.fk_pos, self.fk_rot, self.ik_pos, self.ik_rot, 
+        self.logic_grp, self.fk_logic_ls, self.inv_logic_ls, self.ik_logic_ls, self.jnt_mid_hold = self.cr_logic_elements(self.fk_pos_dict, self.fk_rot_dict, self.ik_pos_dict, self.ik_rot_dict, 
                                                                                                                           [strFw_jnt_chain, nonstrFw_jnt_chain], [strBw_jnt_chain, nonstrBw_jnt_chain],
                                                                                                                         [strRig_jnt_chain, nonStrRig_jnt_chain])
         # curve creation
-        logic_FWcurve = self.cr_logic_curve("StrFw", skeleton_pos)
-        logic_BWcurve = self.cr_logic_curve("StrBw", skeleton_pos, True)
+        logic_FWcurve = self.cr_logic_curve("StrFw", skeleton_pos_dict)
+        logic_BWcurve = self.cr_logic_curve("StrBw", skeleton_pos_dict, True)
         # global curve ik setup
         cv_info_FWnode, fm_global_FWnode = self.wire_ik_curve_setup("StrFw", logic_FWcurve, input_grp)
         cv_info_BWnode, fm_global_BWnode = self.wire_ik_curve_setup("StrBw", logic_BWcurve, input_grp)
         
         # control to logic setup
         self.wire_ctrl_to_jnt_logic()
-        self.wire_ik_bott_top_logic_to_skn('skn', skeleton_pos)
+        self.wire_ik_bott_top_logic_to_skn('skn', skeleton_pos_dict)
         
         ''''''
         # stretch ik setup 
-        self.wire_ik_stretch_setup("StrFw", logic_FWcurve, skeleton_pos, fm_global_FWnode)
-        self.wire_ik_stretch_setup("StrBw", logic_BWcurve, skeleton_pos, fm_global_BWnode, True)
+        self.wire_ik_stretch_setup("StrFw", logic_FWcurve, skeleton_pos_dict, fm_global_FWnode)
+        self.wire_ik_stretch_setup("StrBw", logic_BWcurve, skeleton_pos_dict, fm_global_BWnode, True)
 
         # volume presevation
-        self.wire_ik_volume_setup("skn", skeleton_pos, input_grp, cv_info_FWnode, fm_global_FWnode)
+        self.wire_ik_volume_setup("skn", skeleton_pos_dict, input_grp, cv_info_FWnode, fm_global_FWnode)
 
         # nonStr matching Str chain
         self.nonStr_match_setup(nonstrFw_jnt_chain, strFw_jnt_chain)
@@ -125,7 +125,7 @@ class SpineSystem():
                                               nonstrFw_jnt_chain, nonstrBw_jnt_chain, nonStrRig_jnt_chain,
                                               skn_jnt_chain)
         
-        self.output_group_setup(output_grp, self.ik_pos, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
+        self.output_group_setup(output_grp, self.ik_pos_dict, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
 
         # group the module into a consitent hierarchy structure for my modules.
         utils.group_module(self.mdl_nm, self.unique_id, self.side ,
@@ -297,15 +297,15 @@ class SpineSystem():
         return skn_start_name, skn_end_name
         
 
-    def cr_jnt_type_chain(self, pref, skeleton_pos, skeleton_rot, reverse_direction=False):
+    def cr_jnt_type_chain(self, pref, skeleton_pos_dict, skeleton_rot_dict, reverse_direction=False):
         '''
         # Description:
            Creates a basic desired joint chain, naming, position and direction all 
            taken care of. 
         # Attributes:
             pref (string): name of the joint chain type.
-            skeleton_pos (dict): key = name of spine iteration (spine#), value = positonal data.
-            skeleton_rot (dict): key = name of spine iteration (spine#), value = rotational data.
+            skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
+            skeleton_rot_dict (dict): key = name of spine iteration (spine#), value = rotational data.
             reverse_direction (bool): If True, the joint chain is reversed.
         # Returns:
             jnt_ls (list): The list of joints within the chain.
@@ -315,26 +315,26 @@ class SpineSystem():
         # reverse the positon data
         # need to figure out how I need to flip or minus the rotate values (for when they have just 0.0 or a value.)
         # That'll consist of flipping the primary axis & 
-        print(f"skeleton_rot = {skeleton_rot}")
-        rev_skel_pos = utils.reverse_pos_values_dict(skeleton_pos)
-        rev_skel_rot = utils.reverse_rot_values_dict(skeleton_rot)
-        for name in skeleton_pos:
+        print(f"skeleton_rot_dict = {skeleton_rot_dict}")
+        rev_skel_pos = utils.reverse_pos_values_dict(skeleton_pos_dict)
+        rev_skel_rot = utils.reverse_rot_values_dict(skeleton_rot_dict)
+        for name in skeleton_pos_dict:
             jnt_nm = f"jnt_{pref}_{self.mdl_nm}_{name}_{self.unique_id}_{self.side}"
             jnt_chain_ls.append(jnt_nm)
             cmds.joint(n=jnt_nm)
             if reverse_direction:
                 cmds.xform(jnt_nm, translation=rev_skel_pos[name], worldSpace=True)
-                cmds.xform(jnt_nm, rotation=skeleton_rot[name], worldSpace=True)
+                cmds.xform(jnt_nm, rotation=skeleton_rot_dict[name], worldSpace=True)
             else:
-                cmds.xform(jnt_nm, translation=skeleton_pos[name], worldSpace=True)
-                cmds.xform(jnt_nm, rotation=skeleton_rot[name], worldSpace=True)
+                cmds.xform(jnt_nm, translation=skeleton_pos_dict[name], worldSpace=True)
+                cmds.xform(jnt_nm, rotation=skeleton_rot_dict[name], worldSpace=True)
             cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
         utils.clean_opm(jnt_chain_ls[0])
 
         return jnt_chain_ls
 
 
-    def group_jnts_skn(self, skn_start_end_ls, skn_jnt_chain):
+    def group_jnts_skn(self, skn_start_end_ls, skn_jnt_chain_ls):
         '''
         # Description:
             Creates joint group for this module.
@@ -348,7 +348,8 @@ class SpineSystem():
         utils.cr_node_if_not_exists(0, "transform", joint_grp)
         for skn in skn_start_end_ls:
             cmds.parent(skn, joint_grp)
-        cmds.parent(skn_jnt_chain[0], joint_grp)
+        for skn in skn_jnt_chain_ls: 
+            cmds.parent(skn[0], joint_grp)
 
         return joint_grp
 
@@ -356,7 +357,7 @@ class SpineSystem():
     def wire_spine_ctrls(self, input_grp):
         '''
         TO DO:
-            Add rotation data too w/ 'self.fk_rot (dict)' & 'self.ik_rot (dict)'.
+            Add rotation data too w/ 'self.fk_rot_dict (dict)' & 'self.ik_rot_dict (dict)'.
         # Description:
             Sets up the control's relationship, positions them using matrix data 
             as well as how the 3 states work together:
@@ -365,7 +366,7 @@ class SpineSystem():
             - End fk controls Top ik ctrl.
             - End fkInv controls Bottom ik ctrl.
             - IK Top & Bottom controls share the control over the middle control.
-            This works by using the data of 'self.fk_pos (dict)' & 'self.ik_pos (dict)'
+            This works by using the data of 'self.fk_pos_dict (dict)' & 'self.ik_pos_dict (dict)'
             but not any rotation values are applied atm. 
         # Attributes:
             input_grp (string): Group for input data for this module.
@@ -384,8 +385,8 @@ class SpineSystem():
         inv_ctrl_ls = []
         fk_previous_pos = None
         inv_previous_pos = None
-        reversed_fk_pos = utils.reverse_dict(self.fk_pos) # reverse the pos so the maths offset equation works!
-        for i, ((fk_ctrl_name, fk_pos), (inv_name, inv_pos)) in enumerate(zip(self.fk_pos.items(), reversed_fk_pos.items())):
+        reversed_fk_pos = utils.reverse_dict(self.fk_pos_dict) # reverse the pos so the maths offset equation works!
+        for i, ((fk_ctrl_name, fk_pos), (inv_name, inv_pos)) in enumerate(zip(self.fk_pos_dict.items(), reversed_fk_pos.items())):
             inv_ctrl_name = inv_name.replace('fk', 'inv')
             fk_ctrl_ls.append(fk_ctrl_name)
             inv_ctrl_ls.append(inv_ctrl_name)
@@ -410,9 +411,9 @@ class SpineSystem():
        
         # connect the MMs
             # iniitial inputs
-        print(f"inv_0, list(self.fk_pos.values())[-1] = {list(self.fk_pos.values())[-1]}")
-        utils.set_matrix(list(self.fk_pos.values())[0], f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[0]}")
-        utils.set_matrix(list(self.fk_pos.values())[-1], f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[0]}")
+        print(f"inv_0, list(self.fk_pos_dict.values())[-1] = {list(self.fk_pos_dict.values())[-1]}")
+        utils.set_matrix(list(self.fk_pos_dict.values())[0], f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[0]}")
+        utils.set_matrix(list(self.fk_pos_dict.values())[-1], f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[0]}")
         utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[1]}")
         # connect remaining FK & INV matrices ORDER:
@@ -431,7 +432,7 @@ class SpineSystem():
             # cr the MM for ik ctrls!
         MM_ik_ls = []
         ik_ctrl_ls = []
-        for ik_ctrl_name in self.ik_pos.keys():
+        for ik_ctrl_name in self.ik_pos_dict.keys():
             ik_ctrl_ls.append(ik_ctrl_name)
             MM_ik_name = f"MM_{ik_ctrl_name}"
             utils.cr_node_if_not_exists(1, 'multMatrix', MM_ik_name)
@@ -450,8 +451,8 @@ class SpineSystem():
             utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_Volume")
 
             # Only IK_top ctrl needs its offset claculated!
-        last_fk_pos = list(self.fk_pos.values())[-1]
-        ik_top_ofs = utils.calculate_matrix_offset(last_fk_pos, list(self.ik_pos.values())[-1])
+        last_fk_pos = list(self.fk_pos_dict.values())[-1]
+        ik_top_ofs = utils.calculate_matrix_offset(last_fk_pos, list(self.ik_pos_dict.values())[-1])
         utils.set_matrix(ik_top_ofs, f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[0]}")
             # two end fk & inv ctrls into ik MM top & bottom
         utils.connect_attr(f"{fk_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[1]}") # MM_ik_top
@@ -576,19 +577,19 @@ class SpineSystem():
         return logic_grp, fk_logic_ls, inv_logic_ls, ik_logic_ls, jnt_mid_hold
 
 
-    def cr_logic_curve(self, pref, skeleton_pos, backwards=False):
+    def cr_logic_curve(self, pref, skeleton_pos_dict, backwards=False):
         '''        
         # Description:
             Creates a new logic curve & organises it into the logic_grp. 
         # Attributes:
             pref (string): name of the joint chain type.
-            skeleton_pos (dict): key = name of spine iteration (spine#), value = positonal data.
+            skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
             backwards (bool): If True, the curve direction is reversed (0-1).
         # Returns:
             logic_curve (string): The name of the new curve created. 
         '''
         logic_curve = f"crv_{pref}_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        positions = list(skeleton_pos.values())
+        positions = list(skeleton_pos_dict.values())
         cmds.curve(n=logic_curve, d=3, p=positions)
         cmds.rebuildCurve(logic_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=1, d=3, tol=0.01)
         if backwards:
@@ -654,7 +655,7 @@ class SpineSystem():
             MM_ik_logic = utils.mtxCon_no_ofs(ik_ctrl, ik_logic)
 
 
-    def wire_ik_bott_top_logic_to_skn(self, jnt_pref, skeleton_pos):
+    def wire_ik_bott_top_logic_to_skn(self, jnt_pref, skeleton_pos_dict):
         '''
         # Description:            
             This function drives the Top & Bottom skin joints important for 
@@ -665,10 +666,10 @@ class SpineSystem():
             repective of the animator's control over the rig.  
         # Attributes:
             jnt_pref (string): name of the joint chain type -> needs to be 'skn'.
-            skeleton_pos (dict): key = name of spine iteration (spine#), value = positonal data.
+            skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
         # Returns: N/A
         '''
-        skn_skel_keys = list(skeleton_pos.keys())
+        skn_skel_keys = list(skeleton_pos_dict.keys())
         skn_skel_positions = [int(re.search(r'\d+', s).group()) for s in skn_skel_keys][::-1]
         print(f"skn_skel_positions = `{skn_skel_positions}`")
         
@@ -719,7 +720,7 @@ class SpineSystem():
         utils.connect_attr(f"{bottom_cM}{utils.Plg.out_mtx_plg}", f"{skn_bot_jnt}{utils.Plg.opm_plg}")
 
     
-    def wire_ik_stretch_setup(self, jnt_pref, logic_curve, skeleton_pos, fm_global_curve, backwards=False):
+    def wire_ik_stretch_setup(self, jnt_pref, logic_curve, skeleton_pos_dict, fm_global_curve, backwards=False):
         '''
         # Description:            
             Creates stretch setup on specified joint chain with an ik spline setup. 
@@ -727,13 +728,13 @@ class SpineSystem():
         # Attributes:
             jnt_pref (string): name of the joint chain to cr stretch setup on.
             logic_curve (string): The name of the new curve created.
-            skeleton_pos (dict): key = name of spine iteration (spine#), value = positonal data.
+            skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
             fm_global_curve (utility): Float math node of the arclenght and 'globalScale' passed to this module.
             backwards (bool): If True, the curve direction is reversed (0-1).
         # Returns: N/A
         '''
-        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.mdl_nm}_{j}_{self.unique_id}_{self.side}" for j in skeleton_pos.keys()]
-        num_squash_jnts = len(skeleton_pos.keys())-1
+        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.mdl_nm}_{j}_{self.unique_id}_{self.side}" for j in skeleton_pos_dict.keys()]
+        num_squash_jnts = len(skeleton_pos_dict.keys())-1
         
         # curve skinning method: skin the top & bottom ik skn joints to curve skin 
         # the middle & hold logic joints create inversmatrix, > plug middle MM into inversmatrix
@@ -789,11 +790,11 @@ class SpineSystem():
             utils.cr_node_if_not_exists(1, "multiplyDivide", md_negative, {"operation": 1, "input1X":-1})
             # connect parent BC to negative MD            
             utils.connect_attr(f"{BC_stretch_output}{utils.Plg.out_letter[0]}", f"{md_negative}{utils.Plg.input2_val[0]}")
-            for x in range(1, len(skeleton_pos.keys())):  
+            for x in range(1, len(skeleton_pos_dict.keys())):  
                 # connect negative MD to skeleton translatePrimaryAxis. 
                 utils.connect_attr(f"{md_negative}{utils.Plg.out_axis[0]}", f"{jnt_skeleton_ls[x]}.translate{self.prim_axis}")
         else:
-            for x in range(1, len(skeleton_pos.keys())):  
+            for x in range(1, len(skeleton_pos_dict.keys())):  
                 # connect BC_spine_StretchOutput to skeleton translatePrimaryAxis. 
                 utils.connect_attr(f"{BC_stretch_output}{utils.Plg.out_letter[0]}", f"{jnt_skeleton_ls[x]}.translate{self.prim_axis}")
         
@@ -832,14 +833,14 @@ class SpineSystem():
         cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndZ", 1)
 
 
-    def wire_ik_volume_setup(self, jnt_pref, skeleton_pos, input_grp, cv_info_node, fm_global_curve):
+    def wire_ik_volume_setup(self, jnt_pref, skeleton_pos_dict, input_grp, cv_info_node, fm_global_curve):
         '''
         # Description:            
             Wires the data from the Input grp to the skin joint's scale attr to 
             control Volume preservation when the joint's stretch.
         # Attributes:
             jnt_pref (string): name of the joint chain to cr stretch setup on.
-            skeleton_pos (dict): key = name of spine iteration (spine#), value = positonal data.
+            skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
             input_grp (string): Group for input data for this module.
             fm_global_curve (utility): Float math node of the arclenght and 'globalScale' passed to this module.
         # Returns: N/A
@@ -851,7 +852,7 @@ class SpineSystem():
         utils.cr_node_if_not_exists(1, "floatMath", FM_spine_norm, {"operation": 3, "floatB": cv_arc_length})
         utils.cr_node_if_not_exists(1, "blendColors", BC_spine_squash, {"color1G": 1, "color2R": 1, "color2G": 1, "color2B": 1})
         
-        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.mdl_nm}_{j}_{self.unique_id}_{self.side}" for j in skeleton_pos.keys()]
+        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.mdl_nm}_{j}_{self.unique_id}_{self.side}" for j in skeleton_pos_dict.keys()]
         MD_skeleton_ls = []
         for jnt in jnt_skeleton_ls:
             md_name = f"MD_{jnt}"
@@ -863,7 +864,7 @@ class SpineSystem():
         utils.connect_attr(f"{FM_spine_norm}{utils.Plg.out_flt}", f"{BC_spine_squash}{utils.Plg.color1_plg[0]}")
         utils.connect_attr(f"{FM_spine_norm}{utils.Plg.out_flt}", f"{BC_spine_squash}{utils.Plg.color1_plg[2]}")
         
-        for x in range(len(skeleton_pos.keys())):
+        for x in range(len(skeleton_pos_dict.keys())):
                 # MD
             utils.connect_attr(f"{BC_spine_squash}{utils.Plg.out_letter[0]}", f"{MD_skeleton_ls[x]}{utils.Plg.input1_val[0]}")
             utils.connect_attr(f"{BC_spine_squash}{utils.Plg.out_letter[2]}", f"{MD_skeleton_ls[x]}{utils.Plg.input1_val[2]}")

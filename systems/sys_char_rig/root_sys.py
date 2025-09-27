@@ -31,15 +31,15 @@ class root_system():
             grp_rootInputs
             grp_rootOutputs
         '''
-        skeleton_pos = skeleton_dict["skel_pos"]
-        skeleton_rot = skeleton_dict["skel_rot"]
-        fk_pos_dict = fk_dict["fk_pos"]
-        fk_rot_dict = fk_dict["fk_rot"]
-        ik_pos_dict = ik_dict["ik_pos"]
-        ik_rot_dict = ik_dict["ik_rot"]
+        skeleton_pos_dict = skeleton_dict["skel_pos"]
+        skeleton_rot_dict = skeleton_dict["skel_rot"]
+        self.fk_pos_dict = fk_dict["fk_pos"]
+        self.fk_rot_dict = fk_dict["fk_rot"]
+        self.ik_pos_dict = ik_dict["ik_pos"]
+        self.ik_rot_dict = ik_dict["ik_rot"]
         
-        fk_ctrl_list = [key for key in fk_pos_dict.keys()]
-        ik_ctrl_list = [key for key in ik_pos_dict.keys()]
+        fk_ctrl_list = [key for key in self.fk_pos_dict.keys()]
+        ik_ctrl_list = [key for key in self.ik_pos_dict.keys()]
 
         self.mdl_nm = module_name
         self.unique_id = fk_ctrl_list[0].split('_')[-2]
@@ -57,7 +57,7 @@ class root_system():
 
         self.group_ctrls(fk_ctrl_list, "fk")
 
-        self.cr_utilitys(skeleton_pos)
+        self.cr_utilitys(skeleton_pos_dict)
         
         print(f"fk_ctrl_ls = `{fk_ctrl_list}`")
         cog_offset_list = self.add_custom_attributes(fk_ctrl_ls=fk_ctrl_list)
@@ -148,10 +148,10 @@ class root_system():
         cmds.select(cl=1)
 
 
-    def cr_utilitys(self, skeleton_pos):
-        cog_x = skeleton_pos["COG"][0]
-        cog_y = skeleton_pos["COG"][1]
-        cog_z = skeleton_pos["COG"][2]
+    def cr_utilitys(self, skeleton_pos_dict):
+        cog_x = skeleton_pos_dict["COG"][0]
+        cog_y = skeleton_pos_dict["COG"][1]
+        cog_z = skeleton_pos_dict["COG"][2]
         
         print(f"cog_x: {cog_x}, cog_y: {cog_y}, cog_z: {cog_z}")
         # cog_x = cog_pos[0]
