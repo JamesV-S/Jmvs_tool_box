@@ -128,7 +128,11 @@ class SpineSystem():
         self.output_group_setup(output_grp, self.ik_pos, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
 
         # group the module into a consitent hierarchy structure for my modules.
-        utils.group_module(self.mdl_nm, self.unique_id, self.side ,input_grp, output_grp, F"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}", f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}", f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
+        utils.group_module(self.mdl_nm, self.unique_id, self.side ,
+                           input_grp, output_grp, 
+                           f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}", 
+                           f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}", 
+                           f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
         ''''''
     
     # Temporary functions for skn joints & ctrl creation ----------------------
@@ -264,6 +268,7 @@ class SpineSystem():
         for ctrl in ctrl_ls:
             cmds.parent(ctrl, child_ctrl_grp)
         cmds.parent(child_ctrl_grp, module_control_grp)
+        cmds.select(cl=1)
 
     
     def cr_jnt_skn_start_end(self, ik_pos):
@@ -1004,9 +1009,9 @@ external_plg_dict = {
     "global_scale_grp":"grp_Outputs_root_0_M",
     "global_scale_attr":"globalScale",
     "base_plg_grp":"grp_Outputs_root_0_M",
-    "base_plg_atr":"ctrl_centre_mtx",
+    "base_plg_atr":"ctrl_root_centre_mtx",
     "hook_plg_grp":"grp_Outputs_root_0_M", 
-    "hook_plg_atr":"ctrl_cog_mtx"
+    "hook_plg_atr":"ctrl_root_COG_mtx"
     }
 
 skeleton_dict = {

@@ -248,6 +248,7 @@ class ArmSystem():
         for ctrl in ctrl_ls:
             cmds.parent(ctrl, child_ctrl_grp)
         cmds.parent(child_ctrl_grp, module_control_grp)
+        cmds.select(cl=1)
     
 
     def cr_jnt_skn_start_end(self, ik_pos):
