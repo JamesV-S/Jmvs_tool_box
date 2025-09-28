@@ -58,6 +58,7 @@ class SpineSystem():
         GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
         BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}" # grp_Outputs_root_0_M.ctrl_centre_mtx
         HOOK_MTX_PLG = f"{external_plg_dict['hook_plg_grp']}.{external_plg_dict['hook_plg_atr']}" # grp_Outputs_spine_0_M.ctrl_spine_top_mtx
+        self.global_scale_attr = external_plg_dict['global_scale_attr']
         
         #----------------------------------------------------------------------
         # Create the controls temporarily (they will already exist with char_Layout tool)
@@ -66,7 +67,8 @@ class SpineSystem():
         
         # ORDER: inp_out grps | ctrl mtx setup | logic setup
         # input & output groups
-        input_grp, output_grp = self.cr_input_output_groups(num_jnts)
+        input_grp, output_grp = self.cr_input_output_groups()
+        self.add_outputs_matrix_attr(output_grp, ["bottom", "top"])
         if cmds.objExists(external_plg_dict['global_scale_grp']):
             self.wire_inputs_grp(input_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
@@ -89,7 +91,10 @@ class SpineSystem():
         skn_jnt_chain = self.cr_jnt_type_chain("skn", skeleton_pos_dict, skeleton_rot_dict)
         # Temporarily cr skin_jnt chain!
         self.group_jnts_skn([skn_bott_name, skn_top_name], [skn_jnt_chain])
-            
+        
+        # custom attr on Outputs or inputs grp
+        self.add_custom_input_attr(input_grp, num_jnts)
+
         # CTRL connections for the spine setup!
         self.fk_ctrl_ls, self.inv_ctrl_ls, self.ik_ctrl_ls = self.wire_spine_ctrls(input_grp)
         
@@ -199,7 +204,7 @@ class SpineSystem():
                 cmds.setAttr(f"{ik_name}.s{axis}", lock=1, keyable=0, cb=0)
     
 
-    def cr_input_output_groups(self, jnt_num):
+    def cr_input_output_groups(self, output_global=False):
         '''
         # Description:
             Creates the 'Input' & 'Output' groups for this module. These are 
@@ -223,20 +228,27 @@ class SpineSystem():
         cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
         utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
         utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
-
-        # Output grp
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_bottom_mtx", 
-                                    'matrix', False) # for upper body module to follow
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_top_mtx", 
-                                    'matrix', False) # for lower body module to follow
-
-        '''*module dependant data below (basically this data changes depending on the module)'''
-        for x in range(jnt_num):
-            utils.add_float_attrib(inputs_grp, [f"{self.mdl_nm}{x}_Stretch_Volume"], [1.0, 1.0], False)
-            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", keyable=1, channelBox=1)
-            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", -0.5)
-
+        
+        if output_global:
+            utils.add_float_attrib(outputs_grp, [self.global_scale_attr], [0.01, 999], True)
+            cmds.setAttr(f"{outputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
+        
         return inputs_grp, outputs_grp
+    
+
+    def add_outputs_matrix_attr(self, outputs_grp, out_matrix_name_list):
+        '''
+        # Description:
+            Add custom matrix to ouptut group -> this matrix lets other modules follow.
+        # Attributes:
+            outputs_grp (string): Outputgrpup for this module. 
+            out_matrix_name_list (list): List of names for matrix attr.
+        # Returns: N/A
+        '''
+        for mtx_name in out_matrix_name_list:
+            utils.add_attr_if_not_exists(outputs_grp, 
+                                         f"ctrl_{self.mdl_nm}_{mtx_name}_mtx", 
+                                        'matrix', False)
 
 
     def wire_inputs_grp(self, inputs_grp, global_scale_plg, base_mtx_plg, hook_mtx_plg):
@@ -352,6 +364,20 @@ class SpineSystem():
             cmds.parent(skn[0], joint_grp)
 
         return joint_grp
+
+
+    def add_custom_input_attr(self, inputs_grp, jnt_num):
+        '''
+        # Description:
+            Add module uniwue attributes to the input group.
+        # Attributes:
+            inputs_grp (string): Outputgrpup for this module.
+        # Returns: N/A
+        '''
+        for x in range(jnt_num):
+            utils.add_float_attrib(inputs_grp, [f"{self.mdl_nm}{x}_Stretch_Volume"], [1.0, 1.0], False)
+            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", keyable=1, channelBox=1)
+            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", -0.5)
 
 
     def wire_spine_ctrls(self, input_grp):
@@ -1002,8 +1028,7 @@ class SpineSystem():
         # Plugs - connect the MM to the spine output's attribs!  
         utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_top_mtx")
         utils.connect_attr(f"{MM_output_bot}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_bottom_mtx")
-        
-        print("3rd test type shit.")
+    
 
 # Basic spine example:
 external_plg_dict = {

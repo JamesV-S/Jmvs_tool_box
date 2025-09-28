@@ -53,8 +53,8 @@ class root_system():
         self.cr_root_ctrls("fk")
         #----------------------------------------------------------------------
 
-        self.root_input_grp, self.root_output_grp = self.cr_input_output_groups()
-
+        self.root_input_grp, self.root_output_grp = self.cr_input_output_groups(True)
+        self.add_outputs_matrix_attr(self.root_output_grp, ["centre", "COG"])
         self.group_ctrls(fk_ctrl_list, "fk")
 
         self.cr_utilitys(skeleton_pos_dict)
@@ -101,7 +101,7 @@ class root_system():
                 cmds.setAttr(f"{cog_ctrl}.s{axis}", lock=1, keyable=0, cb=0)
         
     
-    def cr_input_output_groups(self):
+    def cr_input_output_groups(self, output_global=False):
         inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
         outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
         utils.cr_node_if_not_exists(0, "transform", inputs_grp)
@@ -114,14 +114,19 @@ class root_system():
         utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
 
         # Output grp - for hand module to follow
-        utils.add_float_attrib(outputs_grp, [self.global_scale_attr], [0.01, 999], True)
-        cmds.setAttr(f"{outputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_centre_mtx", 
-                                        'matrix', False)
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_COG_mtx",
-                                        'matrix', False)
+        if output_global:
+            utils.add_float_attrib(outputs_grp, [self.global_scale_attr], [0.01, 999], True)
+            cmds.setAttr(f"{outputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
 
         return inputs_grp, outputs_grp
+
+
+    def add_outputs_matrix_attr(self, outputs_grp, out_matrix_name_list):
+        # Output grp
+        for mtx_name in out_matrix_name_list:
+            utils.add_attr_if_not_exists(outputs_grp, 
+                                         f"ctrl_{self.mdl_nm}_{mtx_name}_mtx", 
+                                        'matrix', False)
 
 
     def group_ctrls(self, ctrl_ls, ctrl_type):

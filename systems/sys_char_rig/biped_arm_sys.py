@@ -150,9 +150,11 @@ class ArmSystem():
         GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
         BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}" # grp_Outputs_root_0_M.ctrl_centre_mtx
         HOOK_MTX_PLG = f"{external_plg_dict['hook_plg_grp']}.{external_plg_dict['hook_plg_atr']}" # grp_Outputs_spine_0_M.ctrl_spine_top_mtx
+        self.global_scale_attr = external_plg_dict['global_scale_attr']
         
         # Input & Output grp setup
         inputs_grp, outputs_grp = self.cr_input_output_groups()
+        self.add_outputs_matrix_attr(outputs_grp, ["wrist"])
         if cmds.objExists(external_plg_dict['global_scale_grp']):
             self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
@@ -169,47 +171,58 @@ class ArmSystem():
                                                            skeleton_pos_dict['elbow'], 
                                                            skeleton_pos_dict['wrist'])
         self.group_jnts_skn([skn_jnt_clav, skn_jnt_wrist], [sknUpper_jnt_chain, sknLower_jnt_chain])
-            
+        
+        self.add_custom_input_attr(inputs_grp)
+
         # wire connections
-        # initialise variables for clav & arm_root ctrls. (special controls in the system!) 
-        ctrl_clav = ik_ctrl_list[0]
-        ctrl_armRt = ik_ctrl_list[1]
         self.wire_clav_armRt_setup(inputs_grp, [ik_ctrl_list[0], ik_ctrl_list[1]], skn_jnt_clav, self.ik_pos_dict, self.ik_rot_dict)
-        # fk_blend_dict = {
-        #     "fk_base_plg": f"{inputs_grp}.base_mtx", 
-        #     "fk_mdlRt_plg":f"{ctrl_armRt}{utils.Plg.wld_mtx_plg}"
-        #     }
-        # self.fk_logic_setup(fk_blend_dict, fk_ctrl_list, self.fk_pos_dict, self.fk_rot_dict, 
-        #                     module_name, self.unique_id, self.side)
+        
+        blend_armRoot_node = self.wire_fk_ctrl_setup(inputs_grp, ik_ctrl_list[1], fk_ctrl_list, self.fk_pos_dict, self.fk_rot_dict)
+        logic_jnt_list = self.cr_logic_rig_joints(fk_ctrl_list, self.fk_pos_dict)
+
+        self.wire_fk_ctrl_stretch_setup(fk_ctrl_list, self.fk_pos_dict)
+        self.wire_fk_ik_stretch_setup()
+
+        self.wire_fk_ctrl_to_logic_joint(blend_armRoot_node, fk_ctrl_list, logic_jnt_list)
+        
         # # group the module
         # utils.group_module(module_name=module_name, unique_id=self.unique_id, 
         #                    side=self.side ,input_grp=inputs_grp, output_grp=outputs_grp, 
         #                    ctrl_grp=None, joint_grp=joint_grp, logic_grp=None)
     
 
-    def cr_input_output_groups(self):
+    def cr_input_output_groups(self, output_global=False):
         inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
         outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
         utils.cr_node_if_not_exists(0, "transform", inputs_grp)
         utils.cr_node_if_not_exists(0, "transform", outputs_grp)
 
         # Input grp
-        utils.add_float_attrib(inputs_grp, ["globalScale"], [0.01, 999], True) 
-        cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
+        utils.add_float_attrib(inputs_grp, [self.global_scale_attr], [0.01, 999], True)
+        cmds.setAttr(f"{inputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
         utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
         utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
 
-        # Output grp - for hand module to follow
-        utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_wrist_mtx", 
-                                        'matrix', False)
-        
-        '''*module dependant data below (basically this data changes depending on the module)'''
-        utils.add_float_attrib(inputs_grp, [f"Squash_Value"], [1.0, 1.0], False)
-        cmds.setAttr(f"{inputs_grp}.Squash_Value", keyable=1, channelBox=1)
-        cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
+        if output_global:
+            utils.add_float_attrib(outputs_grp, [self.global_scale_attr], [0.01, 999], True)
+            cmds.setAttr(f"{outputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
 
         return inputs_grp, outputs_grp
     
+
+    def add_outputs_matrix_attr(self, outputs_grp, out_matrix_name_list):
+        '''
+        # Description:
+            Add custom matrix to ouptut group -> this matrix lets other modules follow.
+        # Attributes:
+            outputs_grp (string): Outputgrpup for this module. 
+            out_matrix_name_list (list): List of names for matrix attr.
+        # Returns: N/A
+        '''
+        for mtx_name in out_matrix_name_list:
+            utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_{mtx_name}_mtx", 
+                                    'matrix', False) # for upper body module to follow
+
 
     def wire_inputs_grp(self, inputs_grp, global_scale_plg, base_mtx_plg, hook_mtx_plg):
         # connect the global scale
@@ -383,17 +396,47 @@ class ArmSystem():
 
         return joint_grp
 
+
+    def add_custom_input_attr(self, inputs_grp):
+        '''
+        # Description:
+            Add module uniwue attributes to the input group.
+        # Attributes:
+            inputs_grp (string): Outputgrpup for this module.
+        # Returns: N/A
+        '''
+        utils.add_float_attrib(inputs_grp, [f"Squash_Value"], [1.0, 1.0], False)
+        cmds.setAttr(f"{inputs_grp}.Squash_Value", keyable=1, channelBox=1)
+        cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
+
     # Ctrl mtx setup
-    def wire_clav_armRt_setup(self, inputs_grp, ctrl_list, skn_jnt_clav, pos_dict, rot_dict):
+    def wire_clav_armRt_setup(self, inputs_grp, ctrl_list, skn_jnt_clav, ik_pos_dict, ik_rot_dict):
+        '''
+        # Description:
+            The 'clavicle control' drives the 'clavicle skn_joint' > which drives 
+            the 'arm root control' which will then be the root of the rest of the 
+            arm module: Both FK & IK follow it.  
+        # Attributes:
+            input_grp (string): Group for input data for this module.
+            ctrl_list (list): Contains ik_clavicle & ik_shoulder(armRoot) control names.
+            skn_jnt_clav (string): Clavicle skin joint name.
+            ik_pos_dict (dict): key=Name of ik controls, value=Positional data.
+            ik_rot_dict (dict): key=Name of ik controls, value=Rotational data.
+        # Returns: N/A
+        '''
         ctrl_clav = ctrl_list[0]
         ctrl_armRt = ctrl_list[1]
+        # Lock the armRt rotate attr
+        for axis in (['x', 'y', 'z']):
+                cmds.setAttr(f"{ctrl_armRt}.r{axis}", lock=1, keyable=0, cb=1)
+
         # ctrl_clavicle setup
         # module_hook_mtx into ctrl_clavicle     
         mm_ctrl_clav = f"MM_{ctrl_clav}"
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_clav)
             # set matrix offset value to MM[0]
-        clav_pos = list(pos_dict.values())[0]
-        clav_rot = list(rot_dict.values())[0]
+        clav_pos = list(ik_pos_dict.values())[0]
+        clav_rot = list(ik_rot_dict.values())[0]
         utils.set_transformation_matrix(clav_pos, clav_rot, f"{mm_ctrl_clav}{utils.Plg.mtx_ins[0]}")
             # plug incoming plug (the one to follow) to MM[1]
         utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{mm_ctrl_clav}{utils.Plg.mtx_ins[1]}")
@@ -408,8 +451,8 @@ class ArmSystem():
         # ctrl arm root (shoulder)
         mm_ctrl_armRoot = f"MM_{ctrl_armRt}"
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_armRoot)
-        armRt_pos = list(pos_dict.values())[1]
-        armRt_rot = list(rot_dict.values())[1]
+        armRt_pos = list(ik_pos_dict.values())[1]
+        armRt_rot = list(ik_rot_dict.values())[1]
         armRt_offset_pos = [x - y for x, y in zip(armRt_pos, clav_pos)]
         armRt_offset_rot = [x - y for x, y in zip(armRt_rot, clav_rot)]
         print(f"armRt_offset == {armRt_offset_pos}")
@@ -428,7 +471,7 @@ class ArmSystem():
             utils.connect_attr(f"{ctrl}.rotateX", f"{jnt}.rotateX")
             utils.connect_attr(f"{ctrl}.rotateY", f"{jnt}.rotateY")
             utils.connect_attr(f"{ctrl}.rotateZ", f"{jnt}.rotateZ")
-
+        
         # cr MM x2 & BM
         MM_base = f"MM_fk_base_{self.mdl_nm}_{self.unique_id}_{self.side}"
         MM_armRt = f"MM_fk_root_{self.mdl_nm}_{self.unique_id}_{self.side}"
@@ -454,7 +497,6 @@ class ArmSystem():
         utils.connect_attr(f"{BM_ctrl_fk_blend}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
         utils.connect_attr(f"{BM_ctrl_fk_blend}{utils.Plg.out_mtx_plg}", f"{rig_jnt_list[0]}{utils.Plg.opm_plg}")
         
-        ''' Optimise '''
         # proceeding fk control matrix parenting (ctrl_elbow following ctrl_shoulder)
         # elbow
         MM_ctrl_fk_1 = f"MM_{fk_ctrl_list[1]}"
@@ -474,7 +516,160 @@ class ArmSystem():
         utils.connect_attr(f"{fk_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{MM_ctrl_fk_2}{utils.Plg.mtx_ins[1]}")
             # MM output
         utils.connect_attr(f"{MM_ctrl_fk_2}{utils.Plg.mtx_sum_plg}", f"{fk_ctrl_list[2]}{utils.Plg.opm_plg}")
-        ''' Optimise '''
+
+    
+    def wire_fk_ctrl_setup(self, inputs_grp, armRt_ctrl, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
+        '''
+        # Description:
+            FK logic setup:
+                - cr 3 logic rig joints. 
+                - base & armRt to multMatrix each > blendMatrix.
+                - setup the fk controls with MM method. 
+                - connect ctrl rotates to rig joints rotates
+        # Attributes:
+            input_grp (string): Group for input data for this module.
+            fk_ctrl_list (list): Contains 3 fk control names.
+            fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
+            fk_rot_dict (dict): key=Name of fk controls, value=Rotational data.
+        # Returns:
+            BM_armRt (utility): Arm root ctrl's (ik_shoulder) matrix follow. 
+        '''
+        # Add follow attr to fk shoulder ctrl
+        utils.add_locked_attrib(fk_ctrl_list[0], ["Follows"])
+        utils.add_float_attrib(fk_ctrl_list[0], ["Follow_Arm_Rot"], [0.0, 1.0], True)
+        cmds.setAttr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", 1)
+        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
+        MM_armRtBase = f"MM_{self.mdl_nm}_fkRootBase_{self.unique_id}_{self.side}"
+        MM_armRt = f"MM_{self.mdl_nm}_fkRootCtrl_{self.unique_id}_{self.side}"
+        BM_armRt = f"BM_{self.mdl_nm}_fkRootBlend_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_armRtBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_armRt)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_armRt, 
+                                    {"target[0].scaleWeight":0, 
+                                     "target[0].shearWeight":0})
+        
+        # Shoulder
+        # wire to the armRtBAse -> It's going into the fk shoulder, so need it's pos(fk shoulder). 
+        utils.set_matrix(list(self.fk_pos_dict.values())[0], f"{MM_armRtBase}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_armRtBase}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{armRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{MM_armRt}{utils.Plg.mtx_ins[1]}")
+            # blend wires
+        utils.connect_attr(f"{MM_armRtBase}{utils.Plg.mtx_sum_plg}", f"{BM_armRt}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_armRt}{utils.Plg.mtx_sum_plg}", f"{BM_armRt}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", f"{BM_armRt}.target[0].rotateWeight")
+                # Blend output plug
+        utils.connect_attr(f"{BM_armRt}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
+        # utils.connect_attr(f"{BM_armRt}{utils.Plg.out_mtx_plg}", f"{rig_jnt_list[0]}{utils.Plg.opm_plg}")
+        # elbow
+        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[0], fk_ctrl_list[1], 
+                                            list(fk_pos_dict.values())[0], list(fk_pos_dict.values())[1],
+                                            list(fk_rot_dict.values())[0], list(fk_rot_dict.values())[1])
+        # wrist
+        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[1], fk_ctrl_list[2], 
+                                            list(fk_pos_dict.values())[1], list(fk_pos_dict.values())[2],
+                                            list(fk_rot_dict.values())[1], list(fk_rot_dict.values())[2])
+        
+        return BM_armRt
+
+
+    def cr_logic_rig_joints(self, fk_ctrl_list, fk_pos_dict):
+        '''
+        # Description:
+            Cr 3 logic rig joints. Used for both fk & ik systems.  
+        # Attributes:
+            fk_ctrl_list (list): Contains 3 fk control names.
+            fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
+        # Returns: N/A
+            jnt_rig_logic_ls (list): list of arm logic joints. 
+        '''
+        # cr a list of the 'jnt_rig_fk' items
+        rig_jnt_list = [ctrl.replace('ctrl_fk_', 'jnt_rig_') for ctrl in fk_ctrl_list]
+        print(f"rig_jnt_list = {rig_jnt_list}")
+        jnt_rig_logic_ls = []
+        for name in fk_pos_dict.keys():
+            jnt_nm = name.replace('ctrl_fk_', 'jnt_rig_')
+            jnt_rig_logic_ls.append(jnt_nm)
+            cmds.joint(n=jnt_nm)
+            cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
+        
+        return jnt_rig_logic_ls
+        
+    
+    def wire_fk_ctrl_stretch_setup(self, fk_ctrl_list, fk_pos_dict):
+        '''
+        # Description:
+            - stretches the fk ctrl's by lengthening the control in front. So to 
+            stretch the shoulder, the elbow is translated away.
+            - This also acts as the default translation position of the fk ctrls. 
+        # Attributes:
+            fk_ctrl_list (list): Contains 3 fk control names.
+            fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
+        # Returns: N/A
+        '''
+        for ctrl in fk_ctrl_list[:-1]:
+            utils.add_locked_attrib(ctrl, ["Attributes"])
+            utils.add_float_attrib(ctrl, ["Stretch"], [0.01, 999.0], True)
+            cmds.setAttr(f"{ctrl}.Stretch", 1)
+            
+        fk_shld_stretch_distance = utils.get_distance(fk_ctrl_list[0], list(fk_pos_dict.values())[0], list(fk_pos_dict.values())[1])
+        fk_elbow_stretch_distance = utils.get_distance(fk_ctrl_list[1], list(fk_pos_dict.values())[1], list(fk_pos_dict.values())[2])
+        print(f"fk_shld_stretch_distance = `{fk_shld_stretch_distance}`")
+        print(f"fk_elbow_stretch_distance = `{fk_elbow_stretch_distance}`")
+
+        # shoulder stretch
+        fm_shld_stretch_mult = f"DB_stretchMult_{fk_ctrl_list[0]}"
+        fm_shld_stretch_sub = f"DB_stretchSub_{fk_ctrl_list[0]}"
+        utils.cr_node_if_not_exists(1, "floatMath", fm_shld_stretch_mult, {"operation":2, "floatA":fk_shld_stretch_distance})
+        utils.cr_node_if_not_exists(1, "floatMath", fm_shld_stretch_sub, {"operation":1, "floatB":fk_shld_stretch_distance})
+        
+        utils.connect_attr(f"{fk_ctrl_list[0]}.Stretch", f"{fm_shld_stretch_mult}{utils.Plg.flt_B}")
+        utils.connect_attr(f"{fm_shld_stretch_mult}{utils.Plg.out_flt}", f"{fm_shld_stretch_sub}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{fm_shld_stretch_sub}{utils.Plg.out_flt}", f"{fk_ctrl_list[1]}.translate{self.prim_axis}")
+        
+        # elbow stretch
+        fm_elb_stretch_mult = f"DB_stretchMult_{fk_ctrl_list[1]}"
+        fm_elb_stretch_sub = f"DB_stretchSub_{fk_ctrl_list[1]}"
+        utils.cr_node_if_not_exists(1, "floatMath", fm_elb_stretch_mult, {"operation":2, "floatA":fk_shld_stretch_distance})
+        utils.cr_node_if_not_exists(1, "floatMath", fm_elb_stretch_sub, {"operation":1, "floatB":fk_shld_stretch_distance})
+        
+        utils.connect_attr(f"{fk_ctrl_list[1]}.Stretch", f"{fm_elb_stretch_mult}{utils.Plg.flt_B}")
+        utils.connect_attr(f"{fm_elb_stretch_mult}{utils.Plg.out_flt}", f"{fm_elb_stretch_sub}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{fm_elb_stretch_sub}{utils.Plg.out_flt}", f"{fk_ctrl_list[2]}.translate{self.prim_axis}")
+        
+        
+
+
+    def wire_fk_ik_stretch_setup(self):
+        '''
+        # Description:
+            Setup includes:
+                - stretch of ik system
+                - arm pinning
+                - *more....
+        # Attributes: N/A
+        # Returns: N/A
+        '''
+
+
+    def wire_fk_ctrl_to_logic_joint(self, blend_armRoot_node, fk_ctrl_list, logic_jnt_list):
+        '''
+        # Description:
+            driving the logic joints:
+                - parent logic joint is driven by arnRoot ctrl w/ 'blend_armRoot_node'
+                - child logic joints are driven by fk ctrl's direct rotations.
+        # Attributes: N/A
+        # Returns: N/A
+        '''
+        # connect the BM armRoot node to parent logic joint opm. 
+        utils.connect_attr(f"{blend_armRoot_node}{utils.Plg.out_mtx_plg}", f"{logic_jnt_list[0]}{utils.Plg.opm_plg}")
+        # connect rotations of child arm fk ctrls to child logic jnts 
+        for ctrl, jnt in zip(fk_ctrl_list, logic_jnt_list):
+            utils.connect_attr(f"{ctrl}.rotateX", f"{jnt}.rotateX")
+            utils.connect_attr(f"{ctrl}.rotateY", f"{jnt}.rotateY")
+            utils.connect_attr(f"{ctrl}.rotateZ", f"{jnt}.rotateZ")
+        
+
+#-----------------------
 
 '''
 'ex_external_plg_dict' is an important dictionary that should be intiilaised by 

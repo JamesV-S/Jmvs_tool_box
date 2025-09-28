@@ -22,6 +22,180 @@ def progress_value(step, total_steps):
     pv = (step + 1) * 100 / total_steps
     return pv
 
+#---------------------------- CONNECTIONS -------------------------------------
+def cr_node_if_not_exists(util_type, node_type, node_name, set_attrs=None):
+    if not cmds.objExists(node_name):
+        if util_type:
+            cmds.shadingNode(node_type, au=1, n=node_name)
+        else:
+            cmds.createNode(node_type, n=node_name)
+        if set_attrs:
+            for attr, value in set_attrs.items():
+                cmds.setAttr(f"{node_name}.{attr}", value)
+
+
+def connect_attr(source_attr, target_attr):
+    connections = cmds.listConnections(target_attr, destination=False ,source=True)
+    #print(f"here is the listed connection: {connections}")
+    if not connections:
+        cmds.connectAttr(source_attr, target_attr, force=True)
+    else:
+        print(f" CON {source_attr} is already connected to {target_attr} ")
+
+
+class Plg():
+    axis = ['X', 'Y', 'Z']
+    mtx_ins = []
+    out_axis = []
+    for x in range(3):
+        mtx_ins.append(f".matrixIn[{x}]")
+        out_axis.append(f".output{axis[x]}")
+    
+    inMatrixs = []
+    for x in range(3):
+        # print(f"ORI: inMatrixs == `{inMatrixs}`")
+        # if x == 0:
+        #     x = 1 
+        # elif x == 1:
+        #     x = 2
+            inMatrixs.append(f".inMatrix{x}")
+
+    input1_val = []   
+    input2_val = []
+    for x in range(3):
+        input1_val.append(f".input1{axis[x]}")
+        input2_val.append(f".input2{axis[x]}")
+
+    target_mtx = []
+    for x in range(5):
+        target_mtx.append(f".target[{x}].targetMatrix")
+
+    color1_plg = []
+    color2_plg = []
+    color3_plg = []
+    out_letter = []
+    for x in ["R", "G", "B"]:
+        color1_plg.append(f".color1{x}")
+        color2_plg.append(f".color2{x}")
+        color3_plg.append(f".color3{x}")
+        out_letter.append(f".output{x}")
+
+    output_plg = ".output"
+    inputT_plug = ".inputTranslate"
+    inputR_plug = ".inputRotate"
+    mtx_sum_plg = ".matrixSum"
+    wld_mtx_plg = ".worldMatrix[0]"
+    wld_inv_mtx_plg = ".worldInverseMatrix[0]"
+    wld_space_plg = ".worldSpace[0]"
+    wld_up_mtx_plg = ".worldUpMatrix"
+    inp_mtx_plg = ".inputMatrix"
+    out_mtx_plg = ".outputMatrix"
+    opm_plg = ".offsetParentMatrix"
+    flt_A = ".floatA"
+    flt_B = ".floatB"
+    out_flt = ".outFloat"
+    arc_len_plg = ".arcLength"
+    inp_curve_plg = ".inputCurve"
+    blndr_plg = ".blender"
+    geopath_plg = ".geometryPath"
+    cmpM_ac_plg = ".allCoordinates"
+    rot_plg = ".rotate"
+    u_plg = ".uValue"
+    distance_plg = ".distance"
+
+
+def check_non_default_transforms(obj):
+    attributes = ['translate', 'rotate', 'scale']
+    # check for translate & rotate vals with 0 & scale with 1
+    for atr in attributes:
+        values = cmds.getAttr(f"{obj}.{atr}")[0]
+        if any(value != 0 for value in values) if atr != 'scale' else any(value != 1 for value in values):
+            return True
+    return False
+
+#----------------------------- ATTRIBUTES -------------------------------------
+def add_attr_if_not_exists(node_name, attr_name, attr_type, visible=True):
+    if cmds.objExists(node_name):
+        if not cmds.attributeQuery(attr_name, node=node_name, exists=True):
+            if attr_type == 'matrix':
+                cmds.addAttr(node_name, longName=attr_name, attributeType=attr_type)
+            else:
+                cmds.addAttr(node_name, longName=attr_name, attributeType=attr_type, defaultValue=0)
+            if visible:
+                cmds.setAttr(f"{node_name}.{attr_name}", lock=False, keyable=True, 
+                                channelBox=True
+                            )
+            else:
+                cmds.setAttr(f"{node_name}.{attr_name}", lock=False, keyable=False, 
+                                channelBox=False
+                            )
+    else:
+        print(f"Node '{node_name}' does not exist.")
+
+
+def add_locked_attrib(ctrl, en):              
+    dividerNN = " " 
+    atrrType = "enum"
+    
+    for attr in en:
+        # Generate the long name for the attribute
+        ln = f"{attr.lower()}_dvdr"
+        attr.upper() 
+
+        #check if the attribute already exists
+        if not cmds.attributeQuery(ln, node=ctrl, exists=True):
+            try:
+                # add the attributes
+                cmds.addAttr(ctrl, longName=ln, niceName=dividerNN, 
+                            attributeType=atrrType, enumName=attr, k=True
+                            )
+                
+                cmds.setAttr(f"{ctrl}.{ln}", lock=True, keyable=False, 
+                            channelBox=True
+                            )
+                print(f"Added locked attr {attr} on {ctrl}")
+            except Exception as e:
+                print(f"Failed to add locked attr {attr} on {ctrl}: {e}")
+        else:
+            print(f"Attribute {attr} already exists on {ctrl}")
+
+
+def add_float_attrib(ctrl, flt, val, limited):
+    MinVal = val[0]
+    MaxVal = val[1]
+    
+    for target in [ctrl]:
+        for attr in flt:
+            if not cmds.attributeQuery(attr, node=target, exists=True):
+                if limited:                            
+                    cmds.addAttr(target, longName=attr, at='double', dv=MinVal, 
+                                min= MinVal, max = MaxVal)
+                    cmds.setAttr(f"{target}.{attr}", e=1, k=1 )
+                else:
+                    cmds.addAttr(target, longName=attr, at='double', dv=0, 
+                                )
+                    cmds.setAttr(f"{target}.{attr}", e=1, k=1 )
+            else:
+                print(f"Attribute {attr} already exists on {target}")
+
+
+def proxy_attr_list(master_ctrl, ctrl_list, N_of_Attr):
+    ctrls = cmds.ls(sl=1, type="transform")
+
+    for target in [ctrl_list]:
+        cmds.addAttr( target, ln=N_of_Attr, proxy=f"{master_ctrl}.{N_of_Attr}" )
+
+
+def custom_enum_attr(ctrl, enm_lng_nm, CtrlEnmOptions):
+    print("In util the control is: ", ctrl)
+    print("In util the attr is: ", enm_lng_nm)
+    for target in [ctrl]:
+        if not cmds.attributeQuery(enm_lng_nm, node=target, exists=True):
+            cmds.addAttr(target, longName=enm_lng_nm, at="enum", enumName=CtrlEnmOptions )
+            print(f"{target}.{enm_lng_nm}")
+            cmds.setAttr( f"{target}.{enm_lng_nm}", e=1, k=1 )
+    #custom_enum_attr( "James", "Thuki:Arron:Harv")
+
 #---------------------------------- CTRL --------------------------------------
 def colour_ctrls(ctrl_name_list, side):
     for x in range(len(ctrl_name_list)):
@@ -188,6 +362,7 @@ def get_motionpath_u_value(moPath_list):
     for mop in moPath_list:
         u_val.append(cmds.getAttr(f"{mop}{Plg.u_plg}"))
 
+
 #--------------------------------- HIERARCHY ----------------------------------
 def get_first_child(group_name):
     children = cmds.listRelatives(group_name, children=True)
@@ -241,6 +416,7 @@ def group_module(module_name, unique_id, side, input_grp, output_grp, ctrl_grp=N
             else:
                 print(f"No module child group `{logic_grp}` exists in the scene")
         cmds.select(cl=1)
+        print(F"Grouped Module: {module_name}_{unique_id}_{side}")
 
 
 # ------------------------------- GET DATA ------------------------------------
@@ -399,6 +575,28 @@ def get_sel_ori_plane_dict(selection, attr_name):
         }
 
     return geo_plane_attrib
+
+
+def get_distance(name, start_pos, end_pos):
+    # Get distance between the fk controls. 
+    temp_start_locator = f"temp_start_pos_{name}"
+    temp_end_locator = f"temp_end_pos_{name}"
+    cmds.spaceLocator(n=temp_start_locator)
+    cmds.spaceLocator(n=temp_end_locator)
+    cmds.xform(temp_start_locator, t=start_pos, ws=True)
+    cmds.xform(temp_end_locator, t=end_pos, ws=True)
+
+    # cr distance between node & wire the locators!
+    db_node = f"DB_temp_distance_{name}"
+    cr_node_if_not_exists(1, "distanceBetween", db_node)
+    connect_attr(f"{temp_start_locator}{Plg.wld_mtx_plg}", f"{db_node}{Plg.inMatrixs[1]}")
+    connect_attr(f"{temp_end_locator}{Plg.wld_mtx_plg}", f"{db_node}{Plg.inMatrixs[2]}")
+
+    distance_value = cmds.getAttr(f"{db_node}.distance")
+
+    cmds.delete(temp_start_locator, temp_end_locator, db_node)
+
+    return distance_value
 #------------------------------- DICTIONARY -----------------------------------
 # dict2 = {'x': 10, 'y': 20, 'z':30}
 
@@ -506,281 +704,6 @@ def colour_root_control(custom_crv):
     for shape in white_shape:
         cmds.setAttr(f"{shape}.overrideColor", 16)
     # colour_root_control("ctrl_root")
-
-
-#---------------------------- CONNECTIONS -------------------------------------
-def cr_node_if_not_exists(util_type, node_type, node_name, set_attrs=None):
-    if not cmds.objExists(node_name):
-        if util_type:
-            cmds.shadingNode(node_type, au=1, n=node_name)
-        else:
-            cmds.createNode(node_type, n=node_name)
-        if set_attrs:
-            for attr, value in set_attrs.items():
-                cmds.setAttr(f"{node_name}.{attr}", value)
-
-
-def connect_attr(source_attr, target_attr):
-    connections = cmds.listConnections(target_attr, destination=False ,source=True)
-    #print(f"here is the listed connection: {connections}")
-    if not connections:
-        cmds.connectAttr(source_attr, target_attr, force=True)
-    else:
-        print(f" CON {source_attr} is already connected to {target_attr} ")
-
-
-class Plg():
-    axis = ['X', 'Y', 'Z']
-    mtx_ins = []
-    out_axis = []
-    for x in range(3):
-        mtx_ins.append(f".matrixIn[{x}]")
-        out_axis.append(f".output{axis[x]}")
-    
-    inMatrixs = []
-    for x in range(3):
-        # print(f"ORI: inMatrixs == `{inMatrixs}`")
-        # if x == 0:
-        #     x = 1 
-        # elif x == 1:
-        #     x = 2
-            inMatrixs.append(f".inMatrix{x}")
-
-    input1_val = []   
-    input2_val = []
-    for x in range(3):
-        input1_val.append(f".input1{axis[x]}")
-        input2_val.append(f".input2{axis[x]}")
-
-    target_mtx = []
-    for x in range(5):
-        target_mtx.append(f".target[{x}].targetMatrix")
-
-    color1_plg = []
-    color2_plg = []
-    color3_plg = []
-    out_letter = []
-    for x in ["R", "G", "B"]:
-        color1_plg.append(f".color1{x}")
-        color2_plg.append(f".color2{x}")
-        color3_plg.append(f".color3{x}")
-        out_letter.append(f".output{x}")
-
-    output_plg = ".output"
-    inputT_plug = ".inputTranslate"
-    inputR_plug = ".inputRotate"
-    mtx_sum_plg = ".matrixSum"
-    wld_mtx_plg = ".worldMatrix[0]"
-    wld_inv_mtx_plg = ".worldInverseMatrix[0]"
-    wld_space_plg = ".worldSpace[0]"
-    wld_up_mtx_plg = ".worldUpMatrix"
-    inp_mtx_plg = ".inputMatrix"
-    out_mtx_plg = ".outputMatrix"
-    opm_plg = ".offsetParentMatrix"
-    flt_A = ".floatA"
-    flt_B = ".floatB"
-    out_flt = ".outFloat"
-    arc_len_plg = ".arcLength"
-    inp_curve_plg = ".inputCurve"
-    blndr_plg = ".blender"
-    geopath_plg = ".geometryPath"
-    cmpM_ac_plg = ".allCoordinates"
-    rot_plg = ".rotate"
-    u_plg = ".uValue"
-    distance_plg = ".distance"
-
-
-def check_non_default_transforms(obj):
-    attributes = ['translate', 'rotate', 'scale']
-    # check for translate & rotate vals with 0 & scale with 1
-    for atr in attributes:
-        values = cmds.getAttr(f"{obj}.{atr}")[0]
-        if any(value != 0 for value in values) if atr != 'scale' else any(value != 1 for value in values):
-            return True
-    return False
-
-
-#--------------------------------- MATRIX -------------------------------------
-def clean_opm(obj):
-    cmds.select(obj)
-    OPM.OpmCleanTool()
-    cmds.select(cl=1)
-
-
-def calculate_matrix_offset(previous_pos, pos):
-    # pos format = [0.0, 0.0, 0.0]
-    offset = [p2 - p1 for p1, p2 in zip(previous_pos, pos)]
-    return offset
-
-
-def set_matrix(translation_ls, mtx_attr):
-    # cr a translation matrix
-    translation_matrix = [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        translation_ls[0], translation_ls[1], translation_ls[2], 1.0
-        ]
-    cmds.setAttr(mtx_attr, *translation_matrix, type='matrix')
-
-
-def matrix_to_trs(mtx):
-    '''
-    Explanation: Takes a flat matrix list and returns its list of translation values and
-    a list of rotation values. 
-
-    Args:
-    mtx (list): matrix float list 
-    '''
-    # Convert list to MMatrix
-    maya_mtx = om.MMatrix([mtx[i:i+4] for i in range(0, 16, 4)])
-    
-    # Create transformation matrix wrapper
-    transform = om.MTransformationMatrix(maya_mtx)
-    
-    # Get translation
-    translation = transform.translation(om.MSpace.kTransform)
-    translation_ls = [translation.x, translation.y, translation.z]
-    
-    # Get rotation as Euler (in radians), then convert to degrees
-    euler_rot = transform.rotation()
-    rotation_ls = [math.degrees(euler_rot.x),
-                   math.degrees(euler_rot.y),
-                   math.degrees(euler_rot.z)]
-    
-    return translation_ls, rotation_ls
-
-
-def trs_to_matrix(translation_ls, rotation_ls):
-    '''
-    Explanation: Takes a list of translation values and
-    a list of rotation values and converts them into a flattened matrix list.
-
-    Args:
-    translation_ls (list): translation float list [#.#, #.#, #.#] 
-    rotation_ls (list): rotation float list 
-    '''
-    # Convert rotation from degrees to radians
-    rx, ry, rz = [math.radians(x) for x in rotation_ls]
-    
-    # Create an MEulerRotation
-    euler_rot = om.MEulerRotation(rx, ry, rz)
-    
-    # Create an MTransformationMatrix
-    transform = om.MTransformationMatrix()
-    transform.setRotation(euler_rot)
-    transform.setTranslation(om.MVector(*translation_ls), om.MSpace.kTransform)
-    
-    # Flattern to MMatrix
-    flat_mtx = list(transform.asMatrix())
-    
-    return flat_mtx
-
-
-def set_transformation_matrix(translation_ls, rotation_ls, mtx_attr):
-    '''
-    Explanation: 
-    Sets the matrix of an object's matrix attribute with desired translation
-    and rotation values provided.
-
-    Args:
-    translation_ls (list): translation float list [#.#, #.#, #.#] 
-    rotation_ls (list): rotation float list
-    mtx_attr (object.matrix): object name and matrix attribute. 
-    '''
-    new_matrix = trs_to_matrix(translation_ls, rotation_ls)
-    cmds.setAttr(mtx_attr, new_matrix, type='matrix')
-
-
-def mtxCon_no_ofs(driver, driven):
-        MM = f"MM_{driven}"
-        cr_node_if_not_exists(1, "multMatrix", MM)
-        connect_attr(f"{driver}{Plg.wld_mtx_plg}", f"{MM}{Plg.mtx_ins[1]}")
-        connect_attr(f"{MM}{Plg.mtx_sum_plg}", f"{driven}{Plg.opm_plg}")
-        return MM
-
-#----------------------------- ATTRIBUTES -------------------------------------
-def add_attr_if_not_exists(node_name, attr_name, attr_type, visible=True):
-    if cmds.objExists(node_name):
-        if not cmds.attributeQuery(attr_name, node=node_name, exists=True):
-            if attr_type == 'matrix':
-                cmds.addAttr(node_name, longName=attr_name, attributeType=attr_type)
-            else:
-                cmds.addAttr(node_name, longName=attr_name, attributeType=attr_type, defaultValue=0)
-            if visible:
-                cmds.setAttr(f"{node_name}.{attr_name}", lock=False, keyable=True, 
-                                channelBox=True
-                            )
-            else:
-                cmds.setAttr(f"{node_name}.{attr_name}", lock=False, keyable=False, 
-                                channelBox=False
-                            )
-    else:
-        print(f"Node '{node_name}' does not exist.")
-
-
-def add_locked_attrib(ctrl, en):              
-    dividerNN = " " 
-    atrrType = "enum"
-    
-    for attr in en:
-        # Generate the long name for the attribute
-        ln = f"{attr.lower()}_dvdr"
-        attr.upper() 
-
-        #check if the attribute already exists
-        if not cmds.attributeQuery(ln, node=ctrl, exists=True):
-            try:
-                # add the attributes
-                cmds.addAttr(ctrl, longName=ln, niceName=dividerNN, 
-                            attributeType=atrrType, enumName=attr, k=True
-                            )
-                
-                cmds.setAttr(f"{ctrl}.{ln}", lock=True, keyable=False, 
-                            channelBox=True
-                            )
-                print(f"Added locked attr {attr} on {ctrl}")
-            except Exception as e:
-                print(f"Failed to add locked attr {attr} on {ctrl}: {e}")
-        else:
-            print(f"Attribute {attr} already exists on {ctrl}")
-
-
-def add_float_attrib(ctrl, flt, val, limited):
-    MinVal = val[0]
-    MaxVal = val[1]
-    
-    for target in [ctrl]:
-        for attr in flt:
-            if not cmds.attributeQuery(attr, node=target, exists=True):
-                if limited:                            
-                    cmds.addAttr(target, longName=attr, at='double', dv=MinVal, 
-                                min= MinVal, max = MaxVal)
-                    cmds.setAttr(f"{target}.{attr}", e=1, k=1 )
-                else:
-                    cmds.addAttr(target, longName=attr, at='double', dv=0, 
-                                )
-                    cmds.setAttr(f"{target}.{attr}", e=1, k=1 )
-            else:
-                print(f"Attribute {attr} already exists on {target}")
-
-
-def proxy_attr_list(master_ctrl, ctrl_list, N_of_Attr):
-    ctrls = cmds.ls(sl=1, type="transform")
-
-    for target in [ctrl_list]:
-        cmds.addAttr( target, ln=N_of_Attr, proxy=f"{master_ctrl}.{N_of_Attr}" )
-
-
-def custom_enum_attr(ctrl, enm_lng_nm, CtrlEnmOptions):
-    print("In util the control is: ", ctrl)
-    print("In util the attr is: ", enm_lng_nm)
-    for target in [ctrl]:
-        if not cmds.attributeQuery(enm_lng_nm, node=target, exists=True):
-            cmds.addAttr(target, longName=enm_lng_nm, at="enum", enumName=CtrlEnmOptions )
-            print(f"{target}.{enm_lng_nm}")
-            cmds.setAttr( f"{target}.{enm_lng_nm}", e=1, k=1 )
-    #custom_enum_attr( "James", "Thuki:Arron:Harv")
 
 
 #----------------------------- CONSTRAINTS ------------------------------------
@@ -976,4 +899,114 @@ def joint_from_sel():
           cmds.joint(name=new_name, parent=None)
 
 
+#--------------------------------- MATRIX -------------------------------------
+def clean_opm(obj):
+    cmds.select(obj)
+    OPM.OpmCleanTool()
+    cmds.select(cl=1)
 
+
+def calculate_matrix_offset(previous_pos, pos):
+    # pos format = [0.0, 0.0, 0.0]
+    offset = [p2 - p1 for p1, p2 in zip(previous_pos, pos)]
+    return offset
+
+
+def set_matrix(translation_ls, mtx_attr):
+    # cr a translation matrix
+    translation_matrix = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        translation_ls[0], translation_ls[1], translation_ls[2], 1.0
+        ]
+    cmds.setAttr(mtx_attr, *translation_matrix, type='matrix')
+
+
+def matrix_to_trs(mtx):
+    '''
+    Explanation: Takes a flat matrix list and returns its list of translation values and
+    a list of rotation values. 
+
+    Args:
+    mtx (list): matrix float list 
+    '''
+    # Convert list to MMatrix
+    maya_mtx = om.MMatrix([mtx[i:i+4] for i in range(0, 16, 4)])
+    
+    # Create transformation matrix wrapper
+    transform = om.MTransformationMatrix(maya_mtx)
+    
+    # Get translation
+    translation = transform.translation(om.MSpace.kTransform)
+    translation_ls = [translation.x, translation.y, translation.z]
+    
+    # Get rotation as Euler (in radians), then convert to degrees
+    euler_rot = transform.rotation()
+    rotation_ls = [math.degrees(euler_rot.x),
+                   math.degrees(euler_rot.y),
+                   math.degrees(euler_rot.z)]
+    
+    return translation_ls, rotation_ls
+
+
+def trs_to_matrix(translation_ls, rotation_ls):
+    '''
+    Explanation: Takes a list of translation values and
+    a list of rotation values and converts them into a flattened matrix list.
+
+    Args:
+    translation_ls (list): translation float list [#.#, #.#, #.#] 
+    rotation_ls (list): rotation float list 
+    '''
+    # Convert rotation from degrees to radians
+    rx, ry, rz = [math.radians(x) for x in rotation_ls]
+    
+    # Create an MEulerRotation
+    euler_rot = om.MEulerRotation(rx, ry, rz)
+    
+    # Create an MTransformationMatrix
+    transform = om.MTransformationMatrix()
+    transform.setRotation(euler_rot)
+    transform.setTranslation(om.MVector(*translation_ls), om.MSpace.kTransform)
+    
+    # Flattern to MMatrix
+    flat_mtx = list(transform.asMatrix())
+    
+    return flat_mtx
+
+
+def set_transformation_matrix(translation_ls, rotation_ls, mtx_attr):
+    '''
+    Explanation: 
+    Sets the matrix of an object's matrix attribute with desired translation
+    and rotation values provided.
+
+    Args:
+    translation_ls (list): translation float list [#.#, #.#, #.#] 
+    rotation_ls (list): rotation float list
+    mtx_attr (object.matrix): object name and matrix attribute. 
+    '''
+    new_matrix = trs_to_matrix(translation_ls, rotation_ls)
+    cmds.setAttr(mtx_attr, new_matrix, type='matrix')
+
+
+def mtxCon_no_ofs(driver, driven):
+        MM = f"MM_{driven}"
+        cr_node_if_not_exists(1, "multMatrix", MM)
+        connect_attr(f"{driver}{Plg.wld_mtx_plg}", f"{MM}{Plg.mtx_ins[1]}")
+        connect_attr(f"{MM}{Plg.mtx_sum_plg}", f"{driven}{Plg.opm_plg}")
+        return MM
+
+
+def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, 
+                                        fk_pos_source, fk_pos_target, 
+                                        fk_rot_source, fk_rot_target):
+    MM_ctrl_fk = f"MM_{fk_target_ctrl}"
+    cr_node_if_not_exists(1, 'multMatrix', MM_ctrl_fk)
+    fk_offset_pos = [x - y for x, y in zip(fk_pos_target, fk_pos_source)]
+    fk_offset_rot = [x - y for x, y in zip(fk_rot_source, fk_rot_target)]
+    set_transformation_matrix(fk_offset_pos, fk_offset_rot, f"{MM_ctrl_fk}{Plg.mtx_ins[0]}")
+    connect_attr(f"{fk_source_ctrl}{Plg.wld_mtx_plg}", f"{MM_ctrl_fk}{Plg.mtx_ins[1]}")
+        # MM output to target fk ctrl
+    connect_attr(f"{MM_ctrl_fk}{Plg.mtx_sum_plg}", f"{fk_target_ctrl}{Plg.opm_plg}")
