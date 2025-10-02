@@ -178,13 +178,24 @@ class ArmSystem():
         self.wire_clav_armRt_setup(inputs_grp, [ik_ctrl_list[0], ik_ctrl_list[1]], skn_jnt_clav, self.ik_pos_dict, self.ik_rot_dict)
         
         blend_armRoot_node = self.wire_fk_ctrl_setup(inputs_grp, ik_ctrl_list[1], fk_ctrl_list, self.fk_pos_dict, self.fk_rot_dict)
-        logic_jnt_list = self.cr_logic_rig_joints(fk_ctrl_list, self.fk_pos_dict)
+        logic_jnt_list = self.cr_logic_rig_joints(fk_ctrl_list, self.fk_pos_dict, self.fk_rot_dict)
 
         self.wire_fk_ctrl_stretch_setup(fk_ctrl_list, self.fk_pos_dict)
-        self.wire_fk_ik_stretch_setup()
-
         self.wire_fk_ctrl_to_logic_joint(blend_armRoot_node, fk_ctrl_list, logic_jnt_list)
+
+        self.wire_ctrl_ik_wrist(inputs_grp, ik_ctrl_list)
         
+
+        print(f"{external_plg_dict['hook_plg_grp'].split('_')[-2]}")
+        print(f"{external_plg_dict['hook_plg_grp'].split('_')[-1]}")
+        spine_top_name = f"ctrl_ik_spine_spine_top_{external_plg_dict['hook_plg_grp'].split('_')[-2]}_{external_plg_dict['hook_plg_grp'].split('_')[-1]}"
+        # temp_spine_name = f"ctrl_ik_spine_top"
+        
+        self.wire_ctrl_ik_elbow(inputs_grp, ik_ctrl_list, spine_top_name)
+
+        # cv_upper = self.cr_logic_curves("upper")
+        # cv_lower = self.cr_logic_curves("lower")
+
         # # group the module
         # utils.group_module(module_name=module_name, unique_id=self.unique_id, 
         #                    side=self.side ,input_grp=inputs_grp, output_grp=outputs_grp, 
@@ -456,67 +467,11 @@ class ArmSystem():
         armRt_offset_pos = [x - y for x, y in zip(armRt_pos, clav_pos)]
         armRt_offset_rot = [x - y for x, y in zip(armRt_rot, clav_rot)]
         print(f"armRt_offset == {armRt_offset_pos}")
-        utils.set_transformation_matrix(armRt_offset_pos, armRt_offset_rot, f"{mm_ctrl_armRoot}{utils.Plg.mtx_ins[0]}")
+        # utils.set_transformation_matrix(armRt_offset_pos, armRt_offset_rot, f"{mm_ctrl_armRoot}{utils.Plg.mtx_ins[0]}")
+        utils.set_matrix(armRt_offset_pos, f"{mm_ctrl_armRoot}{utils.Plg.mtx_ins[0]}")
         utils.connect_attr(f"{skn_jnt_clav}{utils.Plg.wld_mtx_plg}", f"{mm_ctrl_armRoot}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{mm_ctrl_armRoot}{utils.Plg.mtx_sum_plg}", f"{ctrl_armRt}{utils.Plg.opm_plg}")
        
- 
-    def fk_logic_setup(self, fk_blend_dict, fk_ctrl_list, pos_dict, rot_dict):
-        # cr a list of the 'jnt_rig_fk' items
-        rig_jnt_list = [ctrl.replace('ctrl_fk_', 'jnt_rig_') for ctrl in fk_ctrl_list]
-        print(f"rig_jnt_list = {rig_jnt_list} | fk_blend_dict = {fk_blend_dict}")
-
-        # connect rotations of arm fk to fk ctrls
-        for ctrl, jnt in zip(fk_ctrl_list, rig_jnt_list):
-            utils.connect_attr(f"{ctrl}.rotateX", f"{jnt}.rotateX")
-            utils.connect_attr(f"{ctrl}.rotateY", f"{jnt}.rotateY")
-            utils.connect_attr(f"{ctrl}.rotateZ", f"{jnt}.rotateZ")
-        
-        # cr MM x2 & BM
-        MM_base = f"MM_fk_base_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        MM_armRt = f"MM_fk_root_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        BM_ctrl_fk_blend = f"BM_fk_blend_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_base)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_armRt)
-        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_ctrl_fk_blend)
-            # MM_base wires
-        ofs_base_pos = list(pos_dict.values())[0]
-        ofs_base_rot = list(rot_dict.values())[0]
-        utils.set_transformation_matrix(ofs_base_pos, ofs_base_rot, f"{MM_base}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(fk_blend_dict["fk_base_plg"], f"{MM_base}{utils.Plg.mtx_ins[1]}")
-            # MM_mdlRt (arm root) wires
-        utils.connect_attr(fk_blend_dict["fk_mdlRt_plg"], f"{MM_armRt}{utils.Plg.mtx_ins[1]}")
-            # BM wires
-                # Add (%) follow attr for fk shoulder ctrl!
-        utils.add_locked_attrib(fk_ctrl_list[0], ["Locked"])
-        utils.add_float_attrib(fk_ctrl_list[0], ["Follow_Arm_Rot"], [0.0, 1.0], True) 
-        utils.connect_attr(f"{MM_base}{utils.Plg.mtx_sum_plg}", f"{BM_ctrl_fk_blend}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{MM_armRt}{utils.Plg.mtx_sum_plg}", f"{BM_ctrl_fk_blend}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", f"{BM_ctrl_fk_blend}.target[0].rotateWeight")
-                # Blend output plug
-        utils.connect_attr(f"{BM_ctrl_fk_blend}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
-        utils.connect_attr(f"{BM_ctrl_fk_blend}{utils.Plg.out_mtx_plg}", f"{rig_jnt_list[0]}{utils.Plg.opm_plg}")
-        
-        # proceeding fk control matrix parenting (ctrl_elbow following ctrl_shoulder)
-        # elbow
-        MM_ctrl_fk_1 = f"MM_{fk_ctrl_list[1]}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_ctrl_fk_1)
-        fk_1_offset_pos = [x - y for x, y in zip(list(pos_dict.values())[1], list(pos_dict.values())[0])]
-        fk_1_offset_rot = [x - y for x, y in zip(list(rot_dict.values())[1], list(rot_dict.values())[0])]
-        utils.set_transformation_matrix(fk_1_offset_pos, fk_1_offset_rot, f"{MM_ctrl_fk_1}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(f"{fk_ctrl_list[0]}{utils.Plg.wld_mtx_plg}", f"{MM_ctrl_fk_1}{utils.Plg.mtx_ins[1]}")
-            # MM output
-        utils.connect_attr(f"{MM_ctrl_fk_1}{utils.Plg.mtx_sum_plg}", f"{fk_ctrl_list[1]}{utils.Plg.opm_plg}")
-        # wrist
-        MM_ctrl_fk_2 = f"MM_{fk_ctrl_list[2]}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_ctrl_fk_2)
-        fk_1_offset_pos = [x - y for x, y in zip(list(pos_dict.values())[2], list(pos_dict.values())[1])]
-        fk_1_offset_rot = [x - y for x, y in zip(list(rot_dict.values())[2], list(rot_dict.values())[1])]
-        utils.set_transformation_matrix(fk_1_offset_pos, fk_1_offset_rot, f"{MM_ctrl_fk_2}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(f"{fk_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{MM_ctrl_fk_2}{utils.Plg.mtx_ins[1]}")
-            # MM output
-        utils.connect_attr(f"{MM_ctrl_fk_2}{utils.Plg.mtx_sum_plg}", f"{fk_ctrl_list[2]}{utils.Plg.opm_plg}")
-
     
     def wire_fk_ctrl_setup(self, inputs_grp, armRt_ctrl, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
         '''
@@ -532,47 +487,64 @@ class ArmSystem():
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
             fk_rot_dict (dict): key=Name of fk controls, value=Rotational data.
         # Returns:
-            BM_armRt (utility): Arm root ctrl's (ik_shoulder) matrix follow. 
+            BM_shld (utility): Arm root ctrl's (ik_shoulder) matrix follow. 
         '''
         # Add follow attr to fk shoulder ctrl
         utils.add_locked_attrib(fk_ctrl_list[0], ["Follows"])
         utils.add_float_attrib(fk_ctrl_list[0], ["Follow_Arm_Rot"], [0.0, 1.0], True)
         cmds.setAttr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", 1)
         # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
-        MM_armRtBase = f"MM_{self.mdl_nm}_fkRootBase_{self.unique_id}_{self.side}"
-        MM_armRt = f"MM_{self.mdl_nm}_fkRootCtrl_{self.unique_id}_{self.side}"
-        BM_armRt = f"BM_{self.mdl_nm}_fkRootBlend_{self.unique_id}_{self.side}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_armRtBase)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_armRt)
-        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_armRt, 
+        MM_shldBase = f"MM_{self.mdl_nm}_fkShld_Base_{self.unique_id}_{self.side}"
+        MM_shldRtCtrl = f"MM_{self.mdl_nm}_fkShld_rootCtrl_{self.unique_id}_{self.side}"
+        BM_shld = f"BM_{self.mdl_nm}__fkShld_blend_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_shldBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_shldRtCtrl)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_shld, 
                                     {"target[0].scaleWeight":0, 
                                      "target[0].shearWeight":0})
         
         # Shoulder
-        # wire to the armRtBAse -> It's going into the fk shoulder, so need it's pos(fk shoulder). 
-        utils.set_matrix(list(self.fk_pos_dict.values())[0], f"{MM_armRtBase}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_armRtBase}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{armRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{MM_armRt}{utils.Plg.mtx_ins[1]}")
-            # blend wires
-        utils.connect_attr(f"{MM_armRtBase}{utils.Plg.mtx_sum_plg}", f"{BM_armRt}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{MM_armRt}{utils.Plg.mtx_sum_plg}", f"{BM_armRt}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", f"{BM_armRt}.target[0].rotateWeight")
-                # Blend output plug
-        utils.connect_attr(f"{BM_armRt}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
-        # utils.connect_attr(f"{BM_armRt}{utils.Plg.out_mtx_plg}", f"{rig_jnt_list[0]}{utils.Plg.opm_plg}")
+            # wire to the armRtBAse -> It's going into the fk shoulder, so need it's pos(fk shoulder). 
+        # utils.set_matrix(list(self.fk_pos_dict.values())[0], f"{MM_wristBase}{utils.Plg.mtx_ins[0]}")
+        utils.set_transformation_matrix(list(fk_pos_dict.values())[0], list(fk_rot_dict.values())[0], f"{MM_shldBase}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_shldBase}{utils.Plg.mtx_ins[1]}")
+            # MM_shldRtCtrl
+        utils.set_transformation_matrix([0.0, 0.0, 0.0], list(fk_rot_dict.values())[0], f"{MM_shldRtCtrl}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{armRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{MM_shldRtCtrl}{utils.Plg.mtx_ins[1]}")
+            # BM_shld
+        utils.connect_attr(f"{MM_shldBase}{utils.Plg.mtx_sum_plg}", f"{BM_shld}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_shldRtCtrl}{utils.Plg.mtx_sum_plg}", f"{BM_shld}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", f"{BM_shld}.target[0].rotateWeight")
+        utils.connect_attr(f"{BM_shld}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
+        # create temp locators
+        temp_loc_ls = []
+        for (key, pos_val), (key, rot_val) in zip(fk_pos_dict.items(), fk_rot_dict.items()):
+            loc_name = key.replace('ctrl_fk_', 'loc_temp_')# "ctrl_fk_bipedArm_shoulder_0_L"
+            temp_loc_ls.append(loc_name)
+            cmds.spaceLocator(n=loc_name)
+            cmds.xform(loc_name, t=pos_val, ws=1)
+            cmds.xform(loc_name, rotation=rot_val, ws=1)
+            
+        print(temp_loc_ls)
+        try:
+            for i in range(len(temp_loc_ls)):
+                cmds.parent(temp_loc_ls[i+1],temp_loc_ls[i])
+        except IndexError:
+            pass
+        # cmds.select(cl=1)
+
         # elbow
-        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[0], fk_ctrl_list[1], 
-                                            list(fk_pos_dict.values())[0], list(fk_pos_dict.values())[1],
-                                            list(fk_rot_dict.values())[0], list(fk_rot_dict.values())[1])
+        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[0], fk_ctrl_list[1], temp_loc_ls[1])
         # wrist
-        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[1], fk_ctrl_list[2], 
-                                            list(fk_pos_dict.values())[1], list(fk_pos_dict.values())[2],
-                                            list(fk_rot_dict.values())[1], list(fk_rot_dict.values())[2])
+        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[1], fk_ctrl_list[2], temp_loc_ls[2])
         
-        return BM_armRt
+        # delete the locators
+        cmds.delete(temp_loc_ls[0])
+        
+        return BM_shld
 
 
-    def cr_logic_rig_joints(self, fk_ctrl_list, fk_pos_dict):
+    def cr_logic_rig_joints(self, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
         '''
         # Description:
             Cr 3 logic rig joints. Used for both fk & ik systems.  
@@ -586,12 +558,22 @@ class ArmSystem():
         rig_jnt_list = [ctrl.replace('ctrl_fk_', 'jnt_rig_') for ctrl in fk_ctrl_list]
         print(f"rig_jnt_list = {rig_jnt_list}")
         jnt_rig_logic_ls = []
-        for name in fk_pos_dict.keys():
-            jnt_nm = name.replace('ctrl_fk_', 'jnt_rig_')
+        for (key, pos_val), (key, rot_val) in zip(fk_pos_dict.items(), fk_rot_dict.items()):
+            jnt_nm = key.replace('ctrl_fk_', 'jnt_rig_')
             jnt_rig_logic_ls.append(jnt_nm)
             cmds.joint(n=jnt_nm)
-            cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
+            cmds.xform(jnt_nm, t=pos_val, ws=1)
+            cmds.xform(jnt_nm, rotation=rot_val, ws=1)
+            
+        cmds.select(cl=1)
         
+        for axis in (["X", "Y", "Z"]):
+            cmds.setAttr(f"{jnt_rig_logic_ls[0]}.translate{axis}", 0)
+            cmds.setAttr(f"{jnt_rig_logic_ls[0]}.rotate{axis}", 0)
+
+        cmds.makeIdentity(jnt_rig_logic_ls[1], a=1, t=0, r=1, s=0, n=0, pn=1)
+        cmds.makeIdentity(jnt_rig_logic_ls[2], a=1, t=0, r=1, s=0, n=0, pn=1)
+
         return jnt_rig_logic_ls
         
     
@@ -636,19 +618,7 @@ class ArmSystem():
         utils.connect_attr(f"{fm_elb_stretch_mult}{utils.Plg.out_flt}", f"{fm_elb_stretch_sub}{utils.Plg.flt_A}")
         utils.connect_attr(f"{fm_elb_stretch_sub}{utils.Plg.out_flt}", f"{fk_ctrl_list[2]}.translate{self.prim_axis}")
         
-        
-
-
-    def wire_fk_ik_stretch_setup(self):
-        '''
-        # Description:
-            Setup includes:
-                - stretch of ik system
-                - arm pinning
-                - *more....
-        # Attributes: N/A
-        # Returns: N/A
-        '''
+        return 
 
 
     def wire_fk_ctrl_to_logic_joint(self, blend_armRoot_node, fk_ctrl_list, logic_jnt_list):
@@ -660,15 +630,221 @@ class ArmSystem():
         # Attributes: N/A
         # Returns: N/A
         '''
-        # connect the BM armRoot node to parent logic joint opm. 
+        # connect the BM armRoot node to parent logic joint opm. & zero out the translatevalues!
         utils.connect_attr(f"{blend_armRoot_node}{utils.Plg.out_mtx_plg}", f"{logic_jnt_list[0]}{utils.Plg.opm_plg}")
+        for axis in (["X", "Y", "Z"]):
+            cmds.setAttr(f"{logic_jnt_list[0]}.translate{axis}", 0)
         # connect rotations of child arm fk ctrls to child logic jnts 
         for ctrl, jnt in zip(fk_ctrl_list, logic_jnt_list):
             utils.connect_attr(f"{ctrl}.rotateX", f"{jnt}.rotateX")
             utils.connect_attr(f"{ctrl}.rotateY", f"{jnt}.rotateY")
             utils.connect_attr(f"{ctrl}.rotateZ", f"{jnt}.rotateZ")
+
+
+    def wire_ctrl_ik_wrist(self, inputs_grp, ik_ctrl_list):
+        '''
+        TO DO:
+            - ctrl_ik_wrist follow armRt. 
+        '''
+        ik_ctrl_target = ik_ctrl_list[-1]
+
+        # Add follow attr to fk shoulder ctrl
+        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
+        utils.add_float_attrib(ik_ctrl_target, ["Follow_Arm"], [0.0, 1.0], True)
+        cmds.setAttr(f"{ik_ctrl_target}.Follow_Arm", 1)
+        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
+        MM_wristBase = f"MM_{self.mdl_nm}_ikWrist_armRootBase_{self.unique_id}_{self.side}"
+        MM_armRootIk = f"MM_{self.mdl_nm}_ikWrist_armRootCtrl_{self.unique_id}_{self.side}"
+        BM_wristIk = f"BM_{self.mdl_nm}_ikWrist_armRootBlend_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_wristBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_armRootIk)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_wristIk, 
+                                    {"target[0].scaleWeight":0, 
+                                     "target[0].shearWeight":0})
+        
+        # MM_Base
+        utils.set_transformation_matrix(list(self.ik_pos_dict.values())[-1], list(self.ik_rot_dict.values())[-1], f"{MM_wristBase}{utils.Plg.mtx_ins[0]}")         
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_wristBase}{utils.Plg.mtx_ins[1]}")        
+            # Setting Rotation is involved!
+        # MM_armRootIk
+        wrist_local_object = f"temp_loc_{ik_ctrl_target}"
+        cmds.spaceLocator(n=wrist_local_object)
+        cmds.xform(wrist_local_object, t=self.ik_pos_dict[ik_ctrl_target], ws=1)
+        cmds.xform(wrist_local_object, rotation=self.ik_rot_dict[ik_ctrl_target], ws=1)
+        cmds.parent(wrist_local_object, ik_ctrl_list[1])
+        get_local_matrix = cmds.getAttr(f"{wrist_local_object}.matrix")
+
+        cmds.setAttr(f"{MM_armRootIk}{utils.Plg.mtx_ins[0]}", *get_local_matrix, type="matrix")    
+        utils.connect_attr(f"{ik_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{MM_armRootIk}{utils.Plg.mtx_ins[1]}")
+        cmds.delete(wrist_local_object)
+        
+        # BM_wristIK
+        utils.connect_attr(f"{MM_wristBase}{utils.Plg.mtx_sum_plg}", f"{BM_wristIk}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_armRootIk}{utils.Plg.mtx_sum_plg}", f"{BM_wristIk}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{ik_ctrl_target}.Follow_Arm", f"{BM_wristIk}.target[0].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.Follow_Arm", f"{BM_wristIk}.target[0].rotateWeight")
+        utils.connect_attr(f"{BM_wristIk}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
+        
+    
+    def wire_ctrl_ik_elbow(self, inputs_grp, ik_ctrl_list, ik_spine_top_ctrl):
+        '''
+        TO DO:
+            - ctrl_ik_pv follow options & base opm matrix plg.
+
+        Descrption:
+            The "pv" = 'ctrl_ik_bipedArm_elbow_0_L' needs to be positioned with 
+            guides correctly to retrieve the correct data(pos/rot) becuase it 
+            will be different than the fk ctrls!
+        Attributes:
+            ctrl_ik_spine_spine_top_0_M ctrl_ik_spine_spine_top_{}_{}
+        '''
+        #establish the target control:
+        ik_ctrl_target = ik_ctrl_list[2]
+
+        # Add follow attr to fk shoulder ctrl
+        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
+        utils.add_float_attrib(ik_ctrl_target, ["Follow_Spine_top"], [0.0, 1.0], True)
+        utils.add_float_attrib(ik_ctrl_target, ["Follow_Wrist_ik"], [0.0, 1.0], True)
+        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
+        MM_pvBase = f"MM_ikPv_{self.mdl_nm}_base_{self.unique_id}_{self.side}"
+        MM_pvSpineTop = f"MM_ikPv_{self.mdl_nm}_spineTopHook_{self.unique_id}_{self.side}"
+        MM_pvWristIk = f"MM_ikPv_{self.mdl_nm}_wristIkCtrl_{self.unique_id}_{self.side}"
+        BM_pv = f"BM_ikPv_{self.mdl_nm}_blend_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvSpineTop)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvWristIk)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_pv, 
+                                    {"target[0].scaleWeight":0, 
+                                     "target[0].shearWeight":0})
+               
+        # MM_pvBase
+        utils.set_transformation_matrix(list(self.ik_pos_dict.values())[2], list(self.ik_rot_dict.values())[2], f"{MM_pvBase}{utils.Plg.mtx_ins[0]}")         
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_pvBase}{utils.Plg.mtx_ins[1]}")
+        
+        # MM_pvSpineTop
+        pvSpine_local_object = f"temp_loc_Spine{ik_ctrl_target}"
+        cmds.spaceLocator(n=pvSpine_local_object)
+        cmds.xform(pvSpine_local_object, t=self.ik_pos_dict[ik_ctrl_target], ws=1)
+        cmds.xform(pvSpine_local_object, rotation=self.ik_rot_dict[ik_ctrl_target], ws=1)
+        cmds.parent(pvSpine_local_object, ik_spine_top_ctrl)
+        get_spine_localM = cmds.getAttr(f"{pvSpine_local_object}{utils.Plg.wld_mtx_plg}")
+        cmds.setAttr(f"{MM_pvSpineTop}{utils.Plg.mtx_ins[0]}", *get_spine_localM, type="matrix") 
+        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{MM_pvSpineTop}{utils.Plg.mtx_ins[1]}")
+        cmds.delete(pvSpine_local_object)
+        
+        # MM_pvWristIk
+        pvWrist_local_object = f"temp_loc_pvWrist{ik_ctrl_target}"
+        cmds.spaceLocator(n=pvWrist_local_object)
+        cmds.xform(pvWrist_local_object, t=self.ik_pos_dict[ik_ctrl_target], ws=1)
+        cmds.xform(pvWrist_local_object, rotation=self.ik_rot_dict[ik_ctrl_target], ws=1)
+        cmds.parent(pvWrist_local_object, ik_ctrl_list[-1])
+        get_wrist_localM = cmds.getAttr(f"{pvWrist_local_object}.matrix")
+        cmds.setAttr(f"{MM_pvWristIk}{utils.Plg.mtx_ins[0]}", *get_wrist_localM, type="matrix")    
+        utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_pvWristIk}{utils.Plg.mtx_ins[1]}")
+        cmds.delete(pvWrist_local_object)
+
+        # BM_pv
+        utils.connect_attr(f"{MM_pvBase}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_pvSpineTop}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{MM_pvWristIk}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[1]}")
+            # space swap atribs
+        utils.connect_attr(f"{ik_ctrl_target}.Follow_Spine_top", f"{BM_pv}.target[0].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.Follow_Spine_top", f"{BM_pv}.target[0].rotateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.Follow_Wrist_ik", f"{BM_pv}.target[1].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.Follow_Wrist_ik", f"{BM_pv}.target[1].rotateWeight")
+            # output plug
+        utils.connect_attr(f"{BM_pv}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
         
 
+    def cr_logic_curves(self, pref):
+        '''
+        TO DO:
+            - cr 2 curves.
+            - Positions are driven by shaper ctrl to curve.controlPoints[#]
+        '''
+        # 'psotions is irrrelavant becuase its pos will be determined by shaper ctrls.'
+        logic_curve = f"crv_{self.mdl_nm}_{pref}_{self.unique_id}_{self.side}"
+        cmds.curve(n=logic_curve, d=3, p=[[0.0, 0.0, 0.0], [5.0, 0.0, 0.0], [10.0, 0.0, 0.0], [15.0, 0.0, 0.0]])
+        cmds.rebuildCurve(logic_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=1, d=3, tol=0.01)
+        
+        return logic_curve
+    
+
+    def wire_ik_logic_elements(self):
+        '''
+        TO DO:
+            - need joints in position first > achieved with stretch. 
+            - Ik RPSolver on logic joints w/ pole vector. 
+            - IK spline on both curves with correspondong joints.
+        '''
+
+
+    def group_logic_elements(self):
+        pass
+
+
+    def group_shaper_ctrls(self):
+        '''
+        TO DO:
+            - Group the shaper controls to their necessary group.
+            - return name list of the shaper ctrls. 
+        '''
+
+
+    def wire_shaper_ctrls(self):
+        '''
+        TO DO:
+            - Driving the shaper controls > Main to children shaper's
+        '''
+
+
+    def wire_shaper_ctrls_to_curves(self):
+        '''
+        TO DO:
+            - Shaper controls drive the Curve's control points.
+        '''
+
+
+    def wire_skn_twist_joints_stretch(self):
+        '''
+        TO DO:
+            - Wire curves to the twist skin joints.
+            - Arm pinning.
+            - This function is the Stretch connection. 
+        '''
+
+
+    def wire_skn_twist_joints_volume(self):
+        '''
+        TO DO:
+            - Wire curves to the twist skin joints.
+            - This function is the Volume preservation connection.
+        '''
+    
+    
+    def wire_jnt_skn_wrist(self):
+        '''
+        TO DO:
+            - MM data: jnt_logic_wrist/ ctrl_fk_wrist/ ctrl_ik_wrist.
+            - Input into BM
+            - BM output to jnt_skn_wrist
+        '''
+
+    
+    def wire_ikfk_settings(self):
+        '''
+        TO DO:
+            - Add attributes the ikfk switch / Auto squash / vis shapers
+            - Wire these functionality's. 
+        '''
+
+    
+    def lock_ctrl_attributes(self, fk_ctrl_list):
+         # lock the fk ctrls
+        for ctrl in fk_ctrl_list:
+            cmds.setAttr(f"{ctrl}.translateX", lock=1)
+            cmds.setAttr(f"{ctrl}.translateY", lock=1)
+            cmds.setAttr(f"{ctrl}.translateZ", lock=1)
 #-----------------------
 
 '''
@@ -687,43 +863,43 @@ ex_external_plg_dict = {
 # Do I need 'skeleton_dict' arg?
 ex_skeleton_dict = {
     "skel_pos":{
-        "clavicle":[3.0937706746970637, 211.9463944293447, -3.981268190856912],
-        "shoulder":[47.19038675793399, 202.90135192871094, -8.067196952221522],
-        "elbow":[86.67167131661598, 202.90135192871094, -8.067196952221524],
-        "wrist":[122.01356659109904, 202.9013566591099, -8.067197667477195]
+        "clavicle":[2.44448507146776, 154.57145295222426, 4.459872829725054], 
+        "shoulder":[19.021108627319336, 152.5847778320312, -3.6705198287963885],
+        "elbow":[51.95222091674805, 151.27154541015625, -7.411651611328125],
+        "wrist":[82.27891540527344, 151.65419006347656, -0.65576171875]
     },
     "skel_rot":{
-        "clavicle":[0.0, 0.0, 0.0],
-        "shoulder":[0.0, 0.0, 0.0],
-        "elbow":[0.0, 0.0, 0.0],
-        "wrist":[0.0, 0.0, 0.0]
+        "clavicle":[-3.0037333819801293, 25.96554559489243, -6.834187725057292],
+        "shoulder":[-0.2577070326177839, 6.4761835670879035, -2.2836406890784096], 
+        "elbow":[-0.15718070963992195, -12.557766678467543, 0.7228865771539283],
+        "wrist":[-0.04691076638914411, -12.440289615750016, -3.1178613803887054]
     }
-} # -> maybe if I want to be able to do deformations at any stage of the game. 
+} 
 
 ex_fk_dict = {
     "fk_pos":{
-        'ctrl_fk_bipedArm_shoulder_0_L': [47.19038675793399, 202.90135192871094, -8.067196952221522], 
-        'ctrl_fk_bipedArm_elbow_0_L': [86.67167131661598, 202.90135192871094, -8.067196952221524],
-        'ctrl_fk_bipedArm_wrist_0_L': [122.01356659109904, 202.9013566591099, -8.067197667477195]
+        'ctrl_fk_bipedArm_shoulder_0_L':[19.021108627319336, 152.5847778320312, -3.6705198287963885],
+        'ctrl_fk_bipedArm_elbow_0_L':[51.95222091674805, 151.27154541015625, -7.411651611328125],
+        'ctrl_fk_bipedArm_wrist_0_L':[82.27891540527344, 151.65419006347656, -0.65576171875]
         },
     "fk_rot":{
-        'ctrl_fk_bipedArm_shoulder_0_L': [0.0, 0.0, 0.0], 
-        'ctrl_fk_bipedArm_elbow_0_L': [0.0, 0.0, 0.0],
-        'ctrl_fk_bipedArm_wrist_0_L': [0.0, 0.0, 0.0]
+        'ctrl_fk_bipedArm_shoulder_0_L':[-0.2577070326177839, 6.4761835670879035, -2.2836406890784096], 
+        'ctrl_fk_bipedArm_elbow_0_L':[-0.15718070963992195, -12.557766678467543, 0.7228865771539283],
+        'ctrl_fk_bipedArm_wrist_0_L':[-0.04691076638914411, -12.440289615750016, -3.1178613803887054]
         }
     }
 ex_ik_dict = {
     "ik_pos":{
-        'ctrl_ik_bipedArm_clavicle_0_L': [3.0937706746970637, 211.9463944293447, -3.981268190856912],
-        'ctrl_ik_bipedArm_shoulder_0_L': [47.19038675793399, 202.90135192871094, -8.067196952221522], 
-        'ctrl_ik_bipedArm_elbow_0_L': [86.67167131661598, 202.90135192871094, -8.067196952221524],
-        'ctrl_ik_bipedArm_wrist_0_L': [122.01356659109904, 202.9013566591099, -8.067197667477195]
+        'ctrl_ik_bipedArm_clavicle_0_L':[2.44448507146776, 154.57145295222426, 4.459872829725054],
+        'ctrl_ik_bipedArm_shoulder_0_L':[19.021108627319336, 152.5847778320312, -3.6705198287963885],
+        'ctrl_ik_bipedArm_elbow_0_L':[53.20349106420788, 146.93758915899517, -35.0046944229159],
+        'ctrl_ik_bipedArm_wrist_0_L':[82.27891540527344, 151.65419006347656, -0.65576171875]
         },
     "ik_rot":{
-        'ctrl_ik_bipedArm_clavicle_0_L': [0.0, 0.0, 0.0],
-        'ctrl_ik_bipedArm_shoulder_0_L': [0.0, 0.0, 0.0], 
-        'ctrl_ik_bipedArm_elbow_0_L': [0.0, 0.0, 0.0],
-        'ctrl_ik_bipedArm_wrist_0_L': [0.0, 0.0, 0.0]
+        'ctrl_ik_bipedArm_clavicle_0_L':[0.0, 0.0, 0.0], #
+        'ctrl_ik_bipedArm_shoulder_0_L':[0.0, 0.0, 0.0], # 
+        'ctrl_ik_bipedArm_elbow_0_L':[-72.84121454033736, 80.71529613638319, -73.89587586207297],
+        'ctrl_ik_bipedArm_wrist_0_L':[-0.04691076638914411, -12.440289615750016, -3.1178613803887054]
         }
     }
 

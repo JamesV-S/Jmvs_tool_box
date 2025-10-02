@@ -6,6 +6,7 @@ import maya.OpenMayaAnim as oma
 import importlib
 import os
 import re
+import numpy as np
 
 from systems import (
     OPM
@@ -976,6 +977,25 @@ def trs_to_matrix(translation_ls, rotation_ls):
     return flat_mtx
 
 
+def make_raw_matrix(translation_ls, rotation_ls):
+    '''
+    Description:
+        Builds a 4x4 MMatrix from translation_ls + rotation_ls (XYZ)
+    '''
+    # Convert rotation from degrees to radians
+    rx, ry, rz = [math.radians(x) for x in rotation_ls]
+    
+    # Create an MEulerRotation
+    euler_rot = om.MEulerRotation(rx, ry, rz)
+    
+    # Create an MTransformationMatrix
+    m_transform = om.MTransformationMatrix()
+    m_transform.setRotation(euler_rot)
+    m_transform.setTranslation(om.MVector(*translation_ls), om.MSpace.kTransform)
+
+    return m_transform.asMatrix()
+
+
 def set_transformation_matrix(translation_ls, rotation_ls, mtx_attr):
     '''
     Explanation: 
@@ -999,14 +1019,78 @@ def mtxCon_no_ofs(driver, driven):
         return MM
 
 
-def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, 
-                                        fk_pos_source, fk_pos_target, 
-                                        fk_rot_source, fk_rot_target):
+def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, fk_local_object):
+    '''
+    Description:
+        cr a MM node to wire the target ctrl to be matrix parented to the source.
+        While the target keeps all its transformations.
+    Arguments:
+        fk_source_ctrl (string): Parent control that will drive the target.
+        fk_target_ctrl (string): Control We want "parenting" to the source
+        fk_local_object (string): Temporary a child object(usually locactor) that is where we want the target to be.  
+    '''
     MM_ctrl_fk = f"MM_{fk_target_ctrl}"
     cr_node_if_not_exists(1, 'multMatrix', MM_ctrl_fk)
-    fk_offset_pos = [x - y for x, y in zip(fk_pos_target, fk_pos_source)]
-    fk_offset_rot = [x - y for x, y in zip(fk_rot_source, fk_rot_target)]
-    set_transformation_matrix(fk_offset_pos, fk_offset_rot, f"{MM_ctrl_fk}{Plg.mtx_ins[0]}")
+    # get the local matrix so the object isn't connected. 
+    get_matrix = cmds.getAttr(f"{fk_local_object}.matrix")
+    cmds.setAttr(f"{MM_ctrl_fk}{Plg.mtx_ins[0]}", *get_matrix, type="matrix")    
     connect_attr(f"{fk_source_ctrl}{Plg.wld_mtx_plg}", f"{MM_ctrl_fk}{Plg.mtx_ins[1]}")
-        # MM output to target fk ctrl
     connect_attr(f"{MM_ctrl_fk}{Plg.mtx_sum_plg}", f"{fk_target_ctrl}{Plg.opm_plg}")
+
+
+def invert_sign(values_ls):
+    '''
+    Returns:
+        flipped_ls (list): Opposite values
+    '''
+    flipped_ls = [-v for v in values_ls]
+    return flipped_ls
+
+
+pos_dict = {"shoulder":[47.19038772583008, 202.90135192871094, -8.0671968460083], 
+            "elbow":[0.0, 0.0, -30.0]} 
+
+rot_dict = {"shoulder":[47.19038772583008, 202.90135192871094, -8.0671968460083], 
+            "elbow":[11.785177009735838, -19.999999111538447, -29.999992562293663]
+} 
+
+
+def list_to_mmatrix(flat_list):
+    """Convert a 16-element list into an MMatrix."""
+    return om.MMatrix(flat_list)
+
+def mmatrix_to_list(mmatrix):
+    """Flatten an MMatrix back into a 16-element list."""
+    return [mmatrix[i] for i in range(16)]#[mmatrix[i][j] for i in range(4) for j in range(4)]
+
+def compute_offset_matrix(child_flat, parent_flat):
+    """Compute child * inverse(parent) as flattened list."""
+    child_m = list_to_mmatrix(child_flat)
+    parent_m = list_to_mmatrix(parent_flat)
+    offset_m = child_m * parent_m.inverse()
+    return mmatrix_to_list(offset_m)
+
+def compute_final_matrix(parent_flat, offset_flat):
+    """Compute final child world matrix = parent * offset."""
+    parent_m = om.MMatrix(parent_flat)
+    offset_m = om.MMatrix(offset_flat)
+    final_m = parent_m * offset_m
+    return [final_m[i] for i in range(16)]
+
+def matrix_parent_con(parent, child, pos_dict, rot_dict):
+    parent_matrix = trs_to_matrix(pos_dict[parent], rot_dict[parent])
+    child_matrix  = trs_to_matrix(pos_dict[child],  rot_dict[child])
+
+    elbow_offset_matrix = compute_offset_matrix(child_matrix, parent_matrix)
+    elbow_final_matrix = compute_final_matrix(parent_matrix, elbow_offset_matrix)
+    
+    print(f"elbow_offset_matrix = {elbow_offset_matrix}")
+    print(f"elbow_final_matrix = {elbow_final_matrix}")
+
+    mm_node = f"{child}_mm"
+    cmds.createNode("multMatrix", name=mm_node)
+    # Now you can feed it into setAttr
+    cmds.setAttr(f"{mm_node}.matrixIn[0]", *elbow_offset_matrix, type="matrix")
+    cmds.connectAttr(parent + ".worldMatrix[0]", mm_node + ".matrixIn[1]", f=True)
+
+    return mm_node

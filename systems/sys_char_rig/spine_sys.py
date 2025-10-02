@@ -130,7 +130,7 @@ class SpineSystem():
                                               nonstrFw_jnt_chain, nonstrBw_jnt_chain, nonStrRig_jnt_chain,
                                               skn_jnt_chain)
         
-        self.output_group_setup(output_grp, self.ik_pos_dict, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
+        self.output_group_setup(output_grp, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
 
         # group the module into a consitent hierarchy structure for my modules.
         utils.group_module(self.mdl_nm, self.unique_id, self.side ,
@@ -211,8 +211,7 @@ class SpineSystem():
             specialised nodes that store custom matrix data to allow the module 
             to be driven(Input) or be the driver(Output) for other modules, etc. 
         # Attributes:
-            jnt_num (int): number of joints in the module - used for the 
-            stretchVolume attr on Input group.
+            output_global (boolean): If True, add globalScale attr to the output group.
         # Returns:
             inputs_grp (string): Group for input data for this module.
             outputs_grp (string): Group for Ouput data for this module.
@@ -224,8 +223,8 @@ class SpineSystem():
         utils.cr_node_if_not_exists(0, "transform", outputs_grp)
         
         # Input grp
-        utils.add_float_attrib(inputs_grp, ["globalScale"], [0.01, 999], True) 
-        cmds.setAttr(f"{inputs_grp}.globalScale", 1, keyable=0, channelBox=0)
+        utils.add_float_attrib(inputs_grp, [self.global_scale_attr], [0.01, 999], True) 
+        cmds.setAttr(f"{inputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
         utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
         utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
         
@@ -991,7 +990,7 @@ class SpineSystem():
                                f"Pcon_nonFwBw_{nonrigStr[x]}.jnt_nonStrBw_{self.mdl_nm}_spine{backward_indexes[x]}_{self.unique_id}_MW1")
    
 
-    def output_group_setup(self, mdl_output_grp, ik_pos_dict, ctrl_spine_top, ctrl_spine_bottom):
+    def output_group_setup(self, mdl_output_grp, ctrl_spine_top, ctrl_spine_bottom):
         '''
         # Description:
             Connects the top & bottom ik controls to attributes on this module's
@@ -1000,7 +999,6 @@ class SpineSystem():
                      so it arm can follow the spine! 
         # Attributes:
             mdl_output_grp (str): name of this module's output group
-            ik_pos_dict (dict): dict of the ik control's pos
             ctrl_spine_top (str): control name of IK top (could be derived from the dict...)
             ctrl_spine_bottom (str): control name of IK bottom (could be derived from the dict...)
         # Returns: N/A
@@ -1014,15 +1012,11 @@ class SpineSystem():
             # cr the MM nodes
         utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
         utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_bot)
-        # get the offset
-        # put the dict into a list & index the correct pos and make it negative
-        ik_pos_list = [value for value in list(ik_pos_dict.values())]
-        top_offset = [x if x == 0 else -x for x in ik_pos_list[-1]]
-        bottom_offset =  [x if x == 0 else -x for x in ik_pos_list[0]]
-        print(f"top_offset = {top_offset} | bottom_offset = {bottom_offset}")
+        top_inverse_mtx = cmds.getAttr(f"{ctrl_spine_top}{utils.Plg.wld_inv_mtx_plg}")
+        bot_inverse_mtx = cmds.getAttr(f"{ctrl_spine_bottom}{utils.Plg.wld_inv_mtx_plg}")
         # Plugs - connect ik ctrl's to MM's
-        utils.set_matrix(top_offset, f"{MM_output_top}{utils.Plg.mtx_ins[0]}")
-        utils.set_matrix(bottom_offset, f"{MM_output_bot}{utils.Plg.mtx_ins[0]}")
+        cmds.setAttr(f"{MM_output_top}{utils.Plg.mtx_ins[0]}", *top_inverse_mtx, type="matrix")
+        cmds.setAttr(f"{MM_output_bot}{utils.Plg.mtx_ins[0]}", *bot_inverse_mtx, type="matrix")
         utils.connect_attr(f"{ctrl_spine_top}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{ctrl_spine_bottom}{utils.Plg.wld_mtx_plg}", f"{MM_output_bot}{utils.Plg.mtx_ins[1]}")
         # Plugs - connect the MM to the spine output's attribs!  
@@ -1042,16 +1036,14 @@ external_plg_dict = {
 
 skeleton_dict = {
     "skel_pos":{
-        'spine0' : [0.0, 147.00000000000003, 0.0], 
-        'spine1' : [0.0, 153.4444446563721, 0.0], 
-        'spine2' : [0.0, 159.88888931274417, 0.0], 
-        'spine3' : [0.0, 166.33333396911624, 0.0], 
-        'spine4' : [0.0, 172.7777786254883, 0.0], 
-        'spine5' : [0.0, 179.22222328186038, 0.0], 
-        'spine6' : [0.0, 185.66666793823245, 0.0], 
-        'spine7' : [0.0, 192.11111259460452, 0.0], 
-        'spine8' : [0.0, 198.5555572509766, 0.0], 
-        'spine9' : [0.0, 205.00000190734866, 0.0]
+        'spine0' : [0.0, 108.51357426399493, 3.0], 
+        'spine1' : [0.0, 114.54568615397002, 3.0],
+        'spine2' : [0.0, 119.80152392711072, 3.0],
+        'spine3' : [0.0, 124.6437390246307, 3.0],
+        'spine4' : [0.0, 129.42469282205994, 3.0],
+        'spine5' : [0.0, 134.25999009941637, 3.0],
+        'spine6' : [0.0, 139.02848563616715, 3.0],
+        'spine7' : [0.0, 143.59873962402344, 3.0]
     },
     "skel_rot":{
         'spine0' : [0.0, 0.0, 0.0], 
@@ -1073,9 +1065,9 @@ skeleton_dict = {
 # I want this to be changable (3 by default)
 fk_spine_dict = {
     "fk_pos":{
-        'ctrl_fk_spine_spine0_0_M': [0.0, 147.0, 0.0], 
-        'ctrl_fk_spine_spine1_0_M': [0.0, 167.29999965429306, 0.0], 
-        'ctrl_fk_spine_spine2_0_M': [0.0, 187.59999930858612, 0.0]
+        'ctrl_fk_spine_spine0_0_M': [0.0, 108.51357426399493, 3.0], 
+        'ctrl_fk_spine_spine1_0_M': [0.0, 119.80152392711072, 3.0], 
+        'ctrl_fk_spine_spine2_0_M': [0.0, 129.42469282205994, 3.0]
         },
     "fk_rot":{
         'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0], 
@@ -1086,9 +1078,9 @@ fk_spine_dict = {
 # Always 3 ctrls!
 ik_spine_dict = {
     "ik_pos":{
-        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 147.0, 0.0], 
-        'ctrl_ik_spine_spine_middle_0_M': [0.0, 176.0, 0.0], 
-        'ctrl_ik_spine_spine_top_0_M': [0.0, 205.0, 0.0]
+        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 108.51357426399493, 3.0], 
+        'ctrl_ik_spine_spine_middle_0_M': [0.0, 128.5, 3.0], 
+        'ctrl_ik_spine_spine_top_0_M': [0.0, 143.59873962402344, 3.0]
         },
     "ik_rot":{
         'ctrl_ik_spine_spine_bottom_0_M': [0.0, 0.0, 0.0], 
