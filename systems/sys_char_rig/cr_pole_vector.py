@@ -10,7 +10,7 @@ def create_pole_vector(top_joint, pv_joint, end_joint):
                                 "..", "imports","pv_ctrl_import.abc")
         print(f"pv_control import path: {PV_FILE}")
         '''
-        
+
         start = cmds.xform(top_joint, q=1,ws=1,t=1)
         mid = cmds.xform(pv_joint, q=1,ws=1,t=1)
         end = cmds.xform(end_joint, q=1,ws=1,t=1)
@@ -63,3 +63,5 @@ def create_pole_vector(top_joint, pv_joint, end_joint):
                                         (rot.z/math.pi*180.0)))
 
         return pv_ctrl 
+
+create_pole_vector("ori_bipedArm_shoulder_0_L", "ori_bipedArm_elbow_0_L", "ori_bipedArm_wrist_0_L")

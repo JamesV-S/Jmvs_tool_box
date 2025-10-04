@@ -58,7 +58,7 @@ class root_system():
         self.group_ctrls(fk_ctrl_list, "fk")
 
         self.wire_root_setup(fk_ctrl_list, skeleton_pos_dict, skeleton_rot_dict)
-        self.output_group_setup(BASE_MTX_PLG, HOOK_MTX_PLG, fk_ctrl_list[1], fk_ctrl_list[-1])
+        self.output_group_setup(GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG, fk_ctrl_list[0], fk_ctrl_list[1], fk_ctrl_list[-1])
         
         # # group the module
         utils.group_module(module_name="root", unique_id=self.unique_id, side=self.side,
@@ -218,12 +218,13 @@ class root_system():
         return cog_offset_list
     
     
-    def output_group_setup(self, base_mtx_plg, hook_mtx_plg, ctrl_centre, ctrl_cog):
+    def output_group_setup(self, global_scale_plg, base_mtx_plg, hook_mtx_plg, ctrl_root, ctrl_centre, ctrl_cog):
         '''
         # Description:
             Connects the base and hook attributes on this module's output group 
             so another module's input group can have incoming plugs to allow it to follow!
         # Attributes:
+            global_scale_plg (constant): base matrix plug
             base_mtx_plg (constant): base matrix plug
             hook_mtx_plg (constant): hook matrix plug
             ctrl_centre (str): centre control name .
@@ -249,6 +250,8 @@ class root_system():
         # Plugs - connect the MM to the spine output's attribs!  
         utils.connect_attr(f"{MM_output_centre}{utils.Plg.mtx_sum_plg}", base_mtx_plg)
         utils.connect_attr(f"{MM_output_cog}{utils.Plg.mtx_sum_plg}", hook_mtx_plg)
+        utils.connect_attr(f"{ctrl_root}.{self.global_scale_attr}", global_scale_plg)
+    
     
         
 skeleton_dict = {
