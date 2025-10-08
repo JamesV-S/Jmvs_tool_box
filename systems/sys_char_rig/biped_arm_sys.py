@@ -18,7 +18,7 @@ importlib.reload(biped_arm_sys)
 '''
 
 class ArmSystem():
-    def __init__(self, module_name, external_plg_dict, skeleton_dict, fk_dict, ik_dict, prim_axis):
+    def __init__(self, module_name, external_plg_dict, skeleton_dict, fk_dict, ik_dict, prim_axis, shaper_dict=None):
         '''
         *(%) IS THE SYMBOL REPRESENTING SYSTEMS IN THE MODULE I THINK SHOULD BE 
         BUILT IN A SEPERATE CLASS OR FUNCTION ENITRELY
@@ -159,8 +159,8 @@ class ArmSystem():
             self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
         # Group the controls!
-        self.group_ctrls(fk_ctrl_list, "fk")
-        self.group_ctrls(ik_ctrl_list, "ik")
+        fk_ctrl_grp = self.group_ctrls(fk_ctrl_list, "fk")
+        ik_ctrl_grp = self.group_ctrls(ik_ctrl_list, "ik")
 
         # cr skn joints
         skn_jnt_clav, skn_jnt_wrist = self.cr_jnt_skn_start_end(self.ik_pos_dict)
@@ -196,13 +196,25 @@ class ArmSystem():
         cv_lower = self.cr_logic_curves("lower")
 
         self.d_shld_wrist, self.d_shld_elb, self.d_elb_wrist = self.logic_jnt_distances(self.fk_pos_dict)
-        logic_ik_hdl = self.wire_ik_logic_elements(inputs_grp, logic_jnt_list, ik_ctrl_list)
+        bc_ikfk_stretch, logic_ik_hdl = self.wire_ik_logic_elements(inputs_grp, logic_jnt_list, ik_ctrl_list)
         self.group_logic_elements(logic_jnt_list, logic_ik_hdl, [cv_upper, cv_lower])
 
-        self.wire_jnt_skn_wrist(skn_jnt_wrist, logic_jnt_list, fk_ctrl_list, ik_ctrl_list)
+        skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg = self.wire_jnt_skn_wrist(skn_jnt_wrist, logic_jnt_list, fk_ctrl_list, ik_ctrl_list)
 
-        # self.add_module_attr_to_root_ctrl("ctrl_fk_root_root_0_M")
-        self.wire_IKFK_switch()
+        mdl_settings_ctrl, ikfk_plug, stretch_plug, shaper_plug  = self.cr_mdl_setting_ctrl(skn_jnt_wrist, ik_ctrl_list)
+        self.wire_IKFK_switch(skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg, 
+                              mdl_settings_ctrl, ikfk_plug, 
+                              bc_ikfk_stretch, logic_ik_hdl, 
+                              fk_ctrl_grp, ik_ctrl_grp)
+        
+        '''TEMP shaper_ctrl_list'''
+        shaper_ctrl_list = ["ctrl_shp_bipedArm_main_0_L", "ctrl_shp_bipedArm_middle_0_L", 
+                            "ctrl_shp_bipedArm_upper_0_L", "ctrl_shp_bipedArm_lower_0_L"]
+        shaper_ctrl_grp = self.group_ctrls(shaper_ctrl_list, "shaper")
+        self.wire_shaper_ctrls(shaper_ctrl_list, logic_jnt_list, ik_ctrl_list, shaper_plug, shaper_ctrl_grp)
+
+        self.parent_ik_ctrls_out(ik_ctrl_list)
+
         # # group the module
         # utils.group_module(module_name=module_name, unique_id=self.unique_id, 
         #                    side=self.side ,input_grp=inputs_grp, output_grp=outputs_grp, 
@@ -258,7 +270,8 @@ class ArmSystem():
         # Attributes:
             ctrl_ls (list): list of given controls.
             ctrl_type (string): Name for the ctrl_grp.
-        # Returns:N/A
+        # Returns:
+            child_ctrl_grp (string): Name of ctrl child grp
         '''
         # If the parent ctrl_grp doesn't exist make it:
         module_control_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
@@ -272,6 +285,8 @@ class ArmSystem():
             cmds.parent(ctrl, child_ctrl_grp)
         cmds.parent(child_ctrl_grp, module_control_grp)
         cmds.select(cl=1)
+
+        return child_ctrl_grp
     
 
     def cr_jnt_skn_start_end(self, ik_pos):
@@ -637,7 +652,10 @@ class ArmSystem():
             driving the logic joints:
                 - parent logic joint is driven by arnRoot ctrl w/ 'blend_armRoot_node'
                 - child logic joints are driven by fk ctrl's direct rotations.
-        # Attributes: N/A
+        # Attributes:
+            blend_armRoot_node (utility): Arm root ctrl's (ik_shoulder) matrix follow.
+            fk_ctrl_list (list): Contains 3 fk control names.
+            logic_jnt_list (list): list of arm logic joints. 
         # Returns: N/A
         '''
         # connect the BM armRoot node to parent logic joint opm. & zero out the translatevalues!
@@ -653,8 +671,14 @@ class ArmSystem():
 
     def wire_ctrl_ik_wrist(self, inputs_grp, ik_ctrl_list):
         '''
-        TO DO:
-            - ctrl_ik_wrist follow armRt. 
+        # Description:
+            driving the logic joints:
+                - parent logic joint is driven by arnRoot ctrl w/ 'blend_armRoot_node'
+                - child logic joints are driven by fk ctrl's direct rotations.
+        # Attributes:
+            inputs_grp (string): Group for input data for this module.
+            ik_ctrl_list (list): Contains 4 ik control names.
+        # Returns: N/A 
         '''
         ik_ctrl_target = ik_ctrl_list[-1]
 
@@ -698,15 +722,13 @@ class ArmSystem():
     
     def wire_ctrl_ik_elbow(self, inputs_grp, ik_ctrl_list, ik_spine_top_ctrl):
         '''
-        TO DO:
-            - ctrl_ik_pv follow options & base opm matrix plg.
-
-        Descrption:
-            The "pv" = 'ctrl_ik_bipedArm_elbow_0_L' needs to be positioned with 
-            guides correctly to retrieve the correct data(pos/rot) becuase it 
-            will be different than the fk ctrls!
-        Attributes:
-            ctrl_ik_spine_spine_top_0_M ctrl_ik_spine_spine_top_{}_{}
+        # Description:
+            Positions & wires the follow swapping of the pv ctrl too
+        # Attributes:
+            inputs_grp (string): Group for input data for this module.
+            ik_ctrl_list (list): Contains 4 ik control names.
+            ik_spine_top_ctrl (string): Name of SPINE modules top ik control.
+        # Returns: N/A 
         '''
         #establish the target control:
         ik_ctrl_target = ik_ctrl_list[2]
@@ -767,9 +789,12 @@ class ArmSystem():
 
     def cr_logic_curves(self, pref):
         '''
-        TO DO:
-            - cr 2 curves.
-            - Positions are driven by shaper ctrl to curve.controlPoints[#]
+        # Description:
+            Creates a logic curve, to be used for twisting & bending.
+        # Attributes:
+            pref (string): The name of this logic curve [upper/lower]
+        # Returns:
+            logic_curve (string): The logic curve created. 
         '''
         # 'psotions is irrrelavant becuase its pos will be determined by shaper ctrls.'
         logic_curve = f"crv_{self.mdl_nm}_{pref}_{self.unique_id}_{self.side}"
@@ -780,6 +805,16 @@ class ArmSystem():
     
     
     def logic_jnt_distances(self, fk_pos_dict):
+        '''
+        # Description:
+            Need to store the distances of the the limb, to be used for PINNING!!!
+        # Attributes:
+            fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
+        # Returns:
+            d_shld_wrist (string): distance of shoulder to wrist [whole limb]. 
+            d_shld_elb (string): distance of shoulder to elbow [upper]. 
+            d_elb_wrist (string): distance of elbow to wrist [lower].
+        '''
         d_shld_wrist = utils.get_distance("shld_elb", list(fk_pos_dict.values())[0], list(fk_pos_dict.values())[2])
         d_shld_elb = utils.get_distance("shld_elb", list(fk_pos_dict.values())[0], list(fk_pos_dict.values())[1])
         d_elb_wrist = utils.get_distance("elb_wrist", list(fk_pos_dict.values())[1], list(fk_pos_dict.values())[2])
@@ -793,10 +828,17 @@ class ArmSystem():
 
     def wire_ik_logic_elements(self, input_grp, logic_jnt_list, ik_ctrl_list):
         '''
-        TO DO:
-            - need joints in position first > achieved with stretch. 
-            - Ik RPSolver on logic joints w/ pole vector. 
-            - IK spline on both curves with correspondong joints.
+        # Description:
+            Create Ik_handle on the logic joints(Ik RPSolver on logic joints w/ pole vector.), 
+            wire the pin arm setup, wire the ikfkStretch setup from pin setup, 
+            wire into ik handle from ikfkstretch. skn_wrist drives Ik_handle.opm. 
+        # Attributes:
+            inputs_grp (string): Group for input data for this module.
+            logic_jnt_list (list): list of arm logic joints. 
+            ik_ctrl_list (list): Contains 4 ik control names.
+        # Returns:
+            bc_ikfk_stretch (utility): blendColors node returned so IKFK_Switch drives it.
+            logic_hdl (string): logic Ik_handle name.
         '''
         # cr Ik_handle on the logic joints
         logic_hdl = f"hdl_{self.mdl_nm}_logic_{self.unique_id}_{self.side}" # hdl_bipedArm_0_L
@@ -876,7 +918,7 @@ class ArmSystem():
         utils.connect_attr(f"{fm_lowPercentTotal_mult}{utils.Plg.out_flt}", f"{bc_pin_limb}{utils.Plg.color2_plg[1]}")
         
             # pv.Pin_Arm > bc.blender
-        utils.connect_attr(f"{ik_ctrl_list[2]}.Pin_Arm", f"{bc_pin_limb}.blender")
+        utils.connect_attr(f"{ik_ctrl_list[2]}.Pin_Arm", f"{bc_pin_limb}{utils.Plg.blndr_plg}")
 
         # Initalise ik stretch logic
         fm_up_fkStretch = f"FM_upFkStretchMult_{self.mdl_nm}_{self.unique_id}_{self.side}"
@@ -943,7 +985,7 @@ class ArmSystem():
             # > hdl.poleVector
         utils.connect_attr(f"{dm_pv}{utils.Plg.outT_plug}", f"{logic_hdl}.poleVector")
         
-        return logic_hdl
+        return bc_ikfk_stretch, logic_hdl
         
 
     def group_logic_elements(self, logic_jnt_list, logic_hdl, logic_curve_list):
@@ -968,18 +1010,29 @@ class ArmSystem():
 
     def wire_jnt_skn_wrist(self, skn_jnt_wrist, logic_jnt_list, fk_ctrl_list, ik_ctrl_list):
         '''
-        TO DO:
-            - MM data: jnt_logic_wrist/ ctrl_fk_wrist/ ctrl_ik_wrist.
-            - Input into BM
-            - BM output to jnt_skn_wrist
+        # Description:
+            Drive the 'skn_jnt_wrist', blending between 'ik wrist ctrl' & 'fk_wrist ctrl'.
+            adding special follow ikfk attributes on the skn joint that drive the blending!  
+        # Attributes:
+            skn_jnt_wrist (string): Name of the wrist skin joint.
+            logic_jnt_list (list): list of arm logic joints. 
+            ik_ctrl_list (list): Contains 4 ik control names.
+        # Returns:
+            skn_jnt_wrist_ik_plg (plug): ik follow plug SO the 
+                                        ctrl_settings.IKFK_Switch drives the blending.
+            skn_jnt_wrist_fk_plg (plug): fk follow plug SO the 
+                                        ctrl_settings.IKFK_Switch drives the blending 
         '''
         utils.add_locked_attrib(skn_jnt_wrist, ["Follows"])
         fk_attr = f"Follow_FK_Wrist_{self.mdl_nm}_{self.unique_id}_Rot"
         ik_attr = f"Follow_IK_Wrist_{self.mdl_nm}_{self.unique_id}"
+        skn_jnt_wrist_ik_plg = f"{skn_jnt_wrist}.{ik_attr}"
+        skn_jnt_wrist_fk_plg = f"{skn_jnt_wrist}.{fk_attr}"
+        
         utils.add_float_attrib(skn_jnt_wrist, [fk_attr], [0.0, 1.0], True)
         utils.add_float_attrib(skn_jnt_wrist, [ik_attr], [0.0, 1.0], True)
-        cmds.setAttr(f"{skn_jnt_wrist}.{fk_attr}", 0)
-        cmds.setAttr(f"{skn_jnt_wrist}.{ik_attr}", 1)
+        cmds.setAttr(skn_jnt_wrist_fk_plg, 0)
+        cmds.setAttr(skn_jnt_wrist_ik_plg, 1)
 
         mm_logic_wrist = f"mm_{logic_jnt_list[-1]}"
         mm_ctrlFk_wrist = f"mm_{fk_ctrl_list[-1]}"
@@ -1009,87 +1062,190 @@ class ArmSystem():
         utils.connect_attr(f"{mm_logic_wrist}{utils.Plg.mtx_sum_plg}", f"{bm_skn_wrist}{utils.Plg.inp_mtx_plg}")
         utils.connect_attr(f"{mm_ctrlFk_wrist}{utils.Plg.mtx_sum_plg}", f"{bm_skn_wrist}{utils.Plg.target_mtx[0]}")
         utils.connect_attr(f"{mm_ctrlIk_wrist}{utils.Plg.mtx_sum_plg}", f"{bm_skn_wrist}{utils.Plg.target_mtx[1]}")
-        utils.connect_attr(f"{skn_jnt_wrist}.{fk_attr}", f"{bm_skn_wrist}.target[0].rotateWeight")
-        utils.connect_attr(f"{skn_jnt_wrist}.{ik_attr}", f"{bm_skn_wrist}.target[1].translateWeight")
-        utils.connect_attr(f"{skn_jnt_wrist}.{ik_attr}", f"{bm_skn_wrist}.target[1].rotateWeight")
+        utils.connect_attr(skn_jnt_wrist_fk_plg, f"{bm_skn_wrist}.target[0].rotateWeight")
+        utils.connect_attr(skn_jnt_wrist_ik_plg, f"{bm_skn_wrist}.target[1].translateWeight")
+        utils.connect_attr(skn_jnt_wrist_ik_plg, f"{bm_skn_wrist}.target[1].rotateWeight")
         utils.connect_attr(f"{bm_skn_wrist}{utils.Plg.out_mtx_plg}", f"{skn_jnt_wrist}{utils.Plg.opm_plg}")
+        
+        return skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg
 
 
-    def add_module_attr_to_root_ctrl(self, root_ctrl):
-        '''
-        # TO DO:
-            How can I put multiple iterations of attributes on the same control
-            without it clashing or being hard to read?
-        # Description:
-            Add all the attributes of this module to the root control, like: 
-            Attributs = 'ikfk_swtich' / 'Auto_switch' | Visibility = 'Shaper_controls'
-        # Attributes:
-        # Returns:
-            
-        '''
-        # utils.add_locked_attrib(root_ctrl, ["----------"])
-        # utils.add_locked_attrib(root_ctrl, [f"BA_0L_MODULE"])
-        # cmds.addAttr(root_ctrl, longName="BA_0L_A", niceName=f"{self.mdl_nm}_{self.unique_id}_{self.side}", 
-        #                         attributeType="enum", enumName=" ", k=True
-        #                         )
-
-        # utils.add_locked_attrib(root_ctrl, ["BA_0L_Attributes"])
-        # utils.add_float_attrib(root_ctrl, [f"BA_0L_IK_FK_Switch", f"Auto_Stretch"], [0.0, 1.0], True)
-        # # utils.add_float_attrib(root_ctrl, [f"Auto_Stretch"], [0.0, 1.0], True)
-
-        # utils.add_locked_attrib(root_ctrl, ["BA_0L_Visibility"])
-        # utils.add_float_attrib(root_ctrl, [f"BA_0L_Vis_Shapers"], [0.0, 1.0], True)
-
-        # utils.add_locked_attrib(root_ctrl, [f"BL_0L_MODULE"])
-        # cmds.addAttr(root_ctrl, longName="BL_0L_A", niceName=f"bipedLeg_0_L", 
-        #                         attributeType="enum", enumName=" ", k=True
-        #                         )
-
-        # utils.add_locked_attrib(root_ctrl, ["Attributes"])
-        # utils.add_float_attrib(root_ctrl, [f"IK_FK_Switch", f"Auto_Stretch"], [0.0, 1.0], True)
-        # utils.add_locked_attrib(root_ctrl, ["----------"])
-
-
-
-    def wire_IKFK_switch(self):
+    def cr_mdl_setting_ctrl(self, skn_jnt_wrist, ik_ctrl_list):
         '''
         # Description:
-            Wire the connections for all ikfk switch attr
-        # Attributes:
-            
+            Create the Settings Control w/ all it's attributes!
+        # Attributes: 
+            skn_jnt_wrist (string): Name of the wrist skin joint.
+            ik_ctrl_list (list): Contains 4 ik control names.
         # Returns:
-            
+            mdl_settings_ctrl (string): Name of the settings control.
+            ikfk_plug (plug): 'ikfk_switch' control attribute plug for consitancy.
+            stretch_volume_plug (plug): 'stretch_volume' control attribute plug for consitancy.
+            shaper_plug (plug): 'shaper_visibility' control attribute plug for consitancy.
         '''
-        # cr the module settings control (square) -> duplicate the ik_shoudler ctrl when it is made, before it's posisioned
+        ''' TEMPORARY -> ADD settings control to this module's database data! '''
+        # duplicate the ik_shoudler ctrl when it is made, before it's posisioned
         mdl_settings_ctrl = f"ctrl_settings_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        cr_ctrl.CreateControl("cube", mdl_settings_ctrl)
-        # the control follows the 'skn_jnt_wrist'
-
-
+        cmds.duplicate(ik_ctrl_list[1], n=mdl_settings_ctrl, rc=1)
+        # Colour the settings ctrl a pale version of the current colour. 
+        if self.side == "L":
+            utils.colour_object(mdl_settings_ctrl, 4)
+        elif self.side == "R":
+            utils.colour_object(mdl_settings_ctrl, 18)
+        cmds.parent(mdl_settings_ctrl, f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}")
+        
+        ikfk_switch_attr = "IK_FK_Switch"
+        auto_stretch_attr = "Stretch_Volume"
+        shaper_attr = "Vis_Shapers"
         utils.add_locked_attrib(mdl_settings_ctrl, ["Attributes"])
-        utils.add_float_attrib(mdl_settings_ctrl, [f"IK_FK_Switch", f"Auto_Stretch"], [0.0, 1.0], True)
+        utils.add_float_attrib(mdl_settings_ctrl, [f"{ikfk_switch_attr}", f"{auto_stretch_attr}"], [0.0, 1.0], True)
         # utils.add_float_attrib(root_ctrl, [f"Auto_Stretch"], [0.0, 1.0], True)
 
-        utils.add_locked_attrib(mdl_settings_ctrl, ["BA_0L_Visibility"])
-        utils.add_float_attrib(mdl_settings_ctrl, [f"BA_0L_Vis_Shapers"], [0.0, 1.0], True)
+        utils.add_locked_attrib(mdl_settings_ctrl, ["Visibility"])
+        utils.add_float_attrib(mdl_settings_ctrl, [f"{shaper_attr}"], [0.0, 1.0], True)
 
+        # wire 'skn_jnt_wrist' to  'mdl_settings_ctrl.OPM'
+        mm_settings = f"MM_{mdl_settings_ctrl}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_settings)
+        utils.connect_attr(f"{skn_jnt_wrist}{utils.Plg.wld_mtx_plg}", f"{mm_settings}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{mm_settings}{utils.Plg.mtx_sum_plg}", f"{mdl_settings_ctrl}{utils.Plg.opm_plg}")
         
+        ikfk_plug = f"{mdl_settings_ctrl}.{ikfk_switch_attr}"
+        stretch_volume_plug = f"{mdl_settings_ctrl}.{auto_stretch_attr}"
+        shaper_plug = f"{mdl_settings_ctrl}.{shaper_attr}"
 
-
-    def group_shaper_ctrls(self):
+        return mdl_settings_ctrl, ikfk_plug, stretch_volume_plug, shaper_plug
+        
+        
+    def wire_IKFK_switch(self, skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg, 
+                         mdl_settings_ctrl, ikfk_plug, 
+                         bc_ikfkStretch, logic_hdl,
+                         fk_ctrl_grp, ik_ctrl_grp):
         '''
-        TO DO:
-            - Group the shaper controls to their necessary group.
-            - return name list of the shaper ctrls. 
+        # Description:
+            Wire the connections for all ikfk switch attributes:
+            > reverse.inputX > .outputX -> skn_jnt_wrist.{f"Follow_FK_Wrist_{self.mdl_nm}_{self.unique_id}_Rot"}
+            > skn_jnt_wrist.{f"Follow_IK_Wrist_{self.mdl_nm}_{self.unique_id}"}
+            > bc_ikfkStretch.blender
+            > hdl.ik_blend
+        # Attributes:
+            skn_jnt_wrist_ik_plg (plug): ik follow plug SO the 
+                                        ctrl_settings.IKFK_Switch drives the blending.
+            skn_jnt_wrist_fk_plg (plug): fk follow plug SO the 
+                                        ctrl_settings.IKFK_Switch drives the blending 
+            mdl_settings_ctrl (string): Name of the settings control.
+            ikfk_plug (plug): 'ikfk_switch' control attribute plug for consitancy.
+            bc_ikfk_stretch (utility): blendColors node returned so IKFK_Switch drives it.
+            logic_hdl (string): logic Ik_handle name.
+            fk_ctrl_grp (string): Name of fk ctrl grp.
+            ik_ctrl_grp (string): Name of ik ctrl grp.
+        # Returns: N/A
         '''
+        # cr rev node
+        rev_ikfk = f"rev_{mdl_settings_ctrl}"
+        utils.cr_node_if_not_exists(1, 'reverse', rev_ikfk)
+        # > skn_jnt_wrist.inputX
+        utils.connect_attr(ikfk_plug, f"{rev_ikfk}.inputX")
+        utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", skn_jnt_wrist_fk_plg)
+        utils.connect_attr(ikfk_plug, skn_jnt_wrist_ik_plg)
+
+        # > bc_ikfkStretch.blender
+        utils.connect_attr(ikfk_plug, f"{bc_ikfkStretch}{utils.Plg.blndr_plg}")
+        
+        # > hdl.ik_blend
+        utils.connect_attr(ikfk_plug, f"{logic_hdl}.ikBlend")
+
+        # > ctrl ik/fk groups.visibility
+        utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", f"{fk_ctrl_grp}{utils.Plg.vis_plg}")
+        utils.connect_attr(ikfk_plug, f"{ik_ctrl_grp}{utils.Plg.vis_plg}")
 
 
-    def wire_shaper_ctrls(self):
+    def wire_shaper_ctrls(self, shaper_ctrl_list, logic_jnt_list, ik_ctrl_list, 
+                          shaper_plug, shaper_ctrl_grp):
         '''
-        TO DO:
-            - Driving the shaper controls > Main to children shaper's
+        # Description:
+            Wire the connections for all shaper controls so they are positioned. 
+            'shaper_main' control drives all other shaper controls. Positons are 
+            all sorted with matrix's and DO NOT need pos or rot data for them.
+        # Attributes:
+            shaper_ctrl_list (list) Contains 4 shaper contol names. 
+            logic_jnt_list (list): list of arm logic joints. 
+            ik_ctrl_list (list): Contains 4 ik control names.
+            shaper_plug (plug): 'shaper_visibility' control attribute plug for consitancy.
+            shaper_ctrl_grp (string): Name of shaper ctrl grp.
+        # Returns: N/A
         '''
         # add ikfk_switch attr to 
+        # gather each control into variables to maje sure i'm working on the right 
+        # control becuase the order isn't consitant atm
+        for shaper in shaper_ctrl_list:
+            if "main" in shaper:
+                shaper_main = shaper
+            elif "upper" in shaper:
+                shaper_upper = shaper
+            elif "middle" in shaper:
+                shaper_mid = shaper
+            elif "lower" in shaper:
+                shaper_lower = shaper
+        new_shaper_ctrl_list = [shaper_main, shaper_upper, shaper_mid, shaper_lower]
+
+        # > shaper_main.opm
+        mm_shaper_main = f"MM_{shaper_main}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_shaper_main)
+        utils.connect_attr(f"{logic_jnt_list[1]}{utils.Plg.wld_mtx_plg}", f"{mm_shaper_main}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{mm_shaper_main}{utils.Plg.mtx_sum_plg}", f"{shaper_main}{utils.Plg.opm_plg}")
+        
+        # > shaper_middle.opm
+        mm_shaper_mid = f"MM_{shaper_mid}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_shaper_mid)
+        utils.connect_attr(f"{shaper_main}{utils.Plg.wld_mtx_plg}", f"{mm_shaper_mid}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{mm_shaper_mid}{utils.Plg.mtx_sum_plg}", f"{shaper_mid}{utils.Plg.opm_plg}")
+
+        # > shaper_upper.opm
+        bm_shaper_upper = f"BM_{shaper_upper}"
+        am_shaper_upper = f"AM_{shaper_upper}"
+        utils.cr_node_if_not_exists(0, 'blendMatrix', bm_shaper_upper, 
+                                    {"target[0].scaleWeight":0,
+                                     "target[0].translateWeight":0.5,
+                                     "target[0].rotateWeight":0, 
+                                     "target[0].shearWeight":0})
+        utils.cr_node_if_not_exists(0, 'aimMatrix', am_shaper_upper)
+            # ik_shoulder.opm > bm_shaper_upper.inputMatrix plug
+        utils.connect_attr(f"{ik_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{bm_shaper_upper}{utils.Plg.inp_mtx_plg}")
+            # shaper_main.opm > bm_shaper_upper.target[0].targetMatrix plug
+        utils.connect_attr(f"{shaper_main}{utils.Plg.wld_mtx_plg}", f"{bm_shaper_upper}{utils.Plg.target_mtx[0]}")
+            # bm_shaper_upper.outputMatrix > am_shaper_upper.inputMatrix plug
+        utils.connect_attr(f"{bm_shaper_upper}{utils.Plg.out_mtx_plg}", f"{am_shaper_upper}{utils.Plg.inp_mtx_plg}")
+            # shaper_main.opm > am_shaper_upper.primaryTargetMatrix plug
+        utils.connect_attr(f"{shaper_main}{utils.Plg.wld_mtx_plg}", f"{am_shaper_upper}.primaryTargetMatrix")
+            # am_shaper_upper.outputMatrix > shaper_upper.opm
+        utils.connect_attr(f"{am_shaper_upper}{utils.Plg.out_mtx_plg}", f"{shaper_upper}{utils.Plg.opm_plg}")
+
+        # > shaper_lower.opm
+        bm_shaper_lower = f"BM_{shaper_lower}"
+        am_shaper_lower = f"AM_{shaper_lower}"
+        utils.cr_node_if_not_exists(0, 'blendMatrix', bm_shaper_lower, 
+                                    {"target[0].scaleWeight":0,
+                                     "target[0].translateWeight":0.5,
+                                     "target[0].rotateWeight":0, 
+                                     "target[0].shearWeight":0})
+        utils.cr_node_if_not_exists(0, 'aimMatrix', am_shaper_lower)
+            # ik_shoulder.opm > bm_shaper_lower.inputMatrix plug
+        utils.connect_attr(f"{shaper_main}{utils.Plg.wld_mtx_plg}", f"{bm_shaper_lower}{utils.Plg.inp_mtx_plg}")
+            # shaper_main.opm > bm_shaper_lower.target[0].targetMatrix plug
+        utils.connect_attr(f"{logic_jnt_list[-1]}{utils.Plg.wld_mtx_plg}", f"{bm_shaper_lower}{utils.Plg.target_mtx[0]}")
+            # bm_shaper_lower.outputMatrix > am_shaper_lower.inputMatrix plug
+        utils.connect_attr(f"{bm_shaper_lower}{utils.Plg.out_mtx_plg}", f"{am_shaper_lower}{utils.Plg.inp_mtx_plg}")
+            # shaper_main.opm > am_shaper_lower.primaryTargetMatrix plug
+        utils.connect_attr(f"{shaper_main}{utils.Plg.wld_mtx_plg}", f"{am_shaper_lower}.primaryTargetMatrix")
+            # am_shaper_lower.outputMatrix > shaper_lower.opm
+        utils.connect_attr(f"{am_shaper_lower}{utils.Plg.out_mtx_plg}", f"{shaper_lower}{utils.Plg.opm_plg}")
+
+        # wire the visibility attr on ctrl_setting
+        utils.connect_attr(shaper_plug, f"{shaper_ctrl_grp}{utils.Plg.vis_plg}")
+        ''' TEMP below'''
+        cmds.setAttr(shaper_plug, 1)
+
 
     def wire_shaper_ctrls_to_curves(self):
         '''
@@ -1123,8 +1279,28 @@ class ArmSystem():
         '''
 
     
+    def parent_ik_ctrls_out(self, ik_ctrl_list):
+        '''
+        # Description:
+            parent the 'ik clavicle & ik shoulder' controls to the parent ctrl grp 
+            so 'they' don't get hidden with ikfk switch
+        # Attributes:
+            ik_ctrl_list (list): Contains 4 ik control names.
+        # Returns: N/A
+        '''
+        cmds.parent(ik_ctrl_list[0], ik_ctrl_list[1], f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}")
+        cmds.select(cl=1)
+
+
     def lock_ctrl_attributes(self, fk_ctrl_list):
-         # lock the fk ctrls
+        '''
+        # Description:
+            Lock an assortment of ctrls of the module to make it animator friendly.
+            (For testing of controls toggle this function).
+        # Attributes:
+            fk_ctrl_list (list): Contains 3 fk control names.
+        # Returns: N/A
+        '''
         for ctrl in fk_ctrl_list:
             cmds.setAttr(f"{ctrl}.translateX", lock=1)
             cmds.setAttr(f"{ctrl}.translateY", lock=1)
@@ -1176,16 +1352,20 @@ ex_ik_dict = {
     "ik_pos":{
         'ctrl_ik_bipedArm_clavicle_0_L':[2.44448507146776, 154.57145295222426, 4.459872829725054],
         'ctrl_ik_bipedArm_shoulder_0_L':[19.021108627319336, 152.5847778320312, -3.6705198287963885],
-        'ctrl_ik_bipedArm_elbow_0_L':[51.95222091674805, 152.5847778320312, -35.0046944229159],#[53.20349106420788, 146.93758915899517, -35.0046944229159],
+        'ctrl_ik_bipedArm_elbow_0_L':[53.17503418460073, 147.03618221256727, -34.37697986989994],#[53.20349106420788, 146.93758915899517, -35.0046944229159],
         'ctrl_ik_bipedArm_wrist_0_L':[82.27891540527344, 151.65419006347656, -0.65576171875]
         },
     "ik_rot":{
         'ctrl_ik_bipedArm_clavicle_0_L':[0.0, 0.0, 0.0], #
         'ctrl_ik_bipedArm_shoulder_0_L':[0.0, 0.0, 0.0], # 
-        'ctrl_ik_bipedArm_elbow_0_L':[0.0, 0.0, 0.0], # [-72.84121454033736, 80.71529613638319, -73.89587586207297],
+        'ctrl_ik_bipedArm_elbow_0_L':[-72.84109068999213, 80.71528988472048, -73.89575036760148], # [-72.84121454033736, 80.71529613638319, -73.89587586207297],
         'ctrl_ik_bipedArm_wrist_0_L':[-0.04691076638914411, -12.440289615750016, -3.1178613803887054]
         }
     }
+
+ex_shaper_dict = {
+
+}
 
 ArmSystem("bipedArm", ex_external_plg_dict, ex_skeleton_dict, ex_fk_dict, ex_ik_dict, "X")
 

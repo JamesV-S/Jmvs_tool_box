@@ -106,6 +106,7 @@ class Plg():
     rot_plg = ".rotate"
     u_plg = ".uValue"
     distance_plg = ".distance"
+    vis_plg = ".visibility"
 
 
 def check_non_default_transforms(obj):

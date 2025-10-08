@@ -64,4 +64,4 @@ def create_pole_vector(top_joint, pv_joint, end_joint):
 
         return pv_ctrl 
 
-create_pole_vector("ori_bipedArm_shoulder_0_L", "ori_bipedArm_elbow_0_L", "ori_bipedArm_wrist_0_L")
+create_pole_vector("jnt_rig_bipedArm_shoulder_0_L", "jnt_rig_bipedArm_elbow_0_L", "jnt_rig_bipedArm_wrist_0_L")
