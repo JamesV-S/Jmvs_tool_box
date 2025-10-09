@@ -166,8 +166,8 @@ class ArmSystem():
         skn_jnt_clav, skn_jnt_wrist = self.cr_jnt_skn_start_end(self.ik_pos_dict)
         
         # cr twist curves & skn joints
-        cv_upper = self.cr_logic_curves("upper", skeleton_pos_dict['shoulder'], skeleton_pos_dict['elbow'])
-        cv_lower = self.cr_logic_curves("lower", skeleton_pos_dict['elbow'], skeleton_pos_dict['wrist'])
+        cv_upper, upper_cv_intermediate_pos_ls = self.cr_logic_curves("upper", skeleton_pos_dict['shoulder'], skeleton_pos_dict['elbow'])
+        cv_lower, lower_cv_intermediate_pos_ls = self.cr_logic_curves("lower", skeleton_pos_dict['elbow'], skeleton_pos_dict['wrist'])
         
         sknUpper_jnt_chain = self.cr_skn_twist_joint_chain("upper", cv_upper,
                                                            skeleton_pos_dict['shoulder'], 
@@ -216,8 +216,9 @@ class ArmSystem():
         shaper_ctrl_list = self.organise_ctrl_shaper_list(unorganised_shaper_ctrl_list)
         shaper_ctrl_grp = self.group_ctrls(shaper_ctrl_list, "shaper")
         self.wire_shaper_ctrls(shaper_ctrl_list, logic_jnt_list, ik_ctrl_list, shaper_plug, shaper_ctrl_grp)
-        self.wire_shaper_ctrls_to_curves(cv_upper, cv_lower, shaper_ctrl_list)
+        self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
 
+        self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
 
         self.parent_ik_ctrls_out(ik_ctrl_list)
         self.lock_ctrl_attributes(fk_ctrl_list)
@@ -337,10 +338,10 @@ class ArmSystem():
         # start_pos = [20.283844, 152.207993, -2.557748]
         # end_pos = [52.076378, 152.208282, -7.538624]
         logic_curve = f"crv_{self.mdl_nm}_{pref}_{self.unique_id}_{self.side}"
-        utils.cr_straight_cubic_curve(logic_curve, start_pos, end_pos)
+        crv, cv_intermediate_pos_ls = utils.cr_straight_cubic_curve(logic_curve, start_pos, end_pos)
         cmds.select(cl=1)
 
-        return logic_curve
+        return logic_curve, cv_intermediate_pos_ls
     
 
     def cr_skn_twist_joint_chain(self, twist_name, logic_curve, start_pos, end_pos):
@@ -393,7 +394,7 @@ class ArmSystem():
         jnt_chain_ls = []
         u_dict = {}
         prevJnt = ""
-        # rootJnt = "" # used for orientation in future maybe....
+        rootJnt = "" # used for orientation in future maybe....
         for x in range(0, jnt_num):
             cmds.select(cl=1)
             jnt_nm = f"jnt_skn_{self.mdl_nm}_{twist_name}{x}_{self.unique_id}_{self.side}"
@@ -412,11 +413,15 @@ class ArmSystem():
             
             if x == 0:
                 prevJnt = newJnts
-                # rootJnt = newJnts
+                rootJnt = newJnts
                 continue
             cmds.parent(newJnts, prevJnt)
             prevJnt = newJnts
             cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
+        
+        # Orient the joints!
+        cmds.joint(rootJnt, e=1, oj='xyz', secondaryAxisOrient='zdown', ch=1, zso=1 )
+        cmds.joint(newJnts, e=1, oj='none', ch=1, zso=1)
         cmds.select(cl=1)
 
         return jnt_chain_ls
@@ -455,7 +460,7 @@ class ArmSystem():
         cmds.setAttr(f"{inputs_grp}.Squash_Value", keyable=1, channelBox=1)
         cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
 
-    # Ctrl mtx setup
+
     def wire_clav_armRt_setup(self, inputs_grp, ctrl_list, skn_jnt_clav, ik_pos_dict, ik_rot_dict):
         '''
         # Description:
@@ -493,7 +498,7 @@ class ArmSystem():
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_clav)
         utils.connect_attr(f"{ctrl_clav}{utils.Plg.wld_mtx_plg}", f"{mm_skn_clav}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{mm_skn_clav}{utils.Plg.mtx_sum_plg}", f"{skn_jnt_clav}{utils.Plg.opm_plg}")
-        
+
         # ctrl arm root (shoulder)
         mm_ctrl_armRoot = f"MM_{ctrl_armRt}"
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_armRoot)
@@ -506,7 +511,7 @@ class ArmSystem():
         utils.set_matrix(armRt_offset_pos, f"{mm_ctrl_armRoot}{utils.Plg.mtx_ins[0]}")
         utils.connect_attr(f"{skn_jnt_clav}{utils.Plg.wld_mtx_plg}", f"{mm_ctrl_armRoot}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{mm_ctrl_armRoot}{utils.Plg.mtx_sum_plg}", f"{ctrl_armRt}{utils.Plg.opm_plg}")
-       
+
     
     def wire_fk_ctrl_setup(self, inputs_grp, armRt_ctrl, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
         '''
@@ -1081,7 +1086,7 @@ class ArmSystem():
         '''
         ''' TEMPORARY -> ADD settings control to this module's database data! '''
         # duplicate the ik_shoudler ctrl when it is made, before it's posisioned
-        mdl_settings_ctrl = f"ctrl_settings_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        mdl_settings_ctrl = f"ctrl_{self.mdl_nm}_settings_{self.unique_id}_{self.side}"
         cmds.duplicate(ik_ctrl_list[1], n=mdl_settings_ctrl, rc=1)
         # Colour the settings ctrl a pale version of the current colour. 
         if self.side == "L":
@@ -1196,19 +1201,6 @@ class ArmSystem():
             shaper_ctrl_grp (string): Name of shaper ctrl grp.
         # Returns: N/A
         '''
-        # add ikfk_switch attr to 
-        # gather each control into variables to maje sure i'm working on the right 
-        # control becuase the order isn't consitant atm
-        # for shaper in shaper_ctrl_list:
-        #     if "main" in shaper:
-        #         shaper_main = shaper
-        #     elif "upper" in shaper:
-        #         shaper_upper = shaper
-        #     elif "middle" in shaper:
-        #         shaper_mid = shaper
-        #     elif "lower" in shaper:
-        #         shaper_lower = shaper
-        # new_shaper_ctrl_list = [shaper_main, shaper_upper, shaper_mid, shaper_lower]
         
         shaper_main, shaper_upper, shaper_mid, shaper_lower = shaper_ctrl_list
 
@@ -1227,12 +1219,12 @@ class ArmSystem():
         # > shaper_upper.opm
         bm_shaper_upper = f"BM_{shaper_upper}"
         am_shaper_upper = f"AM_{shaper_upper}"
-        utils.cr_node_if_not_exists(0, 'blendMatrix', bm_shaper_upper, 
-                                    {"target[0].scaleWeight":0,
-                                     "target[0].translateWeight":0.5,
-                                     "target[0].rotateWeight":0, 
-                                     "target[0].shearWeight":0})
+        utils.cr_node_if_not_exists(0, 'blendMatrix', bm_shaper_upper)
+        for blend_attr in ["scaleWeight", "rotateWeight", "shearWeight"]:
+            cmds.setAttr(f"{bm_shaper_upper}.target[0].{blend_attr}", 0)
+        cmds.setAttr(f"{bm_shaper_upper}.target[0].translateWeight", 0.5)
         utils.cr_node_if_not_exists(0, 'aimMatrix', am_shaper_upper)
+        
             # ik_shoulder.opm > bm_shaper_upper.inputMatrix plug
         utils.connect_attr(f"{ik_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{bm_shaper_upper}{utils.Plg.inp_mtx_plg}")
             # shaper_main.opm > bm_shaper_upper.target[0].targetMatrix plug
@@ -1270,14 +1262,15 @@ class ArmSystem():
         cmds.setAttr(shaper_plug, 1)
 
 
-    def wire_shaper_ctrls_to_curves(self, upper_curve, lower_curve, shaper_ctrl_list):
+    def wire_shaper_ctrls_to_curves(self, shaper_ctrl_list, upper_curve, lower_curve, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list):
         '''
         # Description:
             Wire ctrl_shaper's to the upper & lower curve's (that are going to 
             drive the ik spline afterwards to position the joints)
             - ONLY 'upper', 'middle' & 'lower' shaper controls drive the curves.
         # Attributes:
-            shaper_ctrl_list (list) Contains 4 shaper contol names. (organied)
+            shaper_ctrl_list (list): Contains 4 shaper contol names. (organied)
+            upper_curve (string): 
         # Returns: N/A
         '''
         shaper_main, shaper_upper, shaper_mid, shaper_lower = shaper_ctrl_list
@@ -1285,44 +1278,78 @@ class ArmSystem():
             # upper curve
             # ctrl_upper_shaper drives the CENTRE of crv_upper.controlPoints ([1] & [2])
             # ctrl_middle_shaper drives the END of crv_upper.controlPoints ([3])
+        mm_shld_upp_0 = f"MM_Crv0_{logic_jnt_list[0]}"
         mm_shp_upp_1 = f"MM_Crv1_{shaper_upper}"
         mm_shp_upp_2 = f"MM_Crv2_{shaper_upper}"
         mm_shp_upp_3 = f"MM_Crv3_{shaper_mid}"
+        pmm_shld_upp_0 = f"PMM_Crv0_{logic_jnt_list[0]}"
         pmm_shp_upp_1 = f"PMM_Crv1_{shaper_upper}"
         pmm_shp_upp_2 = f"PMM_Crv2_{shaper_upper}"
         pmm_shp_upp_3 = f"PMM_Crv3_{shaper_mid}"
+        
             # lower curve
             # ctrl_lower_shaper drives the CENTRE of crv_lower.controlPoints ([1] & [2])
             # ctrl_middle_shaper drives the START of crv_lower.controlPoints ([0])
+        mm_shp_low_0 = f"MM_Crv0_{shaper_mid}"
         mm_shp_low_1 = f"MM_Crv1_{shaper_lower}"
         mm_shp_low_2 = f"MM_Crv2_{shaper_lower}"
-        mm_shp_low_0 = f"MM_Crv0_{shaper_mid}"
+        mm_wrist_low_3 = f"MM_Crv0_{logic_jnt_list[-1]}"
+        pmm_shp_low_0 = f"PMM_Crv0_{shaper_mid}"
         pmm_shp_low_1 = f"PMM_Crv1_{shaper_lower}"
         pmm_shp_low_2 = f"PMM_Crv2_{shaper_lower}"
-        pmm_shp_low_0 = f"PMM_Crv0_{shaper_mid}"
-        for mm_name, pmm_name in zip([mm_shp_upp_1, mm_shp_upp_2, mm_shp_upp_3, mm_shp_low_0, mm_shp_low_1, mm_shp_low_2],
-                                     [pmm_shp_upp_1, pmm_shp_upp_2, pmm_shp_upp_3, pmm_shp_low_1, pmm_shp_low_2, pmm_shp_low_0]):
+        pmm_wrist_low_3 = f"PMM_Crv0_{logic_jnt_list[-1]}"
+        for mm_name, pmm_name in zip([mm_shld_upp_0, mm_shp_upp_1, mm_shp_upp_2, mm_shp_upp_3, mm_shp_low_0, mm_shp_low_1, mm_shp_low_2, mm_wrist_low_3],
+                                     [pmm_shld_upp_0, pmm_shp_upp_1, pmm_shp_upp_2, pmm_shp_upp_3, pmm_shp_low_1, pmm_shp_low_2, pmm_shp_low_0, pmm_wrist_low_3]):
             utils.cr_node_if_not_exists(1, 'multMatrix', mm_name)
             utils.cr_node_if_not_exists(1, 'pointMatrixMult', pmm_name)
-
-        # wire connections | upper curve !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            # offset matrix data > mm.[0] needs to be the offset of the cr 
-
+        # wire connections Upper
+            # offset > mm.[1]
+        shp_upp_pos = cmds.xform(shaper_upper, q=1, translation=1, ws=1)
+        upp_cv_1_offset = [x - y for x, y in zip(upper_cv_intermediate_pos_ls[0], shp_upp_pos)]
+        upp_cv_2_offset = [x - y for x, y in zip(upper_cv_intermediate_pos_ls[1], shp_upp_pos)]
+        utils.set_pos_mtx(upp_cv_1_offset, f"{mm_shp_upp_1}{utils.Plg.mtx_ins[0]}")
+        utils.set_pos_mtx(upp_cv_2_offset, f"{mm_shp_upp_2}{utils.Plg.mtx_ins[0]}")
             # ctrl_shaper > mm.[1]
+        utils.connect_attr(f"{logic_jnt_list[0]}{utils.Plg.wld_mtx_plg}", f"{mm_shld_upp_0}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{shaper_upper}{utils.Plg.wld_mtx_plg}", f"{mm_shp_upp_1}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{shaper_upper}{utils.Plg.wld_mtx_plg}", f"{mm_shp_upp_2}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{shaper_mid}{utils.Plg.wld_mtx_plg}", f"{mm_shp_upp_3}{utils.Plg.mtx_ins[1]}")
             # mm > pmm
+        utils.connect_attr(f"{mm_shld_upp_0}{utils.Plg.mtx_sum_plg}", f"{pmm_shld_upp_0}{utils.Plg.inMtx_plg}")
         utils.connect_attr(f"{mm_shp_upp_1}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_upp_1}{utils.Plg.inMtx_plg}")
         utils.connect_attr(f"{mm_shp_upp_2}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_upp_2}{utils.Plg.inMtx_plg}")
         utils.connect_attr(f"{mm_shp_upp_3}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_upp_3}{utils.Plg.inMtx_plg}")
             # pmm > contrPoint[#]
+        utils.connect_attr(f"{pmm_shld_upp_0}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[0]")
         utils.connect_attr(f"{pmm_shp_upp_1}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[1]")
         utils.connect_attr(f"{pmm_shp_upp_2}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[2]")
         utils.connect_attr(f"{pmm_shp_upp_3}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[3]")
+
+        # wire connections Upper
+            # offset > mm.[1]
+        shp_low_pos = cmds.xform(shaper_lower, q=1, translation=1, ws=1)
+        low_cv_1_offset = [x - y for x, y in zip(shp_low_pos, lower_cv_intermediate_pos_ls[0])]
+        low_cv_2_offset = [x - y for x, y in zip(shp_low_pos, lower_cv_intermediate_pos_ls[1])]
+        utils.set_pos_mtx(low_cv_1_offset, f"{mm_shp_low_1}{utils.Plg.mtx_ins[0]}")
+        utils.set_pos_mtx(low_cv_2_offset, f"{mm_shp_low_2}{utils.Plg.mtx_ins[0]}")
+            # ctrl_shaper > mm.[1]
+        utils.connect_attr(f"{shaper_lower}{utils.Plg.wld_mtx_plg}", f"{mm_shp_low_1}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{shaper_lower}{utils.Plg.wld_mtx_plg}", f"{mm_shp_low_2}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{shaper_mid}{utils.Plg.wld_mtx_plg}", f"{mm_shp_low_0}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{logic_jnt_list[-1]}{utils.Plg.wld_mtx_plg}", f"{mm_wrist_low_3}{utils.Plg.mtx_ins[1]}")
+            # mm > pmm
+        utils.connect_attr(f"{mm_shp_low_1}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_low_1}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_shp_low_2}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_low_2}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_shp_low_0}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_low_0}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_wrist_low_3}{utils.Plg.mtx_sum_plg}", f"{pmm_wrist_low_3}{utils.Plg.inMtx_plg}")
+            # pmm > contrPoint[#]
+        utils.connect_attr(f"{pmm_shp_low_1}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[1]")
+        utils.connect_attr(f"{pmm_shp_low_2}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[2]")
+        utils.connect_attr(f"{pmm_shp_low_0}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[0]")
+        utils.connect_attr(f"{pmm_wrist_low_3}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[3]")
       
 
-    def cr_twist_ik_spline(self, upper_curve, lower_curve, logic_jnt_list):
+    def cr_twist_ik_spline(self, upp_jnt_chain, low_jnt_chain, upper_curve, lower_curve):
         '''
         # Description:
             - Twist skin joints & Curves must be positioned first beforehand. 
@@ -1338,12 +1365,12 @@ class ArmSystem():
         # upper curve ik spline handle
         # print(f"ikHandle: jnt_skeleton_ls[-1] = {jnt_skeleton_ls[-1]}, jnt_skeleton_ls[0] = {jnt_skeleton_ls[0]},")
         
-        # hdl_upper_name = f"hdl_upper_{self.mdl_nm}_spline_{self.unique_id}_{self.side}"
-        # hdl_lower_name = f"hdl_lower_{self.mdl_nm}_spline_{self.unique_id}_{self.side}"
-        # cmds.ikHandle( n=hdl_upper_name, sol="ikSplineSolver", c=upper_curve, sj=jnt_skeleton_ls[0], ee=jnt_skeleton_ls[-1], ccv=False, pcv=False)
-        # cmds.ikHandle( n=hdl_lower_name, sol="ikSplineSolver", c=lower_curve, sj=jnt_skeleton_ls[0], ee=jnt_skeleton_ls[-1], ccv=False, pcv=False)
+        hdl_upper_name = f"hdl_{self.mdl_nm}_upper_{self.unique_id}_{self.side}"
+        hdl_lower_name = f"hdl_{self.mdl_nm}_lower_{self.unique_id}_{self.side}"
+        cmds.ikHandle( n=hdl_upper_name, sol="ikSplineSolver", c=upper_curve, sj=upp_jnt_chain[0], ee=upp_jnt_chain[-1], ccv=False, pcv=False)
+        cmds.ikHandle( n=hdl_lower_name, sol="ikSplineSolver", c=lower_curve, sj=low_jnt_chain[0], ee=low_jnt_chain[-1], ccv=False, pcv=False)
         
-        # cmds.parent(hdl_upper_name, hdl_lower_name, f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
+        cmds.parent(hdl_upper_name, hdl_lower_name, f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
 
 
     def wire_skn_twist_joints_stretch(self):
