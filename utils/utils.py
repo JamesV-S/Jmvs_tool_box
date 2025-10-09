@@ -403,7 +403,7 @@ def cr_straight_cubic_curve(crv_name, start_pos, end_pos):
     # Create the curve using the cmds.curve command.
     curve = cmds.curve(n=crv_name, d=3, p=curve_points)
     
-    return curve
+    return curve, [list(curve_points[1]), list(curve_points[2])]
 
 
 #--------------------------------- HIERARCHY ----------------------------------
@@ -965,6 +965,17 @@ def set_matrix(translation_ls, mtx_attr):
     cmds.setAttr(mtx_attr, *translation_matrix, type='matrix')
 
 
+def set_pos_mtx(translation_ls, mtx_attr):
+    # cr a translation matrix
+    translation_matrix = [
+        1.0, 0.0, 0.0, 0.0,
+        0.0, 1.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        translation_ls[0], translation_ls[1], translation_ls[2], 1.0
+        ]
+    cmds.setAttr(mtx_attr, *translation_matrix, type='matrix')
+
+
 def matrix_to_trs(mtx):
     '''
     Explanation: Takes a flat matrix list and returns its list of translation values and
@@ -1067,8 +1078,8 @@ def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, fk_loca
         While the target keeps all its transformations.
     Arguments:
         fk_source_ctrl (string): Parent control that will drive the target.
-        fk_target_ctrl (string): Control We want "parenting" to the source
-        fk_local_object (string): Temporary a child object(usually locactor) that is where we want the target to be.  
+        fk_target_ctrl (string): Control We want "parenting" to the source.
+        fk_local_object (string): Temporary a child object(usually locactor) that is where we want the target to be.
     '''
     MM_ctrl_fk = f"MM_{fk_target_ctrl}"
     cr_node_if_not_exists(1, 'multMatrix', MM_ctrl_fk)
