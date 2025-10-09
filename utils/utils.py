@@ -59,7 +59,7 @@ class Plg():
         #     x = 1 
         # elif x == 1:
         #     x = 2
-            inMatrixs.append(f".inMatrix{x}")
+        inMatrixs.append(f".inMatrix{x}")
 
     input1_val = []   
     input2_val = []
@@ -107,6 +107,7 @@ class Plg():
     u_plg = ".uValue"
     distance_plg = ".distance"
     vis_plg = ".visibility"
+    inMtx_plg = ".inMatrix"
 
 
 def check_non_default_transforms(obj):
@@ -368,6 +369,43 @@ def get_motionpath_u_value(moPath_list):
         u_val.append(cmds.getAttr(f"{mop}{Plg.u_plg}"))
 
 
+def cr_straight_cubic_curve(crv_name, start_pos, end_pos):
+    '''
+    # Description:
+        Creates a perfectly straight 3-degrees curve between two positions 
+        by evenly spacing the intermediate control verts.
+    # Attributes:
+        start_pos (tuple): The (x, y, z) coordinates for the curve's start point.
+        end_pos (tuple): The (x, y, z) coordinates for the curve's end point.
+    # Returns:
+        logic_curve (string): The logic curve created. 
+    '''
+    # Convert pos to MVector objects for vector math
+    start_vec = om.MVector(start_pos)
+    end_vec = om.MVector(end_pos)
+    
+    # Calculate the vector from the start to the end position
+    direction_vec = end_vec - start_vec
+
+    # A degree 3 curve has 4 CVs. To space them evenly, calculate the position
+    # at 1/3 and 2/3 of the way along the line.
+    # Position for the second CV (one third of the way)
+    pos2 = start_vec + (direction_vec * (1.0 / 3.0))
+    # Position for the third CV (two thirds of the way)
+    pos3 = start_vec + (direction_vec * (2.0 / 3.0))
+    # The list of CVs for the curve command.
+    curve_points = [
+        start_pos,
+        (pos2.x, pos2.y, pos2.z),
+        (pos3.x, pos3.y, pos3.z),
+        end_pos
+    ]
+    # Create the curve using the cmds.curve command.
+    curve = cmds.curve(n=crv_name, d=3, p=curve_points)
+    
+    return curve
+
+
 #--------------------------------- HIERARCHY ----------------------------------
 def get_first_child(group_name):
     children = cmds.listRelatives(group_name, children=True)
@@ -461,7 +499,6 @@ def mtrans_and_pivot_to_origin(target_obj, source_obj, translation_vector=None, 
         for cv in cvs:
             cmds.xform(cv, translation=translation_vector, relative=True)
     
-   
     cmds.xform(target_obj, pivots=(0,0,0), ws=True)
 
 
