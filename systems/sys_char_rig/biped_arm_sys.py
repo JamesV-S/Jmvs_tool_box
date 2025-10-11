@@ -216,9 +216,10 @@ class ArmSystem():
         self.wire_shaper_ctrls(shaper_ctrl_list, logic_jnt_list, ik_ctrl_list, shaper_plug, shaper_ctrl_grp)
         self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
 
-        self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
+        hdl_upper, hdl_lower = self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
         fm_upp_global, fm_low_global = self.wire_skn_twist_joints_stretch(inputs_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
         self.wire_skn_twist_joints_volume(inputs_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global)
+        self.wire_rotations_on_twist_joints(logic_jnt_list, skn_jnt_wrist, ik_ctrl_list[1], hdl_upper, hdl_lower)
 
         self.parent_ik_ctrls_out(ik_ctrl_list)
         self.lock_ctrl_attributes(fk_ctrl_list)
@@ -360,12 +361,14 @@ class ArmSystem():
             end_pos (list): Position data for end of the chain.
         # Returns:
             skn_jnt_chain (list): The list of joints within the chain.
-        '''
+        
+        * Below is how to automate the number of twist joints. 
+        * Standard is 6 for.
+
         # need the number of joints. 
             # need the front & end position for the chain to span across.
             # cr temp locators, positon them there, & calculate the distance between them. 
             # distance/6 = number of joints(number MUST be EVEN , so round to the best one.)
-        print(f"testting: `cr_skn_twist_joint_chain()`")
         temp_start_locator = f"loc_{twist_name}_start_pos_{self.mdl_nm}_{self.unique_id}_{self.side}"
         temp_end_locator = f"loc_{twist_name}_end_pos_{self.mdl_nm}_{self.unique_id}_{self.side}"
         cmds.spaceLocator(n=temp_start_locator)
@@ -385,11 +388,14 @@ class ArmSystem():
         # get the raw number from the calculation.
         raw_number = cmds.getAttr(f"{divide_node}.output")
         print(f"Twist {twist_name}: raw_number = {raw_number}")
-        jnt_num = utils.round_to_even(raw_number)
-        print(f"Twist {twist_name}: jnt_num = {jnt_num}")
         
         # Now delete the temp data
         cmds.delete(temp_start_locator, temp_end_locator, db_node, divide_node)
+
+        # jnt_num = utils.round_to_even(raw_number)
+        '''
+        jnt_num = 6
+        print(f"Twist {twist_name}: jnt_num = {jnt_num}")
 
         jnt_chain_ls = []
         u_dict = {}
@@ -1175,7 +1181,7 @@ class ArmSystem():
         # 'ikfk_plug' & 'stretch_state_plug' > bc_ikfkStretch.blender
         cond_stretch_state = f"COND_stretchState_{self.mdl_nm}_{self.unique_id}_{self.side}"
         cond_ikfk = f"COND_ikfk_switch_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        utils.cr_node_if_not_exists(1, 'condition', cond_stretch_state, {"secondTerm":1, "colorIfTrueR":0.955})
+        utils.cr_node_if_not_exists(1, 'condition', cond_stretch_state, {"secondTerm":1, "colorIfTrueR":0.9525})
         utils.cr_node_if_not_exists(1, 'condition', cond_ikfk, {"secondTerm":0})
             # > cond_stretch_state
         utils.connect_attr(stretch_state_plug, f"{cond_stretch_state}.firstTerm")
@@ -1295,7 +1301,9 @@ class ArmSystem():
         cmds.setAttr(shaper_plug, 1)
 
 
-    def wire_shaper_ctrls_to_curves(self, shaper_ctrl_list, upper_curve, lower_curve, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list):
+    def wire_shaper_ctrls_to_curves(self, shaper_ctrl_list, upper_curve, lower_curve, 
+                                    upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, 
+                                    logic_jnt_list):
         '''
         # Description:
             Wire ctrl_shaper's to the upper & lower curve's (that are going to 
@@ -1389,7 +1397,9 @@ class ArmSystem():
             - Create IK spline handle for upper & lower joints w/ curves
         # Attributes:
             
-        # Returns: N/A
+        # Returns:
+            hdl_upper_name (string): name of upper spring solver ik handle 
+            hdl_lower_name (string): name of lower spring solver ik handle
         '''
         # upper curve ik spline handle
         hdl_upper_name = f"hdl_{self.mdl_nm}_upper_{self.unique_id}_{self.side}"
@@ -1399,6 +1409,7 @@ class ArmSystem():
         
         cmds.parent(hdl_upper_name, hdl_lower_name, f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
 
+        return hdl_upper_name, hdl_lower_name
 
     # def wire_parent_skn_twist_joint_matrix(self):
     #     '''
@@ -1501,10 +1512,88 @@ class ArmSystem():
         for jnt in (low_jnt_chain):
             utils.connect_attr(f"{fm_low_pow}{utils.Plg.out_flt}", f"{jnt}.scaleY")
             utils.connect_attr(f"{fm_low_pow}{utils.Plg.out_flt}", f"{jnt}.scaleZ")
-        print(cmds.getAttr(f"{fm_upp_pow}{utils.Plg.out_flt}") , cmds.getAttr(f"{fm_low_pow}{utils.Plg.out_flt}"))
-        cmds.select(fm_upp_pow, fm_low_pow)
         
     
+    def wire_rotations_on_twist_joints(self, logic_jnt_list, skn_jnt_wrist, ctrl_arm_root, hdl_upper, hdl_lower):
+        '''
+        # Description:
+            Twisting of the upper & lower skn joint chains are driven by their 
+            ik handle's .twist attribute.
+            - Upper handle twisting is driven by jnt_logic_shld & jnt_logic_elbow  
+            - lower handle twisting is driven by jnt_logic_elbow & jnt_skn_wrist
+        # Attributes:
+            
+        # Returns:
+            hdl_upper_name (string): name of upper spring solver ik handle 
+            hdl_lower_name (string): name of lower spring solver ik handle
+        '''
+        jnt_logic_shld = logic_jnt_list[0]
+        jnt_logic_elbow = logic_jnt_list[1]
+
+        # upper 6 utility nodes
+        mm_upp_fk_twist = f"MM_twist_fkNonRoll_{hdl_upper}"
+        dm_upp_fk_twist = f"DM_twist_fkNonRoll_{hdl_upper}"
+        quatToEuler_upp_fk_twist = f"QTE_twist_fkNonRoll_{hdl_upper}"
+        mm_upp_twist = f"MM_twist_NonRoll_{hdl_upper}"
+        dm_upp_twist = f"DM_twist_NonRoll_{hdl_upper}"
+        quatToEuler_upp_twist = f"QTE_twist_NonRoll_{hdl_upper}"
+        fm_upp_twist = f"FM_jntTwistValue_add_{hdl_upper}"
+
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_upp_fk_twist)
+        utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_upp_fk_twist)
+        utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_upp_fk_twist)
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_upp_twist)
+        utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_upp_twist)
+        utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_upp_twist)
+        utils.cr_node_if_not_exists(1, 'floatMath', fm_upp_twist, {"operation":0})
+
+        # wire Upper 
+            # fk_nonRoll
+            # > mm_upp_fk_twist
+        utils.connect_attr(f"{jnt_logic_shld}{utils.Plg.wld_mtx_plg}", f"{mm_upp_fk_twist}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{ctrl_arm_root}{utils.Plg.wld_inv_mtx_plg}", f"{mm_upp_fk_twist}{utils.Plg.mtx_ins[1]}")
+            # > dm_upp_fk_twist
+        utils.connect_attr(f"{mm_upp_fk_twist}{utils.Plg.mtx_sum_plg}", f"{dm_upp_fk_twist}{utils.Plg.inp_mtx_plg}")
+            # > quatToEuler_upp_fk_twist
+        utils.connect_attr(f"{dm_upp_fk_twist}.outputQuatX", f"{quatToEuler_upp_fk_twist}.inputQuatX")
+        utils.connect_attr(f"{dm_upp_fk_twist}.outputQuatW", f"{quatToEuler_upp_fk_twist}.inputQuatW")
+            # nonRoll
+            # > mm_upp_twist
+        utils.connect_attr(f"{jnt_logic_elbow}{utils.Plg.wld_mtx_plg}", f"{mm_upp_twist}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{jnt_logic_shld}{utils.Plg.wld_inv_mtx_plg}", f"{mm_upp_twist}{utils.Plg.mtx_ins[1]}")
+            # > dm_upp_twist
+        utils.connect_attr(f"{mm_upp_twist}{utils.Plg.mtx_sum_plg}", f"{dm_upp_twist}{utils.Plg.inp_mtx_plg}")
+            # > quatToEuler_upp_twist
+        utils.connect_attr(f"{dm_upp_twist}.outputQuatX", f"{quatToEuler_upp_twist}.inputQuatX")
+        utils.connect_attr(f"{dm_upp_twist}.outputQuatW", f"{quatToEuler_upp_twist}.inputQuatW")
+            # > fm_upp_twist
+        utils.connect_attr(f"{quatToEuler_upp_fk_twist}.outputRotateX", f"{fm_upp_twist}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{quatToEuler_upp_twist}.outputRotateX", f"{fm_upp_twist}{utils.Plg.flt_B}")
+            # > hdl_upper.twist
+        utils.connect_attr(f"{fm_upp_twist}{utils.Plg.out_flt}", f"{hdl_upper}.twist")
+
+        # lower 3 utility nodes
+        mm_low_twist = f"MM_twist_NonRoll_{hdl_lower}"
+        dm_low_twist = f"DM_twist_NonRoll_{hdl_lower}"
+        quatToEuler_low_twist = f"QTE_twist_NonRoll_{hdl_lower}"
+
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_low_twist)
+        utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_low_twist)
+        utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_low_twist)
+
+        # wire lower 
+            # > mm_low_twist
+        utils.connect_attr(f"{skn_jnt_wrist}{utils.Plg.wld_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{jnt_logic_elbow}{utils.Plg.wld_inv_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[1]}")
+            # > dm_low_twist
+        utils.connect_attr(f"{mm_low_twist}{utils.Plg.mtx_sum_plg}", f"{dm_low_twist}{utils.Plg.inp_mtx_plg}")
+            # > quatToEuler_upp_twist
+        utils.connect_attr(f"{dm_low_twist}.outputQuatX", f"{quatToEuler_low_twist}.inputQuatX")
+        utils.connect_attr(f"{dm_low_twist}.outputQuatW", f"{quatToEuler_low_twist}.inputQuatW")
+            # > hdl_lower.twist
+        utils.connect_attr(f"{quatToEuler_low_twist}.outputRotateX", f"{hdl_lower}.twist")
+
+
     def parent_ik_ctrls_out(self, ik_ctrl_list):
         '''
         # Description:
