@@ -217,6 +217,7 @@ class ArmSystem():
         self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
 
         hdl_upper, hdl_lower = self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
+        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, ik_ctrl_list[1], logic_jnt_list)
         fm_upp_global, fm_low_global = self.wire_skn_twist_joints_stretch(inputs_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
         self.wire_skn_twist_joints_volume(inputs_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global)
         self.wire_rotations_on_twist_joints(logic_jnt_list, skn_jnt_wrist, ik_ctrl_list[1], hdl_upper, hdl_lower)
@@ -1411,15 +1412,41 @@ class ArmSystem():
 
         return hdl_upper_name, hdl_lower_name
 
-    # def wire_parent_skn_twist_joint_matrix(self):
-    #     '''
-    #     # Description:
-    #         The parent of each joint chain (Upper/Lower) have values, need to 
-    #     # Attributes:
-            
-    #     # Returns: N/A
-    #     '''
 
+    def wire_parent_skn_twist_joint_matrix(self, upp_jnt_chain, low_jnt_chain, armRt_ctrl, logic_jnt_list):
+        '''
+        # Description:
+            The parent of each joint chain (Upper/Lower) has driven OPM.
+            - Upper prnt driven by 'arm root control' 
+            - lower prnt driven by 'jnt logic elbow' 
+        # Attributes:
+            
+        # Returns: N/A
+        '''
+        jnt_skn_upp_parent = upp_jnt_chain[0]
+        jnt_skn_low_parent = low_jnt_chain[0]
+        mm_skn_upp_parent = f"mm_{jnt_skn_upp_parent}"
+        mm_skn_low_parent = f"mm_{jnt_skn_low_parent}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_upp_parent)
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_low_parent)
+        
+        utils.clean_opm(jnt_skn_upp_parent)
+        utils.clean_opm(jnt_skn_low_parent)
+
+        # wire upper
+            # > mm_skn_upp_parent
+        utils.set_transformation_matrix([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], f"{mm_skn_upp_parent}{utils.Plg.mtx_ins[0]}") 
+        utils.connect_attr(f"{armRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{mm_skn_upp_parent}{utils.Plg.mtx_ins[1]}")
+            # > jnt_skn_upp_parent
+        utils.connect_attr(f"{mm_skn_upp_parent}{utils.Plg.mtx_sum_plg}", f"{jnt_skn_upp_parent}{utils.Plg.opm_plg}")
+        
+        # wire lower
+            # > mm_skn_low_parent
+        utils.set_transformation_matrix([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], f"{mm_skn_low_parent}{utils.Plg.mtx_ins[0]}") 
+        utils.connect_attr(f"{logic_jnt_list[1]}{utils.Plg.wld_mtx_plg}", f"{mm_skn_low_parent}{utils.Plg.mtx_ins[1]}")
+            # > jnt_skn_low_parent
+        utils.connect_attr(f"{mm_skn_low_parent}{utils.Plg.mtx_sum_plg}", f"{jnt_skn_low_parent}{utils.Plg.opm_plg}")
+        
 
     def wire_skn_twist_joints_stretch(self, input_grp, upp_jnt_chain, low_jnt_chain, upper_curve, lower_curve):
         '''
