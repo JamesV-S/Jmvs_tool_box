@@ -214,6 +214,7 @@ class ArmSystem():
         shaper_ctrl_list = self.organise_ctrl_shaper_list(unorganised_shaper_ctrl_list)
         shaper_ctrl_grp = self.group_ctrls(shaper_ctrl_list, "shaper")
         self.wire_shaper_ctrls(shaper_ctrl_list, logic_jnt_list, ik_ctrl_list, shaper_plug, shaper_ctrl_grp)
+
         self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
 
         hdl_upper, hdl_lower = self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
@@ -225,10 +226,12 @@ class ArmSystem():
         self.parent_ik_ctrls_out(ik_ctrl_list)
         self.lock_ctrl_attributes(fk_ctrl_list)
 
-        # # group the module
-        # utils.group_module(module_name=module_name, unique_id=self.unique_id, 
-        #                    side=self.side ,input_grp=inputs_grp, output_grp=outputs_grp, 
-        #                    ctrl_grp=None, joint_grp=joint_grp, logic_grp=None)
+        # group the module
+        utils.group_module(module_name=module_name, unique_id=self.unique_id, 
+                           side=self.side ,input_grp=inputs_grp, output_grp=outputs_grp, 
+                           ctrl_grp=f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}", 
+                           joint_grp=f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}", 
+                           logic_grp=f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
     
 
     def cr_input_output_groups(self, output_global=False):
@@ -1310,6 +1313,9 @@ class ArmSystem():
             Wire ctrl_shaper's to the upper & lower curve's (that are going to 
             drive the ik spline afterwards to position the joints)
             - ONLY 'upper', 'middle' & 'lower' shaper controls drive the curves.
+            - The intermediate control points of the curves, have an offset in 
+              the MM.matrixIn[0]. [#.#, 0.0, 0.0] means Y & Z values should be 
+              0.0 to keep the curve straight!
         # Attributes:
             shaper_ctrl_list (list): Contains 4 shaper contol names. (organied)
             upper_curve (string): 
@@ -1349,6 +1355,11 @@ class ArmSystem():
         shp_upp_pos = cmds.xform(shaper_upper, q=1, translation=1, ws=1)
         upp_cv_1_offset = [x - y for x, y in zip(upper_cv_intermediate_pos_ls[0], shp_upp_pos)]
         upp_cv_2_offset = [x - y for x, y in zip(upper_cv_intermediate_pos_ls[1], shp_upp_pos)]
+        
+        # Use Pyhtonic Slicing & Assignment method to set the items after the first index to 0.0 ([#.#, 0.0, 0.0])
+        upp_cv_1_offset[1:] = [0.0] * len(upp_cv_1_offset[1:])
+        upp_cv_2_offset[1:] = [0.0] * len(upp_cv_2_offset[1:])
+
         utils.set_pos_mtx(upp_cv_1_offset, f"{mm_shp_upp_1}{utils.Plg.mtx_ins[0]}")
         utils.set_pos_mtx(upp_cv_2_offset, f"{mm_shp_upp_2}{utils.Plg.mtx_ins[0]}")
             # ctrl_shaper > mm.[1]
@@ -1372,6 +1383,10 @@ class ArmSystem():
         shp_low_pos = cmds.xform(shaper_lower, q=1, translation=1, ws=1)
         low_cv_1_offset = [x - y for x, y in zip(shp_low_pos, lower_cv_intermediate_pos_ls[0])]
         low_cv_2_offset = [x - y for x, y in zip(shp_low_pos, lower_cv_intermediate_pos_ls[1])]
+
+        low_cv_1_offset[1:] = [0.0] * len(low_cv_1_offset[1:])
+        low_cv_2_offset[1:] = [0.0] * len(low_cv_2_offset[1:])
+
         utils.set_pos_mtx(low_cv_1_offset, f"{mm_shp_low_1}{utils.Plg.mtx_ins[0]}")
         utils.set_pos_mtx(low_cv_2_offset, f"{mm_shp_low_2}{utils.Plg.mtx_ins[0]}")
             # ctrl_shaper > mm.[1]
