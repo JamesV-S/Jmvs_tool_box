@@ -108,7 +108,8 @@ class Plg():
     distance_plg = ".distance"
     vis_plg = ".visibility"
     inMtx_plg = ".inMatrix"
-
+    ovrride_plg = ".overrideEnabled"
+    dispTyp_plg = ".overrideDisplayType"
 
 def check_non_default_transforms(obj):
     attributes = ['translate', 'rotate', 'scale']
@@ -369,7 +370,7 @@ def get_motionpath_u_value(moPath_list):
         u_val.append(cmds.getAttr(f"{mop}{Plg.u_plg}"))
 
 
-def cr_straight_cubic_curve(crv_name, start_pos, end_pos):
+def cr_straight_cubic_curve(crv_name, start_pos, end_pos, degree=3):
     '''
     # Description:
         Creates a perfectly straight 3-degrees curve between two positions 
@@ -401,7 +402,7 @@ def cr_straight_cubic_curve(crv_name, start_pos, end_pos):
         end_pos
     ]
     # Create the curve using the cmds.curve command.
-    curve = cmds.curve(n=crv_name, d=3, p=curve_points)
+    curve = cmds.curve(n=crv_name, d=degree, p=curve_points)
     
     return curve, [list(curve_points[1]), list(curve_points[2])]
 
@@ -463,6 +464,25 @@ def group_module(module_name, unique_id, side, input_grp, output_grp, ctrl_grp=N
 
 
 # ------------------------------- GET DATA ------------------------------------
+def get_selection_trans_rots_dictionary():
+    selection = cmds.ls(sl=1, type="transform")
+    
+    translation_pos = {}
+    rotation_pos = {}
+    
+    for sel in selection:
+        trans_ls = cmds.xform(sel, q=True, t=True, ws=True)
+        rot_ls = cmds.xform(sel, q=True, ro=True, ws=True)
+        
+        translation_pos[sel] = trans_ls
+        rotation_pos[sel] = rot_ls
+        
+    print("Trans_dictionary: ", translation_pos)
+    print("Rots_dictionary: ", rotation_pos)
+
+    return translation_pos, rotation_pos
+
+
 def round_to_even(num: float) -> int:
     # Standard rounding to nearest integer
     rounded = round(num)
@@ -851,25 +871,6 @@ def connect_guide(start_guide, end_guide):
         pass
     
     return curve_name, joint_1
-
-
-def get_selection_trans_rots_dictionary():
-    selection = cmds.ls(sl=1, type="transform")
-    
-    translation_pos = {}
-    rotation_pos = {}
-    
-    for sel in selection:
-        trans_ls = cmds.xform(sel, q=True, t=True, ws=True)
-        rot_ls = cmds.xform(sel, q=True, ro=True, ws=True)
-        
-        translation_pos[sel] = trans_ls
-        rotation_pos[sel] = rot_ls
-        
-    print("Trans_dictionary: ", translation_pos)
-    print("Rots_dictionary: ", rotation_pos)
-
-    return translation_pos, rotation_pos
 
 
 def set_transformations(translation_dict, rotation_dict):

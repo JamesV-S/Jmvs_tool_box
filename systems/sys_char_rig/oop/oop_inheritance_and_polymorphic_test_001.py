@@ -56,31 +56,31 @@ class Vehicle():
 ''' Avoid code duplication by using Inheritance. Share the method move() '''
 class Car(Vehicle):
     def __init__(self, brand, model, name=None):
-        super().__init__(brand, model, name=None)
+        super().__init__(brand, model, name)
         self.traversal = "Drive"
         
 
 class Boat(Vehicle):
     def __init__(self, brand, model, name=None):
-        super().__init__(brand, model, name=None)
+        super().__init__(brand, model, name)
         self.traversal = "Sail"
    
 
 class Plane(Vehicle):
     def __init__(self, brand, model, name=None):
-        super().__init__(brand, model, name=None)
+        super().__init__(brand, model, name)
         self.traversal = "Fly"
   
 '''
 Example use:
 '''
 car_1 = Car("Ford", "Mustang")
-boat_1 = Boat("White Star Line", "Olympic-class ocean liner", "Titanic")
-plane_1 = Plane("Supermarine", "single-seat fighter aircraft", "Spitfire")
+boat_1 = Boat("White Star Line", "Olympic-class Ocean Liner", "Titanic")
+plane_1 = Plane("Supermarine", "Single-seat Fighter Aircraft", "Spitfire")
 
 for x in (car_1, boat_1, plane_1):
    x.move()
 # Output: 
     # Drive the Ford Mustang!
-    # Sail the White Star Line Olympic-class ocean liner!
-    # Fly the Supermarine single-seat fighter aircraft!
+    # Sail the White Star Line Olympic-class Ocean Liner known as the Titanic!
+    # Fly the Supermarine Single-seat Fighter Aircraft known as the Spitfire!

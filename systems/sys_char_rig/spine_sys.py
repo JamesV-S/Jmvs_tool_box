@@ -130,7 +130,7 @@ class SpineSystem():
                                               nonstrFw_jnt_chain, nonstrBw_jnt_chain, nonStrRig_jnt_chain,
                                               skn_jnt_chain)
         
-        self.output_group_setup(output_grp, self.ik_ctrl_ls[-1], self.ik_ctrl_ls[0])
+        self.output_group_setup(output_grp, [skn_bott_name, skn_top_name], ["bottom", "top"])
 
         # group the module into a consitent hierarchy structure for my modules.
         utils.group_module(self.mdl_nm, self.unique_id, self.side ,
@@ -246,7 +246,7 @@ class SpineSystem():
         '''
         for mtx_name in out_matrix_name_list:
             utils.add_attr_if_not_exists(outputs_grp, 
-                                         f"ctrl_{self.mdl_nm}_{mtx_name}_mtx", 
+                                         f"mtx_{self.mdl_nm}_{mtx_name}", 
                                         'matrix', False)
 
 
@@ -714,34 +714,64 @@ class SpineSystem():
         # 'output_skn_jnt' refers to the skn joint chain!
         top_output_skn_jnt = f"jnt_{jnt_pref}_{self.mdl_nm}_spine{skn_skel_positions[0]}_{self.unique_id}_{self.side}"
         bottom_output_skn_jnt = f"jnt_{jnt_pref}_{self.mdl_nm}_spine{skn_skel_positions[-1]}_{self.unique_id}_{self.side}"
+        
+        top_ik_ctrl = self.ik_ctrl_ls[-1]
+        bottom_ik_ctrl = self.ik_ctrl_ls[0]
 
         # cr two decompose matrix nodes & a compMatrix node for each jnt_skn_top/bottom
-        top_translate_dcM = f"DCM_translate_top_{top_output_skn_jnt}"
+        top_translate_skn_dcM = f"DCM_translate_top_{top_output_skn_jnt}"
         top_rotate_dcM = f"DCM_rotate_top_{top_ik_jnt}"
         top_cM = f"CM_driver_{skn_top_jnt}"
         bottom_translate_dcM = f"DCM_translate_bot_{bottom_output_skn_jnt}"
         bottom_rotate_dcM = f"DCM_rotate_bot_{bottom_ik_jnt}"
         bottom_cM = f"CM_driver_{skn_bot_jnt}"
-        utils.cr_node_if_not_exists(0, "decomposeMatrix", top_translate_dcM)
+        utils.cr_node_if_not_exists(0, "decomposeMatrix", top_translate_skn_dcM)
         utils.cr_node_if_not_exists(0, "decomposeMatrix", top_rotate_dcM)
         utils.cr_node_if_not_exists(0, "composeMatrix", top_cM)
         utils.cr_node_if_not_exists(0, "decomposeMatrix", bottom_translate_dcM)
         utils.cr_node_if_not_exists(0, "decomposeMatrix", bottom_rotate_dcM)
         utils.cr_node_if_not_exists(0, "composeMatrix", bottom_cM)
 
-        # wire connections
-        utils.connect_attr(f"{top_ik_jnt}{utils.Plg.wld_mtx_plg}", f"{top_rotate_dcM}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{top_output_skn_jnt}{utils.Plg.wld_mtx_plg}", f"{top_translate_dcM}{utils.Plg.inp_mtx_plg}")
-
-        utils.connect_attr(f"{bottom_ik_jnt}{utils.Plg.wld_mtx_plg}", f"{bottom_rotate_dcM}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{bottom_output_skn_jnt}{utils.Plg.wld_mtx_plg}", f"{bottom_translate_dcM}{utils.Plg.inp_mtx_plg}")
-
-        utils.connect_attr(f"{top_translate_dcM}.outputTranslate", f"{top_cM}.inputTranslate")
-        utils.connect_attr(f"{top_rotate_dcM}.outputRotate", f"{top_cM}.inputRotate")
-        utils.connect_attr(f"{bottom_translate_dcM}.outputTranslate", f"{bottom_cM}.inputTranslate")
-        utils.connect_attr(f"{bottom_rotate_dcM}.outputRotate", f"{bottom_cM}.inputRotate")
+        # two new utility nodes for the translate data to compose to the skin joint. 
+            # translate is a switch between 2 objects: 'top_output_skn_jnt' & 'self.ik_ctrl_ls[-1]' depending(SecondTerm) on the stretch_state atribute 
+            # DCM for self.ik_ctrl_ls[-1]
+        top_translate_ctrl_dcM = f"DCM_translate_top_{top_ik_ctrl}"
+        top_translate_cond = f"DCM_translate_top_{skn_top_jnt}"
+        bottom_translate_ctrl_dcM = f"DCM_translate_bot_{bottom_ik_ctrl}"
+        bottom_translate_cond = f"DCM_translate_bot_{skn_bot_jnt}"
         
+        utils.cr_node_if_not_exists(0, "decomposeMatrix", top_translate_ctrl_dcM)
+        utils.cr_node_if_not_exists(0, "condition", top_translate_cond, {"operation":5, "firstTerm": 0.95})        
+        utils.cr_node_if_not_exists(0, "decomposeMatrix", bottom_translate_ctrl_dcM)
+        utils.cr_node_if_not_exists(0, "condition", bottom_translate_cond, {"operation":5, "firstTerm": 0.95})    
+
+        # wire top
+            # > DCM.inputMatrix
+        utils.connect_attr(f"{top_output_skn_jnt}{utils.Plg.wld_mtx_plg}", f"{top_translate_skn_dcM}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{top_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{top_translate_ctrl_dcM}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{top_ik_jnt}{utils.Plg.wld_mtx_plg}", f"{top_rotate_dcM}{utils.Plg.inp_mtx_plg}")
+            # > top_translate_cond
+        utils.connect_attr(f"{top_ik_ctrl}.{self.mdl_nm}_Stretch_State", f"{top_translate_cond}.secondTerm")
+        utils.connect_attr(f"{top_translate_ctrl_dcM}{utils.Plg.outT_plug}", f"{top_translate_cond}.colorIfTrue")
+        utils.connect_attr(f"{top_translate_skn_dcM}{utils.Plg.outT_plug}", f"{top_translate_cond}.colorIfFalse")
+            # > CM.inputTranslate/Rotate
+        utils.connect_attr(f"{top_translate_cond}.outColor", f"{top_cM}{utils.Plg.inputT_plug}")
+        utils.connect_attr(f"{top_rotate_dcM}{utils.Plg.outR_plug}", f"{top_cM}{utils.Plg.inputR_plug}")
+            # > skn_top_jnt.OPM
         utils.connect_attr(f"{top_cM}{utils.Plg.out_mtx_plg}", f"{skn_top_jnt}{utils.Plg.opm_plg}")
+
+        # wire bottom
+        utils.connect_attr(f"{bottom_output_skn_jnt}{utils.Plg.wld_mtx_plg}", f"{bottom_translate_dcM}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{bottom_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{bottom_translate_ctrl_dcM}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{bottom_ik_jnt}{utils.Plg.wld_mtx_plg}", f"{bottom_rotate_dcM}{utils.Plg.inp_mtx_plg}")
+
+        utils.connect_attr(f"{bottom_ik_ctrl}.{self.mdl_nm}_Stretch_State", f"{bottom_translate_cond}.secondTerm")
+        utils.connect_attr(f"{bottom_translate_ctrl_dcM}{utils.Plg.outT_plug}", f"{bottom_translate_cond}.colorIfTrue")
+        utils.connect_attr(f"{bottom_translate_dcM}{utils.Plg.outT_plug}", f"{bottom_translate_cond}.colorIfFalse")
+        
+        utils.connect_attr(f"{bottom_translate_cond}.outColor", f"{bottom_cM}{utils.Plg.inputT_plug}")
+        utils.connect_attr(f"{bottom_rotate_dcM}{utils.Plg.outR_plug}", f"{bottom_cM}{utils.Plg.inputR_plug}")
+        
         utils.connect_attr(f"{bottom_cM}{utils.Plg.out_mtx_plg}", f"{skn_bot_jnt}{utils.Plg.opm_plg}")
 
     
@@ -910,13 +940,17 @@ class SpineSystem():
         # Returns: N/A
         '''
         # parentconstrain first parent joint of nonStr chain to first parent joint of it's corresbpomnding str chain
-        cmds.parentConstraint(Str_jnt_chain[0], nonStr_jnt_chain[0], mo=1)
+        pcon_nonStr_parent_name = f"Pcon_nonStr_{nonStr_jnt_chain[0]}"
+        cmds.parentConstraint(Str_jnt_chain[0], nonStr_jnt_chain[0], mo=1, n=pcon_nonStr_parent_name)
+        cmds.setAttr(f"{pcon_nonStr_parent_name}.interpType", 2)
 
         # orient constrain the remaining items in the list of chains
         child_nonStr_jnt_chain = nonStr_jnt_chain[1:]
         child_Str_jnt_chain_ls = Str_jnt_chain[1:]
         for x in range(len(child_nonStr_jnt_chain)):
-            cmds.orientConstraint(child_Str_jnt_chain_ls[x], child_nonStr_jnt_chain[x])
+            ocon_nonStr_name = f"Ocon_nonStr_{child_nonStr_jnt_chain[x]}"
+            cmds.orientConstraint(child_Str_jnt_chain_ls[x], child_nonStr_jnt_chain[x], n=ocon_nonStr_name)
+            cmds.setAttr(f"{ocon_nonStr_name}.interpType", 2)
 
 
     def blend_fw_bw_states_to_skin_chain(self, strFw_chain, strBw_chain, rigStr, 
@@ -944,19 +978,27 @@ class SpineSystem():
         strBw_chain.reverse()
         for x in range(len(rigStr)):
             print(f"ORDER Bw: {strFw_chain[x]}, {strBw_chain[x]}, {rigStr[x]}")
-            cmds.parentConstraint(strFw_chain[x], strBw_chain[x], rigStr[x], n=f"Pcon_FwBw_{rigStr[x]}")# , n=f"Pcon_FwBw_{rigStr}")
+            pcon_FwBw_name = f"Pcon_FwBw_{rigStr[x]}"
+            cmds.parentConstraint(strFw_chain[x], strBw_chain[x], rigStr[x], n=pcon_FwBw_name)# , n=f"Pcon_FwBw_{rigStr}")
+            cmds.setAttr(f"{pcon_FwBw_name}.interpType", 2)
         cmds.select(cl=1)
+
         # Pcon nonrigStr by nonstrFw_chain & nonstrBw_chain
         nonstrBw_chain.reverse()
         for x in range(len(nonrigStr)):
             print(f"ORDER rev nonBw: {nonstrFw_chain[x]}, {nonstrBw_chain[x]}, {nonrigStr[x]}")
-            cmds.parentConstraint(nonstrFw_chain[x], nonstrBw_chain[x], nonrigStr[x], n=f"Pcon_nonFwBw_{nonrigStr[x]}")#, n=f"Pcon_FwBw_{nonrigStr}")
+            pcon_nonFwBw_name = f"Pcon_nonFwBw_{nonrigStr[x]}"
+            cmds.parentConstraint(nonstrFw_chain[x], nonstrBw_chain[x], nonrigStr[x], n=pcon_nonFwBw_name)#, n=f"Pcon_FwBw_{nonrigStr}")
+            cmds.setAttr(f"{pcon_nonFwBw_name}.interpType", 2)
         cmds.select(cl=1)
+        
         # Pcon skn_chain by rigStr & nonrigStr
         for x in range(len(skn_chain)):
-            print(f"{rigStr[x]}, {nonrigStr[x]}, {skn_chain[x]}, n=Pcon_StrRig_nonStrRig_{skn_chain}")
-            cmds.parentConstraint(rigStr[x], nonrigStr[x], skn_chain[x], n=f"Pcon_StrRig_nonStrRig_{skn_chain[x]}")
-
+            pcon_str_name = f"Pcon_StrRig_nonStrRig_{skn_chain[x]}"
+            print(f"{rigStr[x]}, {nonrigStr[x]}, {skn_chain[x]}, n={pcon_str_name}")
+            cmds.parentConstraint(rigStr[x], nonrigStr[x], skn_chain[x], n=pcon_str_name)
+            cmds.setAttr(f"{pcon_str_name}.interpType", 2)
+            
         # wire up the Stretch_Anchor attrib.
         rev_skn_str = f"Rev_sknStr_{self.mdl_nm}_{self.unique_id}"
         rev_strAnchor = f"Rev_stretchAnchor_{self.mdl_nm}_{self.unique_id}"
@@ -990,38 +1032,36 @@ class SpineSystem():
                                f"Pcon_nonFwBw_{nonrigStr[x]}.jnt_nonStrBw_{self.mdl_nm}_spine{backward_indexes[x]}_{self.unique_id}_MW1")
    
 
-    def output_group_setup(self, mdl_output_grp, ctrl_spine_top, ctrl_spine_bottom):
+    def output_group_setup(self, mdl_output_grp, object_name_ls, out_matrix_name_list):
         '''
         # Description:
-            Connects the top & bottom ik controls to attributes on this module's
-            output group so another module's inpout group can have incoming plugs to allow it to follow!
-            Example: spine output grp (this module) plugs into arm input grp (external/other module) 
-                     so it arm can follow the spine! 
+            Iterate through the two lists:
+                Connects the object to attributes on this module's output group 
+                so another module's inpout group can have incoming plugs to allow
+                it to follow!
         # Attributes:
-            mdl_output_grp (str): name of this module's output group
-            ctrl_spine_top (str): control name of IK top (could be derived from the dict...)
-            ctrl_spine_bottom (str): control name of IK bottom (could be derived from the dict...)
+            mdl_output_grp (str): Name of this module's output group
+            object_name_ls (list): Name of object that is what matrix data is 
+                                    coming from for this attribute on the output 
+                                    grp(could be derived from the dict...)
+            out_matrix_name_list (list): Name of the corresponding matrix 
+                                        atttribute to connect to that exists on 
+                                        the output grp.
         # Returns: N/A
         # Future updates:
             Problem -> Handle the attrib names on the Input & Output grps in a way that can be shared between the other modules.
             Solution -> Store this data in the database & access it from there when neccessary by encoding it in a dictionary!
         '''
-        # cr two multMatrixs
-        MM_output_top = f"MM_output_{ctrl_spine_top}"
-        MM_output_bot = f"MM_output_{ctrl_spine_bottom}"
-            # cr the MM nodes
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_bot)
-        top_inverse_mtx = cmds.getAttr(f"{ctrl_spine_top}{utils.Plg.wld_inv_mtx_plg}")
-        bot_inverse_mtx = cmds.getAttr(f"{ctrl_spine_bottom}{utils.Plg.wld_inv_mtx_plg}")
-        # Plugs - connect ik ctrl's to MM's
-        cmds.setAttr(f"{MM_output_top}{utils.Plg.mtx_ins[0]}", *top_inverse_mtx, type="matrix")
-        cmds.setAttr(f"{MM_output_bot}{utils.Plg.mtx_ins[0]}", *bot_inverse_mtx, type="matrix")
-        utils.connect_attr(f"{ctrl_spine_top}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{ctrl_spine_bottom}{utils.Plg.wld_mtx_plg}", f"{MM_output_bot}{utils.Plg.mtx_ins[1]}")
-        # Plugs - connect the MM to the spine output's attribs!  
-        utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_top_mtx")
-        utils.connect_attr(f"{MM_output_bot}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.ctrl_{self.mdl_nm}_bottom_mtx")
+        for obj_name, mtx_obj_name in zip(object_name_ls, out_matrix_name_list): # _top_mtx
+            MM_output_top = f"MM_output_{obj_name}"
+                # cr the MM nodes
+            utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
+            top_inverse_mtx = cmds.getAttr(f"{obj_name}{utils.Plg.wld_inv_mtx_plg}")
+                # > MM's
+            cmds.setAttr(f"{MM_output_top}{utils.Plg.mtx_ins[0]}", *top_inverse_mtx, type="matrix")
+            utils.connect_attr(f"{obj_name}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
+                # > mdl_output_grp.mtx_obj_name
+            utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.mtx_{self.mdl_nm}_{mtx_obj_name}")
     
 
 # Basic spine example:
@@ -1029,9 +1069,9 @@ external_plg_dict = {
     "global_scale_grp":"grp_Outputs_root_0_M",
     "global_scale_attr":"globalScale",
     "base_plg_grp":"grp_Outputs_root_0_M",
-    "base_plg_atr":"ctrl_root_centre_mtx",
+    "base_plg_atr":"mtx_root_ctrlCentre",
     "hook_plg_grp":"grp_Outputs_root_0_M", 
-    "hook_plg_atr":"ctrl_root_COG_mtx"
+    "hook_plg_atr":"mtx_root_ctrlCOG"
     }
 
 skeleton_dict = {

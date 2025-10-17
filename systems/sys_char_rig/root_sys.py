@@ -54,7 +54,7 @@ class root_system():
         #----------------------------------------------------------------------
 
         self.root_input_grp, self.root_output_grp = self.cr_input_output_groups(True)
-        self.add_outputs_matrix_attr(self.root_output_grp, ["centre", "COG"])
+        self.add_outputs_matrix_attr(self.root_output_grp, ["ctrlCentre", "ctrlCOG"])
         self.group_ctrls(fk_ctrl_list, "fk")
 
         self.wire_root_setup(fk_ctrl_list, skeleton_pos_dict, skeleton_rot_dict)
@@ -120,7 +120,7 @@ class root_system():
         # Output grp
         for mtx_name in out_matrix_name_list:
             utils.add_attr_if_not_exists(outputs_grp, 
-                                         f"ctrl_{self.mdl_nm}_{mtx_name}_mtx", 
+                                         f"mtx_{self.mdl_nm}_{mtx_name}", 
                                         'matrix', False)
 
 
@@ -296,9 +296,9 @@ external_plg_dict = {
     "global_scale_grp":"grp_Outputs_root_0_M",
     "global_scale_attr":"globalScale",
     "base_plg_grp":"grp_Outputs_root_0_M",
-    "base_plg_atr":"ctrl_root_centre_mtx",
+    "base_plg_atr":"mtx_root_ctrlCentre",
     "hook_plg_grp":"grp_Outputs_root_0_M",
-    "hook_plg_atr":"ctrl_root_COG_mtx"
+    "hook_plg_atr":"mtx_root_ctrlCOG"
     }
 
 root_system("root", external_plg_dict, skeleton_dict, fk_dict, ik_dict, "Y")

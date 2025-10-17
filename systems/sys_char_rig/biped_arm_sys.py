@@ -17,7 +17,7 @@ from Jmvs_tool_box.systems.sys_char_rig import biped_arm_sys
 importlib.reload(biped_arm_sys)
 '''
 
-class ArmSystem():
+class BipedArmSystem():
     def __init__(self, module_name, external_plg_dict, skeleton_dict, fk_dict, ik_dict, prim_axis, shaper_dict=None):
         '''
         *(%) IS THE SYMBOL REPRESENTING SYSTEMS IN THE MODULE I THINK SHOULD BE 
@@ -154,7 +154,7 @@ class ArmSystem():
         
         # Input & Output grp setup
         inputs_grp, outputs_grp = self.cr_input_output_groups()
-        self.add_outputs_matrix_attr(outputs_grp, ["wrist"])
+        self.add_outputs_matrix_attr(outputs_grp, ["sknWrist", "twistWrist"])
         if cmds.objExists(external_plg_dict['global_scale_grp']):
             self.wire_inputs_grp(inputs_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
 
@@ -224,7 +224,10 @@ class ArmSystem():
         self.wire_rotations_on_twist_joints(logic_jnt_list, skn_jnt_wrist, ik_ctrl_list[1], hdl_upper, hdl_lower)
 
         self.parent_ik_ctrls_out(ik_ctrl_list)
+        self.wire_pv_reference_curve(ik_ctrl_list[2], logic_jnt_list[1], ik_ctrl_grp)
         self.lock_ctrl_attributes(fk_ctrl_list)
+
+        self.output_group_setup(outputs_grp, [skn_jnt_wrist, sknLower_jnt_chain[-1]], ["sknWrist", "twistWrist"])
 
         # group the module
         utils.group_module(module_name=module_name, unique_id=self.unique_id, 
@@ -263,7 +266,7 @@ class ArmSystem():
         # Returns: N/A
         '''
         for mtx_name in out_matrix_name_list:
-            utils.add_attr_if_not_exists(outputs_grp, f"ctrl_{self.mdl_nm}_{mtx_name}_mtx", 
+            utils.add_attr_if_not_exists(outputs_grp, f"mtx_{self.mdl_nm}_{mtx_name}", 
                                     'matrix', False) # for upper body module to follow
 
 
@@ -836,7 +839,7 @@ class ArmSystem():
             # output plug
         utils.connect_attr(f"{BM_pv}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
     
-    
+  
     def wire_ik_logic_elements(self, input_grp, logic_jnt_list, ik_ctrl_list):
         '''
         # Description:
@@ -1649,6 +1652,38 @@ class ArmSystem():
         cmds.select(cl=1)
 
 
+    def wire_pv_reference_curve(self, pv_ctrl, pv_jnt, ik_ctrl_grp):
+        '''
+        # Description:
+            Create and wire a reference curve to from the jnt_elbow to the ctrl_elbow 
+        # Attributes:
+        # Returns: N/A
+        '''
+        # build control
+        ref_curve = f"crv_ik_{self.mdl_nm}_ref_{self.unique_id}_{self.side}"
+        cmds.curve(n=ref_curve, d=1, 
+                   p=[(0, 0, 0), (0, 0, 3)], 
+                   k=[0, 1])
+        cmds.parent(ref_curve, ik_ctrl_grp)
+        cmds.setAttr(f"{ref_curve}{utils.Plg.ovrride_plg}", 1)
+        cmds.setAttr(f"{ref_curve}{utils.Plg.dispTyp_plg}", 2)
+        
+        ref_curve_shape = cmds.listRelatives(ref_curve, s=1)[0]
+
+        # cr util nodes
+        pmm_ctrl = f"PMM_Crv0_{pv_ctrl}"
+        pmm_jnt = f"PMM_Crv1_{pv_jnt}"
+        utils.cr_node_if_not_exists(1, 'pointMatrixMult', pmm_ctrl)
+        utils.cr_node_if_not_exists(1, 'pointMatrixMult', pmm_jnt)
+        
+        utils.connect_attr(f"{pv_ctrl}{utils.Plg.wld_mtx_plg}", f"{pmm_ctrl}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{pv_jnt}{utils.Plg.wld_mtx_plg}", f"{pmm_jnt}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{pmm_ctrl}{utils.Plg.output_plg}", f"{ref_curve_shape}.controlPoints[0]")
+        utils.connect_attr(f"{pmm_jnt}{utils.Plg.output_plg}", f"{ref_curve_shape}.controlPoints[1]")
+        
+
+
+
     def lock_ctrl_attributes(self, fk_ctrl_list):
         '''
         # Description:
@@ -1662,6 +1697,40 @@ class ArmSystem():
             cmds.setAttr(f"{ctrl}.translateX", lock=1)
             cmds.setAttr(f"{ctrl}.translateY", lock=1)
             cmds.setAttr(f"{ctrl}.translateZ", lock=1)
+
+    
+    def output_group_setup(self, mdl_output_grp, object_name_ls, out_matrix_name_list):
+        '''
+        # Description:
+            Iterate through the two lists:
+                Connects the object to attributes on this module's output group 
+                so another module's inpout group can have incoming plugs to allow
+                it to follow!
+        # Attributes:
+            mdl_output_grp (str): Name of this module's output group
+            object_name_ls (list): Name of object that is what matrix data is 
+                                    coming from for this attribute on the output 
+                                    grp(could be derived from the dict...)
+            out_matrix_name_list (list): Name of the corresponding matrix 
+                                        atttribute to connect to that exists on 
+                                        the output grp.
+        # Returns: N/A
+        # Future updates:
+            Problem -> Handle the attrib names on the Input & Output grps in a way that can be shared between the other modules.
+            Solution -> Store this data in the database & access it from there when neccessary by encoding it in a dictionary!
+        '''
+        for obj_name, mtx_obj_name in zip(object_name_ls, out_matrix_name_list): # _top_mtx
+            MM_output_top = f"MM_output_{obj_name}"
+                # cr the MM nodes
+            utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
+            top_inverse_mtx = cmds.getAttr(f"{obj_name}{utils.Plg.wld_inv_mtx_plg}")
+                # > MM's
+            cmds.setAttr(f"{MM_output_top}{utils.Plg.mtx_ins[0]}", *top_inverse_mtx, type="matrix")
+            utils.connect_attr(f"{obj_name}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
+                # > mdl_output_grp.mtx_obj_name
+            utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.mtx_{self.mdl_nm}_{mtx_obj_name}")
+
+
 #-----------------------
 
 '''
@@ -1673,9 +1742,9 @@ ex_external_plg_dict = {
     "global_scale_grp":"grp_Outputs_root_0_M",
     "global_scale_attr":"globalScale",
     "base_plg_grp":"grp_Outputs_root_0_M",
-    "base_plg_atr":"ctrl_root_centre_mtx",
+    "base_plg_atr":"mtx_root_ctrlCentre",
     "hook_plg_grp":"grp_Outputs_spine_0_M", 
-    "hook_plg_atr":"ctrl_spine_top_mtx"
+    "hook_plg_atr":"mtx_spine_top"
     }
 # Do I need 'skeleton_dict' arg?
 ex_skeleton_dict = {
@@ -1724,7 +1793,7 @@ ex_shaper_dict = {
 
 }
 
-ArmSystem("bipedArm", ex_external_plg_dict, ex_skeleton_dict, ex_fk_dict, ex_ik_dict, "X")
+BipedArmSystem("bipedArm", ex_external_plg_dict, ex_skeleton_dict, ex_fk_dict, ex_ik_dict, "X")
 
 pos = {"clavicle": [3.0937706746970637, 211.9463944293447, -3.981268190856912], 
  "shoulder": [47.19038675793399, 202.90135192871094, -8.067196952221522], 
