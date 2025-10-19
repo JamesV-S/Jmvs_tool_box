@@ -1,0 +1,11 @@
+
+Script Type:
+    - (Class)
+Inheritance?
+    - YES
+    - Parent to 'build' class
+Descrption:
+    - Contains the member functions that are responsible for the consistant 
+    operations for eahc  module. 
+
+

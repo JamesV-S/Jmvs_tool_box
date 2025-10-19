@@ -26,6 +26,11 @@ def add_to_sys_path(directory):
 
 
 def gather_folders_to_add_to_list(the_list, append_list, *args):
+    '''
+    Attributes:
+        the_list (list): Folder name
+        *args (string: the folder names that make up the directory path to 'the_list' items. 
+    '''
     from utils import utils_os
     importlib.reload(utils_os)
     folder_list = the_list
@@ -45,7 +50,14 @@ def updating_paths():
     gather_folders_to_add_to_list(['char_ui', 'vehicle_ui', 'geoDB_ui', 'other_ui'], custom_dir_list, "Jmvs_tool_box", "user_interface")
     gather_folders_to_add_to_list(['databases', 'models', 'views', 'controllers'], custom_dir_list, "Jmvs_tool_box")
     gather_folders_to_add_to_list(['char_models', 'geoDB_models'], custom_dir_list, "Jmvs_tool_box", "models")
+
+    # Temp module workflow:
+    print(f"Main -> data_managers")
+    gather_folders_to_add_to_list(['data_managers', 'blueprints', 'mdl_systems', 'builders',], 
+                                  custom_dir_list, 
+                                  "Jmvs_tool_box", "systems", "sys_char_rig", "module_system_solution_003")
     
+
     # check if the custom dir exist:
     for directory in custom_dir_list:
         if does_directory_exist(directory):

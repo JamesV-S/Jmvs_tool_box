@@ -1,0 +1,15 @@
+
+Script Type:
+    - (Class)
+Inheritance?
+    - YES
+    - Parent to 'build' class
+Multiple classes?
+    - YES
+Descrption:
+    Purpose - Contains the member functions that are responsible for the 
+                module-specific operations for specific modules.
+    Responsibilty - ctrl, skeleton, logic setups.  I can make changes to a 
+                    rig system & add updates very easily.
+
+

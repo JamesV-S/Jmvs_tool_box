@@ -1,0 +1,13 @@
+
+Script Type:
+    - (Class)
+Inheritance?
+    - No
+Multiple classes?
+    - No
+Descrption:
+    Purpose - To orchestrate the complete module-specific build process.  
+    Responsibilty - Needs to coordinate the build sequence and method calls for
+                    module-specific classes.  
+
+
