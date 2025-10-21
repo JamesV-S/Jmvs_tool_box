@@ -43,9 +43,11 @@ class ModuleBP:
         fk_ctrl_list = [key for key in self.fk_pos_dict.keys()]
         ik_ctrl_list = [key for key in self.ik_pos_dict.keys()]
 
-        self.mdl_name = module_data['module_name']
+        self.mdl_nm = module_data['module_name']
         self.unique_id = fk_ctrl_list[0].split('_')[-2]
         self.side = fk_ctrl_list[0].split('_')[-1]
+        
+        self.prim_axis = axis_dict['prim']
 
         # Plg data from 'external_plg_dict'.
         GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale

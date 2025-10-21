@@ -50,6 +50,8 @@ class ModuleBP:
         self.unique_id = fk_ctrl_list[0].split('_')[-2]
         self.side = fk_ctrl_list[0].split('_')[-1]
 
+        self.prim_axis = axis_dict['prim']
+
         # Plg data from 'external_plg_dict'.
         GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
         BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}" # grp_Outputs_root_0_M.ctrl_centre_mtx
@@ -69,7 +71,8 @@ class ModuleBP:
         for field in required:
             if field not in self._data:
                 raise ValueError(f"ModuleBP Missing field: {field}")
-        
+
+
     def cr_input_output_groups(self, output_global=False):
         '''
         # Description:

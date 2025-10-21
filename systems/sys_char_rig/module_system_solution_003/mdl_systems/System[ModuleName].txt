@@ -3,7 +3,7 @@ Script Type:
     - (Class)
 Inheritance?
     - YES
-    - Parent to 'build' class
+    - Parent class for module-specific 'build' classes.
 Multiple classes?
     - YES
 Descrption:

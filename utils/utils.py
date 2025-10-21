@@ -477,8 +477,8 @@ def get_selection_trans_rots_dictionary():
         translation_pos[sel] = trans_ls
         rotation_pos[sel] = rot_ls
         
-    print("Trans_dictionary: ", translation_pos)
-    print("Rots_dictionary: ", rotation_pos)
+    print("Trans_dictionary = ", translation_pos)
+    print("Rots_dictionary = ", rotation_pos)
 
     return translation_pos, rotation_pos
 

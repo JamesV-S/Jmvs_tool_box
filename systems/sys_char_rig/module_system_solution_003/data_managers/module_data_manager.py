@@ -2,15 +2,13 @@
 
 
 class ModuleDataManager:
-    def __init__(self, location, module_data):
+    def __init__(self, module_data):
         self.raw_data = module_data
         print(f"---------------------------------------------------------------")
         print(f"Running ModuleDataManager (M.D.M).")
 
-        print(f"location = {location}")
-        self.location = location
         print(f"DEBUG: Type of module_data = {type(module_data)}")
-        print(f"DEBUG: Is it a ModuleDataManager? {isinstance(module_data, ModuleDataManager)}")
+        print(f"DEBUG: Is it a ModuleDataManager instance? {isinstance(module_data, ModuleDataManager)}")
 
         print(f"M.D.M: module_data = `{module_data}`")
         print(f"M.D.M: self.raw_data = `{self.raw_data}`")
@@ -35,7 +33,6 @@ class ModuleDataManager:
 
     
     def _process_data(self):
-        print(f"_process_data: location = {self.location}")
         skeleton_dict = self.raw_data['skeleton_dict']
         fk_dict = self.raw_data['fk_dict']
         ik_dict = self.raw_data['ik_dict']
@@ -87,6 +84,9 @@ class ModuleDataManager:
     @property
     def ik_rot_dict(self):
         return self._ik_rot_dict
+    @property
+    def prim_axis(self):
+        return self._axis_dict["prim"]
     @property
     def axis_dict(self):
         return self._axis_dict

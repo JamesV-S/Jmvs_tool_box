@@ -3,9 +3,12 @@ Script Type:
     - (Class)
 Inheritance?
     - YES
-    - Parent to 'build' class
+    - Parent class for all 'build' classes.
+Multiple classes?
+    - NO
 Descrption:
-    - Contains the member functions that are responsible for the consistant 
-    operations for eahc  module. 
-
+    Purpose - Provides consistent member functions that are responsible for the 
+                consistant operations for all my rig modules.
+    Responsibilty - Input/Ouput groups, attribute setupp, plug connections.
+    
 

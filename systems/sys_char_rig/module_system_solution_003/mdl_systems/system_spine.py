@@ -1,287 +1,41 @@
 
+
+
 import importlib
-import re
 import maya.cmds as cmds
+import re
+
+''' in 'main.py' set the directory of the four folders for this workflow '''
+from systems.sys_char_rig.module_system_solution_003.data_managers import module_data_manager
+
 from utils import (
     utils
 )
 from systems.sys_char_rig import (
     cr_ctrl
 )
+
+importlib.reload(module_data_manager)
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
 
-'''
-import importlib
-from Jmvs_tool_box.systems.sys_char_rig import spine_sys
-
-importlib.reload(spine_sys)
-'''
-
-class SpineSystem():
-    def __init__(self, module_name, external_plg_dict, skeleton_dict, fk_dict, ik_dict, prim_axis):
+class SystemSpine:
+    def __init__(self, data_manager):
         '''
-        # Description:
-            Class Module: Creates a spine 3 states: fk/Inverse fk/ik. The two fk 
-            states drive the Ik controls, and ik can be animated at the same time.
-            The spine has 3 Stretch ability's: Stretch/Anchor(allows the direction 
-            of the spine to reverse & make the top and bottom follow each other)
-            /volume preservation.
-        # Attributes:
-            module_name (string): name of this module.
-            root_outputs_grp (string): 'Output' grp from other module for this one to follow.
-            skeleton_dict (dict): (dict): key="skel_pos/rot"(string), value="skel_pos/rot"(dict).
-            fk_dict (dict): (dict): key="fk_pos/rot"(string), value="fk_pos/rot"(dict).
-            ik_dict (dict): (dict): key="ik_pos/rot"(string), value="ik_pos/rot"(dict).
-        # Returns:N/A
+        Use type hint checking `variable:type = data` to be able to let VsCode 
+        know about autocomplete for `ModuleDataManager` class so i can access 
+        the correct variable names with `self.dm.#`
+
+        Pass the data_manager instance to 'self.#' so it can be shared throughout 
+        the class functions
         '''
-        skeleton_pos_dict = skeleton_dict["skel_pos"]
-        skeleton_rot_dict = skeleton_dict["skel_rot"]
-        self.fk_pos_dict = fk_dict["fk_pos"]
-        self.ik_pos_dict = ik_dict["ik_pos"]
-        self.fk_rot_dict = fk_dict["fk_rot"]
-        self.ik_rot_dict = ik_dict["ik_rot"]
-        self.prim_axis = prim_axis
         
-        fk_ctrl_ls = [key for key in self.fk_pos_dict.keys()]
-        ik_ctrl_ls = [key for key in self.ik_pos_dict.keys()]
-        inv_ctrl_ls = [key.replace("_fk_", "_inv_") for key in self.fk_pos_dict.keys()]
-
-        self.mdl_nm = module_name
-        self.unique_id = fk_ctrl_ls[0].split('_')[-2]
-        self.side = fk_ctrl_ls[0].split('_')[-1]
-
-        # gather the number of values in the dict
-        num_jnts = len(skeleton_pos_dict.keys())
-
-        # Plg data from 'external_plg_dict'.
-        GLOBAL_SCALE_PLG = f"{external_plg_dict['global_scale_grp']}.{external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
-        BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}" # grp_Outputs_root_0_M.ctrl_centre_mtx
-        HOOK_MTX_PLG = f"{external_plg_dict['hook_plg_grp']}.{external_plg_dict['hook_plg_atr']}" # grp_Outputs_spine_0_M.ctrl_spine_top_mtx
-        self.global_scale_attr = external_plg_dict['global_scale_attr']
-        
-        #----------------------------------------------------------------------
-        # Create the controls temporarily (they will already exist with char_Layout tool)
-        # self.build_ctrls(self.fk_pos_dict, self.ik_pos_dict)
-        #----------------------------------------------------------------------
-        
-        # ORDER: inp_out grps | ctrl mtx setup | logic setup
-        # input & output groups
-        input_grp, output_grp = self.cr_input_output_groups()
-        self.add_outputs_matrix_attr(output_grp, ["bottom", "top"])
-        if cmds.objExists(external_plg_dict['global_scale_grp']):
-            self.wire_inputs_grp(input_grp, GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG)
-
-        self.group_ctrls(fk_ctrl_ls, "fk")
-        self.group_ctrls(ik_ctrl_ls, "ik")
-        self.group_ctrls(inv_ctrl_ls, "inv")
-        
-        #----------------------------------------------------------------------
-        # create skn the joints temporarily for testing
-        skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.ik_pos_dict)
-        #----------------------------------------------------------------------
-        
-        # cr StrFw_jnt / nonStrFw / StrBw_jnt / nonStrBw in this script.
-        strFw_jnt_chain = self.cr_jnt_type_chain("StrFw", skeleton_pos_dict, skeleton_rot_dict)
-        nonstrFw_jnt_chain = self.cr_jnt_type_chain("nonStrFw", skeleton_pos_dict, skeleton_rot_dict)
-        strBw_jnt_chain = self.cr_jnt_type_chain("StrBw", skeleton_pos_dict, skeleton_rot_dict, True)
-        nonstrBw_jnt_chain = self.cr_jnt_type_chain("nonStrBw", skeleton_pos_dict, skeleton_rot_dict, True)
-        strRig_jnt_chain = self.cr_jnt_type_chain("StrRig", skeleton_pos_dict, skeleton_rot_dict)
-        nonStrRig_jnt_chain = self.cr_jnt_type_chain("nonStrRig", skeleton_pos_dict, skeleton_rot_dict)
-        skn_jnt_chain = self.cr_jnt_type_chain("skn", skeleton_pos_dict, skeleton_rot_dict)
-        # Temporarily cr skin_jnt chain!
-        self.group_jnts_skn([skn_bott_name, skn_top_name], [skn_jnt_chain])
-        
-        # custom attr on Outputs or inputs grp
-        self.add_custom_input_attr(input_grp, num_jnts)
-
-        # CTRL connections for the spine setup!
-        self.fk_ctrl_ls, self.inv_ctrl_ls, self.ik_ctrl_ls = self.wire_spine_ctrls(input_grp)
-        
-        # Logic setup (joints and hdl_spine_names)
-        
-        self.logic_grp, self.fk_logic_ls, self.inv_logic_ls, self.ik_logic_ls, self.jnt_mid_hold = self.cr_logic_elements(self.fk_pos_dict, self.fk_rot_dict, self.ik_pos_dict, self.ik_rot_dict, 
-                                                                                                                          [strFw_jnt_chain, nonstrFw_jnt_chain], [strBw_jnt_chain, nonstrBw_jnt_chain],
-                                                                                                                        [strRig_jnt_chain, nonStrRig_jnt_chain])
-        # curve creation
-        logic_FWcurve = self.cr_logic_curve("StrFw", skeleton_pos_dict)
-        logic_BWcurve = self.cr_logic_curve("StrBw", skeleton_pos_dict, True)
-        # global curve ik setup
-        cv_info_FWnode, fm_global_FWnode = self.wire_ik_curve_setup("StrFw", logic_FWcurve, input_grp)
-        cv_info_BWnode, fm_global_BWnode = self.wire_ik_curve_setup("StrBw", logic_BWcurve, input_grp)
-        
-        # control to logic setup
-        self.wire_ctrl_to_jnt_logic()
-        self.wire_ik_bott_top_logic_to_skn('skn', skeleton_pos_dict)
-        
-        ''''''
-        # stretch ik setup 
-        self.wire_ik_stretch_setup("StrFw", logic_FWcurve, skeleton_pos_dict, fm_global_FWnode)
-        self.wire_ik_stretch_setup("StrBw", logic_BWcurve, skeleton_pos_dict, fm_global_BWnode, True)
-
-        # volume presevation
-        self.wire_ik_volume_setup("skn", skeleton_pos_dict, input_grp, cv_info_FWnode, fm_global_FWnode)
-
-        # nonStr matching Str chain
-        self.nonStr_match_setup(nonstrFw_jnt_chain, strFw_jnt_chain)
-        self.nonStr_match_setup(nonstrBw_jnt_chain, strBw_jnt_chain)
-
-        self.blend_fw_bw_states_to_skin_chain(strFw_jnt_chain, strBw_jnt_chain, strRig_jnt_chain,
-                                              nonstrFw_jnt_chain, nonstrBw_jnt_chain, nonStrRig_jnt_chain,
-                                              skn_jnt_chain)
-        
-        self.output_group_setup(output_grp, [skn_bott_name, skn_top_name], ["bottom", "top"])
-
-        # group the module into a consitent hierarchy structure for my modules.
-        utils.group_module(self.mdl_nm, self.unique_id, self.side ,
-                           input_grp, output_grp, 
-                           f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}", 
-                           f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}", 
-                           f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
-        ''''''
-    
-    # Temporary functions for skn joints & ctrl creation ----------------------
-    def build_ctrls(self, fk_pos, ik_pos):
-        '''
-        # Description:
-            For temporary use; builds the 3 sets of controls for this module. 
-            FK / IK / InvFK. They are positioned at the world for the time being.
-        # Attributes:
-            fk_pos (dict): key = fk ctrl name, value = positonal data.
-            ik_pos (dict): key = ik ctrl name, value = positonal data.
-        # Returns:N/A
-        '''
-        inv_values = list(fk_pos.values())[::-1]
-        # Create a new dictionary with the reversed values.
-        inv_fk_pos = {key: inv_values[i] for i, key in enumerate(fk_pos.keys())}
-        
-        print(f"inv_pos = {inv_fk_pos}")
-        fk_ctrl_ls = []
-        inv_ctrl_ls = []
-        ik_ctrl_ls = []
-
-        # fk & fkInv ctrls
-        for spn_name, spn_pos in fk_pos.items():
-            fk_name = f"{spn_name}"
-            fk_ctrl_ls.append(fk_name)
-            fk_import_ctrl = cr_ctrl.CreateControl(type="circle", name=fk_name)
-            fk_import_ctrl.retrun_ctrl()
-            cmds.rotate(0, 0, 90, fk_name)
-            fk_scl = 1
-            cmds.scale(fk_scl, fk_scl, fk_scl, fk_name)
-            cmds.makeIdentity(fk_name, a=1, t=0, r=1, s=1, n=0, pn=1)
-            # cmds.xform(fk_name, translation=spn_pos, worldSpace=True)
-            utils.colour_object(fk_name, 17)
-            for axis in (['x', 'y', 'z']):
-                cmds.setAttr(f"{fk_name}.s{axis}", lock=1, keyable=0, cb=0)
-            
-        for spn_name, spn_pos in inv_fk_pos.items():
-            inv_name = spn_name.replace("_fk_", "_inv_")
-            inv_ctrl_ls.append(inv_name)
-            inv_import_ctrl = cr_ctrl.CreateControl(type="bvSquare", name=inv_name)
-            inv_import_ctrl.retrun_ctrl()
-            inv_scl = 1
-            cmds.scale(inv_scl, inv_scl, inv_scl, inv_name)
-            cmds.makeIdentity(inv_name, a=1, t=0, r=1, s=1, n=0, pn=1)
-            # cmds.xform(inv_name, translation=spn_pos, worldSpace=True)
-            utils.colour_object(inv_name, 21)
-            for axis in (['x', 'y', 'z']):
-                cmds.setAttr(f"{inv_name}.s{axis}", lock=1, keyable=0, cb=0)
-
-        # ik ctrls
-        for spn_name, spn_pos in ik_pos.items():
-            ik_name = f"{spn_name}"
-            ik_ctrl_ls.append(ik_name)
-            ik_import_ctrl = cr_ctrl.CreateControl(type="octogan", name=ik_name)
-            ik_import_ctrl.retrun_ctrl()
-            cmds.rotate(0, 0, 90, ik_name)
-            cmds.scale(1.5, 1.5, 1.5, ik_name)
-            # cmds.scale(0.25, 0.25, 0.25, ik_name)
-            cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=1, n=0, pn=1)
-            # cmds.xform(ik_name, translation=spn_pos, worldSpace=True)
-            utils.colour_object(ik_name, 17)
-            for axis in (['x', 'y', 'z']):
-                cmds.setAttr(f"{ik_name}.s{axis}", lock=1, keyable=0, cb=0)
-    
-
-    def cr_input_output_groups(self, output_global=False):
-        '''
-        # Description:
-            Creates the 'Input' & 'Output' groups for this module. These are 
-            specialised nodes that store custom matrix data to allow the module 
-            to be driven(Input) or be the driver(Output) for other modules, etc. 
-        # Attributes:
-            output_global (boolean): If True, add globalScale attr to the output group.
-        # Returns:
-            inputs_grp (string): Group for input data for this module.
-            outputs_grp (string): Group for Ouput data for this module.
-        '''
-        # create input & output groups
-        inputs_grp = f"grp_Inputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        outputs_grp = f"grp_Outputs_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        utils.cr_node_if_not_exists(0, "transform", inputs_grp)
-        utils.cr_node_if_not_exists(0, "transform", outputs_grp)
-        
-        # Input grp
-        utils.add_float_attrib(inputs_grp, [self.global_scale_attr], [0.01, 999], True) 
-        cmds.setAttr(f"{inputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
-        utils.add_attr_if_not_exists(inputs_grp, "base_mtx", 'matrix', False)
-        utils.add_attr_if_not_exists(inputs_grp, "hook_mtx", 'matrix', False)
-        
-        if output_global:
-            utils.add_float_attrib(outputs_grp, [self.global_scale_attr], [0.01, 999], True)
-            cmds.setAttr(f"{outputs_grp}.{self.global_scale_attr}", 1, keyable=0, channelBox=0)
-        
-        return inputs_grp, outputs_grp
-    
-
-    def add_outputs_matrix_attr(self, outputs_grp, out_matrix_name_list):
-        '''
-        # Description:
-            Add custom matrix to ouptut group -> this matrix lets other modules follow.
-        # Attributes:
-            outputs_grp (string): Outputgrpup for this module. 
-            out_matrix_name_list (list): List of names for matrix attr.
-        # Returns: N/A
-        '''
-        for mtx_name in out_matrix_name_list:
-            utils.add_attr_if_not_exists(outputs_grp, 
-                                         f"mtx_{self.mdl_nm}_{mtx_name}", 
-                                        'matrix', False)
+        self.dm:module_data_manager.ModuleDataManager = data_manager 
+        print("<- - ->")
+        print(f"SystemSpine -> dat_manager = {data_manager}")
 
 
-    def wire_inputs_grp(self, inputs_grp, global_scale_plg, base_mtx_plg, hook_mtx_plg):
-        # connect the global scale
-        utils.connect_attr(global_scale_plg, f"{inputs_grp}.globalScale")
-        # connect the base plug
-        utils.connect_attr(base_mtx_plg, f"{inputs_grp}.base_mtx")
-        # connect the hook plug
-        utils.connect_attr(hook_mtx_plg, f"{inputs_grp}.hook_mtx")
-
-
-    def group_ctrls(self, ctrl_ls, ctrl_type):
-        '''
-        # Description:
-            Creates control group for a list of ctrls.
-        # Attributes:
-            ctrl_ls (list): list of given controls.
-            ctrl_type (string): Name for the ctrl_grp.
-        # Returns:N/A
-        '''
-        # If the parent ctrl_grp doesn't exist make it:
-        module_control_grp = f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        if not cmds.objExists(module_control_grp):
-            utils.cr_node_if_not_exists(0, "transform", module_control_grp)
-
-        child_ctrl_grp = f"grp_ctrl_{ctrl_type}_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        utils.cr_node_if_not_exists(0, "transform", child_ctrl_grp)
-
-        for ctrl in ctrl_ls:
-            cmds.parent(ctrl, child_ctrl_grp)
-        cmds.parent(child_ctrl_grp, module_control_grp)
-        cmds.select(cl=1)
-
-    
+    # Phase 2 - Module-specific class functions in 'System[ModuleName]'
     def cr_jnt_skn_start_end(self, ik_pos):
         '''
         # Description:
@@ -330,7 +84,7 @@ class SpineSystem():
         rev_skel_pos = utils.reverse_pos_values_dict(skeleton_pos_dict)
         rev_skel_rot = utils.reverse_rot_values_dict(skeleton_rot_dict)
         for name in skeleton_pos_dict:
-            jnt_nm = f"jnt_{pref}_{self.mdl_nm}_{name}_{self.unique_id}_{self.side}"
+            jnt_nm = f"jnt_{pref}_{self.dm.mdl_nm}_{name}_{self.dm.unique_id}_{self.dm.side}"
             jnt_chain_ls.append(jnt_nm)
             cmds.joint(n=jnt_nm)
             if reverse_direction:
@@ -355,7 +109,7 @@ class SpineSystem():
         # Returns:
             joint_grp (string): Joint group.
         '''
-        joint_grp = f"grp_joints_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        joint_grp = f"grp_joints_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
         utils.cr_node_if_not_exists(0, "transform", joint_grp)
         for skn in skn_start_end_ls:
             cmds.parent(skn, joint_grp)
@@ -374,15 +128,15 @@ class SpineSystem():
         # Returns: N/A
         '''
         for x in range(jnt_num):
-            utils.add_float_attrib(inputs_grp, [f"{self.mdl_nm}{x}_Stretch_Volume"], [1.0, 1.0], False)
-            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", keyable=1, channelBox=1)
-            cmds.setAttr(f"{inputs_grp}.{self.mdl_nm}{x}_Stretch_Volume", -0.5)
+            utils.add_float_attrib(inputs_grp, [f"{self.dm.mdl_nm}{x}_Stretch_Volume"], [1.0, 1.0], False)
+            cmds.setAttr(f"{inputs_grp}.{self.dm.mdl_nm}{x}_Stretch_Volume", keyable=1, channelBox=1)
+            cmds.setAttr(f"{inputs_grp}.{self.dm.mdl_nm}{x}_Stretch_Volume", -0.5)
 
 
-    def wire_spine_ctrls(self, input_grp):
+    def wire_spine_ctrls(self, input_grp, fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls):
         '''
         TO DO:
-            Add rotation data too w/ 'self.fk_rot_dict (dict)' & 'self.ik_rot_dict (dict)'.
+            Add rotation data too w/ 'self.dm.fk_rot_dict (dict)' & 'self.dm.ik_rot_dict (dict)'.
         # Description:
             Sets up the control's relationship, positions them using matrix data 
             as well as how the 3 states work together:
@@ -391,14 +145,11 @@ class SpineSystem():
             - End fk controls Top ik ctrl.
             - End fkInv controls Bottom ik ctrl.
             - IK Top & Bottom controls share the control over the middle control.
-            This works by using the data of 'self.fk_pos_dict (dict)' & 'self.ik_pos_dict (dict)'
+            This works by using the data of 'self.dm.fk_pos_dict (dict)' & 'self.dm.ik_pos_dict (dict)'
             but not any rotation values are applied atm. 
         # Attributes:
             input_grp (string): Group for input data for this module.
-        # Returns:
-            fk_ctrl_ls (list): list of fk controls.
-            inv_ctrl_ls (list): list of fkInv controls.
-            ik_ctrl_ls (list): list of ik controls.
+        # Returns: N/A
         '''
         ''' This is my first attempt at making controls follow without parenting, 
          Using their matrix's & adding the offset to keep their distance!!! '''
@@ -406,15 +157,15 @@ class SpineSystem():
             # MM's
         MM_fk_ls = []
         MM_inv_ls = []
-        fk_ctrl_ls = []
-        inv_ctrl_ls = []
+        # fk_ctrl_ls = []
+        # inv_ctrl_ls = []
         fk_previous_pos = None
         inv_previous_pos = None
-        reversed_fk_pos = utils.reverse_dict(self.fk_pos_dict) # reverse the pos so the maths offset equation works!
-        for i, ((fk_ctrl_name, fk_pos), (inv_name, inv_pos)) in enumerate(zip(self.fk_pos_dict.items(), reversed_fk_pos.items())):
+        reversed_fk_pos = utils.reverse_dict(self.dm.fk_pos_dict) # reverse the pos so the maths offset equation works!
+        for i, ((fk_ctrl_name, fk_pos), (inv_name, inv_pos)) in enumerate(zip(self.dm.fk_pos_dict.items(), reversed_fk_pos.items())):
             inv_ctrl_name = inv_name.replace('fk', 'inv')
-            fk_ctrl_ls.append(fk_ctrl_name)
-            inv_ctrl_ls.append(inv_ctrl_name)
+            # fk_ctrl_ls.append(fk_ctrl_name)
+            # inv_ctrl_ls.append(inv_ctrl_name)
                 # cr MM names
             MM_fk_name = f"MM_{fk_ctrl_name}"
             MM_inv_name = f"MM_{inv_ctrl_name}"
@@ -436,9 +187,9 @@ class SpineSystem():
        
         # connect the MMs
             # iniitial inputs
-        print(f"inv_0, list(self.fk_pos_dict.values())[-1] = {list(self.fk_pos_dict.values())[-1]}")
-        utils.set_matrix(list(self.fk_pos_dict.values())[0], f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[0]}")
-        utils.set_matrix(list(self.fk_pos_dict.values())[-1], f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[0]}")
+        print(f"inv_0, list(self.dm.fk_pos_dict.values())[-1] = {list(self.dm.fk_pos_dict.values())[-1]}")
+        utils.set_matrix(list(self.dm.fk_pos_dict.values())[0], f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[0]}")
+        utils.set_matrix(list(self.dm.fk_pos_dict.values())[-1], f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[0]}")
         utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[1]}")
         # connect remaining FK & INV matrices ORDER:
@@ -456,28 +207,28 @@ class SpineSystem():
         # wire hierarchy: FK > IK_Top | Inv > IK_Bott | IK_top/bott > IK_mid
             # cr the MM for ik ctrls!
         MM_ik_ls = []
-        ik_ctrl_ls = []
-        for ik_ctrl_name in self.ik_pos_dict.keys():
-            ik_ctrl_ls.append(ik_ctrl_name)
+        # ik_ctrl_ls = []
+        for ik_ctrl_name in self.dm.ik_pos_dict.keys():
+            # ik_ctrl_ls.append(ik_ctrl_name)
             MM_ik_name = f"MM_{ik_ctrl_name}"
             utils.cr_node_if_not_exists(1, 'multMatrix', MM_ik_name)
             MM_ik_ls.append(MM_ik_name)
         # add squash attr to top ik ctrl
         utils.add_locked_attrib(ik_ctrl_ls[-1], ["Attributes"])
-        utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.mdl_nm}_Stretch_State"], [0, 1], True)
-        utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.mdl_nm}_Stretch_Anchor"], [0, 1], True)
-        utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.mdl_nm}_Stretch_Volume"], [0, 1], True)
+        utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.dm.mdl_nm}_Stretch_State"], [0, 1], True)
+        utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.dm.mdl_nm}_Stretch_Anchor"], [0, 1], True)
+        utils.add_float_attrib(ik_ctrl_ls[-1], [f"{self.dm.mdl_nm}_Stretch_Volume"], [0, 1], True)
 
         # proxy the stretch attributes to the other ikctrls!
         for remaining_ik_ctrl in ik_ctrl_ls[:-1]:
             utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, "attributes_dvdr")
-            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_State")
-            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_Anchor")
-            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.mdl_nm}_Stretch_Volume")
+            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.dm.mdl_nm}_Stretch_State")
+            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.dm.mdl_nm}_Stretch_Anchor")
+            utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.dm.mdl_nm}_Stretch_Volume")
 
             # Only IK_top ctrl needs its offset claculated!
-        last_fk_pos = list(self.fk_pos_dict.values())[-1]
-        ik_top_ofs = utils.calculate_matrix_offset(last_fk_pos, list(self.ik_pos_dict.values())[-1])
+        last_fk_pos = list(self.dm.fk_pos_dict.values())[-1]
+        ik_top_ofs = utils.calculate_matrix_offset(last_fk_pos, list(self.dm.ik_pos_dict.values())[-1])
         utils.set_matrix(ik_top_ofs, f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[0]}")
             # two end fk & inv ctrls into ik MM top & bottom
         utils.connect_attr(f"{fk_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[1]}") # MM_ik_top
@@ -520,7 +271,7 @@ class SpineSystem():
         utils.connect_attr(f"{top_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{AM_ik_mid}.secondaryTargetMatrix")
         utils.connect_attr(f"{AM_ik_mid}{utils.Plg.out_mtx_plg}", f"{MM_ik_ls[1]}{utils.Plg.mtx_ins[1]}")
 
-        return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
+        # return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
 
 
     def cr_logic_elements(self, fk_pos, fk_rot, ik_pos, ik_rot, fw_jnt_lists, bw_jnt_lists, rig_jnt_lists):
@@ -550,12 +301,12 @@ class SpineSystem():
         # inv_pos = {key: inv_pos_values[i] for i, key in enumerate(fk_pos.keys())}
         # inv_rot = {key: inv_rot_values[i] for i, key in enumerate(fk_pos.keys())}
         # cr 6 groups to organise the joints into:
-        logic_grp = f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        fk_grp = f"grp_jnts_fk_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        inv_grp = f"grp_jnts_inv_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        ik_grp = f"grp_jnts_ik_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        ikFw_grp = f"grp_ikFw_{self.mdl_nm}_{self.unique_id}_{self.side}"
-        ikBw_grp = f"grp_ikBw_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        logic_grp = f"grp_logic_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        fk_grp = f"grp_jnts_fk_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        inv_grp = f"grp_jnts_inv_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        ik_grp = f"grp_jnts_ik_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        ikFw_grp = f"grp_ikFw_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        ikBw_grp = f"grp_ikBw_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
         utils.cr_node_if_not_exists(0, "transform", logic_grp)
         utils.cr_node_if_not_exists(0, "transform", fk_grp)
         utils.cr_node_if_not_exists(0, "transform", inv_grp)
@@ -569,9 +320,9 @@ class SpineSystem():
         # cr the logic joints!
         for spn_name in fk_pos:
             cmds.select(cl=1)
-            fk_name = spn_name.replace("ctrl_", "jnt_") # ctrl_fk_{self.mdl_nm}0
+            fk_name = spn_name.replace("ctrl_", "jnt_") # ctrl_fk_{self.dm.mdl_nm}0
             fk_logic_ls.append(fk_name)
-            inv_name = spn_name.replace("ctrl_fk_", "jnt_inv_") # ctrl_fk_{self.mdl_nm}0
+            inv_name = spn_name.replace("ctrl_fk_", "jnt_inv_") # ctrl_fk_{self.dm.mdl_nm}0
             inv_logic_ls.append(inv_name)
             cmds.joint(n=fk_name)
             cmds.select(cl=1)
@@ -587,7 +338,7 @@ class SpineSystem():
             cmds.makeIdentity(ik_name, a=1, t=0, r=1, s=0, n=0, pn=1)
         
         # Create the jnt_ik_middleHold 
-        jnt_mid_hold = cmds.joint(n=f"jnt_ik_{self.mdl_nm}_middleHold")
+        jnt_mid_hold = cmds.joint(n=f"jnt_ik_{self.dm.mdl_nm}_middleHold")
 
         # Parent the joints into the right groups:
         cmds.parent(fk_logic_ls, fk_grp)
@@ -602,7 +353,7 @@ class SpineSystem():
         return logic_grp, fk_logic_ls, inv_logic_ls, ik_logic_ls, jnt_mid_hold
 
 
-    def cr_logic_curve(self, pref, skeleton_pos_dict, backwards=False):
+    def cr_logic_curve(self, pref, skeleton_pos_dict, logic_grp, backwards=False):
         '''        
         # Description:
             Creates a new logic curve & organises it into the logic_grp. 
@@ -613,14 +364,14 @@ class SpineSystem():
         # Returns:
             logic_curve (string): The name of the new curve created. 
         '''
-        logic_curve = f"crv_{pref}_{self.mdl_nm}_{self.unique_id}_{self.side}"
+        logic_curve = f"crv_{pref}_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
         positions = list(skeleton_pos_dict.values())
         cmds.curve(n=logic_curve, d=3, p=positions)
         cmds.rebuildCurve(logic_curve, ch=1, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=0, kt=0, s=1, d=3, tol=0.01)
         if backwards:
             ''' reverse the dirtection of the curve '''
             cmds.reverseCurve(logic_curve, constructionHistory=True, replaceOriginal=True)
-        cmds.parent(logic_curve, self.logic_grp)
+        cmds.parent(logic_curve, logic_grp)
 
         return logic_curve
 
@@ -643,11 +394,11 @@ class SpineSystem():
 
         print(f"crv_logic_shape = {crv_logic_shape}")
         # curve util nodes 
-        CvInfo = f"CI_{jnt_pref}_{self.mdl_nm}_{self.unique_id}"
+        CvInfo = f"CI_{jnt_pref}_{self.dm.mdl_nm}_{self.dm.unique_id}"
         utils.cr_node_if_not_exists(1, "curveInfo", CvInfo)
         utils.connect_attr(f"{crv_logic_shape}{utils.Plg.wld_space_plg}", 
                            f"{CvInfo}{utils.Plg.inp_curve_plg}")
-        FM_spine_global = f"FM_{jnt_pref}_{self.mdl_nm}_global_div_{self.unique_id}"
+        FM_spine_global = f"FM_{jnt_pref}_{self.dm.mdl_nm}_global_div_{self.dm.unique_id}"
         utils.cr_node_if_not_exists(1, "floatMath", FM_spine_global, {"operation": 3})
         # connections
             # global FM
@@ -657,7 +408,8 @@ class SpineSystem():
         return CvInfo, FM_spine_global
 
 
-    def wire_ctrl_to_jnt_logic(self):
+    def wire_ctrl_to_jnt_logic(self, fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls, 
+                                    fk_logic_ls, inv_logic_ls, ik_logic_ls):
         '''        
         # Description:            
             Connects all control's to their corresponding logic joint using 
@@ -669,8 +421,8 @@ class SpineSystem():
         # Returns: N/A
         '''
         for fk_ctrl, inv_ctrl, ik_ctrl, fk_logic, inv_logic, ik_logic in zip(
-            self.fk_ctrl_ls, self.inv_ctrl_ls, self.ik_ctrl_ls, 
-            self.fk_logic_ls, self.inv_logic_ls, self.ik_logic_ls
+            fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls, 
+            fk_logic_ls, inv_logic_ls, ik_logic_ls
             ):
             print(f"fk_ctrl = {fk_ctrl} | {fk_logic}")
             print(f"inv_ctrl = {inv_ctrl} | {inv_logic}")
@@ -680,7 +432,8 @@ class SpineSystem():
             MM_ik_logic = utils.mtxCon_no_ofs(ik_ctrl, ik_logic)
 
 
-    def wire_ik_bott_top_logic_to_skn(self, jnt_pref, skeleton_pos_dict):
+    def wire_ik_bott_top_logic_to_skn(self, jnt_pref, skeleton_pos_dict, 
+                                            ik_logic_ls, ik_ctrl_ls):
         '''
         # Description:            
             This function drives the Top & Bottom skin joints important for 
@@ -698,8 +451,8 @@ class SpineSystem():
         skn_skel_positions = [int(re.search(r'\d+', s).group()) for s in skn_skel_keys][::-1]
         print(f"skn_skel_positions = `{skn_skel_positions}`")
         
-        skn_top_jnt = self.ik_logic_ls[-1].replace('ik', jnt_pref)
-        skn_bot_jnt = self.ik_logic_ls[0].replace('ik', jnt_pref)
+        skn_top_jnt = ik_logic_ls[-1].replace('ik', jnt_pref)
+        skn_bot_jnt = ik_logic_ls[0].replace('ik', jnt_pref)
         cmds.setAttr(f"{skn_top_jnt}.radius", 3)
         cmds.setAttr(f"{skn_bot_jnt}.radius", 3)
 
@@ -709,14 +462,14 @@ class SpineSystem():
             utils.clean_opm([skn_bot_jnt, skn_top_jnt])
 
         # get the names of the top ik_jnt & skn_chain joint
-        top_ik_jnt = self.ik_logic_ls[-1]
-        bottom_ik_jnt = self.ik_logic_ls[0]
+        top_ik_jnt = ik_logic_ls[-1]
+        bottom_ik_jnt = ik_logic_ls[0]
         # 'output_skn_jnt' refers to the skn joint chain!
-        top_output_skn_jnt = f"jnt_{jnt_pref}_{self.mdl_nm}_spine{skn_skel_positions[0]}_{self.unique_id}_{self.side}"
-        bottom_output_skn_jnt = f"jnt_{jnt_pref}_{self.mdl_nm}_spine{skn_skel_positions[-1]}_{self.unique_id}_{self.side}"
+        top_output_skn_jnt = f"jnt_{jnt_pref}_{self.dm.mdl_nm}_spine{skn_skel_positions[0]}_{self.dm.unique_id}_{self.dm.side}"
+        bottom_output_skn_jnt = f"jnt_{jnt_pref}_{self.dm.mdl_nm}_spine{skn_skel_positions[-1]}_{self.dm.unique_id}_{self.dm.side}"
         
-        top_ik_ctrl = self.ik_ctrl_ls[-1]
-        bottom_ik_ctrl = self.ik_ctrl_ls[0]
+        top_ik_ctrl = ik_ctrl_ls[-1]
+        bottom_ik_ctrl = ik_ctrl_ls[0]
 
         # cr two decompose matrix nodes & a compMatrix node for each jnt_skn_top/bottom
         top_translate_skn_dcM = f"DCM_translate_top_{top_output_skn_jnt}"
@@ -733,8 +486,8 @@ class SpineSystem():
         utils.cr_node_if_not_exists(0, "composeMatrix", bottom_cM)
 
         # two new utility nodes for the translate data to compose to the skin joint. 
-            # translate is a switch between 2 objects: 'top_output_skn_jnt' & 'self.ik_ctrl_ls[-1]' depending(SecondTerm) on the stretch_state atribute 
-            # DCM for self.ik_ctrl_ls[-1]
+            # translate is a switch between 2 objects: 'top_output_skn_jnt' & 'ik_ctrl_ls[-1]' depending(SecondTerm) on the stretch_state atribute 
+            # DCM for ik_ctrl_ls[-1]
         top_translate_ctrl_dcM = f"DCM_translate_top_{top_ik_ctrl}"
         top_translate_cond = f"DCM_translate_top_{skn_top_jnt}"
         bottom_translate_ctrl_dcM = f"DCM_translate_bot_{bottom_ik_ctrl}"
@@ -751,7 +504,7 @@ class SpineSystem():
         utils.connect_attr(f"{top_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{top_translate_ctrl_dcM}{utils.Plg.inp_mtx_plg}")
         utils.connect_attr(f"{top_ik_jnt}{utils.Plg.wld_mtx_plg}", f"{top_rotate_dcM}{utils.Plg.inp_mtx_plg}")
             # > top_translate_cond
-        utils.connect_attr(f"{top_ik_ctrl}.{self.mdl_nm}_Stretch_State", f"{top_translate_cond}.secondTerm")
+        utils.connect_attr(f"{top_ik_ctrl}.{self.dm.mdl_nm}_Stretch_State", f"{top_translate_cond}.secondTerm")
         utils.connect_attr(f"{top_translate_ctrl_dcM}{utils.Plg.outT_plug}", f"{top_translate_cond}.colorIfTrue")
         utils.connect_attr(f"{top_translate_skn_dcM}{utils.Plg.outT_plug}", f"{top_translate_cond}.colorIfFalse")
             # > CM.inputTranslate/Rotate
@@ -765,7 +518,7 @@ class SpineSystem():
         utils.connect_attr(f"{bottom_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{bottom_translate_ctrl_dcM}{utils.Plg.inp_mtx_plg}")
         utils.connect_attr(f"{bottom_ik_jnt}{utils.Plg.wld_mtx_plg}", f"{bottom_rotate_dcM}{utils.Plg.inp_mtx_plg}")
 
-        utils.connect_attr(f"{bottom_ik_ctrl}.{self.mdl_nm}_Stretch_State", f"{bottom_translate_cond}.secondTerm")
+        utils.connect_attr(f"{bottom_ik_ctrl}.{self.dm.mdl_nm}_Stretch_State", f"{bottom_translate_cond}.secondTerm")
         utils.connect_attr(f"{bottom_translate_ctrl_dcM}{utils.Plg.outT_plug}", f"{bottom_translate_cond}.colorIfTrue")
         utils.connect_attr(f"{bottom_translate_dcM}{utils.Plg.outT_plug}", f"{bottom_translate_cond}.colorIfFalse")
         
@@ -775,7 +528,8 @@ class SpineSystem():
         utils.connect_attr(f"{bottom_cM}{utils.Plg.out_mtx_plg}", f"{skn_bot_jnt}{utils.Plg.opm_plg}")
 
     
-    def wire_ik_stretch_setup(self, jnt_pref, logic_curve, skeleton_pos_dict, fm_global_curve, backwards=False):
+    def wire_ik_stretch_setup(self, jnt_pref, logic_curve, skeleton_pos_dict, fm_global_curve, 
+                                    ik_logic_ls, ik_ctrl_ls, jnt_mid_hold, backwards=False):
         '''
         # Description:            
             Creates stretch setup on specified joint chain with an ik spline setup. 
@@ -788,27 +542,27 @@ class SpineSystem():
             backwards (bool): If True, the curve direction is reversed (0-1).
         # Returns: N/A
         '''
-        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.mdl_nm}_{j}_{self.unique_id}_{self.side}" for j in skeleton_pos_dict.keys()]
+        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.dm.mdl_nm}_{j}_{self.dm.unique_id}_{self.dm.side}" for j in skeleton_pos_dict.keys()]
         num_squash_jnts = len(skeleton_pos_dict.keys())-1
         
         # curve skinning method: skin the top & bottom ik skn joints to curve skin 
         # the middle & hold logic joints create inversmatrix, > plug middle MM into inversmatrix
         # > plug inversematrix into bind bind pre-matrix on the 2nd skincluster!
-        jnt_ik_logic_mid = self.ik_logic_ls[1]
-        cmds.skinCluster([self.ik_logic_ls[0], self.ik_logic_ls[-1]], logic_curve, tsb=True, wd=1)[0]
+        jnt_ik_logic_mid = ik_logic_ls[1]
+        cmds.skinCluster([ik_logic_ls[0], ik_logic_ls[-1]], logic_curve, tsb=True, wd=1)[0]
         # # Create the second skinCluster
-        middle_skincluster = cmds.skinCluster([jnt_ik_logic_mid, self.jnt_mid_hold], logic_curve, tsb=True, wd=1, multi=1)[0]
-        cmds.skinPercent( middle_skincluster, f"{logic_curve}.cv[0]", f"{logic_curve}.cv[3]", tv=[(self.jnt_mid_hold, 1)])
+        middle_skincluster = cmds.skinCluster([jnt_ik_logic_mid, jnt_mid_hold], logic_curve, tsb=True, wd=1, multi=1)[0]
+        cmds.skinPercent( middle_skincluster, f"{logic_curve}.cv[0]", f"{logic_curve}.cv[3]", tv=[(jnt_mid_hold, 1)])
         # skinPercent -tv jnt_hold  1 skinCluster4 curve1.cv[0:1] curve1.cv[4:5]
 
         inv_mtx = f"IM_{jnt_ik_logic_mid}"
         utils.cr_node_if_not_exists(1, "inverseMatrix", inv_mtx)
-        utils.connect_attr(f"MM_{self.ik_ctrl_ls[1]}{utils.Plg.mtx_sum_plg}", f"{inv_mtx}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"MM_{ik_ctrl_ls[1]}{utils.Plg.mtx_sum_plg}", f"{inv_mtx}{utils.Plg.inp_mtx_plg}")
         utils.connect_attr(f"{inv_mtx}{utils.Plg.out_mtx_plg}", f"{middle_skincluster}.bindPreMatrix[0]")
         
         # Util nodes for stretch setup
-        FM_spine_joints = f"FM_{jnt_pref}_{self.mdl_nm}_joints_div_{self.unique_id}"
-        BC_spine_squash = F"BC_{jnt_pref}_{self.mdl_nm}_stretchVolume_{self.unique_id}"
+        FM_spine_joints = f"FM_{jnt_pref}_{self.dm.mdl_nm}_joints_div_{self.dm.unique_id}"
+        BC_spine_squash = F"BC_{jnt_pref}_{self.dm.mdl_nm}_stretchVolume_{self.dm.unique_id}"
 
         utils.cr_node_if_not_exists(1, "floatMath", FM_spine_joints, {"operation": 3, "floatB": num_squash_jnts})
         utils.cr_node_if_not_exists(1, "blendColors", BC_spine_squash, {"color1G": 1, "color2R": 1, "color2G": 1, "color2B": 1})
@@ -821,10 +575,10 @@ class SpineSystem():
         # get FM_spine_joints_div.floatA attr and set it to new 
         still_stretch_dividend = cmds.getAttr(f"{FM_spine_joints}{utils.Plg.flt_A}")
         # cr utility nodes neccessary to blend a smooth on & off of the stretch
-        FM_trans_still = f"FM_{jnt_pref}_{self.mdl_nm}_joints_div_still_{self.unique_id}"
-        BC_stretch_active = F"BC_{jnt_pref}_{self.mdl_nm}_activeStretch_{self.unique_id}"
-        BC_stretch_still = F"BC_{jnt_pref}_{self.mdl_nm}_stillStretchLength_{self.unique_id}"
-        BC_stretch_output = F"BC_{jnt_pref}_{self.mdl_nm}_translateStretchOutput_{self.unique_id}"
+        FM_trans_still = f"FM_{jnt_pref}_{self.dm.mdl_nm}_joints_div_still_{self.dm.unique_id}"
+        BC_stretch_active = F"BC_{jnt_pref}_{self.dm.mdl_nm}_activeStretch_{self.dm.unique_id}"
+        BC_stretch_still = F"BC_{jnt_pref}_{self.dm.mdl_nm}_stillStretchLength_{self.dm.unique_id}"
+        BC_stretch_output = F"BC_{jnt_pref}_{self.dm.mdl_nm}_translateStretchOutput_{self.dm.unique_id}"
         utils.cr_node_if_not_exists(1, "floatMath", FM_trans_still, {"operation": 3, "floatA": still_stretch_dividend, "floatB": num_squash_jnts})
         utils.cr_node_if_not_exists(1, "blendColors", BC_stretch_active, {"blender":1, "color1G": 1, "color2R": 1, "color2G": 1, "color2B": 1})
         utils.cr_node_if_not_exists(1, "blendColors", BC_stretch_still, {"blender":1, "color1G": 1, "color2R": 1, "color2G": 1, "color2B": 1})
@@ -837,29 +591,28 @@ class SpineSystem():
         utils.connect_attr(f"{BC_stretch_active}{utils.Plg.out_letter[0]}", f"{BC_stretch_output}{utils.Plg.color1_plg[0]}")
         utils.connect_attr(f"{BC_stretch_still}{utils.Plg.out_letter[0]}", f"{BC_stretch_output}{utils.Plg.color2_plg[0]}")
         # Connect 'stetch' attrib to parent BC blender.
-        # utils.connect_attr(f"{self.ik_ctrl_ls[-1]}.{self.mdl_nm}_Stretch_State", f"{BC_stretch_output}{utils.Plg.blndr_plg}")
+        # utils.connect_attr(f"{ik_ctrl_ls[-1]}.{self.dm.mdl_nm}_Stretch_State", f"{BC_stretch_output}{utils.Plg.blndr_plg}")
         
         if backwards:
             # cr negative MD
-            md_negative = f"MD_{jnt_pref}_{self.mdl_nm}_negativeStretchOutput_{self.unique_id}"
+            md_negative = f"MD_{jnt_pref}_{self.dm.mdl_nm}_negativeStretchOutput_{self.dm.unique_id}"
             utils.cr_node_if_not_exists(1, "multiplyDivide", md_negative, {"operation": 1, "input1X":-1})
             # connect parent BC to negative MD            
             utils.connect_attr(f"{BC_stretch_output}{utils.Plg.out_letter[0]}", f"{md_negative}{utils.Plg.input2_val[0]}")
             for x in range(1, len(skeleton_pos_dict.keys())):  
                 # connect negative MD to skeleton translatePrimaryAxis. 
-                utils.connect_attr(f"{md_negative}{utils.Plg.out_axis[0]}", f"{jnt_skeleton_ls[x]}.translate{self.prim_axis}")
+                utils.connect_attr(f"{md_negative}{utils.Plg.out_axis[0]}", f"{jnt_skeleton_ls[x]}.translate{self.dm.prim_axis}")
         else:
             for x in range(1, len(skeleton_pos_dict.keys())):  
                 # connect BC_spine_StretchOutput to skeleton translatePrimaryAxis. 
-                utils.connect_attr(f"{BC_stretch_output}{utils.Plg.out_letter[0]}", f"{jnt_skeleton_ls[x]}.translate{self.prim_axis}")
-        
+                utils.connect_attr(f"{BC_stretch_output}{utils.Plg.out_letter[0]}", f"{jnt_skeleton_ls[x]}.translate{self.dm.prim_axis}")
         # ---------------
         # ik spline setup w/ advanced twist on ik handle
         print(f"ikHandle: jnt_pref = `{jnt_pref}`, jnt_skeleton_ls[-1] = {jnt_skeleton_ls[-1]}, jnt_skeleton_ls[0] = {jnt_skeleton_ls[0]},")
         
-        hdl_spine_name = f"hdl_{jnt_pref}_{self.mdl_nm}_spline_{self.unique_id}_{self.side}"
+        hdl_spine_name = f"hdl_{jnt_pref}_{self.dm.mdl_nm}_spline_{self.dm.unique_id}_{self.dm.side}"
         cmds.ikHandle( n=hdl_spine_name, sol="ikSplineSolver", c=logic_curve, sj=jnt_skeleton_ls[0], ee=jnt_skeleton_ls[-1], ccv=False, pcv=False)
-        cmds.parent(hdl_spine_name, f"grp_logic_{self.mdl_nm}_{self.unique_id}_{self.side}")
+        cmds.parent(hdl_spine_name, f"grp_logic_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
         # Enable advanced twist options on hdl_spine_name
         cmds.setAttr(  f"{hdl_spine_name}.dTwistControlEnable", 1 )
         cmds.setAttr( f"{hdl_spine_name}.dWorldUpType", 4 )              
@@ -869,12 +622,12 @@ class SpineSystem():
         if backwards:
             cmds.setAttr(f"{hdl_spine_name}.dForwardAxis", negative_y)
             # Set the 'World Up Object' to the controller the is driving the first joint of the chain. (ctrl_ik_pelvis)
-            utils.connect_attr(f"{self.ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrix")
-            utils.connect_attr(f"{self.ik_ctrl_ls[0]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
+            utils.connect_attr(f"{ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrix")
+            utils.connect_attr(f"{ik_ctrl_ls[0]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
         else:
             cmds.setAttr(f"{hdl_spine_name}.dForwardAxis", positive_y)
-            utils.connect_attr(f"{self.ik_ctrl_ls[0]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrix")
-            utils.connect_attr(f"{self.ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
+            utils.connect_attr(f"{ik_ctrl_ls[0]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrix")
+            utils.connect_attr(f"{ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
        
         cmds.setAttr(f"{hdl_spine_name}.dWorldUpAxis", 3 ) # neg x
         # Xvals
@@ -888,7 +641,7 @@ class SpineSystem():
         cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndZ", 1)
 
 
-    def wire_ik_volume_setup(self, jnt_pref, skeleton_pos_dict, input_grp, cv_info_node, fm_global_curve):
+    def wire_ik_volume_setup(self, jnt_pref, skeleton_pos_dict, input_grp, cv_info_node, fm_global_curve, ik_ctrl_ls):
         '''
         # Description:            
             Wires the data from the Input grp to the skin joint's scale attr to 
@@ -902,12 +655,12 @@ class SpineSystem():
         '''
         cv_arc_length = cmds.getAttr(f"{cv_info_node}{utils.Plg.arc_len_plg}")
 
-        FM_spine_norm = F"FM_{self.mdl_nm}_norm_{self.unique_id}"
-        BC_spine_squash = F"BC_{self.mdl_nm}_stretchVolume_{self.unique_id}"        
+        FM_spine_norm = F"FM_{self.dm.mdl_nm}_norm_{self.dm.unique_id}"
+        BC_spine_squash = F"BC_{self.dm.mdl_nm}_stretchVolume_{self.dm.unique_id}"        
         utils.cr_node_if_not_exists(1, "floatMath", FM_spine_norm, {"operation": 3, "floatB": cv_arc_length})
         utils.cr_node_if_not_exists(1, "blendColors", BC_spine_squash, {"color1G": 1, "color2R": 1, "color2G": 1, "color2B": 1})
         
-        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.mdl_nm}_{j}_{self.unique_id}_{self.side}" for j in skeleton_pos_dict.keys()]
+        jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.dm.mdl_nm}_{j}_{self.dm.unique_id}_{self.dm.side}" for j in skeleton_pos_dict.keys()]
         MD_skeleton_ls = []
         for jnt in jnt_skeleton_ls:
             md_name = f"MD_{jnt}"
@@ -915,7 +668,7 @@ class SpineSystem():
             MD_skeleton_ls.append(md_name)
 
         utils.connect_attr(f"{fm_global_curve}{utils.Plg.out_flt}", f"{FM_spine_norm}{utils.Plg.flt_A}")
-        utils.connect_attr(f"{self.ik_ctrl_ls[-1]}.{self.mdl_nm}_Stretch_Volume", f"{BC_spine_squash}{utils.Plg.blndr_plg}")
+        utils.connect_attr(f"{ik_ctrl_ls[-1]}.{self.dm.mdl_nm}_Stretch_Volume", f"{BC_spine_squash}{utils.Plg.blndr_plg}")
         utils.connect_attr(f"{FM_spine_norm}{utils.Plg.out_flt}", f"{BC_spine_squash}{utils.Plg.color1_plg[0]}")
         utils.connect_attr(f"{FM_spine_norm}{utils.Plg.out_flt}", f"{BC_spine_squash}{utils.Plg.color1_plg[2]}")
         
@@ -923,8 +676,8 @@ class SpineSystem():
                 # MD
             utils.connect_attr(f"{BC_spine_squash}{utils.Plg.out_letter[0]}", f"{MD_skeleton_ls[x]}{utils.Plg.input1_val[0]}")
             utils.connect_attr(f"{BC_spine_squash}{utils.Plg.out_letter[2]}", f"{MD_skeleton_ls[x]}{utils.Plg.input1_val[2]}")
-            utils.connect_attr(f"{input_grp}.{self.mdl_nm}{x}_Stretch_Volume", f"{MD_skeleton_ls[x]}{utils.Plg.input2_val[0]}")
-            utils.connect_attr(f"{input_grp}.{self.mdl_nm}{x}_Stretch_Volume", f"{MD_skeleton_ls[x]}{utils.Plg.input2_val[2]}")
+            utils.connect_attr(f"{input_grp}.{self.dm.mdl_nm}{x}_Stretch_Volume", f"{MD_skeleton_ls[x]}{utils.Plg.input2_val[0]}")
+            utils.connect_attr(f"{input_grp}.{self.dm.mdl_nm}{x}_Stretch_Volume", f"{MD_skeleton_ls[x]}{utils.Plg.input2_val[2]}")
                 # skeleton scale joint!
             utils.connect_attr(f"{MD_skeleton_ls[x]}{utils.Plg.out_axis[0]}", f"{jnt_skeleton_ls[x]}.scaleX")
             utils.connect_attr(f"{MD_skeleton_ls[x]}{utils.Plg.out_axis[-1]}", f"{jnt_skeleton_ls[x]}.scaleZ")
@@ -955,7 +708,7 @@ class SpineSystem():
 
     def blend_fw_bw_states_to_skin_chain(self, strFw_chain, strBw_chain, rigStr, 
                                          nonstrFw_chain, nonstrBw_chain, nonrigStr,
-                                         skn_chain):
+                                         skn_chain, ik_ctrl_ls):
         '''
         # Description:            
             This function blends the forward & backward joint chains to drive 
@@ -1000,258 +753,34 @@ class SpineSystem():
             cmds.setAttr(f"{pcon_str_name}.interpType", 2)
             
         # wire up the Stretch_Anchor attrib.
-        rev_skn_str = f"Rev_sknStr_{self.mdl_nm}_{self.unique_id}"
-        rev_strAnchor = f"Rev_stretchAnchor_{self.mdl_nm}_{self.unique_id}"
+        rev_skn_str = f"Rev_sknStr_{self.dm.mdl_nm}_{self.dm.unique_id}"
+        rev_strAnchor = f"Rev_stretchAnchor_{self.dm.mdl_nm}_{self.dm.unique_id}"
         utils.cr_node_if_not_exists(1, "reverse", rev_skn_str)
         utils.cr_node_if_not_exists(1, "reverse", rev_strAnchor)
         
         # skn chain rev
-        utils.connect_attr(f"{self.ik_ctrl_ls[-1]}.{self.mdl_nm}_Stretch_State", f"{rev_skn_str}.inputX")
+        utils.connect_attr(f"{ik_ctrl_ls[-1]}.{self.dm.mdl_nm}_Stretch_State", f"{rev_skn_str}.inputX")
         # strAnchor rev
-        utils.connect_attr(f"{self.ik_ctrl_ls[-1]}.{self.mdl_nm}_Stretch_Anchor", f"{rev_strAnchor}.inputX")
+        utils.connect_attr(f"{ik_ctrl_ls[-1]}.{self.dm.mdl_nm}_Stretch_Anchor", f"{rev_strAnchor}.inputX")
         backward_indexes = [i for i, _ in enumerate(skn_chain)][::-1]
         print(f"backward_indexes = {backward_indexes}")
         for x in range(len(skn_chain)):
             # skn chain
-            utils.connect_attr(f"{self.ik_ctrl_ls[-1]}.{self.mdl_nm}_Stretch_State", 
-                               f"Pcon_StrRig_nonStrRig_{skn_chain[x]}.jnt_StrRig_{self.mdl_nm}_spine{x}_{self.unique_id}_MW0")
+            utils.connect_attr(f"{ik_ctrl_ls[-1]}.{self.dm.mdl_nm}_Stretch_State", 
+                               f"Pcon_StrRig_nonStrRig_{skn_chain[x]}.jnt_StrRig_{self.dm.mdl_nm}_spine{x}_{self.dm.unique_id}_MW0")
             utils.connect_attr(f"{rev_skn_str}{utils.Plg.out_axis[0]}", 
-                               f"Pcon_StrRig_nonStrRig_{skn_chain[x]}.jnt_nonStrRig_{self.mdl_nm}_spine{x}_{self.unique_id}_MW1")
+                               f"Pcon_StrRig_nonStrRig_{skn_chain[x]}.jnt_nonStrRig_{self.dm.mdl_nm}_spine{x}_{self.dm.unique_id}_MW1")
             
             # rigStr chain
             utils.connect_attr(f"{rev_strAnchor}{utils.Plg.out_axis[0]}", 
-                               f"Pcon_FwBw_{rigStr[x]}.jnt_StrFw_{self.mdl_nm}_spine{x}_{self.unique_id}_MW0")
+                               f"Pcon_FwBw_{rigStr[x]}.jnt_StrFw_{self.dm.mdl_nm}_spine{x}_{self.dm.unique_id}_MW0")
             # jnt_StrFw_spine_spine9_0_MW0            
-            utils.connect_attr(f"{self.ik_ctrl_ls[-1]}.{self.mdl_nm}_Stretch_Anchor", 
-                               f"Pcon_FwBw_{rigStr[x]}.jnt_StrBw_{self.mdl_nm}_spine{backward_indexes[x]}_{self.unique_id}_MW1")
+            utils.connect_attr(f"{ik_ctrl_ls[-1]}.{self.dm.mdl_nm}_Stretch_Anchor", 
+                               f"Pcon_FwBw_{rigStr[x]}.jnt_StrBw_{self.dm.mdl_nm}_spine{backward_indexes[x]}_{self.dm.unique_id}_MW1")
           
             # nonRigStr chain
             utils.connect_attr(f"{rev_strAnchor}{utils.Plg.out_axis[0]}", 
-                               f"Pcon_nonFwBw_{nonrigStr[x]}.jnt_nonStrFw_{self.mdl_nm}_spine{x}_{self.unique_id}_MW0")
-            utils.connect_attr(f"{self.ik_ctrl_ls[-1]}.{self.mdl_nm}_Stretch_Anchor", 
-                               f"Pcon_nonFwBw_{nonrigStr[x]}.jnt_nonStrBw_{self.mdl_nm}_spine{backward_indexes[x]}_{self.unique_id}_MW1")
+                               f"Pcon_nonFwBw_{nonrigStr[x]}.jnt_nonStrFw_{self.dm.mdl_nm}_spine{x}_{self.dm.unique_id}_MW0")
+            utils.connect_attr(f"{ik_ctrl_ls[-1]}.{self.dm.mdl_nm}_Stretch_Anchor", 
+                               f"Pcon_nonFwBw_{nonrigStr[x]}.jnt_nonStrBw_{self.dm.mdl_nm}_spine{backward_indexes[x]}_{self.dm.unique_id}_MW1")
    
-
-    def output_group_setup(self, mdl_output_grp, object_name_ls, out_matrix_name_list):
-        '''
-        # Description:
-            Iterate through the two lists:
-                Connects the object to attributes on this module's output group 
-                so another module's inpout group can have incoming plugs to allow
-                it to follow!
-        # Attributes:
-            mdl_output_grp (str): Name of this module's output group
-            object_name_ls (list): Name of object that is what matrix data is 
-                                    coming from for this attribute on the output 
-                                    grp(could be derived from the dict...)
-            out_matrix_name_list (list): Name of the corresponding matrix 
-                                        atttribute to connect to that exists on 
-                                        the output grp.
-        # Returns: N/A
-        # Future updates:
-            Problem -> Handle the attrib names on the Input & Output grps in a way that can be shared between the other modules.
-            Solution -> Store this data in the database & access it from there when neccessary by encoding it in a dictionary!
-        '''
-        for obj_name, mtx_obj_name in zip(object_name_ls, out_matrix_name_list): # _top_mtx
-            MM_output_top = f"MM_output_{obj_name}"
-                # cr the MM nodes
-            utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
-            top_inverse_mtx = cmds.getAttr(f"{obj_name}{utils.Plg.wld_inv_mtx_plg}")
-                # > MM's
-            cmds.setAttr(f"{MM_output_top}{utils.Plg.mtx_ins[0]}", *top_inverse_mtx, type="matrix")
-            utils.connect_attr(f"{obj_name}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
-                # > mdl_output_grp.mtx_obj_name
-            utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.mtx_{self.mdl_nm}_{mtx_obj_name}")
-    
-
-# Basic spine example:
-external_plg_dict = {
-    "global_scale_grp":"grp_Outputs_root_0_M",
-    "global_scale_attr":"globalScale",
-    "base_plg_grp":"grp_Outputs_root_0_M",
-    "base_plg_atr":"mtx_root_ctrlCentre",
-    "hook_plg_grp":"grp_Outputs_root_0_M", 
-    "hook_plg_atr":"mtx_root_ctrlCOG"
-    }
-
-skeleton_dict = {
-    "skel_pos":{
-        'spine0' : [0.0, 108.51357426399493, 3.0], 
-        'spine1' : [0.0, 114.54568615397002, 3.0],
-        'spine2' : [0.0, 119.80152392711072, 3.0],
-        'spine3' : [0.0, 124.6437390246307, 3.0],
-        'spine4' : [0.0, 129.42469282205994, 3.0],
-        'spine5' : [0.0, 134.25999009941637, 3.0],
-        'spine6' : [0.0, 139.02848563616715, 3.0],
-        'spine7' : [0.0, 143.59873962402344, 3.0]
-    },
-    "skel_rot":{
-        'spine0' : [0.0, 0.0, 0.0], 
-        'spine1' : [0.0, 0.0, 0.0], 
-        'spine2' : [0.0, 0.0, 0.0], 
-        'spine3' : [0.0, 0.0, 0.0], 
-        'spine4' : [0.0, 0.0, 0.0], 
-        'spine5' : [0.0, 0.0, 0.0], 
-        'spine6' : [0.0, 0.0, 0.0], 
-        'spine7' : [0.0, 0.0, 0.0], 
-        'spine8' : [0.0, 0.0, 0.0], 
-        'spine9' : [0.0, 0.0, 0.0]
-    } 
-    }
-
-''' ---These outputs will be determined by Char_Layout tool! 
-        (place joints, choose num of ctrls, position ctrls, shape ctrls)--- '''
-# I want this to be changable (3 by default)
-fk_spine_dict = {
-    "fk_pos":{
-        'ctrl_fk_spine_spine0_0_M': [0.0, 108.51357426399493, 3.0], 
-        'ctrl_fk_spine_spine1_0_M': [0.0, 119.80152392711072, 3.0], 
-        'ctrl_fk_spine_spine2_0_M': [0.0, 129.42469282205994, 3.0]
-        },
-    "fk_rot":{
-        'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_fk_spine_spine1_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_fk_spine_spine2_0_M': [0.0, 0.0, 0.0]
-        }
-    }
-# Always 3 ctrls!
-ik_spine_dict = {
-    "ik_pos":{
-        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 108.51357426399493, 3.0], 
-        'ctrl_ik_spine_spine_middle_0_M': [0.0, 128.5, 3.0], 
-        'ctrl_ik_spine_spine_top_0_M': [0.0, 143.59873962402344, 3.0]
-        },
-    "ik_rot":{
-        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_ik_spine_spine_middle_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_ik_spine_spine_top_0_M': [0.0, 0.0, 0.0]
-        }
-    }
-
-# ------
-skeleton_dict_002 = {
-    "skel_pos":{
-        'spine0': [0.0, 149.99404907226562, 0.0], 
-        'spine1': [0.0, 163.67609956253224, 0.5505454896913743], 
-        'spine2': [0.0, 176.51040956536684, 0.47938506129239655], 
-        'spine3': [0.0, 188.63961008683742, -0.2503962985531877], 
-        'spine4': [0.0, 200.24069727159255, -1.6490033326717328], 
-        'spine5': [0.0, 212.28094266250034, -3.112293946922094], 
-        'spine6': [0.0, 226.51790858442743, -3.421781291403731], 
-        'spine7': [0.0, 244.74351501464844, -1.3322676420211792]
-        },
-    "skel_rot":{
-        'spine0': [0.0, 0.0, 0.0], 
-        'spine1': [0.0, 0.0, 0.0], 
-        'spine2': [0.0, 0.0, 0.0], 
-        'spine3': [0.0, 0.0, 0.0], 
-        'spine4': [0.0, 0.0, 0.0], 
-        'spine5': [0.0, 0.0, 0.0], 
-        'spine6': [0.0, 0.0, 0.0], 
-        'spine7': [0.0, 0.0, 0.0]
-        }
-    }
-'''
-"skel_rot":{
-        'spine0': [0.0, 0.0, 0.0], 
-        'spine1': [-90.0, -1.0642156226575015, 90.0], 
-        'spine2': [-90.0, 1.8129130531688165, 90.0], 
-        'spine3': [-90.0, 5.17746565181425, 90.0], 
-        'spine4': [-90.0, 8.016548074258269, 90.0], 
-        'spine5': [-90.0, 4.869653596501576, 90.0], 
-        'spine6': [-90.0, -2.4527863792809406, 90.0], 
-        'spine7': [-90.0, -10.089238271081271, 90.0]
-        }
-'''
-''' ---These outputs will be determined by Char_Layout tool! 
-        (place joints, choose num of ctrls, position ctrls, shape ctrls)--- '''
-# I want this to be changable (3 by default)
-fk_spine_dict_002 = {
-    "fk_pos":{
-        'ctrl_fk_spine_spine0_0_M': [0.0, 149.99404907226562, 0.0], 
-        'ctrl_fk_spine_spine1_0_M': [0.0, 176.51040956536684, 0.47938506129239655], 
-        'ctrl_fk_spine_spine2_0_M': [0.0, 212.28094266250034, -3.112293946922094]
-        },
-    "fk_rot":{
-        'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_fk_spine_spine1_0_M': [-90.0, 1.8129130531688165, 90.0], 
-        'ctrl_fk_spine_spine2_0_M': [-90.0, 4.869653596501576, 90.0]
-        }
-    }
-# Always 3 ctrls!
-ik_spine_dict_002 = {
-    "ik_pos":{
-        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 149.99404907226562, 0.0], 
-        'ctrl_ik_spine_spine_middle_0_M': [0.0, 176.51040956536684, 0.47938506129239655], 
-        'ctrl_ik_spine_spine_top_0_M': [0.0, 244.74351501464844, -1.3322676420211792]
-        },
-    "ik_rot":{
-        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_ik_spine_spine_middle_0_M': [-90.0, 1.8129130531688165, 90.0], 
-        'ctrl_ik_spine_spine_top_0_M': [-90.0, -10.089238271081271, 90.0]
-        }
-    }
-
-SpineSystem("spine", external_plg_dict, skeleton_dict, fk_spine_dict, ik_spine_dict, "Y")
-# SpineSystem("spine", external_plg_dict, skeleton_dict_002, fk_spine_dict_002, ik_spine_dict_002, "X")
-
-'''
-correct ori backwards{
-        'spine0': [0.0, 149.99404907226562, 0.0],
-        'spine1': [-1.5777218104420236e-30, 163.67609956253227, 0.5505454896913758], 
-        'spine2': [5.4329662066347425e-15, 176.51040956536687, 0.4793850612923948], 
-        'spine3': [1.0261634202060544e-14, 188.63961008683745, -0.2503962985531931], 
-        'spine4': [1.4556671875674994e-14, 200.24069727159258, -1.6490033326717561], 
-        'spine5': [1.9008879104396965e-14, 212.2809426625003, -3.1122939469221054], 
-        'spine6': [2.4929193343529772e-14, 226.5179085844274, -3.421781291403751], 
-        'spine7': [3.3655513459783803e-14, 244.74351501464847, -1.332267642021204]
-        },
-
-# Snake middle body example:
-# skel_midBody_dict = {
-#     "skel_pos":{
-#         'midBody0': [0.0, 0.0, -20.0], 
-#         'midBody1': [0.0, 0.0, -18.0], 
-#         'midBody2': [0.0, 0.0, -16.0], 
-#         'midBody3': [0.0, 0.0, -14.0], 
-#         'midBody4': [0.0, 0.0, -12.0], 
-#         'midBody5': [0.0, 0.0, -10.0], 
-#         'midBody6': [0.0, 0.0, -8.0], 
-#         'midBody7': [0.0, 0.0, -6.0], 
-#         'midBody8': [0.0, 0.0, -4.0], 
-#         'midBody9': [0.0, 0.0, -2.0], 
-#         'midBody10': [0.0, 0.0, 0.0], 
-#         'midBody11': [0.0, 0.0, 2.0], 
-#         'midBody12': [0.0, 0.0, 4.0], 
-#         'midBody13': [0.0, 0.0, 6.0], 
-#         'midBody14': [0.0, 0.0, 8.0], 
-#         'midBody15': [0.0, 0.0, 10.0], 
-#         'midBody16': [0.0, 0.0, 12.0], 
-#         'midBody17': [0.0, 0.0, 14.0],
-#         'midBody18': [0.0, 0.0, 16.0]
-#         },
-#     "skel_rot":{'midBody0': [90.0, 0.0, 0.0], 'midBody1': [90.0, 0.0, 0.0], 'midBody2': [90.0, 0.0, 0.0], 'midBody3': [90.0, 0.0, 0.0], 'midBody4': [90.0, 0.0, 0.0], 'midBody5': [90.0, 0.0, 0.0], 'midBody6': [90.0, 0.0, 0.0], 'midBody7': [90.0, 0.0, 0.0], 'midBody8': [90.0, 0.0, 0.0], 'midBody9': [90.0, 0.0, 0.0], 'midBody10': [90.0, 0.0, 0.0], 'midBody11': [90.0, 0.0, 0.0], 'midBody12': [90.0, 0.0, 0.0], 'midBody13': [90.0, 0.0, 0.0], 'midBody14': [90.0, 0.0, 0.0], 'midBody15': [90.0, 0.0, 0.0], 'midBody16': [90.0, 0.0, 0.0], 'midBody17': [90.0, 0.0, 0.0], 'midBody18': [90.0, 0.0, 0.0]}
-# }
-# fk_midBody_dict = { 
-#     "fk_pos":{
-#         'ctrl_fk_midBody0': [0.0, 0.0, -20.0], 
-#         'ctrl_fk_midBody1': [0.0, 0.0, -16.0], 
-#         'ctrl_fk_midBody2': [0.0, 0.0, -12.0], 
-#         'ctrl_fk_midBody3': [0.0, 0.0, -8.0], 
-#         'ctrl_fk_midBody4': [0.0, 0.0, -4.0], 
-#         'ctrl_fk_midBody5': [0.0, 0.0, 0.0], 
-#         'ctrl_fk_midBody6': [0.0, 0.0, 4.0], 
-#         'ctrl_fk_midBody7': [0.0, 0.0, 8.0], 
-#         'ctrl_fk_midBody8': [0.0, 0.0, 12.0], 
-#         'ctrl_fk_midBody9': [0.0, 0.0, 16.0]
-#         },
-#     "fk_rot":{'ctrl_fk_midBody0': [90.0, 0.0, 0.0], 'ctrl_fk_midBody1': [90.0, 0.0, 0.0], 'ctrl_fk_midBody2': [90.0, 0.0, 0.0], 'ctrl_fk_midBody3': [90.0, 0.0, 0.0], 'ctrl_fk_midBody4': [90.0, 0.0, 0.0], 'ctrl_fk_midBody5': [90.0, 0.0, 0.0], 'ctrl_fk_midBody6': [90.0, 0.0, 0.0], 'ctrl_fk_midBody7': [90.0, 0.0, 0.0], 'ctrl_fk_midBody8': [90.0, 0.0, 0.0], 'ctrl_fk_midBody9': [90.0, 0.0, 0.0]}
-
-# }
-# ik_midBody_dict = {
-#     "ik_pos":{'ctrl_ik_midBody_bottom': [0.0, 0.0, -20.0], 'ctrl_ik_midBody_mid': [0.0, 0.0, -2.0], 'ctrl_ik_midBody_top': [0.0, 0.0, 16.0]},
-#     "ik_rot":{'ctrl_ik_midBody_bottom': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_mid': [90.0, 0.0, 0.0], 'ctrl_ik_midBody_top': [90.0, 0.0, 0.0]}
-
-# }
-# SpineSystem("midBody", "grp_rootOutputs", skel_midBody_dict, fk_midBody_dict, ik_midBody_dict)
-'''

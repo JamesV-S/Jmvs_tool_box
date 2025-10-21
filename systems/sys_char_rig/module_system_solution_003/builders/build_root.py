@@ -22,11 +22,10 @@ importlib.reload(cr_ctrl)
 
 class BuildRoot(module_blueprint.ModuleBP, system_root.SystemRoot):
     def __init__(self, data_manager):
-        # super().__init__(data_manager)
-        print(f"Running BuildRoot")
         module_blueprint.ModuleBP.__init__(self, data_manager)
         system_root.SystemRoot.__init__(self, data_manager)
-        # self.data = data_manager  
+        print(f"-------  -------  --------  -------")
+        print(f"Declared Build{self.dm.mdl_nm}")
 
 
     def build(self):
@@ -44,15 +43,19 @@ class BuildRoot(module_blueprint.ModuleBP, system_root.SystemRoot):
             ik_dict (dict): (dict): key="ik_pos/rot"(string), value="ik_pos/rot"(dict).
         # Returns:N/A
         '''
+        print(f"Running Build{self.dm.mdl_nm}.build()")
+        
+        # Phase 1 - Foundation
         root_input_grp, root_output_grp = self.cr_input_output_groups(True)
         self.add_outputs_matrix_attr(root_output_grp, ["ctrlCentre", "ctrlCOG"])
         self.group_ctrls(self.dm.fk_ctrl_list, "fk")
 
+        # Phase 2 - Module-specific
         self.wire_root_setup(root_input_grp, self.dm.fk_ctrl_list, self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         self.root_output_group_setup(self.dm.GLOBAL_SCALE_PLG, self.dm.BASE_MTX_PLG, self.dm.HOOK_MTX_PLG, self.dm.fk_ctrl_list[0], self.dm.fk_ctrl_list[1], self.dm.fk_ctrl_list[-1])
         
-        # # group the module
-        utils.group_module(module_name="root", unique_id=self.dm.unique_id, side=self.dm.side,
+        # Phase 3 - Finalising
+        self.group_module(module_name=self.dm.mdl_nm, unique_id=self.dm.unique_id, side=self.dm.side,
                            input_grp=root_input_grp, output_grp=root_output_grp,
                            ctrl_grp=f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
                            joint_grp=None,

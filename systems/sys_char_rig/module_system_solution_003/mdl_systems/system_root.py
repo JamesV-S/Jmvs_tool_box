@@ -20,8 +20,6 @@ importlib.reload(cr_ctrl)
 
 class SystemRoot:
     def __init__(self, data_manager):
-        print(f"SystemRoot -> data_manager = {data_manager}")
-
         '''
         Use type hint checking `variable:type = data` to be able to let VsCode 
         know about autocomplete for `ModuleDataManager` class so i can access 
@@ -32,6 +30,8 @@ class SystemRoot:
         '''
         
         self.dm:module_data_manager.ModuleDataManager = data_manager 
+        print("<- - ->")
+        print(f"SystemRoot -> dataa_manager = {data_manager}")
         
 
     # Phase 2 - Module-specific class functions in 'System[ModuleName]'

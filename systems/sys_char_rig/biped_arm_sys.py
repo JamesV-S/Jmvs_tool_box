@@ -161,7 +161,8 @@ class BipedArmSystem():
         # Group the controls!
         fk_ctrl_grp = self.group_ctrls(fk_ctrl_list, "fk")
         ik_ctrl_grp = self.group_ctrls(ik_ctrl_list, "ik")
-
+        
+        # Phase 2 - Module-specific class functions in 'System[ModuleName]'
         # cr skn joints
         skn_jnt_clav, skn_jnt_wrist = self.cr_jnt_skn_start_end(self.ik_pos_dict)
         
@@ -180,7 +181,7 @@ class BipedArmSystem():
         self.add_custom_input_attr(inputs_grp)
 
         # wire connections
-        self.wire_clav_armRt_setup(inputs_grp, [ik_ctrl_list[0], ik_ctrl_list[1]], skn_jnt_clav, self.ik_pos_dict, self.ik_rot_dict)
+        self.wire_hook_clav_armRt_setup(inputs_grp, [ik_ctrl_list[0], ik_ctrl_list[1]], skn_jnt_clav, self.ik_pos_dict, self.ik_rot_dict)
         
         blend_armRoot_node = self.wire_fk_ctrl_setup(inputs_grp, ik_ctrl_list[1], fk_ctrl_list, self.fk_pos_dict, self.fk_rot_dict)
         logic_jnt_list = self.cr_logic_rig_joints(fk_ctrl_list, self.fk_pos_dict, self.fk_rot_dict)
@@ -474,7 +475,7 @@ class BipedArmSystem():
         cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
 
 
-    def wire_clav_armRt_setup(self, inputs_grp, ctrl_list, skn_jnt_clav, ik_pos_dict, ik_rot_dict):
+    def wire_hook_clav_armRt_setup(self, inputs_grp, ctrl_list, skn_jnt_clav, ik_pos_dict, ik_rot_dict):
         '''
         # Description:
             The 'clavicle control' drives the 'clavicle skn_joint' > which drives 
@@ -526,75 +527,75 @@ class BipedArmSystem():
         utils.connect_attr(f"{mm_ctrl_armRoot}{utils.Plg.mtx_sum_plg}", f"{ctrl_armRt}{utils.Plg.opm_plg}")
 
     
-    def wire_fk_ctrl_setup(self, inputs_grp, armRt_ctrl, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
+    def wire_fk_ctrl_setup(self, inputs_grp, limbRt_ctrl, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
         '''
         # Description:
             FK logic setup:
-                - cr 3 logic rig joints. 
-                - base & armRt to multMatrix each > blendMatrix.
+                - need corresponding fk joints (jnt_logic or jnt_fk -> depends on the module setup)
+                - base & limbRt to multMatrix each > blendMatrix.
                 - setup the fk controls with MM method. 
-                - connect ctrl rotates to rig joints rotates
+                - connect ctrl rotates to fk joints rotates (direct or constraint -> depends on the module setup)
+                Temporary loactors are used to position the fk control's with 
+                rotation data, using the locators local space matrix as an offset.
+                After the data is passed to the control correctly, temp locs r deleted.  
         # Attributes:
             input_grp (string): Group for input data for this module.
             fk_ctrl_list (list): Contains 3 fk control names.
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
             fk_rot_dict (dict): key=Name of fk controls, value=Rotational data.
         # Returns:
-            BM_shld (utility): Arm root ctrl's (ik_shoulder) matrix follow. 
+            BM_limb (utility): Limb root ctrl's matrix follow. 
         '''
-        # Add follow attr to fk shoulder ctrl
+        # Add follow attr to fk 'first parent' ctrl.
+        follow_attr = f"Follow_{self.mdl_nm}_Rot"
         utils.add_locked_attrib(fk_ctrl_list[0], ["Follows"])
-        utils.add_float_attrib(fk_ctrl_list[0], ["Follow_Arm_Rot"], [0.0, 1.0], True)
-        cmds.setAttr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", 1)
-        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
-        MM_shldBase = f"MM_{self.mdl_nm}_fkShld_Base_{self.unique_id}_{self.side}"
-        MM_shldRtCtrl = f"MM_{self.mdl_nm}_fkShld_rootCtrl_{self.unique_id}_{self.side}"
-        BM_shld = f"BM_{self.mdl_nm}__fkShld_blend_{self.unique_id}_{self.side}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_shldBase)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_shldRtCtrl)
-        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_shld, 
+        utils.add_float_attrib(fk_ctrl_list[0], [follow_attr], [0.0, 1.0], True)
+        cmds.setAttr(f"{fk_ctrl_list[0]}.{follow_attr}", 1)
+        # cr blendMatrix setup to feed to fk ctrl/rigJnt 'first parent'. 
+        MM_limbBase = f"MM_{self.mdl_nm}_fklimb_Base_{self.unique_id}_{self.side}"
+        MM_limbRtCtrl = f"MM_{self.mdl_nm}_fklimb_rootCtrl_{self.unique_id}_{self.side}"
+        BM_limb = f"BM_{self.mdl_nm}__fklimb_blend_{self.unique_id}_{self.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_limbBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_limbRtCtrl)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_limb, 
                                     {"target[0].scaleWeight":0, 
                                      "target[0].shearWeight":0})
         
-        # Shoulder
-            # wire to the armRtBAse -> It's going into the fk shoulder, so need it's pos(fk shoulder). 
-        # utils.set_matrix(list(self.fk_pos_dict.values())[0], f"{MM_wristBase}{utils.Plg.mtx_ins[0]}")
-        utils.set_transformation_matrix(list(fk_pos_dict.values())[0], list(fk_rot_dict.values())[0], f"{MM_shldBase}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_shldBase}{utils.Plg.mtx_ins[1]}")
-            # MM_shldRtCtrl
-        utils.set_transformation_matrix([0.0, 0.0, 0.0], list(fk_rot_dict.values())[0], f"{MM_shldRtCtrl}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(f"{armRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{MM_shldRtCtrl}{utils.Plg.mtx_ins[1]}")
-            # BM_shld
-        utils.connect_attr(f"{MM_shldBase}{utils.Plg.mtx_sum_plg}", f"{BM_shld}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{MM_shldRtCtrl}{utils.Plg.mtx_sum_plg}", f"{BM_shld}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{fk_ctrl_list[0]}.Follow_Arm_Rot", f"{BM_shld}.target[0].rotateWeight")
-        utils.connect_attr(f"{BM_shld}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
+        # wire to the limbRtBAse -> It's going into the fk 'first parent', so need it's pos(fk 'first parent'). 
+        utils.set_transformation_matrix(list(fk_pos_dict.values())[0], list(fk_rot_dict.values())[0], f"{MM_limbBase}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_limbBase}{utils.Plg.mtx_ins[1]}")
+            # MM_limbRtCtrl
+        utils.set_transformation_matrix([0.0, 0.0, 0.0], list(fk_rot_dict.values())[0], f"{MM_limbRtCtrl}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{limbRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{MM_limbRtCtrl}{utils.Plg.mtx_ins[1]}")
+            # BM_limb
+        utils.connect_attr(f"{MM_limbBase}{utils.Plg.mtx_sum_plg}", f"{BM_limb}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_limbRtCtrl}{utils.Plg.mtx_sum_plg}", f"{BM_limb}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{fk_ctrl_list[0]}.{follow_attr}", f"{BM_limb}.target[0].rotateWeight")
+        utils.connect_attr(f"{BM_limb}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
         # create temp locators
         temp_loc_ls = []
         for (key, pos_val), (key, rot_val) in zip(fk_pos_dict.items(), fk_rot_dict.items()):
-            loc_name = key.replace('ctrl_fk_', 'loc_temp_')# "ctrl_fk_bipedArm_shoulder_0_L"
+            loc_name = key.replace('ctrl_fk_', 'loc_temp_')# "ctrl_fk_bipedArm_'first parent'_0_L"
             temp_loc_ls.append(loc_name)
             cmds.spaceLocator(n=loc_name)
             cmds.xform(loc_name, t=pos_val, ws=1)
             cmds.xform(loc_name, rotation=rot_val, ws=1)
-            
-        print(temp_loc_ls)
         try:
             for i in range(len(temp_loc_ls)):
                 cmds.parent(temp_loc_ls[i+1],temp_loc_ls[i])
         except IndexError:
             pass
-        # cmds.select(cl=1)
-
-        # elbow
-        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[0], fk_ctrl_list[1], temp_loc_ls[1])
-        # wrist
-        utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[1], fk_ctrl_list[2], temp_loc_ls[2])
         
+        # iterate through the fk ctrl list with rule: 
+            # > Skip first iteration (first fk ctrl is done above with limbRt ctrl)
+            # > fk_source_ctrl[x-1], fk_target_ctrl[x], fk_local_object[x]
+        for x in range(1, len(fk_ctrl_list)):
+            utils.matrix_control_FowardKinematic_setup(fk_ctrl_list[x-1], fk_ctrl_list[x], temp_loc_ls[x])
+
         # delete the locators
         cmds.delete(temp_loc_ls[0])
         
-        return BM_shld
+        return BM_limb
 
 
     def cr_logic_rig_joints(self, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
@@ -655,8 +656,8 @@ class BipedArmSystem():
     def wire_fk_ctrl_stretch_setup(self, fk_ctrl_list, fk_pos_dict):
         '''
         # Description:
-            - stretches the fk ctrl's by lengthening the control in front. So to 
-            stretch the shoulder, the elbow is translated away.
+            - stretches the fk ctrl's by translating the control in front. So to 
+            "stretch" fk_0, the fk_1 is translated away.
             - This also acts as the default translation position of the fk ctrls. 
         # Attributes:
             fk_ctrl_list (list): Contains 3 fk control names.
@@ -696,8 +697,6 @@ class BipedArmSystem():
         utils.connect_attr(f"{fm_elb_stretch_mult}{utils.Plg.out_flt}", f"{fm_elb_stretch_sub}{utils.Plg.flt_A}")
         utils.connect_attr(f"{fm_elb_stretch_sub}{utils.Plg.out_flt}", f"{fk_ctrl_list[2]}.translate{self.prim_axis}")
         
-        return 
-
 
     def wire_fk_ctrl_to_logic_joint(self, blend_armRoot_node, fk_ctrl_list, logic_jnt_list):
         '''
@@ -1285,11 +1284,10 @@ class BipedArmSystem():
         # > shaper_lower.opm
         bm_shaper_lower = f"BM_{shaper_lower}"
         am_shaper_lower = f"AM_{shaper_lower}"
-        utils.cr_node_if_not_exists(0, 'blendMatrix', bm_shaper_lower, 
-                                    {"target[0].scaleWeight":0,
-                                     "target[0].translateWeight":0.5,
-                                     "target[0].rotateWeight":0, 
-                                     "target[0].shearWeight":0})
+        utils.cr_node_if_not_exists(0, 'blendMatrix', bm_shaper_lower)
+        for blend_attr in ["scaleWeight", "rotateWeight", "shearWeight"]:
+            cmds.setAttr(f"{bm_shaper_lower}.target[0].{blend_attr}", 0)
+        cmds.setAttr(f"{bm_shaper_lower}.target[0].translateWeight", 0.5)
         utils.cr_node_if_not_exists(0, 'aimMatrix', am_shaper_lower)
             # ik_shoulder.opm > bm_shaper_lower.inputMatrix plug
         utils.connect_attr(f"{shaper_main}{utils.Plg.wld_mtx_plg}", f"{bm_shaper_lower}{utils.Plg.inp_mtx_plg}")

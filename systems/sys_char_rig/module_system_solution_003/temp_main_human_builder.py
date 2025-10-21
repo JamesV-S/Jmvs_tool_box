@@ -2,9 +2,9 @@
 ''' Without the Registry (single module build at a time)'''
 '''
 import importlib
-from Jmvs_tool_box.systems.sys_char_rig.module_system_solution_003 import temp_main_builder
+from Jmvs_tool_box.systems.sys_char_rig.module_system_solution_003 import temp_main_human_builder
 
-importlib.reload(temp_main_builder)
+importlib.reload(temp_main_human_builder)
 '''
 
 # import the right classes
@@ -12,10 +12,14 @@ import importlib
 
 # from data_managers import (module_data_manager)
 from systems.sys_char_rig.module_system_solution_003.data_managers import (module_data_manager)
-from systems.sys_char_rig.module_system_solution_003.builders import (build_root)
+from systems.sys_char_rig.module_system_solution_003.builders import (
+    build_root,
+    build_spine 
+    )
 
 importlib.reload(module_data_manager)
 importlib.reload(build_root)
+importlib.reload(build_spine)
 
 # raw module-specific data
 root_data = {
@@ -136,20 +140,21 @@ spine_data = {
 ''' 
 1 time data processing. 
 '''
-root_data_manager = module_data_manager.ModuleDataManager("temp_main", root_data)
-# spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
+# root_data_manager = module_data_manager.ModuleDataManager(root_data)
+# root_build = build_root.BuildRoot(root_data_manager)
 
-root_build = build_root.BuildRoot(root_data_manager)
-# spine_build = BuildSpine(root_data_manager)
+# # Manual build order
+# '''
+# `.build()` is a class function from the Build[ModuleName] class. 
+# # Root first
+# # Spine Second
+# '''
+# root_build.build()
 
-# Manual build order
-'''
-`.build()` is a class function from the Build[ModuleName] class. 
-# Root first
-# Spine Second
-'''
-root_build.build()
-# spine_build.build()
+# spine mdl
+spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
+spine_build = build_spine.BuildSpine(spine_data_manager)
+spine_build.build()
 
 
 

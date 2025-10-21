@@ -6,8 +6,10 @@ Inheritance?
 Multiple classes?
     - No
 Descrption:
-    Purpose - To orchestrate the complete module-specific build process.  
-    Responsibilty - Needs to coordinate the build sequence and method calls for
-                    module-specific classes.  
+    Purpose - To process & validate the raw module-spcific data passed to it 
+                into clean, accessible properties to be accessed by all other 
+                classes in this workflow.   
+    Responsibilty - Data isolation from the dictionary, validate the keys.
+    * Each module gets its own instance to prevent data leaks.
 
 

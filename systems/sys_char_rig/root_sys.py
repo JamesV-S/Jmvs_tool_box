@@ -49,30 +49,23 @@ class root_system():
         BASE_MTX_PLG = f"{external_plg_dict['base_plg_grp']}.{external_plg_dict['base_plg_atr']}"
         HOOK_MTX_PLG = f"{external_plg_dict['hook_plg_grp']}.{external_plg_dict['hook_plg_atr']}"
         self.global_scale_attr = external_plg_dict['global_scale_attr']
-
-        print(f"module_name = {module_name}")
-        print(f"external_plg_dict = {external_plg_dict}")
-        print(f"skeleton_dict = {skeleton_dict}")
-        print(f"fk_dict = {fk_dict}")
-        print(f"ik_dict = {ik_dict}")
-
         #----------------------------------------------------------------------
-        # self.cr_root_ctrls("fk")
-        # #----------------------------------------------------------------------
+        self.cr_root_ctrls("fk")
+        #----------------------------------------------------------------------
 
-        # self.root_input_grp, self.root_output_grp = self.cr_input_output_groups(True)
-        # self.add_outputs_matrix_attr(self.root_output_grp, ["ctrlCentre", "ctrlCOG"])
-        # self.group_ctrls(fk_ctrl_list, "fk")
+        self.root_input_grp, self.root_output_grp = self.cr_input_output_groups(True)
+        self.add_outputs_matrix_attr(self.root_output_grp, ["ctrlCentre", "ctrlCOG"])
+        self.group_ctrls(fk_ctrl_list, "fk")
 
-        # self.wire_root_setup(fk_ctrl_list, skeleton_pos_dict, skeleton_rot_dict)
-        # self.root_output_group_setup(GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG, fk_ctrl_list[0], fk_ctrl_list[1], fk_ctrl_list[-1])
+        self.wire_root_setup(fk_ctrl_list, skeleton_pos_dict, skeleton_rot_dict)
+        self.output_group_setup(GLOBAL_SCALE_PLG, BASE_MTX_PLG, HOOK_MTX_PLG, fk_ctrl_list[0], fk_ctrl_list[1], fk_ctrl_list[-1])
         
-        # # # group the module
-        # utils.group_module(module_name="root", unique_id=self.unique_id, side=self.side,
-        #                    input_grp=self.root_input_grp, output_grp=self.root_output_grp,
-        #                    ctrl_grp=f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}", 
-        #                    joint_grp=None,
-        #                    logic_grp=None)
+        # # group the module
+        utils.group_module(module_name="root", unique_id=self.unique_id, side=self.side,
+                           input_grp=self.root_input_grp, output_grp=self.root_output_grp,
+                           ctrl_grp=f"grp_ctrls_{self.mdl_nm}_{self.unique_id}_{self.side}", 
+                           joint_grp=None,
+                           logic_grp=None)
 
 
      
@@ -225,7 +218,7 @@ class root_system():
         return cog_offset_list
     
     
-    def root_output_group_setup(self, global_scale_plg, base_mtx_plg, hook_mtx_plg, ctrl_root, ctrl_centre, ctrl_cog):
+    def output_group_setup(self, global_scale_plg, base_mtx_plg, hook_mtx_plg, ctrl_root, ctrl_centre, ctrl_cog):
         '''
         # Description:
             Connects the base and hook attributes on this module's output group 
@@ -308,4 +301,4 @@ external_plg_dict = {
     "hook_plg_atr":"mtx_root_ctrlCOG"
     }
 
-# root_system("root", external_plg_dict, skeleton_dict, fk_dict, ik_dict, "Y")
+root_system("root", external_plg_dict, skeleton_dict, fk_dict, ik_dict, "Y")
