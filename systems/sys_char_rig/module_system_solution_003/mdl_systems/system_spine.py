@@ -545,6 +545,16 @@ class SystemSpine:
         jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.dm.mdl_nm}_{j}_{self.dm.unique_id}_{self.dm.side}" for j in skeleton_pos_dict.keys()]
         num_squash_jnts = len(skeleton_pos_dict.keys())-1
         
+        print(f"jnt_skeleton_ls = `{jnt_skeleton_ls}`")
+        print(f"num_squash_jnts = `{num_squash_jnts}`")
+
+        '''
+        correct: 
+
+        this: 
+
+        '''
+
         # curve skinning method: skin the top & bottom ik skn joints to curve skin 
         # the middle & hold logic joints create inversmatrix, > plug middle MM into inversmatrix
         # > plug inversematrix into bind bind pre-matrix on the 2nd skincluster!
@@ -606,6 +616,7 @@ class SystemSpine:
             for x in range(1, len(skeleton_pos_dict.keys())):  
                 # connect BC_spine_StretchOutput to skeleton translatePrimaryAxis. 
                 utils.connect_attr(f"{BC_stretch_output}{utils.Plg.out_letter[0]}", f"{jnt_skeleton_ls[x]}.translate{self.dm.prim_axis}")
+        
         # ---------------
         # ik spline setup w/ advanced twist on ik handle
         print(f"ikHandle: jnt_pref = `{jnt_pref}`, jnt_skeleton_ls[-1] = {jnt_skeleton_ls[-1]}, jnt_skeleton_ls[0] = {jnt_skeleton_ls[0]},")
@@ -617,29 +628,47 @@ class SystemSpine:
         cmds.setAttr(  f"{hdl_spine_name}.dTwistControlEnable", 1 )
         cmds.setAttr( f"{hdl_spine_name}.dWorldUpType", 4 )              
         
-        positive_y = 2
-        negative_y = 3
+        
+        if self.dm.prim_axis == "X":
+            if backwards:
+                dForwardAxis = 1 # negativeX
+            else:
+                dForwardAxis = 0 # positiveX
+            dWorldUpAxis = 0 # PositiveY
+            dWorldUpVectorX = 0
+            dWorldUpVectorY = 1
+            dWorldUpVectorZ = 0
+
+        elif self.dm.prim_axis == "Y":
+            if backwards:
+                dForwardAxis = 3 # negativeY
+            else:
+                dForwardAxis = 2 # positiveY
+            dWorldUpAxis = 3 # PositiveZ
+            dWorldUpVectorX = 0
+            dWorldUpVectorY = 0
+            dWorldUpVectorZ = 1
+
+        cmds.setAttr(f"{hdl_spine_name}.dForwardAxis", dForwardAxis)
+        cmds.setAttr(f"{hdl_spine_name}.dWorldUpAxis", dWorldUpAxis )
+        # Xvals
+        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorX", dWorldUpVectorX)
+        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndX", dWorldUpVectorX)
+        # Yvals
+        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorY", dWorldUpVectorY)
+        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndY", dWorldUpVectorY)
+        # Zvals
+        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorZ", dWorldUpVectorZ)
+        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndZ", dWorldUpVectorZ)
+
         if backwards:
-            cmds.setAttr(f"{hdl_spine_name}.dForwardAxis", negative_y)
             # Set the 'World Up Object' to the controller the is driving the first joint of the chain. (ctrl_ik_pelvis)
             utils.connect_attr(f"{ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrix")
             utils.connect_attr(f"{ik_ctrl_ls[0]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
         else:
-            cmds.setAttr(f"{hdl_spine_name}.dForwardAxis", positive_y)
             utils.connect_attr(f"{ik_ctrl_ls[0]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrix")
             utils.connect_attr(f"{ik_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{hdl_spine_name}.dWorldUpMatrixEnd")
-       
-        cmds.setAttr(f"{hdl_spine_name}.dWorldUpAxis", 3 ) # neg x
-        # Xvals
-        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorX", 0)
-        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndX", 0)
-        # Yvals
-        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorY", 0)
-        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndY", 0)
-        # Zvals
-        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorZ", 1)
-        cmds.setAttr(f"{hdl_spine_name}.dWorldUpVectorEndZ", 1)
-
+                  
 
     def wire_ik_volume_setup(self, jnt_pref, skeleton_pos_dict, input_grp, cv_info_node, fm_global_curve, ik_ctrl_ls):
         '''

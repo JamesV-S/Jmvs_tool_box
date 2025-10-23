@@ -76,8 +76,8 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
 
         # CTRL connections for the spine setup!
         self.wire_spine_ctrls(input_grp, self.dm.fk_ctrl_list, inv_ctrl_ls, self.dm.ik_ctrl_list)
-        # Logic setup (joints and hdl_spine_names)
         
+        # Logic setup (joints and hdl_spine_names)
         logic_grp, fk_logic_ls, inv_logic_ls, ik_logic_ls, jnt_mid_hold = self.cr_logic_elements(self.dm.fk_pos_dict, self.dm.fk_rot_dict, self.dm.ik_pos_dict, self.dm.ik_rot_dict, 
                                                                                                                           [strFw_jnt_chain, nonstrFw_jnt_chain], [strBw_jnt_chain, nonstrBw_jnt_chain],
                                                                                                                         [strRig_jnt_chain, nonStrRig_jnt_chain])
@@ -88,7 +88,7 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
         cv_info_FWnode, fm_global_FWnode = self.wire_ik_curve_setup("StrFw", logic_FWcurve, input_grp)
         cv_info_BWnode, fm_global_BWnode = self.wire_ik_curve_setup("StrBw", logic_BWcurve, input_grp)
         
-        # control to logic setup
+        # # control to logic setup
         self.wire_ctrl_to_jnt_logic(self.dm.fk_ctrl_list, inv_ctrl_ls, self.dm.ik_ctrl_list, 
                                     fk_logic_ls, inv_logic_ls, ik_logic_ls)
         self.wire_ik_bott_top_logic_to_skn('skn', self.dm.skel_pos_dict, ik_logic_ls, self.dm.ik_ctrl_list)

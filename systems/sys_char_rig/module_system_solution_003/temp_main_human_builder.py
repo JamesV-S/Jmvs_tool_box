@@ -26,7 +26,7 @@ root_data = {
     "module_name":"root",
     "external_plg_dict": {
         "global_scale_grp":"grp_Outputs_root_0_M",
-        "global_scale_attr":"globalScale",
+        "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
         "base_plg_atr":"mtx_root_ctrlCentre",
         "hook_plg_grp":"grp_Outputs_root_0_M",
@@ -77,7 +77,7 @@ spine_data = {
     "module_name":"spine",
     "external_plg_dict": {
         "global_scale_grp":"grp_Outputs_root_0_M",
-        "global_scale_attr":"globalScale",
+        "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
         "base_plg_atr":"mtx_root_ctrlCentre",
         "hook_plg_grp":"grp_Outputs_root_0_M", 
@@ -102,9 +102,7 @@ spine_data = {
             'spine4' : [0.0, 0.0, 0.0], 
             'spine5' : [0.0, 0.0, 0.0], 
             'spine6' : [0.0, 0.0, 0.0], 
-            'spine7' : [0.0, 0.0, 0.0], 
-            'spine8' : [0.0, 0.0, 0.0], 
-            'spine9' : [0.0, 0.0, 0.0]
+            'spine7' : [0.0, 0.0, 0.0]
             }
         },
     "fk_dict":{
@@ -132,24 +130,24 @@ spine_data = {
             }
         },
     "axis_dict":{
-        "prim":"X", "scnd":"Y", "wld":"Z"
+        "prim":"Y", "scnd":"X", "wld":"Z"
         }
 }
 
 # Isolated module-specific data flow
 ''' 
 1 time data processing. 
-'''
-# root_data_manager = module_data_manager.ModuleDataManager(root_data)
-# root_build = build_root.BuildRoot(root_data_manager)
+# '''
+root_data_manager = module_data_manager.ModuleDataManager(root_data)
+root_build = build_root.BuildRoot(root_data_manager)
 
-# # Manual build order
-# '''
-# `.build()` is a class function from the Build[ModuleName] class. 
-# # Root first
-# # Spine Second
-# '''
-# root_build.build()
+# Manual build order
+'''
+`.build()` is a class function from the Build[ModuleName] class. 
+# Root first
+# Spine Second
+'''
+root_build.build()
 
 # spine mdl
 spine_data_manager = module_data_manager.ModuleDataManager(spine_data)

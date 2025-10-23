@@ -76,8 +76,8 @@ class SpineSystem():
         self.group_ctrls(ik_ctrl_ls, "ik")
         self.group_ctrls(inv_ctrl_ls, "inv")
         
+        # Phase 2 - Module-specific class functions in 'System[ModuleName]'
         #----------------------------------------------------------------------
-        # create skn the joints temporarily for testing
         skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.ik_pos_dict)
         #----------------------------------------------------------------------
         
@@ -103,7 +103,7 @@ class SpineSystem():
         self.logic_grp, self.fk_logic_ls, self.inv_logic_ls, self.ik_logic_ls, self.jnt_mid_hold = self.cr_logic_elements(self.fk_pos_dict, self.fk_rot_dict, self.ik_pos_dict, self.ik_rot_dict, 
                                                                                                                           [strFw_jnt_chain, nonstrFw_jnt_chain], [strBw_jnt_chain, nonstrBw_jnt_chain],
                                                                                                                         [strRig_jnt_chain, nonStrRig_jnt_chain])
-        # curve creation
+        # # curve creation
         logic_FWcurve = self.cr_logic_curve("StrFw", skeleton_pos_dict)
         logic_BWcurve = self.cr_logic_curve("StrBw", skeleton_pos_dict, True)
         # global curve ik setup
@@ -791,6 +791,10 @@ class SpineSystem():
         jnt_skeleton_ls = [f"jnt_{jnt_pref}_{self.mdl_nm}_{j}_{self.unique_id}_{self.side}" for j in skeleton_pos_dict.keys()]
         num_squash_jnts = len(skeleton_pos_dict.keys())-1
         
+        print(f"jnt_skeleton_ls = `{jnt_skeleton_ls}`")
+        print(f"num_squash_jnts = `{num_squash_jnts}`")
+
+
         # curve skinning method: skin the top & bottom ik skn joints to curve skin 
         # the middle & hold logic joints create inversmatrix, > plug middle MM into inversmatrix
         # > plug inversematrix into bind bind pre-matrix on the 2nd skincluster!
@@ -1093,9 +1097,7 @@ skeleton_dict = {
         'spine4' : [0.0, 0.0, 0.0], 
         'spine5' : [0.0, 0.0, 0.0], 
         'spine6' : [0.0, 0.0, 0.0], 
-        'spine7' : [0.0, 0.0, 0.0], 
-        'spine8' : [0.0, 0.0, 0.0], 
-        'spine9' : [0.0, 0.0, 0.0]
+        'spine7' : [0.0, 0.0, 0.0]
     } 
     }
 
@@ -1128,69 +1130,69 @@ ik_spine_dict = {
         }
     }
 
-# ------
-skeleton_dict_002 = {
-    "skel_pos":{
-        'spine0': [0.0, 149.99404907226562, 0.0], 
-        'spine1': [0.0, 163.67609956253224, 0.5505454896913743], 
-        'spine2': [0.0, 176.51040956536684, 0.47938506129239655], 
-        'spine3': [0.0, 188.63961008683742, -0.2503962985531877], 
-        'spine4': [0.0, 200.24069727159255, -1.6490033326717328], 
-        'spine5': [0.0, 212.28094266250034, -3.112293946922094], 
-        'spine6': [0.0, 226.51790858442743, -3.421781291403731], 
-        'spine7': [0.0, 244.74351501464844, -1.3322676420211792]
-        },
-    "skel_rot":{
-        'spine0': [0.0, 0.0, 0.0], 
-        'spine1': [0.0, 0.0, 0.0], 
-        'spine2': [0.0, 0.0, 0.0], 
-        'spine3': [0.0, 0.0, 0.0], 
-        'spine4': [0.0, 0.0, 0.0], 
-        'spine5': [0.0, 0.0, 0.0], 
-        'spine6': [0.0, 0.0, 0.0], 
-        'spine7': [0.0, 0.0, 0.0]
-        }
-    }
-'''
-"skel_rot":{
-        'spine0': [0.0, 0.0, 0.0], 
-        'spine1': [-90.0, -1.0642156226575015, 90.0], 
-        'spine2': [-90.0, 1.8129130531688165, 90.0], 
-        'spine3': [-90.0, 5.17746565181425, 90.0], 
-        'spine4': [-90.0, 8.016548074258269, 90.0], 
-        'spine5': [-90.0, 4.869653596501576, 90.0], 
-        'spine6': [-90.0, -2.4527863792809406, 90.0], 
-        'spine7': [-90.0, -10.089238271081271, 90.0]
-        }
-'''
-''' ---These outputs will be determined by Char_Layout tool! 
-        (place joints, choose num of ctrls, position ctrls, shape ctrls)--- '''
-# I want this to be changable (3 by default)
-fk_spine_dict_002 = {
-    "fk_pos":{
-        'ctrl_fk_spine_spine0_0_M': [0.0, 149.99404907226562, 0.0], 
-        'ctrl_fk_spine_spine1_0_M': [0.0, 176.51040956536684, 0.47938506129239655], 
-        'ctrl_fk_spine_spine2_0_M': [0.0, 212.28094266250034, -3.112293946922094]
-        },
-    "fk_rot":{
-        'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_fk_spine_spine1_0_M': [-90.0, 1.8129130531688165, 90.0], 
-        'ctrl_fk_spine_spine2_0_M': [-90.0, 4.869653596501576, 90.0]
-        }
-    }
-# Always 3 ctrls!
-ik_spine_dict_002 = {
-    "ik_pos":{
-        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 149.99404907226562, 0.0], 
-        'ctrl_ik_spine_spine_middle_0_M': [0.0, 176.51040956536684, 0.47938506129239655], 
-        'ctrl_ik_spine_spine_top_0_M': [0.0, 244.74351501464844, -1.3322676420211792]
-        },
-    "ik_rot":{
-        'ctrl_ik_spine_spine_bottom_0_M': [0.0, 0.0, 0.0], 
-        'ctrl_ik_spine_spine_middle_0_M': [-90.0, 1.8129130531688165, 90.0], 
-        'ctrl_ik_spine_spine_top_0_M': [-90.0, -10.089238271081271, 90.0]
-        }
-    }
+# # ------
+# skeleton_dict_002 = {
+#     "skel_pos":{
+#         'spine0': [0.0, 149.99404907226562, 0.0], 
+#         'spine1': [0.0, 163.67609956253224, 0.5505454896913743], 
+#         'spine2': [0.0, 176.51040956536684, 0.47938506129239655], 
+#         'spine3': [0.0, 188.63961008683742, -0.2503962985531877], 
+#         'spine4': [0.0, 200.24069727159255, -1.6490033326717328], 
+#         'spine5': [0.0, 212.28094266250034, -3.112293946922094], 
+#         'spine6': [0.0, 226.51790858442743, -3.421781291403731], 
+#         'spine7': [0.0, 244.74351501464844, -1.3322676420211792]
+#         },
+#     "skel_rot":{
+#         'spine0': [0.0, 0.0, 0.0], 
+#         'spine1': [0.0, 0.0, 0.0], 
+#         'spine2': [0.0, 0.0, 0.0], 
+#         'spine3': [0.0, 0.0, 0.0], 
+#         'spine4': [0.0, 0.0, 0.0], 
+#         'spine5': [0.0, 0.0, 0.0], 
+#         'spine6': [0.0, 0.0, 0.0], 
+#         'spine7': [0.0, 0.0, 0.0]
+#         }
+#     }
+# '''
+# "skel_rot":{
+#         'spine0': [0.0, 0.0, 0.0], 
+#         'spine1': [-90.0, -1.0642156226575015, 90.0], 
+#         'spine2': [-90.0, 1.8129130531688165, 90.0], 
+#         'spine3': [-90.0, 5.17746565181425, 90.0], 
+#         'spine4': [-90.0, 8.016548074258269, 90.0], 
+#         'spine5': [-90.0, 4.869653596501576, 90.0], 
+#         'spine6': [-90.0, -2.4527863792809406, 90.0], 
+#         'spine7': [-90.0, -10.089238271081271, 90.0]
+#         }
+# '''
+# ''' ---These outputs will be determined by Char_Layout tool! 
+#         (place joints, choose num of ctrls, position ctrls, shape ctrls)--- '''
+# # I want this to be changable (3 by default)
+# fk_spine_dict_002 = {
+#     "fk_pos":{
+#         'ctrl_fk_spine_spine0_0_M': [0.0, 149.99404907226562, 0.0], 
+#         'ctrl_fk_spine_spine1_0_M': [0.0, 176.51040956536684, 0.47938506129239655], 
+#         'ctrl_fk_spine_spine2_0_M': [0.0, 212.28094266250034, -3.112293946922094]
+#         },
+#     "fk_rot":{
+#         'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0], 
+#         'ctrl_fk_spine_spine1_0_M': [-90.0, 1.8129130531688165, 90.0], 
+#         'ctrl_fk_spine_spine2_0_M': [-90.0, 4.869653596501576, 90.0]
+#         }
+#     }
+# # Always 3 ctrls!
+# ik_spine_dict_002 = {
+#     "ik_pos":{
+#         'ctrl_ik_spine_spine_bottom_0_M': [0.0, 149.99404907226562, 0.0], 
+#         'ctrl_ik_spine_spine_middle_0_M': [0.0, 176.51040956536684, 0.47938506129239655], 
+#         'ctrl_ik_spine_spine_top_0_M': [0.0, 244.74351501464844, -1.3322676420211792]
+#         },
+#     "ik_rot":{
+#         'ctrl_ik_spine_spine_bottom_0_M': [0.0, 0.0, 0.0], 
+#         'ctrl_ik_spine_spine_middle_0_M': [-90.0, 1.8129130531688165, 90.0], 
+#         'ctrl_ik_spine_spine_top_0_M': [-90.0, -10.089238271081271, 90.0]
+#         }
+#     }
 
 SpineSystem("spine", external_plg_dict, skeleton_dict, fk_spine_dict, ik_spine_dict, "Y")
 # SpineSystem("spine", external_plg_dict, skeleton_dict_002, fk_spine_dict_002, ik_spine_dict_002, "X")

@@ -28,7 +28,7 @@ root_data = {
     "module_name":"root",
     "external_plg_dict": {
         "global_scale_grp":"grp_Outputs_root_0_M",
-        "global_scale_attr":"globalScale",
+        "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
         "base_plg_atr":"mtx_root_ctrlCentre",
         "hook_plg_grp":"grp_Outputs_root_0_M",
@@ -79,7 +79,7 @@ spine_data = {
     "module_name":"spine",
     "external_plg_dict": {
         "global_scale_grp":"grp_Outputs_root_0_M",
-        "global_scale_attr":"globalScale",
+        "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
         "base_plg_atr":"mtx_root_ctrlCentre",
         "hook_plg_grp":"grp_Outputs_root_0_M", 
@@ -139,7 +139,7 @@ quadLeg_data = {
     "module_name":"quadLeg",
     "external_plg_dict": {
         "global_scale_grp":"grp_Outputs_root_0_M",
-        "global_scale_attr":"globalScale",
+        "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
         "base_plg_atr":"mtx_root_ctrlCentre",
         "hook_plg_grp":"grp_Outputs_spine_0_M", 
@@ -214,8 +214,8 @@ spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
 spine_build = build_spine.BuildSpine(spine_data_manager)
 spine_build.build()
 
-# quadLeg mdl
-quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
-quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
-quadLeg_build.build()
+# # quadLeg mdl
+# quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
+# quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
+# quadLeg_build.build()
 

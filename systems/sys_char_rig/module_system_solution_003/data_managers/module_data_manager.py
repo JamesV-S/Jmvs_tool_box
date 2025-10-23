@@ -56,11 +56,11 @@ class ModuleDataManager:
         self._skel_pos_num = len(self._skel_pos_dict.keys())
 
         # Plg data from 'external_plg_dict'.
-        self._GLOBAL_SCALE_PLG = f"{self._external_plg_dict['global_scale_grp']}.{self._external_plg_dict['global_scale_attr']}" # grp_Outputs_root_0_M.globalScale
+        self._GLOBAL_SCALE_PLG = f"{self._external_plg_dict['global_scale_grp']}.{self._external_plg_dict['global_scale_atr']}" # grp_Outputs_root_0_M.globalScale
         self._BASE_MTX_PLG = f"{self._external_plg_dict['base_plg_grp']}.{self._external_plg_dict['base_plg_atr']}" # grp_Outputs_root_0_M.ctrl_centre_mtx
         self._HOOK_MTX_PLG = f"{self._external_plg_dict['hook_plg_grp']}.{self._external_plg_dict['hook_plg_atr']}" # grp_Outputs_spine_0_M.ctrl_spine_top_mtx
         
-        self._global_scale_attr = self._external_plg_dict['global_scale_attr']
+        self._global_scale_attr = self._external_plg_dict['global_scale_atr']
 
 
     @property
