@@ -97,12 +97,12 @@ spine_data = {
             'spine7': [0.0, 72.63502366683598, 46.45413490035679]
             },
         "skel_rot":{
-            'spine0': [0.0, -88.81134184349034, 90.0], 
+            'spine0': [0.0, -91.18865815650966, -90.0], 
             'spine1': [0.0, -88.79861597717976, -90.0], 
             'spine2': [0.0, -86.11848885858963, -90.0], 
             'spine3': [0.0, -83.0782161077253, -90.0], 
             'spine4': [0.0, -80.52418794336602, -90.0], 
-            'spine5': [0.0, -100.58082102729126, 90.0], 
+            'spine5': [0.0, -79.41919280636799, -90.0], 
             'spine6': [0.0, -79.42944934192094, -90.0], 
             'spine7': [0.0, -79.42944934192093, -90.0]}
         },
@@ -113,9 +113,9 @@ spine_data = {
             'ctrl_fk_spine_spine2_0_M': [0.0, 76.86710737169409, 23.78384710808872]
             },
         "fk_rot":{
-            'ctrl_fk_spine_spine0_0_M': [0.0, -88.81134184349034, 90.0], 
+            'ctrl_fk_spine_spine0_0_M': [0.0, -91.18865815650966, -90.0], 
             'ctrl_fk_spine_spine1_0_M': [0.0, -86.11848885858963, -90.0], 
-            'ctrl_fk_spine_spine2_0_M': [0.0, -100.58082102729126, 90.0]
+            'ctrl_fk_spine_spine2_0_M': [0.0, -79.41919280636799, -90.0]
             }
         },
     "ik_dict":{
@@ -125,9 +125,9 @@ spine_data = {
             'ctrl_ik_spine_spine_top_0_M': [0.0, 72.63502366683598, 46.45413490035679]
             },
         "ik_rot":{
-            'ctrl_ik_spine_spine_bottom_0_M': [0.0, -88.81134184349034, 90.0], 
-            'ctrl_ik_spine_spine_middle_0_M': [4.17290486988409, -83.45439685986587, -90.00000000000168], 
-            'ctrl_ik_spine_spine_top_0_M': [-83.05738785592176, -79.75815644450279, -90.01607472073135]
+            'ctrl_ik_spine_spine_bottom_0_M': [0.0, -91.18865815650966, -90.0], 
+            'ctrl_ik_spine_spine_middle_0_M': [4.17290486988409, -83.45439685986587, -90.0], 
+            'ctrl_ik_spine_spine_top_0_M': [0.0, -79.42944934192093, -90.0] # [-83.05738785592176, -79.75815644450279, -90.01607472073135]
             }
         },
     "axis_dict":{
@@ -214,8 +214,8 @@ spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
 spine_build = build_spine.BuildSpine(spine_data_manager)
 spine_build.build()
 
-# # quadLeg mdl
-# quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
-# quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
-# quadLeg_build.build()
+# quadLeg mdl
+quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
+quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
+quadLeg_build.build()
 

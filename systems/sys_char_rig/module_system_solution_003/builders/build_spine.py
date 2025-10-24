@@ -23,7 +23,7 @@ importlib.reload(cr_ctrl)
 class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
     def __init__(self, data_manager):
         module_blueprint.ModuleBP.__init__(self, data_manager)
-        system_spine.SystemSpine.__init__(self, data_manager)
+        # system_spine.SystemSpine.__init__(self, data_manager)
         print(f"-------  -------  --------  -------")
         print(f"Declared Build{self.dm.mdl_nm}")
 
@@ -57,10 +57,7 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
         self.group_ctrls(self.dm.ik_ctrl_list, "ik")
         self.group_ctrls(inv_ctrl_ls, "inv")
 
-        # Phase 2 - Module-specific
-        skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.dm.ik_pos_dict)
-        
-        # cr StrFw_jnt / nonStrFw / StrBw_jnt / nonStrBw in this script.
+        # # cr StrFw_jnt / nonStrFw / StrBw_jnt / nonStrBw in this script.
         strFw_jnt_chain = self.cr_jnt_type_chain("StrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         nonstrFw_jnt_chain = self.cr_jnt_type_chain("nonStrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         strBw_jnt_chain = self.cr_jnt_type_chain("StrBw", self.dm.skel_pos_dict, self.dm.skel_rot_dict, True)
@@ -68,6 +65,10 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
         strRig_jnt_chain = self.cr_jnt_type_chain("StrRig", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         nonStrRig_jnt_chain = self.cr_jnt_type_chain("nonStrRig", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         skn_jnt_chain = self.cr_jnt_type_chain("skn", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+
+        # Phase 2 - Module-specific
+        skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.dm.ik_pos_dict)
+        
         # Temporarily cr skin_jnt chain!
         self.group_jnts_skn([skn_bott_name, skn_top_name], [skn_jnt_chain])
         

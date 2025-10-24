@@ -130,16 +130,21 @@ class ModuleBP:
         # reverse the positon data
         # need to figure out how I need to flip or minus the rotate values (for when they have just 0.0 or a value.)
         # That'll consist of flipping the primary axis & 
-        print(f"skeleton_rot_dict = {skeleton_rot_dict}")
-        rev_skel_pos = utils.reverse_pos_values_dict(skeleton_pos_dict)
-        rev_skel_rot = utils.reverse_rot_values_dict(skeleton_rot_dict)
+        
         for name in skeleton_pos_dict:
             jnt_nm = f"jnt_{pref}_{self.dm.mdl_nm}_{name}_{self.dm.unique_id}_{self.dm.side}"
             jnt_chain_ls.append(jnt_nm)
             cmds.joint(n=jnt_nm)
             if reverse_direction:
+                # reverse the rot pos dict 
+                print(f"skeleton_pos_dict = {skeleton_pos_dict}")
+                print(f"skeleton_rot_dict = {skeleton_rot_dict}")
+                rev_skel_pos = utils.reverse_values_dict(skeleton_pos_dict)
+                rev_skel_rot = utils.reverse_values_dict(skeleton_rot_dict)
+                print(f"rev_skel_pos = {rev_skel_pos}")
+                print(f"rev_skel_rot = {rev_skel_rot}")
                 cmds.xform(jnt_nm, translation=rev_skel_pos[name], worldSpace=True)
-                cmds.xform(jnt_nm, rotation=skeleton_rot_dict[name], worldSpace=True)
+                cmds.xform(jnt_nm, rotation=rev_skel_rot[name], worldSpace=True)
             else:
                 cmds.xform(jnt_nm, translation=skeleton_pos_dict[name], worldSpace=True)
                 cmds.xform(jnt_nm, rotation=skeleton_rot_dict[name], worldSpace=True)
@@ -147,8 +152,8 @@ class ModuleBP:
         utils.clean_opm(jnt_chain_ls[0])
 
         return jnt_chain_ls
-    
 
+    
     def wire_fk_ctrl_setup(self, inputs_grp, limbRt_ctrl, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
         '''
         # Description:
@@ -218,7 +223,6 @@ class ModuleBP:
         cmds.delete(temp_loc_ls[0])
         
         return BM_limb
-
 
 
     # Phase 3 - Finalising ( Phase 2 - Module-specific class functions in 'System[ModuleName]' )

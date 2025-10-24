@@ -661,46 +661,43 @@ def get_distance(name, start_pos, end_pos):
     return distance_value
 #------------------------------- DICTIONARY -----------------------------------
 # dict2 = {'x': 10, 'y': 20, 'z':30}
-
-def reverse_pos_values_dict(dictionary):
-    # get a list of the current keys, then reverse it.
-    value_list = [value for value in dictionary.values()]
-    value_list.reverse()
-    # cr new dictionary now
-    rev_dict = {key: values for key, values in zip(dictionary.keys(), value_list)}
-    print(f"rev_dict = {rev_dict}")
-    return rev_dict
-
-# def reverse_dict(dictionary):
-#     # get a list of the current keys, then reverse it.
-#     key_list = [value for value in dictionary.keys()]
-#     value_list = [value for value in dictionary.values()]
-#     key_list.reverse()
-#     value_list.reverse()
-#     # cr new dictionary now
-#     rev_dict = {key: values for key, values in zip(key_list, value_list)}
-#     print(f"rev_dict = {rev_dict}")
-#     return rev_dict
-# Result: {'z': 30, 'y': 20, 'x': 10}
-
-
 def reverse_dict(dictionary):
     keys_list = list(dictionary.keys())[::-1] # reversing values in dict!
     rev_pos_dict = {key: dictionary[key] for key in keys_list}
+    print(f"reverse_dict workin on {dictionary}")
     return rev_pos_dict
-# Result: {'z': 30, 'y': 20, 'x': 10}
+    # Result: {'z': 30, 'y': 20, 'x': 10}
+    
+def reverse_values_dict(dict):
+    print(f"reverse_values_dict WORKING ")
+    key_list = list(dict.keys())
+    print(f"keys_list = {key_list}")
+    val_list = list(dict.values())[::-1] # reversing values in dict!
+    rev_val_dict = {key: val for key, val in zip(key_list, val_list)}
+    return rev_val_dict
 
-def reverse_rot_values_dict(dictionary):
-    #reverse the joint order.
-    # joint_names = list(dictionary.keys())[::-1]
-    # print(joint_names)
-    rev_skel_rot = {}
-    for joint in dictionary.keys():
-        rot = dictionary[joint]
-        # negate Y-axis for reverse twist direction.
-        reversed_rot = [rot[0], -rot[1], rot[2]]
-        rev_skel_rot[joint] =reversed_rot
-    print(f"rev_skel_rot = {rev_skel_rot}")
+
+# def reverse_pos_values_dict(dictionary):
+#     # get a list of the current keys, then reverse it.
+#     value_list = [value for value in dictionary.values()]
+#     value_list.reverse()
+#     # cr new dictionary now
+#     rev_dict = {key: values for key, values in zip(dictionary.keys(), value_list)}
+#     return rev_dict
+
+
+# def reverse_rot_values_dict(dictionary):
+#     #reverse the joint order.
+#     # joint_names = list(dictionary.keys())[::-1]
+#     # print(joint_names)
+#     rev_skel_rot = {}
+#     for joint in dictionary.keys():
+#         rot = dictionary[joint]
+#         # negate Y-axis for reverse twist direction.
+#         reversed_rot = [rot[0], -rot[1], rot[2]]
+#         rev_skel_rot[joint] =reversed_rot
+#     print(f"rev_skel_rot = {rev_skel_rot}")
+
 
 #--------------------------------- COLOUR -------------------------------------
 def colour_object(obj, colour):
@@ -977,6 +974,93 @@ def set_pos_mtx(translation_ls, mtx_attr):
     cmds.setAttr(mtx_attr, *translation_matrix, type='matrix')
 
 
+def wire_ofs_mtxIn0_1_to_1(source_pos_rot_dicts_ls, target_pos_rot_dicts_ls, 
+                        src_index, tgt_index, target_mtx_name, set_matrix=True):
+    '''
+    # Description:
+        -Create 2 temporary locators, 1 each for source amd target transforms.
+        -Parents target to source (target becomes the child following). 
+        -Set's `Target Locator.matrix` to  `target_mtx_name.matrixIn[0]`
+        providing the transform offset so 'target' object us positioned 
+        where it should be. 
+    # Attributes:
+        source_pos_rot_dicts_ls (list): Contains two dictionaries for the source 'Pos' & 'Rot'
+        target_pos_rot_dicts_ls (list): Contains two dictionaries for the target 'Pos' & 'Rot'
+        src_index (list): Access specific source dict with Index (like `[-1]`).
+        tgt_index (list): Access specific target dict with Index.
+        target_mtx_name (string): Name of the MultMatrix to set matrixIn[0] to
+        set_matrix (bool): True = set the matrix on 'target_mtx_name' bode
+    # Returns:
+        tgt_loc_matrix (matrix list): 16 element matrix list. 
+    '''
+    # get the pos and rot dicts from arg list 'source_pos_rot_dicts_ls'
+    source_pos_dict = source_pos_rot_dicts_ls[0]
+    source_rot_dict = source_pos_rot_dicts_ls[-1]
+    # get the specific index with 'dict_index[0]'
+    source_pos_dict_index = dict(list(source_pos_dict.items())[src_index[0]::])
+    source_rot_dict_index = dict(list(source_rot_dict.items())[src_index[0]::])
+
+    target_pos_dict = target_pos_rot_dicts_ls[0]
+    target_rot_dict = target_pos_rot_dicts_ls[-1]
+    # get the specific index with 'dict_index'
+    target_pos_dict_index = dict(list(target_pos_dict.items())[tgt_index[0]::])
+    target_rot_dict_index = dict(list(target_rot_dict.items())[tgt_index[0]::])
+
+    # build the temp locators
+    src_tgt_temp_loc = []
+    for (src_key, src_pos_val), (_, src_rot_val), (tgt_key, tgt_pos_val), (_, tgt_rot_val) in zip(
+        source_pos_dict_index.items(), 
+        source_rot_dict_index.items(), 
+        target_pos_dict_index.items(), 
+        target_rot_dict_index.items()
+        ):
+        # source locator
+        src_loc_nm = f"loc_temp_{src_key}"
+        src_tgt_temp_loc.append(src_loc_nm)
+        cmds.spaceLocator(n=src_loc_nm)
+        cmds.xform(src_loc_nm, t=src_pos_val, ws=1)
+        cmds.xform(src_loc_nm, rotation=src_rot_val, ws=1)
+
+        tgt_loc_nm = f"loc_temp_{tgt_key}"
+        src_tgt_temp_loc.append(tgt_loc_nm)
+        cmds.spaceLocator(n=tgt_loc_nm)
+        cmds.xform(tgt_loc_nm, t=tgt_pos_val, ws=1)
+        cmds.xform(tgt_loc_nm, rotation=tgt_rot_val, ws=1)
+        
+    # parent target to source
+    cmds.parent(src_tgt_temp_loc[-1], src_tgt_temp_loc[0])
+    
+    # get matrix & set on the MM atr
+    tgt_loc_matrix = cmds.getAttr(f"{src_tgt_temp_loc[-1]}.matrix")
+    if set_matrix:
+        cmds.setAttr(f"{target_mtx_name}{Plg.mtx_ins[0]}", *tgt_loc_matrix, type="matrix")
+    
+    # delete the temp locs
+    cmds.delete(src_tgt_temp_loc[0])
+
+    return tgt_loc_matrix
+
+
+def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, fk_local_object):
+    '''
+    Description:
+        cr a MM node to wire the target ctrl to be matrix parented to the source.
+        While the target keeps all its transformations.
+    Arguments:
+        fk_source_ctrl (string): Parent control that will drive the target.
+        fk_target_ctrl (string): Control We want "parenting" to the source.
+        fk_local_object (string): Temporary a child object(usually locactor) that is where we want the target to be.
+    '''
+    MM_ctrl_fk = f"MM_{fk_target_ctrl}"
+    cr_node_if_not_exists(1, 'multMatrix', MM_ctrl_fk)
+    # get the local matrix so the object isn't connected. 
+    get_matrix = cmds.getAttr(f"{fk_local_object}.matrix")
+    cmds.setAttr(f"{MM_ctrl_fk}{Plg.mtx_ins[0]}", *get_matrix, type="matrix")    
+    connect_attr(f"{fk_source_ctrl}{Plg.wld_mtx_plg}", f"{MM_ctrl_fk}{Plg.mtx_ins[1]}")
+    connect_attr(f"{MM_ctrl_fk}{Plg.mtx_sum_plg}", f"{fk_target_ctrl}{Plg.opm_plg}")
+
+
+
 def matrix_to_trs(mtx):
     '''
     Explanation: Takes a flat matrix list and returns its list of translation values and
@@ -1072,23 +1156,6 @@ def mtxCon_no_ofs(driver, driven):
         return MM
 
 
-def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, fk_local_object):
-    '''
-    Description:
-        cr a MM node to wire the target ctrl to be matrix parented to the source.
-        While the target keeps all its transformations.
-    Arguments:
-        fk_source_ctrl (string): Parent control that will drive the target.
-        fk_target_ctrl (string): Control We want "parenting" to the source.
-        fk_local_object (string): Temporary a child object(usually locactor) that is where we want the target to be.
-    '''
-    MM_ctrl_fk = f"MM_{fk_target_ctrl}"
-    cr_node_if_not_exists(1, 'multMatrix', MM_ctrl_fk)
-    # get the local matrix so the object isn't connected. 
-    get_matrix = cmds.getAttr(f"{fk_local_object}.matrix")
-    cmds.setAttr(f"{MM_ctrl_fk}{Plg.mtx_ins[0]}", *get_matrix, type="matrix")    
-    connect_attr(f"{fk_source_ctrl}{Plg.wld_mtx_plg}", f"{MM_ctrl_fk}{Plg.mtx_ins[1]}")
-    connect_attr(f"{MM_ctrl_fk}{Plg.mtx_sum_plg}", f"{fk_target_ctrl}{Plg.opm_plg}")
 
 
 def invert_sign(values_ls):

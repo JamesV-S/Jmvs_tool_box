@@ -62,43 +62,6 @@ class SystemSpine:
         return skn_start_name, skn_end_name
         
 
-    def cr_jnt_type_chain(self, pref, skeleton_pos_dict, skeleton_rot_dict, reverse_direction=False):
-        '''
-        # Description:
-           Creates a basic desired joint chain, naming, position and direction all 
-           taken care of. 
-        # Attributes:
-            pref (string): name of the joint chain type.
-            skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
-            skeleton_rot_dict (dict): key = name of spine iteration (spine#), value = rotational data.
-            reverse_direction (bool): If True, the joint chain is reversed.
-        # Returns:
-            jnt_ls (list): The list of joints within the chain.
-        '''
-        cmds.select(cl=True)
-        jnt_chain_ls = []
-        # reverse the positon data
-        # need to figure out how I need to flip or minus the rotate values (for when they have just 0.0 or a value.)
-        # That'll consist of flipping the primary axis & 
-        print(f"skeleton_rot_dict = {skeleton_rot_dict}")
-        rev_skel_pos = utils.reverse_pos_values_dict(skeleton_pos_dict)
-        rev_skel_rot = utils.reverse_rot_values_dict(skeleton_rot_dict)
-        for name in skeleton_pos_dict:
-            jnt_nm = f"jnt_{pref}_{self.dm.mdl_nm}_{name}_{self.dm.unique_id}_{self.dm.side}"
-            jnt_chain_ls.append(jnt_nm)
-            cmds.joint(n=jnt_nm)
-            if reverse_direction:
-                cmds.xform(jnt_nm, translation=rev_skel_pos[name], worldSpace=True)
-                cmds.xform(jnt_nm, rotation=skeleton_rot_dict[name], worldSpace=True)
-            else:
-                cmds.xform(jnt_nm, translation=skeleton_pos_dict[name], worldSpace=True)
-                cmds.xform(jnt_nm, rotation=skeleton_rot_dict[name], worldSpace=True)
-            cmds.makeIdentity(jnt_nm, a=1, t=0, r=1, s=0, n=0, pn=1)
-        utils.clean_opm(jnt_chain_ls[0])
-
-        return jnt_chain_ls
-
-
     def group_jnts_skn(self, skn_start_end_ls, skn_jnt_chain_ls):
         '''
         # Description:
@@ -151,59 +114,72 @@ class SystemSpine:
             input_grp (string): Group for input data for this module.
         # Returns: N/A
         '''
-        ''' This is my first attempt at making controls follow without parenting, 
-         Using their matrix's & adding the offset to keep their distance!!! '''
-        # fk ctrl setup = Constraining the controls in canon, with MMs to achieve the neccesary offset: 
-            # MM's
-        MM_fk_ls = []
-        MM_inv_ls = []
-        # fk_ctrl_ls = []
-        # inv_ctrl_ls = []
-        fk_previous_pos = None
-        inv_previous_pos = None
-        reversed_fk_pos = utils.reverse_dict(self.dm.fk_pos_dict) # reverse the pos so the maths offset equation works!
-        for i, ((fk_ctrl_name, fk_pos), (inv_name, inv_pos)) in enumerate(zip(self.dm.fk_pos_dict.items(), reversed_fk_pos.items())):
-            inv_ctrl_name = inv_name.replace('fk', 'inv')
-            # fk_ctrl_ls.append(fk_ctrl_name)
-            # inv_ctrl_ls.append(inv_ctrl_name)
-                # cr MM names
-            MM_fk_name = f"MM_{fk_ctrl_name}"
-            MM_inv_name = f"MM_{inv_ctrl_name}"
-                # cr the MM nodes
-            utils.cr_node_if_not_exists(1, 'multMatrix', MM_fk_name)
-            utils.cr_node_if_not_exists(1, 'multMatrix', MM_inv_name)
-                # append their names to the list
-            MM_fk_ls.append(MM_fk_name)
-            MM_inv_ls.append(MM_inv_name)
-                # Calculate the offset for the next control
-            if fk_previous_pos is not None:
-                fk_offset = [p2 - p1 for p1, p2 in zip(fk_previous_pos, fk_pos)]
-                utils.set_matrix(fk_offset, f"{MM_fk_name}{utils.Plg.mtx_ins[0]}")
-            if inv_previous_pos is not None:
-                inv_offset = [p2 - p1 for p1, p2 in zip(inv_previous_pos, inv_pos)]
-                utils.set_matrix(inv_offset, f"{MM_inv_name}{utils.Plg.mtx_ins[0]}")
-            fk_previous_pos = fk_pos
-            inv_previous_pos = inv_pos
-       
-        # connect the MMs
-            # iniitial inputs
-        print(f"inv_0, list(self.dm.fk_pos_dict.values())[-1] = {list(self.dm.fk_pos_dict.values())[-1]}")
-        utils.set_matrix(list(self.dm.fk_pos_dict.values())[0], f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[0]}")
-        utils.set_matrix(list(self.dm.fk_pos_dict.values())[-1], f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_fk_ls[0]}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_inv_ls[0]}{utils.Plg.mtx_ins[1]}")
-        # connect remaining FK & INV matrices ORDER:
-            # connect the MM to corresponding ctrl
-        for x in range(len(MM_fk_ls)):
-            utils.connect_attr(f"{MM_fk_ls[x]}{utils.Plg.mtx_sum_plg}", f"{fk_ctrl_ls[x]}{utils.Plg.opm_plg}")
-            utils.connect_attr(f"{MM_inv_ls[x]}{utils.Plg.mtx_sum_plg}", f"{inv_ctrl_ls[x]}{utils.Plg.opm_plg}")
-            # connect the ctrls to MM to create the sequence
-        for x in range(1, len(MM_fk_ls)):
-            utils.connect_attr(f"{fk_ctrl_ls[x-1]}{utils.Plg.wld_mtx_plg}", f"{MM_fk_ls[x]}{utils.Plg.mtx_ins[1]}")
-            utils.connect_attr(f"{inv_ctrl_ls[x-1]}{utils.Plg.wld_mtx_plg}", f"{MM_inv_ls[x]}{utils.Plg.mtx_ins[1]}")
+        # ---------------------------------------------------------------------
+        # FK & Inv ctrl setup
+        # Initalise inv pos & rot dicts by reversing the values. 
+        inv_pos_dict = utils.reverse_dict(self.dm.fk_pos_dict)
+        inv_rot_dict = utils.reverse_dict(self.dm.fk_rot_dict)
+
+        # Create the first [0] fk & inv utility nodes 
+        MM_fk_0 = f"MM_{fk_ctrl_ls[0]}"
+        MM_inv_0 = f"MM_{inv_ctrl_ls[0]}"
+            # cr the MM nodes
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_fk_0)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_inv_0)
+            # append their names to the list
+        print(f"MM_fk_ls = `{MM_fk_0}`")
+        print(f"MM_inv_ls = `{MM_inv_0}`")
+
+        # wire the fk & inv 0 MMs
+        utils.set_transformation_matrix(list(self.dm.fk_pos_dict.values())[0], list(self.dm.fk_rot_dict.values())[0], f"{MM_fk_0}{utils.Plg.mtx_ins[0]}")
+        utils.set_transformation_matrix(list(inv_pos_dict.values())[0], list(inv_rot_dict.values())[0], f"{MM_inv_0}{utils.Plg.mtx_ins[0]}")
+    
+        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_fk_0}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{input_grp}.hook_mtx", f"{MM_inv_0}{utils.Plg.mtx_ins[1]}")
+
+        utils.connect_attr(f"{MM_fk_0}{utils.Plg.mtx_sum_plg}", f"{fk_ctrl_ls[0]}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{MM_inv_0}{utils.Plg.mtx_sum_plg}", f"{inv_ctrl_ls[0]}{utils.Plg.opm_plg}")
+
+        ''''''
+        # cr temp locators for FK & Inv ctrls local space. 
+        fk_temp_loc_ls = []
+        for (key, pos_val), (key, rot_val) in zip(self.dm.fk_pos_dict.items(), self.dm.fk_rot_dict.items()):
+            loc_name = key.replace('ctrl_fk_', 'loc_tempFk_')# "ctrl_fk_bipedArm_'first parent'_0_L"
+            fk_temp_loc_ls.append(loc_name)
+            cmds.spaceLocator(n=loc_name)
+            cmds.xform(loc_name, t=pos_val, ws=1)
+            cmds.xform(loc_name, rotation=rot_val, ws=1)
+        try:
+            for i in range(len(fk_temp_loc_ls)):
+                cmds.parent(fk_temp_loc_ls[i+1],fk_temp_loc_ls[i])
+        except IndexError:
+            pass
         
-        # ---------------------------------------------------------------------------------
-        # IK ctrl setup
+        inv_temp_loc_ls = []
+        for (key, pos_val), (key, rot_val) in zip(inv_pos_dict.items(), inv_rot_dict.items()):
+            loc_name = key.replace('ctrl_fk_', 'loc_tempInv_')# "ctrl_fk_bipedArm_'first parent'_0_L"
+            inv_temp_loc_ls.append(loc_name)
+            cmds.spaceLocator(n=loc_name)
+            cmds.xform(loc_name, t=pos_val, ws=1)
+            cmds.xform(loc_name, rotation=rot_val, ws=1)
+        try:
+            for i in range(len(inv_temp_loc_ls)):
+                cmds.parent(inv_temp_loc_ls[i+1],inv_temp_loc_ls[i])
+        except IndexError:
+            pass
+
+        # Foward kinematic matrix setup w/ temp locators
+        for x in range(1, len(self.dm.fk_ctrl_list)):
+            utils.matrix_control_FowardKinematic_setup(fk_ctrl_ls[x-1], fk_ctrl_ls[x], fk_temp_loc_ls[x])
+        
+        print(f"inv_ctrl_ls = `{inv_ctrl_ls}`")
+        for x in range(1, len(inv_ctrl_ls)):
+            utils.matrix_control_FowardKinematic_setup(inv_ctrl_ls[x-1], inv_ctrl_ls[x], inv_temp_loc_ls[x])
+
+        cmds.delete(fk_temp_loc_ls[0], inv_temp_loc_ls[0])
+
+        # ---------------------------------------------------------------------
+        # IK ctrl top & bottom setup
         # wire hierarchy: FK > IK_Top | Inv > IK_Bott | IK_top/bott > IK_mid
             # cr the MM for ik ctrls!
         MM_ik_ls = []
@@ -226,26 +202,32 @@ class SystemSpine:
             utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.dm.mdl_nm}_Stretch_Anchor")
             utils.proxy_attr_list(ik_ctrl_ls[-1], remaining_ik_ctrl, f"{self.dm.mdl_nm}_Stretch_Volume")
 
-            # Only IK_top ctrl needs its offset claculated!
-        last_fk_pos = list(self.dm.fk_pos_dict.values())[-1]
-        ik_top_ofs = utils.calculate_matrix_offset(last_fk_pos, list(self.dm.ik_pos_dict.values())[-1])
-        utils.set_matrix(ik_top_ofs, f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[0]}")
-            # two end fk & inv ctrls into ik MM top & bottom
+        # top > matrixIn[0]/[1]
+        utils.wire_ofs_mtxIn0_1_to_1([self.dm.fk_pos_dict, self.dm.fk_rot_dict], 
+                               [self.dm.ik_pos_dict, self.dm.ik_rot_dict],
+                               [-1], [-1],
+                               MM_ik_ls[-1])
         utils.connect_attr(f"{fk_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_ik_ls[-1]}{utils.Plg.mtx_ins[1]}") # MM_ik_top
-        utils.connect_attr(f"{inv_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_ik_ls[0]}{utils.Plg.mtx_ins[1]}") # MM_ik_bottom
-            # connect the MMs to ctrls
-        for x in range(len(MM_ik_ls)):
-            utils.connect_attr(f"{MM_ik_ls[x]}{utils.Plg.mtx_sum_plg}", f"{ik_ctrl_ls[x]}{utils.Plg.opm_plg}")
         
-        # IK middle ctrl wires: (twisting axis in this scenario is 'Y' >
-        twist_axis = "Y" 
+        # bottom > matrixIn[0]/[1]
+        utils.wire_ofs_mtxIn0_1_to_1([inv_pos_dict, inv_rot_dict], 
+                               [self.dm.ik_pos_dict, self.dm.ik_rot_dict],
+                               [-1], [0],
+                               MM_ik_ls[0])
+        utils.connect_attr(f"{inv_ctrl_ls[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_ik_ls[0]}{utils.Plg.mtx_ins[1]}") # MM_ik_bottom
+        
+        # IK middle ctrl wires ------------------------------------------------
+        twist_axis = self.dm.prim_axis
         # calc this by the givin rotation values)
             # Blend matrix for pos between top & bottom
             # 2 flt nodes, 1 aim matracies & 1 CM for twisting
         BM_ik_mid = f"BM_{ik_ctrl_ls[1]}"
         utils.cr_node_if_not_exists(1, "blendMatrix", BM_ik_mid)
         AM_ik_mid =  f"AM_sub_{ik_ctrl_ls[1]}"
-        utils.cr_node_if_not_exists(0, "aimMatrix", AM_ik_mid, {f"primaryInputAxis{twist_axis}":1, "primaryInputAxisX":0}) 
+        if twist_axis == "X":
+            utils.cr_node_if_not_exists(0, "aimMatrix", AM_ik_mid) 
+        elif twist_axis == "Y":
+            utils.cr_node_if_not_exists(0, "aimMatrix", AM_ik_mid, {f"primaryInputAxis{twist_axis}":1, "primaryInputAxisX":0}) 
         FM_ik_mid_sub = f"FM_sub_{ik_ctrl_ls[1]}"
         FM_ik_mid_div = f"FM_div_{ik_ctrl_ls[1]}"
         utils.cr_node_if_not_exists(1, "floatMath", FM_ik_mid_sub, {"operation":1})
@@ -271,8 +253,10 @@ class SystemSpine:
         utils.connect_attr(f"{top_ik_ctrl}{utils.Plg.wld_mtx_plg}", f"{AM_ik_mid}.secondaryTargetMatrix")
         utils.connect_attr(f"{AM_ik_mid}{utils.Plg.out_mtx_plg}", f"{MM_ik_ls[1]}{utils.Plg.mtx_ins[1]}")
 
-        # return fk_ctrl_ls, inv_ctrl_ls, ik_ctrl_ls
-
+        # connect all MMs to all ik ctrls
+        for x in range(len(MM_ik_ls)):
+            utils.connect_attr(f"{MM_ik_ls[x]}{utils.Plg.mtx_sum_plg}", f"{ik_ctrl_ls[x]}{utils.Plg.opm_plg}")
+        
 
     def cr_logic_elements(self, fk_pos, fk_rot, ik_pos, ik_rot, fw_jnt_lists, bw_jnt_lists, rig_jnt_lists):
         '''        
@@ -723,7 +707,7 @@ class SystemSpine:
         '''
         # parentconstrain first parent joint of nonStr chain to first parent joint of it's corresbpomnding str chain
         pcon_nonStr_parent_name = f"Pcon_nonStr_{nonStr_jnt_chain[0]}"
-        cmds.parentConstraint(Str_jnt_chain[0], nonStr_jnt_chain[0], mo=1, n=pcon_nonStr_parent_name)
+        cmds.parentConstraint(Str_jnt_chain[0], nonStr_jnt_chain[0], n=pcon_nonStr_parent_name) #,  mo=1
         cmds.setAttr(f"{pcon_nonStr_parent_name}.interpType", 2)
 
         # orient constrain the remaining items in the list of chains
