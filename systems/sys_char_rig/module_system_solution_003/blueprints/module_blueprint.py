@@ -154,6 +154,45 @@ class ModuleBP:
         return jnt_chain_ls
 
     
+    def logic_jnt_distances(self, skel_num, skel_pos_dict):
+        '''
+        # Description:
+            Need to store the distances of the the limb, (to be used for PINNING! & More).
+            Stored in a dictionary with each item being the distance going through the list of skel positions.
+            Last item in dict is 'start to end' distance
+        # Attributes:
+            skel_num (int): number of joints in the module's skeleton.
+            skel_pos_dict (dict): key=Name skel pos component, value=Positional data.
+        # Returns:
+            d_skel_dict (dict): key=Name '*component_*component', value= Int length.
+        '''
+        # print(f"skel_num = {skel_num}")
+        d_skel_dict = {}
+        for x in range(skel_num):
+            # get distances through the skel pos dict and add to the dictionary. 
+            try:
+                # print(f"{list(skel_pos_dict.keys())[x]}, {list(skel_pos_dict.keys())[x+1]}")
+                d = utils.get_distance(f"skel_jnt_sequence_{x}", list(skel_pos_dict.values())[x], list(skel_pos_dict.values())[x+1])
+                d_skel_dict[f"{list(skel_pos_dict.keys())[x]}_{list(skel_pos_dict.keys())[x+1]}"] = d
+            except IndexError:
+                pass
+        # Add start end distance to dictionary -> hip_ankle
+        d_start_end = utils.get_distance("start_end", list(skel_pos_dict.values())[0], list(skel_pos_dict.values())[3])
+        d_skel_dict[f"{list(skel_pos_dict.keys())[0]}_{list(skel_pos_dict.keys())[3]}"] = d_start_end
+        print(d_skel_dict)
+
+        '''{
+        'hip_knee': 29.73453085918653, 
+        'knee_calf': 29.79762073881076, 
+        'calf_ankle': 14.904801745021047, 
+        'ankle_ball': 5.432754706587857, 
+        'ball_end': 6.2893240637222405, 
+        'hip_ankle': 67.50895722456278
+        }'''
+
+        return d_skel_dict
+
+
     def wire_fk_ctrl_setup(self, inputs_grp, limbRt_ctrl, fk_ctrl_list, fk_pos_dict, fk_rot_dict):
         '''
         # Description:
@@ -223,6 +262,59 @@ class ModuleBP:
         cmds.delete(temp_loc_ls[0])
         
         return BM_limb
+
+
+    def wire_ik_ctrl_end(self, inputs_grp, limbRt_ctrl, ik_ctrl_list):
+        '''
+        # Description:
+            driving the logic joints:
+                - parent logic joint is driven by arnRoot ctrl w/ 'blend_armRoot_node'
+                - child logic joints are driven by fk ctrl's direct rotations.
+        # Attributes:
+            inputs_grp (string): Group for input data for this module.
+            ik_ctrl_list (list): Contains 4 ik control names.
+        # Returns: N/A 
+        '''
+        ik_ctrl_target = ik_ctrl_list[-1]
+        ik_tgt_nm = ik_ctrl_target.split('_')[-3]
+
+        # Add follow attr to fk shoulder ctrl
+        follow_attr = f"Follow_{self.dm.mdl_nm}"
+        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
+        utils.add_float_attrib(ik_ctrl_target, [follow_attr], [0.0, 1.0], True)
+        cmds.setAttr(f"{ik_ctrl_target}.{follow_attr}", 1)
+        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
+        MM_ikBase = f"MM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtBase_{self.dm.unique_id}_{self.dm.side}"
+        MM_iklimbRt = f"MM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtCtrl_{self.dm.unique_id}_{self.dm.side}"
+        BM_ik = f"BM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtBlend_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_ikBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_iklimbRt)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_ik, 
+                                    {"target[0].scaleWeight":0, 
+                                     "target[0].shearWeight":0})
+        
+        # MM_Base
+        utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1], f"{MM_ikBase}{utils.Plg.mtx_ins[0]}")         
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_ikBase}{utils.Plg.mtx_ins[1]}")        
+            # Setting Rotation is involved!
+        # MM_iklimbRt
+        wrist_local_object = f"temp_loc_{ik_ctrl_target}"
+        cmds.spaceLocator(n=wrist_local_object)
+        cmds.xform(wrist_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
+        cmds.xform(wrist_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
+        cmds.parent(wrist_local_object, limbRt_ctrl)
+        get_local_matrix = cmds.getAttr(f"{wrist_local_object}.matrix")
+
+        cmds.setAttr(f"{MM_iklimbRt}{utils.Plg.mtx_ins[0]}", *get_local_matrix, type="matrix")    
+        utils.connect_attr(f"{limbRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{MM_iklimbRt}{utils.Plg.mtx_ins[1]}")
+        cmds.delete(wrist_local_object)
+        
+        # BM_ik
+        utils.connect_attr(f"{MM_ikBase}{utils.Plg.mtx_sum_plg}", f"{BM_ik}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_iklimbRt}{utils.Plg.mtx_sum_plg}", f"{BM_ik}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{ik_ctrl_target}.{follow_attr}", f"{BM_ik}.target[0].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.{follow_attr}", f"{BM_ik}.target[0].rotateWeight")
+        utils.connect_attr(f"{BM_ik}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
 
 
     # Phase 3 - Finalising ( Phase 2 - Module-specific class functions in 'System[ModuleName]' )

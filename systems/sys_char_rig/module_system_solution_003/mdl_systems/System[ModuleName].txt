@@ -12,4 +12,13 @@ Descrption:
     Responsibilty - ctrl, skeleton, logic setups.  I can make changes to a 
                     rig system & add updates very easily.
 
+Rule:
+    '''
+    * DON'T Have 'self.dm' variables accessed here within the class functions.
+    It makes the managing of the raw data messy across two classes (system & build) 
+    
+    System[ModuleName] = no self.dm._raw_data
+    Build[ModuleName] = yes self.dm._raw_data
+    '''
+
 

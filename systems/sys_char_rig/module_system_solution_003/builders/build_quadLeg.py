@@ -24,8 +24,8 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
     def __init__(self, data_manager):
         module_blueprint.ModuleBP.__init__(self, data_manager)
         system_quadLeg.SystemQuadLeg.__init__(self, data_manager)
-        print(f"-------  -------  --------  -------")
-        print(f"Declared Build{self.dm.mdl_nm}")
+        # print(f"-------  -------  --------  -------")
+        # print(f"Declared Build{self.dm.mdl_nm}")
 
 
     def build(self):
@@ -56,14 +56,18 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         self.group_ctrls(self.dm.fk_ctrl_list, "fk")
         self.group_ctrls(self.dm.ik_ctrl_list, "ik")
 
-        self.cr_jnt_type_chain("fk", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        self.cr_jnt_type_chain("ik", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        fk_logic_jnt_ls = self.cr_jnt_type_chain("fk", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        ik_logic_jnt_ls = self.cr_jnt_type_chain("ik", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
 
         # Phase 2 - Module-specific class functions in 'System[ModuleName]'
+        self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
         self.wire_hook_limbRoot_setup(input_grp, self.dm.ik_ctrl_list, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
-        self.wire_fk_ctrl_setup(input_grp, self.dm.ik_ctrl_list[0], self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
         
-        self.logic_jnt_distances()
+        BM_limbRt_node = self.wire_fk_ctrl_setup(input_grp, self.dm.ik_ctrl_list[0], self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
+        self.wire_fk_logic_joints(self.dm.fk_ctrl_list, fk_logic_jnt_ls, BM_limbRt_node)
+
+        self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[0], self.dm.ik_ctrl_list)
+
         # Phase 3 - Finalising
         # self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
         #                    input_grp, output_grp, 

@@ -32,7 +32,7 @@ class SystemQuadLeg:
         self.dm:module_data_manager.ModuleDataManager = data_manager 
         print("<- - ->")
         print(f"SystemQuadLeg -> dataa_manager = {data_manager}")
-        
+    
 
     # Phase 2 - Module-specific class functions in 'System[ModuleName]'
     def wire_hook_limbRoot_setup(self, inputs_grp, ctrl_list, ik_pos_dict, ik_rot_dict):
@@ -67,33 +67,63 @@ class SystemQuadLeg:
         utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{ctrl_limbRoot}{utils.Plg.opm_plg}")
 
 
-    def logic_jnt_distances(self):
+    def logic_jnt_distances(self, skel_num, skel_pos_dict):
         '''
         # Description:
-            Need to store the distances of the the limb, (to be used for PINNING! & More)
+            Need to store the distances of the the limb, (to be used for PINNING! & More).
+            Stored in a dictionary with each item being the distance going through the list of skel positions.
+            Last item in dict is 'start to end' distance
         # Attributes:
-            fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
+            skel_num (int): number of joints in the module's skeleton.
+            skel_pos_dict (dict): key=Name skel pos component, value=Positional data.
         # Returns:
-            d_shld_wrist (string): distance of shoulder to wrist [whole limb]. 
-            d_shld_elb (string): distance of shoulder to elbow [upper]. 
-            d_elb_wrist (string): distance of elbow to wrist [lower].
+            d_skel_dict (dict): key=Name '*component_*component', value= Int length.
         '''
+        # print(f"skel_num = {skel_num}")
         d_skel_dict = {}
-        print(f"self.dm.skel_pos_num = {self.dm.skel_pos_num}")
-        for x in range(self.dm.skel_pos_num):
+        for x in range(skel_num):
+            # get distances through the skel pos dict and add to the dictionary. 
             try:
-                print(f"{list(self.dm.skel_pos_dict.keys())[x]}, {list(self.dm.skel_pos_dict.keys())[x+1]}")
-                d = utils.get_distance(f"skel_jnt_sequernce_{x}", list(self.dm.skel_pos_dict.values())[x], list(self.dm.skel_pos_dict.values())[x+1])
-                d_skel_dict[f"{list(self.dm.skel_pos_dict.keys())[x]}_{list(self.dm.skel_pos_dict.keys())[x+1]}"] = d
+                # print(f"{list(skel_pos_dict.keys())[x]}, {list(skel_pos_dict.keys())[x+1]}")
+                d = utils.get_distance(f"skel_jnt_sequence_{x}", list(skel_pos_dict.values())[x], list(skel_pos_dict.values())[x+1])
+                d_skel_dict[f"{list(skel_pos_dict.keys())[x]}_{list(skel_pos_dict.keys())[x+1]}"] = d
             except IndexError:
                 pass
-        # Add start end distance to dictionary
-            # hip > ankle
-        d_start_end = utils.get_distance("start_end", list(self.dm.skel_pos_dict.values())[0], list(self.dm.skel_pos_dict.values())[3])
-        d_skel_dict[f"{list(self.dm.skel_pos_dict.keys())[0]}_{list(self.dm.skel_pos_dict.keys())[3]}"] = d_start_end
+        # Add start end distance to dictionary -> hip_ankle
+        d_start_end = utils.get_distance("start_end", list(skel_pos_dict.values())[0], list(skel_pos_dict.values())[3])
+        d_skel_dict[f"{list(skel_pos_dict.keys())[0]}_{list(skel_pos_dict.keys())[3]}"] = d_start_end
         print(d_skel_dict)
 
+        '''{
+        'hip_knee': 29.73453085918653, 
+        'knee_calf': 29.79762073881076, 
+        'calf_ankle': 14.904801745021047, 
+        'ankle_ball': 5.432754706587857, 
+        'ball_end': 6.2893240637222405, 
+        'hip_ankle': 67.50895722456278
+        }'''
+
         return d_skel_dict
+
+
+    def wire_fk_logic_joints(self, fk_ctrl_list, fk_jnt_chain, bm_limbRt):
+        '''
+        # Description:
+            bm_limbRt output drives fk_ctrl_list[0] translate
+            Drive fk_jnt_chain.rotations with fk_ctrl_list.rotations.
+        # Attributes:
+            fk_ctrl_list (list): fk control names.
+            fk_jnt_chain (list): fk joint names.
+            bm_limbRt (utility) BlendMatrix node drives the positional transform for fk joints
+        # Returns:
+        '''
+        #  bm_limbRt.outMatrix > fk_jnt_chain[0].opm
+        utils.connect_attr(f"{bm_limbRt}{utils.Plg.out_mtx_plg}", f"{fk_jnt_chain[0]}{utils.Plg.opm_plg}")
+
+        # direct connection of ctrl to joint
+        for x, i in ((x, i) for x in range(len(fk_ctrl_list)) for i in range(len(self.dm.XYZ))):
+            utils.connect_attr(f"{fk_ctrl_list[x]}.rotate{self.dm.XYZ[i]}", f"{fk_jnt_chain[x]}.rotate{self.dm.XYZ[i]}")
+
 
 
     # Do this after all other functions are complete.

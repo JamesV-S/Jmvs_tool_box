@@ -120,7 +120,9 @@ class ModuleDataManager:
     @property
     def global_scale_attr(self):
         return self._global_scale_attr
-
+    @property
+    def XYZ(self):
+        return ["X", "Y", "Z"]
     
 
 

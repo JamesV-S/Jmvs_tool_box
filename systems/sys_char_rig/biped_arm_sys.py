@@ -202,7 +202,7 @@ class BipedArmSystem():
 
         skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg = self.wire_jnt_skn_wrist(skn_jnt_wrist, logic_jnt_list, fk_ctrl_list, ik_ctrl_list)
 
-        mdl_settings_ctrl, ikfk_plug, stretch_state_plug, stretch_vol_plug, shaper_plug  = self.cr_mdl_setting_ctrl(skn_jnt_wrist, ik_ctrl_list)
+        mdl_settings_ctrl, ikfk_plug, stretch_state_plug, stretch_vol_plug, shaper_plug  = self.wire_mdl_setting_ctrl(skn_jnt_wrist)
         
         self.wire_IKFK_switch(skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg, 
                             mdl_settings_ctrl, ikfk_plug, stretch_state_plug,
@@ -1103,10 +1103,10 @@ class BipedArmSystem():
         return skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg
 
 
-    def cr_mdl_setting_ctrl(self, skn_jnt_wrist, ik_ctrl_list):
+    def wire_mdl_setting_ctrl(self, skn_jnt_wrist):
         '''
         # Description:
-            Create the Settings Control w/ all it's attributes!
+            Settings Control alr exists in scene so wire its positon & ADD all it's attributes!
         # Attributes: 
             skn_jnt_wrist (string): Name of the wrist skin joint.
             ik_ctrl_list (list): Contains 4 ik control names.
@@ -1119,7 +1119,6 @@ class BipedArmSystem():
         ''' TEMPORARY -> ADD settings control to this module's database data! '''
         # duplicate the ik_shoudler ctrl when it is made, before it's posisioned
         mdl_settings_ctrl = f"ctrl_{self.mdl_nm}_settings_{self.unique_id}_{self.side}"
-        cmds.duplicate(ik_ctrl_list[1], n=mdl_settings_ctrl, rc=1)
         # Colour the settings ctrl a pale version of the current colour. 
         if self.side == "L":
             utils.colour_object(mdl_settings_ctrl, 4)

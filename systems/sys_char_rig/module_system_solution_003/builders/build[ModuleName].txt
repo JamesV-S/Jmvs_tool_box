@@ -11,4 +11,11 @@ Descrption:
     Responsibilty - Needs to coordinate the build sequence and method calls for
                     module-specific classes.  
 
+Rule:
+    '''
+    * Have 'self.dm' variables be accessed here for the class functions. 
+    
+    System[ModuleName] = no self.dm._raw_data
+    Build[ModuleName] = yes self.dm._raw_data
+    '''
 
