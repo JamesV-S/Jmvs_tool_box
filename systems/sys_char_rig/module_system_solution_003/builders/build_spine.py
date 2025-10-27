@@ -58,13 +58,13 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
         self.group_ctrls(inv_ctrl_ls, "inv")
 
         # # cr StrFw_jnt / nonStrFw / StrBw_jnt / nonStrBw in this script.
-        strFw_jnt_chain = self.cr_jnt_type_chain("StrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        nonstrFw_jnt_chain = self.cr_jnt_type_chain("nonStrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        strBw_jnt_chain = self.cr_jnt_type_chain("StrBw", self.dm.skel_pos_dict, self.dm.skel_rot_dict, True)
-        nonstrBw_jnt_chain = self.cr_jnt_type_chain("nonStrBw", self.dm.skel_pos_dict, self.dm.skel_rot_dict, True)
-        strRig_jnt_chain = self.cr_jnt_type_chain("StrRig", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        nonStrRig_jnt_chain = self.cr_jnt_type_chain("nonStrRig", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        skn_jnt_chain = self.cr_jnt_type_chain("skn", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        strFw_jnt_chain = self.cr_typ_jnt_chain("StrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        nonstrFw_jnt_chain = self.cr_typ_jnt_chain("nonStrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        strBw_jnt_chain = self.cr_typ_jnt_chain("StrBw", self.dm.skel_pos_dict, self.dm.skel_rot_dict, True)
+        nonstrBw_jnt_chain = self.cr_typ_jnt_chain("nonStrBw", self.dm.skel_pos_dict, self.dm.skel_rot_dict, True)
+        strRig_jnt_chain = self.cr_typ_jnt_chain("StrRig", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        nonStrRig_jnt_chain = self.cr_typ_jnt_chain("nonStrRig", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        skn_jnt_chain = self.cr_typ_jnt_chain("skn", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
 
         # Phase 2 - Module-specific
         skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.dm.ik_pos_dict)

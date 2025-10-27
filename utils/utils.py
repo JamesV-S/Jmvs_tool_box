@@ -408,6 +408,18 @@ def cr_straight_cubic_curve(crv_name, start_pos, end_pos, degree=3):
 
 
 #--------------------------------- HIERARCHY ----------------------------------
+def cr_empty_grp(group_name):
+    if not cmds.objExists(group_name):
+        cr_node_if_not_exists(0, "transform", group_name)
+
+
+def ofst_grp_to_zero(item, grp_name):
+    cr_empty_grp(grp_name)
+    cmds.matchTransform(grp_name, item)
+    cmds.parent(item, grp_name)
+    cmds.select(cl=1)
+
+
 def get_first_child(group_name):
     children = cmds.listRelatives(group_name, children=True)
     if children:
@@ -425,7 +437,7 @@ def get_name_id_data_from_component(component_sel):
 
 
 def make_group_and_parent(grp_name, parent):
-    cmds.group(n=grp_name, em=1)
+    cr_empty_grp(grp_name)
     cmds.parent(grp_name, parent)
 
 

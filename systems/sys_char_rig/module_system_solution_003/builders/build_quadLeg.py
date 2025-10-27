@@ -53,11 +53,11 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
             print(F"running 'wire_input_grp()'")
             self.wire_input_grp(input_grp, self.dm.GLOBAL_SCALE_PLG, self.dm.BASE_MTX_PLG, self.dm.HOOK_MTX_PLG)
 
-        self.group_ctrls(self.dm.fk_ctrl_list, "fk")
-        self.group_ctrls(self.dm.ik_ctrl_list, "ik")
+        fk_ctrl_grp = self.group_ctrls(self.dm.fk_ctrl_list, "fk")
+        ik_ctrl_grp = self.group_ctrls(self.dm.ik_ctrl_list, "ik")
 
-        fk_logic_jnt_ls = self.cr_jnt_type_chain("fk", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        ik_logic_jnt_ls = self.cr_jnt_type_chain("ik", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        fk_logic_jnt_ls = self.cr_typ_jnt_chain("fk", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        ik_logic_jnt_ls = self.cr_typ_jnt_chain("ik", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
 
         # Phase 2 - Module-specific class functions in 'System[ModuleName]'
         self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
@@ -67,6 +67,18 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         self.wire_fk_logic_joints(self.dm.fk_ctrl_list, fk_logic_jnt_ls, BM_limbRt_node)
 
         self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[0], self.dm.ik_ctrl_list)
+        
+        # temp: 
+        ctrl_extrenal = f"ctrl_ik_spine_spine_bottom_0_M"
+        
+        self.wire_ik_ctrl_pv(input_grp, 1, self.dm.ik_ctrl_list, ctrl_extrenal)
+        self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], ik_logic_jnt_ls[1], ik_ctrl_grp)
+        
+        self.cr_ik_aim_logic_joints(self.dm.ik_pos_dict, self.dm.ik_rot_dict, self.dm.ik_ctrl_list, ik_logic_jnt_ls)
+        
+        # ik setup
+        self.wire_logic_ik_handles(input_grp, ik_logic_jnt_ls, self.dm.ik_ctrl_list, 
+                                   self.dm.ik_pos_dict, self.dm.ik_rot_dict)
 
         # Phase 3 - Finalising
         # self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,

@@ -96,7 +96,8 @@ class ModuleBP:
         # Attributes:
             ctrl_ls (list): list of given controls.
             ctrl_type (string): Name for the ctrl_grp.
-        # Returns:N/A
+        # Returns:
+            child_ctrl_grp (string): Name of ctrl child grp
         '''
         # If the parent ctrl_grp doesn't exist make it:
         module_control_grp = f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
@@ -111,16 +112,18 @@ class ModuleBP:
         cmds.parent(child_ctrl_grp, module_control_grp)
         cmds.select(cl=1)
 
-    # Module operations sharedf by multiple modules but not all
-    def cr_jnt_type_chain(self, pref, skeleton_pos_dict, skeleton_rot_dict, reverse_direction=False):
+        return child_ctrl_grp
+
+    # Phase 2 - Module operations shared by multiple modules but not all
+    def cr_typ_jnt_chain(self, pref, skeleton_pos_dict, skeleton_rot_dict, reverse_direction=False):
         '''
         # Description:
            Creates a basic desired joint chain, naming, position and direction all 
            taken care of. 
         # Attributes:
             pref (string): name of the joint chain type.
-            skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
-            skeleton_rot_dict (dict): key = name of spine iteration (spine#), value = rotational data.
+            skeleton_pos_dict (dict): key = name of Ext iteration (Ext#), value = positonal data.
+            skeleton_rot_dict (dict): key = name of Ext iteration (Ext#), value = rotational data.
             reverse_direction (bool): If True, the joint chain is reversed.
         # Returns:
             jnt_ls (list): The list of joints within the chain.
@@ -298,16 +301,16 @@ class ModuleBP:
         utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_ikBase}{utils.Plg.mtx_ins[1]}")        
             # Setting Rotation is involved!
         # MM_iklimbRt
-        wrist_local_object = f"temp_loc_{ik_ctrl_target}"
-        cmds.spaceLocator(n=wrist_local_object)
-        cmds.xform(wrist_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
-        cmds.xform(wrist_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
-        cmds.parent(wrist_local_object, limbRt_ctrl)
-        get_local_matrix = cmds.getAttr(f"{wrist_local_object}.matrix")
+        tgt_local_object = f"temp_loc_{ik_ctrl_target}"
+        cmds.spaceLocator(n=tgt_local_object)
+        cmds.xform(tgt_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
+        cmds.xform(tgt_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
+        cmds.parent(tgt_local_object, limbRt_ctrl)
+        get_local_matrix = cmds.getAttr(f"{tgt_local_object}.matrix")
 
         cmds.setAttr(f"{MM_iklimbRt}{utils.Plg.mtx_ins[0]}", *get_local_matrix, type="matrix")    
         utils.connect_attr(f"{limbRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{MM_iklimbRt}{utils.Plg.mtx_ins[1]}")
-        cmds.delete(wrist_local_object)
+        cmds.delete(tgt_local_object)
         
         # BM_ik
         utils.connect_attr(f"{MM_ikBase}{utils.Plg.mtx_sum_plg}", f"{BM_ik}{utils.Plg.inp_mtx_plg}")
@@ -315,6 +318,112 @@ class ModuleBP:
         utils.connect_attr(f"{ik_ctrl_target}.{follow_attr}", f"{BM_ik}.target[0].translateWeight")
         utils.connect_attr(f"{ik_ctrl_target}.{follow_attr}", f"{BM_ik}.target[0].rotateWeight")
         utils.connect_attr(f"{BM_ik}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
+
+
+    def wire_ik_ctrl_pv(self, inputs_grp, target_index, ik_ctrl_list, ctrl_external_fol):
+        '''
+        # Description:
+            Positions & wires the follow swapping of the pv ctrl too
+        # Attributes:
+            inputs_grp (string): Group for input data for this module.
+            ik_ctrl_list (list): Contains 4 ik control names.
+            ctrl_external_fol (string): Name of Ext modules top ik control.
+        # Returns: N/A 
+        '''
+        #establish the target control:
+        ik_ctrl_target = ik_ctrl_list[target_index]
+        ik_tgt_nm = ik_ctrl_target.split('_')[-3]
+        print(f"pv ik_tgt_nm = `{ik_tgt_nm}`")
+
+        ext_fol_split = ctrl_external_fol.split('_')[3:-2]
+        ext_fol_nm = "".join(ext_fol_split)
+        print(f"pv ik_tgt_nm = `{ext_fol_nm}`")
+        
+        # Add follow attr to fk shoulder ctrl
+        ext_fol_atr = f"Follow_{ext_fol_nm}"
+        end_fol_atr = "Follow_End_ik"
+
+        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
+        utils.add_float_attrib(ik_ctrl_target, [ext_fol_atr], [0.0, 1.0], True)
+        utils.add_float_attrib(ik_ctrl_target, [end_fol_atr], [0.0, 1.0], True)
+        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
+        MM_pvBase = f"MM_ikPv_{self.dm.mdl_nm}_base_{self.dm.unique_id}_{self.dm.side}"
+        MM_pvExterernal = f"MM_ikPv_{self.dm.mdl_nm}_{ext_fol_nm}Hook_{self.dm.unique_id}_{self.dm.side}"
+        MM_pvEndIk = f"MM_ikPv_{self.dm.mdl_nm}_EndIkCtrl_{self.dm.unique_id}_{self.dm.side}"
+        BM_pv = f"BM_ikPv_{self.dm.mdl_nm}_blend_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvExterernal)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvEndIk)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_pv, {
+            "target[0].scaleWeight":0, 
+            "target[0].shearWeight":0})
+        # MM_pvBase
+        utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[target_index], list(self.dm.ik_rot_dict.values())[target_index], f"{MM_pvBase}{utils.Plg.mtx_ins[0]}")         
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_pvBase}{utils.Plg.mtx_ins[1]}")
+        
+        # MM_pvExterernal
+        pvExt_local_object = f"temp_loc_Ext{ik_ctrl_target}"
+        cmds.spaceLocator(n=pvExt_local_object)
+        cmds.xform(pvExt_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
+        cmds.xform(pvExt_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
+        cmds.parent(pvExt_local_object, ctrl_external_fol)
+        get_Ext_local_matrix = cmds.getAttr(f"{pvExt_local_object}{utils.Plg.wld_mtx_plg}")
+        cmds.setAttr(f"{MM_pvExterernal}{utils.Plg.mtx_ins[0]}", *get_Ext_local_matrix, type="matrix") 
+        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{MM_pvExterernal}{utils.Plg.mtx_ins[1]}")
+        cmds.delete(pvExt_local_object)
+        
+        # MM_pvEndIk
+        pvEnd_local_object = f"temp_loc_pvEnd{ik_ctrl_target}"
+        cmds.spaceLocator(n=pvEnd_local_object)
+        cmds.xform(pvEnd_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
+        cmds.xform(pvEnd_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
+        cmds.parent(pvEnd_local_object, ik_ctrl_list[-1])
+        get_End_local_matrix = cmds.getAttr(f"{pvEnd_local_object}.matrix")
+        cmds.setAttr(f"{MM_pvEndIk}{utils.Plg.mtx_ins[0]}", *get_End_local_matrix, type="matrix")    
+        utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_pvEndIk}{utils.Plg.mtx_ins[1]}")
+        cmds.delete(pvEnd_local_object)
+
+        # BM_pv
+        utils.connect_attr(f"{MM_pvBase}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_pvExterernal}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{MM_pvEndIk}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[1]}")
+            # space swap atribs
+        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_pv}.target[0].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_pv}.target[0].rotateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.{end_fol_atr}", f"{BM_pv}.target[1].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.{end_fol_atr}", f"{BM_pv}.target[1].rotateWeight")
+            # output plug
+        utils.connect_attr(f"{BM_pv}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
+
+
+    def wire_pv_reference_curve(self, pv_ctrl, pv_jnt, ik_ctrl_grp):
+        '''
+        # Description:
+            Create and wire a reference curve to from the jnt_elbow to the ctrl_elbow 
+        # Attributes:
+        # Returns: N/A
+        '''
+        # build control
+        ref_curve = f"crv_ik_{self.dm.mdl_nm}_ref_{self.dm.unique_id}_{self.dm.side}"
+        cmds.curve(n=ref_curve, d=1, 
+                   p=[(0, 0, 0), (0, 0, 3)], 
+                   k=[0, 1])
+        cmds.parent(ref_curve, ik_ctrl_grp)
+        cmds.setAttr(f"{ref_curve}{utils.Plg.ovrride_plg}", 1)
+        cmds.setAttr(f"{ref_curve}{utils.Plg.dispTyp_plg}", 2)
+        
+        ref_curve_shape = cmds.listRelatives(ref_curve, s=1)[0]
+
+        # cr util nodes
+        pmm_ctrl = f"PMM_Crv0_{self.dm.mdl_nm}_{pv_ctrl}_{self.dm.unique_id}_{self.dm.side}"
+        pmm_jnt = f"PMM_Crv1_{self.dm.mdl_nm}_{pv_jnt}_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(1, 'pointMatrixMult', pmm_ctrl)
+        utils.cr_node_if_not_exists(1, 'pointMatrixMult', pmm_jnt)
+        
+        utils.connect_attr(f"{pv_ctrl}{utils.Plg.wld_mtx_plg}", f"{pmm_ctrl}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{pv_jnt}{utils.Plg.wld_mtx_plg}", f"{pmm_jnt}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{pmm_ctrl}{utils.Plg.output_plg}", f"{ref_curve_shape}.controlPoints[0]")
+        utils.connect_attr(f"{pmm_jnt}{utils.Plg.output_plg}", f"{ref_curve_shape}.controlPoints[1]")
 
 
     # Phase 3 - Finalising ( Phase 2 - Module-specific class functions in 'System[ModuleName]' )
