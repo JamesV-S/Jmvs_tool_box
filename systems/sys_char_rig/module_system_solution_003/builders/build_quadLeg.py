@@ -80,6 +80,8 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         self.wire_logic_ik_handles(input_grp, ik_logic_jnt_ls, self.dm.ik_ctrl_list, 
                                    self.dm.ik_pos_dict, self.dm.ik_rot_dict)
 
+        print("wire limbRt to ik chain root")
+
         # Phase 3 - Finalising
         # self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
         #                    input_grp, output_grp, 

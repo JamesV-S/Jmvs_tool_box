@@ -158,7 +158,7 @@ class SystemQuadLeg:
             bc_ikfk_stretch (utility): blendColors node returned so IKFK_Switch drives it.
             logic_hdl (string): logic Ik_handle name.
         '''
-        # temp
+        # temp 
         cmds.hide("jnt_fk_quadLeg_hip_0_L")
         # cr Ik_handle on the logic joints
         
@@ -204,9 +204,9 @@ class SystemQuadLeg:
         cmds.parent(end_logic_hdl, grp_end_logic_hdl)
 
 
-    def wire_limbRt_ik_joint_parent(self):
+    def wire_limbRt_ik_chain_root(self):
         '''
-        Have the limbRt control drive the (see file 009)
+        Have the limbRt control drive the root ik joint(see file 009)
         '''
 
 
