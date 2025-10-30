@@ -209,13 +209,14 @@ class SystemQuadLeg:
         Have the limbRt control drive the root ik joint(see file 009)
         '''
         jnt_target = ik_jnt_list[0]
+        print(f"jnt_target = {jnt_target}")
 
-        mm_ik = f"MM_{self.dm.mdl_nm}_{jnt_target}_{self.dm.unique_id}_{self.dm.side}"
+        mm_ik = f"MM_{self.dm.mdl_nm}_{jnt_target}"
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_ik)
 
         utils.set_transformation_matrix([0.0, 0.0, 0.0], list(ik_rot_dict.values())[-1], f"{mm_ik}{utils.Plg.mtx_ins[0]}")         
         utils.connect_attr(f"{ik_ctrl_list[0]}{utils.Plg.wld_mtx_plg}", f"{mm_ik}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{mm_ik}{utils.Plg.out_mtx_plg}", f"{jnt_target}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{mm_ik}{utils.Plg.mtx_sum_plg}", f"{jnt_target}{utils.Plg.opm_plg}")
 
        
 
