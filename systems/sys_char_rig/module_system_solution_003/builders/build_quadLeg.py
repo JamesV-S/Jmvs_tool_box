@@ -81,6 +81,7 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
                                    self.dm.ik_pos_dict, self.dm.ik_rot_dict)
 
         print("wire limbRt to ik chain root")
+        self.wire_limbRt_ik_chain_root(self.dm.ik_ctrl_list, ik_logic_jnt_ls, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
 
         # Phase 3 - Finalising
         # self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
