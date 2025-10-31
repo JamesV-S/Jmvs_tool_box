@@ -42,312 +42,6 @@ importlib.reload(utils)
 importlib.reload(utils_db)
 
 
-class retrieveModulesData():
-    def __init__(self, directory, database_name):
-        self.mdl_populate_tree_dict = {}
-        # db_directory = os.path.expanduser(directory)
-        # os.makedirs(db_directory, exist_ok=1)
-        # # db_name must include the entire path too!
-        # db_name = os.path.join(db_directory, database_name)
-        db_path = utils_db.get_database_name_path(directory, database_name)
-
-
-        try:
-            with sqlite3.connect(db_path) as conn:
-                self.mdl_populate_tree_dict = self.dict_from_table(
-                    conn, 'modules', database_name
-                    )
-                #return self.mdl_populate_tree_dict
-        except sqlite3.Error as e:
-            print(e)
-
-
-    def dict_from_table(self, conn, table, database_name):
-        # return a dict where each key is the database_name & each value is tuple of (unique_id & side)
-        cursor = conn.cursor()
-        query_param_state = f"SELECT unique_id, side FROM {table}"
-        try:
-            cursor.execute(query_param_state)
-            rows = cursor.fetchall()
-            # rows == [int(unique_id), string(side)]
-            mdl_populate_tree_dict = {database_name: []}
-            if rows:
-                for row in rows:
-                    unique_id, side = row[0], row[1]
-                    mdl_populate_tree_dict[database_name].append((unique_id, side))
-            return mdl_populate_tree_dict
-
-        except sqlite3.Error as e:
-            print(f"sqlite3.Error: {e}")
-            return {}
-        
-
-class retrieveSpecificComponentdata():
-    def __init__(self, directory, module_name, unique_id, side):
-        print(f" Retrieve specific component data MODULE_NAME: {module_name} ")
-
-        db_path = utils_db.get_database_name_path(directory, module_name)
-
-        # constants:
-        self.module_name = module_name
-        self.unique_id = unique_id
-        self.side = side
-
-        try:
-            with sqlite3.connect(db_path) as conn:
-                pos_dict = self.position_dict_from_table(conn)
-                self.rot_dict = self.rotation_dict_from_table(conn)
-                self.controls_dict = self.controls_dict_from_table(conn)
-                self.mdl_component_dict = {
-                    "module_name":self.module_name, 
-                    "unique_id":int(self.unique_id),
-                    "side":self.side,
-                    "component_pos": pos_dict,
-                    "controls": self.controls_dict
-                    }
-                print(f"THE DICT :: self.mdl_component_dict = {self.mdl_component_dict}")
-                
-        except sqlite3.Error as e:
-            print(f"module component retrieval sqlite3.Error: {e}")
-    
-
-    def position_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        placement_sql = f"SELECT component_pos FROM placement WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(placement_sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                component_pos_json = row[0]
-                # use Python's 'json module' to load json dict into python dictionary's
-                component_pos_dict = json.loads(component_pos_json)
-                print(f"component_pos = {component_pos_dict}")
-            return component_pos_dict              
-
-        except sqlite3.Error as e:
-            print(f"placement sqlite3.Error: {e}")
-            return {}
-        
-
-    def rotation_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        placement_sql = f"SELECT component_rot_xyz FROM placement WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(placement_sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                comp_rot_json = row[0]
-                # use Python's 'json module' to load json dict into python dictionary's
-                comp_rot_dict = json.loads(comp_rot_json)
-                print(f"component_pos = {comp_rot_dict}")
-            return comp_rot_dict              
-
-        except sqlite3.Error as e:
-            print(f"table placement, ROT sqlite3.Error: {e}")
-            return {}
-        
-
-    def controls_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        controls_sql = f"SELECT FK_ctrls, IK_ctrls FROM controls WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(controls_sql, (self.unique_id, self.side,))
-            rows = cursor.fetchall()
-            controls_dict = {"FK_ctrls":{}, "IK_ctrls":{}}
-            if rows:
-                for row in rows:
-                    fk_ctrls_sjon =row[0] 
-                    ik_ctrl_json = row[1]
-                    # use Python's 'json module' to load json dict into python dictionary's
-                    controls_dict["FK_ctrls"] = json.loads(fk_ctrls_sjon)
-                    controls_dict["IK_ctrls"] = json.loads(ik_ctrl_json)
-                    print(f"controls_dict = {controls_dict}")
-            return controls_dict
-
-        except sqlite3.Error as e:
-            print(f"controls sqlite3.Error: {e}")
-            return {}
-        
-
-    def return_mdl_component_dict(self):
-        return self.mdl_component_dict
-
-    
-    def return_rot_component_dict(self):
-        return self.rot_dict
-    
-    def return_pos_dict(self):
-        return self.controls_dict
-    
-
-class retrieveSpecificPlacementPOSData():
-    def __init__(self, directory, module_name, unique_id, side):
-        db_directory = os.path.expanduser(directory)
-        os.makedirs(db_directory, exist_ok=1)
-        # db_name must include the entire path too!
-        database_name = f"DB_{module_name}.db"
-        db_name = os.path.join(db_directory, database_name)
-
-        # constants:
-        self.module_name = module_name
-        self.unique_id = unique_id
-        self.side = side
-
-        try:
-            with sqlite3.connect(db_name) as conn:
-                self.existing_pos_dict = self.component_pos_dict_from_table(conn)
-                self.existing_rot_dict = self.component_rot_dict_from_table(conn)
-                self.existing_plane_dict = self.component_ori_plane_dict_from_table(conn)
-                
-        except sqlite3.Error as e:
-            print(f"module component retrieval sqlite3.Error: {e}")
-    
-
-    def component_pos_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        placement_sql = f"SELECT component_pos FROM placement WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(placement_sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                component_pos_json = row[0]
-                # use Python's 'json module' to load json dict into python dictionary's
-                component_pos_dict = json.loads(component_pos_json)
-            return component_pos_dict
-
-        except sqlite3.Error as e:
-            print(f"placement sqlite3.Error: {e}")
-            return {}
-    
-
-    def component_rot_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        placement_sql = f"SELECT component_rot_xyz FROM placement WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(placement_sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                component_rot_json = row[0]
-                # use Python's 'json module' to load json dict into python dictionary's
-                component_rot_dict = json.loads(component_rot_json)
-            return component_rot_dict
-
-        except sqlite3.Error as e:
-            print(f"placement sqlite3.Error: {e}")
-            return {}
-        
-
-    def component_ori_plane_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        sql = f"SELECT ori_plane_info FROM controls WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                comp_plane_json = row[0]
-                comp_plane_dict = json.loads(comp_plane_json)
-            return comp_plane_dict
-
-        except sqlite3.Error as e:
-            print(f"placement sqlite3.Error: {e}")
-            return {}
-
-
-    def return_existing_pos_dict(self):
-        return self.existing_pos_dict
-    
-    def return_existing_rot_dict(self):
-        return self.existing_rot_dict
-    
-    def return_existing_plane_dict(self):
-        return self.existing_plane_dict
-
-
-class RetrieveSpecificData():
-    def __init__(self, directory, module_name, unique_id, side):
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.unique_id = unique_id
-        self.side = side
-        try:
-            with sqlite3.connect(db_path) as conn:
-                self.jnt_num = self.get_jnt_num(conn, "user_settings")
-                self.guides_connection, self.guides_follow = self.get_guide_data(conn, "constant")
-                self.ori_plane_dict = self.get_ori_plane_data(conn, "controls")
-        except sqlite3.Error as e:
-            print(f"DB* module umo update Error: {e}")
-
-
-    def get_jnt_num(self, conn, table):
-        cursor = conn.cursor()
-        sql = f"SELECT joint_num FROM {table} WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                jnt_num = row[0]
-                if jnt_num is None:
-                    return 'NULL'
-                else:
-                    return jnt_num
-            else:
-                return 'NULL'
-        except sqlite3.Error as e:
-            print(f"placement sqlite3.Error: {e}")
-            return {}
-        
-    
-    def get_guide_data(self, conn, table):
-        cursor = conn.cursor()
-        sql= f"SELECT guides_connection, guides_follow FROM {table} WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(sql, (self.unique_id, self.side,))
-            rows = cursor.fetchall()
-            # controls_dict = {"FK_ctrls":{}, "IK_ctrls":{}}
-            if rows:
-                for row in rows:
-                    gd_con_json =row[0] 
-                    gd_fol_json = row[1]
-                    # use Python's 'json module' to load json list into python dictionary's
-                    guides_connection = json.loads(gd_con_json)
-                    guides_follow = json.loads(gd_fol_json)
-                    print(f"DB > guides_connection = {guides_connection}")
-                    print(f"DB > guides_follow = {guides_follow}")
-            return guides_connection, guides_follow
-        except sqlite3.Error as e:
-            print(f"constant table sqlite3.Error: {e}")
-            return None, None
-        
-
-    def get_ori_plane_data(self, conn, table):
-        cursor = conn.cursor()
-        sql= f"SELECT ori_plane_info FROM {table} WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                ori_pln_dict = json.loads(row[0])
-                print(f"DB > ori_pln_dict = `{ori_pln_dict}`")
-            return ori_pln_dict
-        except sqlite3.Error as e:
-            print(f"controls table sqlite3.Error: {e}")
-            return None
-
-
-    def return_get_jnt_num(self):
-        return self.jnt_num
-    
-
-    def return_guides_connection(self):
-        return self.guides_connection
-    
-
-    def return_guides_follow(self):
-        return self.guides_follow
-    
-    def return_ori_plane_dict(self):
-        return self.ori_plane_dict
-    
-
 # -----------------------------------------------------------------------------
 
 # Class Parent
@@ -454,11 +148,9 @@ class RetrieveModuleTable(RetrieveDatabase):
         db_path = os.path.join(db_directory, self.db_name)
         try:
             with self.connect(db_path) as conn:
-                print(f"> db_path = {db_path}")
-                
-                # self.mdl_populate_tree_dict = self.dict_from_table(
-                #     'modules', self.db_name
-                #     )
+                self.mdl_populate_tree_dict = self.dict_from_table(
+                    'modules', self.db_name
+                    )
         except sqlite3.Error as e:
             print(f"Module component data retireval error: {e}")
 
@@ -479,18 +171,18 @@ class RetrieveModuleTable(RetrieveDatabase):
         # Returns: 
             mdl_data_dict (dict): key = database name, value = (unique_id, side)
         '''
-        print(f"> Running dict_from_table()")
         query = f"SELECT unique_id, side FROM {table}"
         try:
             cursor = self.execute_query(query)
             rows = cursor.fetchall()
             # rows == [int(unique_id), string(side)]
             mdl_data_dict = {database_name: []}
+            print(f"{database_name} 003 > rows = {rows}")
             if rows:
                 for row in rows:
                     unique_id, side = row[0], row[1]
                     mdl_data_dict[database_name].append((unique_id, side))
-        
+            
             return mdl_data_dict
 
         except sqlite3.Error as e:
