@@ -594,24 +594,24 @@ class RetrieveCompData(RetrieveDatabase):
     
     
 # example testing:
-# Example 1: Retrieve module data
-module_retriever = RetrieveModuleTable("~/my_app/data", "my_database.db")
-module_data = module_retriever.retrieve_data()
-print(module_data)
+# # Example 1: Retrieve module data
+# module_retriever = RetrieveModuleTable("~/my_app/data", "my_database.db")
+# module_data = module_retriever.retrieve_data()
+# print(module_data)
 
-# Example 2: Retrieve specific component data
-component_retriever = RetrieveCompData(
-    "~/my_app/data", 
-    "bipedArm", 
-    0, 
-    "L"
-)
-component_data = component_retriever.retrieve_data()
+# # Example 2: Retrieve specific component data
+# component_retriever = RetrieveCompData(
+#     "~/my_app/data", 
+#     "bipedArm", 
+#     0, 
+#     "L"
+# )
+# component_data = component_retriever.retrieve_data()
 
-# Access data through properties
-print(component_retriever.component_dict)
-print(component_retriever.rotation_dict)
-print(component_retriever.position_dict)
+# # Access data through properties
+# print(component_retriever.component_dict)
+# print(component_retriever.rotation_dict)
+# print(component_retriever.position_dict)
 
 
 # INHERITENCE with Object-Orientated Programming. 
