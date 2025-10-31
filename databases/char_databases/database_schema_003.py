@@ -455,7 +455,7 @@ class RetrieveModuleTable(RetrieveDatabase):
         try:
             with self.connect(db_path) as conn:
                 self.mdl_populate_tree_dict = self.dict_from_table(
-                    conn, 'modules', self.db_name
+                    'modules', self.db_name
                     )
         except sqlite3.Error as e:
             print(f"Module component data retireval error: {e}")
