@@ -442,6 +442,7 @@ class RetrieveModuleTable(RetrieveDatabase):
     '''
     def __init__(self, database_name):
         super().__init__()
+        print(f"self.directory = {self.directory}")
         self.db_name = database_name
         self.mdl_data_dict = {}
         
