@@ -457,6 +457,7 @@ class RetrieveModuleTable(RetrieveDatabase):
                 self.mdl_populate_tree_dict = self.dict_from_table(
                     'modules', self.db_name
                     )
+            print(f" * Running retrieve_data")
         except sqlite3.Error as e:
             print(f"Module component data retireval error: {e}")
 
@@ -477,6 +478,7 @@ class RetrieveModuleTable(RetrieveDatabase):
         # Returns: 
             mdl_data_dict (dict): key = database name, value = (unique_id, side)
         '''
+        print(f"> Running dict_from_table()")
         query = f"SELECT unique_id, side FROM {table}"
         try:
             cursor = self.execute_query(query)
