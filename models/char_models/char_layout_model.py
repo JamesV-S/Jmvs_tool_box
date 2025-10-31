@@ -233,7 +233,7 @@ class CharLayoutModel:
                     # query the unique_id & side from each row
                     # store into a dictionary to pass to pop `populate_tree_views()`
                     
-                    data_retriever = database_schema_002.retrieveModulesData(rig_db_directory, db)
+                    data_retriever = database_schema_002.retrieveModulesData(rig_db_directory, db_name)
                     db_test[db_name] = data_retriever.mdl_populate_tree_dict.get(db_name, [])
                     
                     data_retriever = database_schema_003.RetrieveModuleTable(
