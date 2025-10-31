@@ -177,7 +177,7 @@ class RetrieveModuleTable(RetrieveDatabase):
             rows = cursor.fetchall()
             # rows == [int(unique_id), string(side)]
             mdl_data_dict = {database_name: []}
-            print(f"{database_name} 003 > rows = {rows}")
+            print(f" <~> {database_name} 003 > rows = {rows}")
             if rows:
                 for row in rows:
                     unique_id, side = row[0], row[1]
