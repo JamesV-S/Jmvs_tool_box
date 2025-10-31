@@ -218,8 +218,6 @@ class SystemQuadLeg:
         utils.connect_attr(f"{ik_ctrl_list[0]}{utils.Plg.wld_mtx_plg}", f"{mm_ik}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{mm_ik}{utils.Plg.mtx_sum_plg}", f"{jnt_target}{utils.Plg.opm_plg}")
 
-       
-
 
     def wire_logic_foot_roll(self ):
         '''
