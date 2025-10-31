@@ -239,14 +239,14 @@ class CharLayoutModel:
                         rig_db_directory, db)
                     db_data[db] = data_retriever.mdl_populate_tree_dict.get(db, [])
                 
-                    # schema_003
-                    data_retriever = database_schema_003.RetrieveModuleTable(
-                        rig_db_directory, db
-                    )
-                    db_new[db] = data_retriever.retrieve_mdl_data().get(db, [])
-                    print(f"data = {data_retriever.retrieve_mdl_data()}")
+                    # # schema_003
+                    # data_retriever = database_schema_003.RetrieveModuleTable(
+                    #     rig_db_directory, db
+                    # )
+                    # db_new[db] = data_retriever.retrieve_mdl_data().get(db, [])
+                    # print(f"data = {data_retriever.retrieve_mdl_data()}")
                     
-                    db_other = data_retriever.return_mdl_data_dict()
+                    # db_other = data_retriever.return_mdl_data_dict()
 
                 
                 else:
