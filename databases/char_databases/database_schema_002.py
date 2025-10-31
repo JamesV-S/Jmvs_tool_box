@@ -228,6 +228,7 @@ class retrieveModulesData():
 
         try:
             with sqlite3.connect(db_name) as conn:
+                print(f">> db_name = {db_name}")
                 self.mdl_populate_tree_dict = self.dict_from_table(
                     conn, 'modules', database_name
                     )
