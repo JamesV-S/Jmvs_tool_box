@@ -22,6 +22,7 @@ from databases.char_databases import (
     )
 
 importlib.reload(database_schema_002)
+importlib.reload(database_schema_003)
 importlib.reload(utils_os)
 importlib.reload(utils_json)
 
