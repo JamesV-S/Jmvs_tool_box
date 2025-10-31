@@ -440,15 +440,18 @@ class RetrieveModuleTable(RetrieveDatabase):
     # Attributes: N/A
     # Returns: N/A
     '''
-    def __init__(self, database_name):
-        super().__init__()
-        print(f"self.directory = {self.directory}")
+    def __init__(self, directory, database_name):
+        super().__init__(directory)
+        # print(f"self.directory = {self.directory}")
         self.db_name = database_name
         self.mdl_data_dict = {}
         
     
     def retrieve_data(self):
-        db_path = self.get_db_path()
+        # db_path = self.get_db_path()
+        db_directory = os.path.expanduser(self.directory)
+        os.makedirs(db_directory, exist_ok=True)
+        db_path = os.path.join(db_directory, self.db_name)
         try:
             with self.connect(db_path) as conn:
                 self.mdl_populate_tree_dict = self.dict_from_table(

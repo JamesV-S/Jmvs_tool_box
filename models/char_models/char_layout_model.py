@@ -236,7 +236,7 @@ class CharLayoutModel:
                     # db_data[db] = data_retriever.mdl_populate_tree_dict.get(db, [])
                     
                     data_retriever = database_schema_003.RetrieveModuleTable(
-                        db_name
+                        rig_db_directory, db_name
                     )
                     db_data[db_name] = data_retriever.mdl_data_dict(db_name, [])
                 
