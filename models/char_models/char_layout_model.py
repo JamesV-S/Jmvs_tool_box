@@ -231,16 +231,23 @@ class CharLayoutModel:
                     
                     # get the table data `modules` from each database
                     # query the unique_id & side from each row
-                    # store into a dictionary to pass to pop `populate_tree_views()`
+                    # store into a dictionary to pass to pop populate_tree_views()
                     
-                    data_retriever = database_schema_002.retrieveModulesData(rig_db_directory, db_name)
-                    db_test[db_name] = data_retriever.mdl_populate_tree_dict.get(db_name, [])
+                    data_ret = database_schema_002.retrieveModulesData(rig_db_directory, db_name)
+                    db_test[db_name] = data_ret.mdl_populate_tree_dict.get(db_name, [])
                     
+                    print(f"Test = {data_ret.mdl_populate_tree_dict}")
+
+
+
                     data_retriever = database_schema_003.RetrieveModuleTable(
                         rig_db_directory, db_name
                     )
                     db_data[db_name] = data_retriever.retrieve_data().get(db_name, [])
-                
+                    print(f"data = {data_retriever.retrieve_data()}")
+                    
+
+
                 else:
                     print(f"NO database file found in: {rig_db_directory}")
         else:
