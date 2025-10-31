@@ -138,7 +138,7 @@ class RetrieveModuleTable(RetrieveDatabase):
         super().__init__(directory)
         # print(f"self.directory = {self.directory}")
         self.db_name = database_name
-        self.mdl_data_dict = {}
+        # self.mdl_data_dict = {}
         
     
     def retrieve_mdl_data(self):
