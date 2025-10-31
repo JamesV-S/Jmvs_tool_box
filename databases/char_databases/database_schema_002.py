@@ -235,6 +235,7 @@ class retrieveModulesData():
         except sqlite3.Error as e:
             print(e)
 
+
     def dict_from_table(self, conn, table, database_name):
         # return a dict where each key is the database_name & each value is tuple of (unique_id & side)
         cursor = conn.cursor()
@@ -360,7 +361,6 @@ class retrieveSpecificComponentdata():
 
 class retrieveSpecificPlacementPOSData():
     def __init__(self, directory, module_name, unique_id, side):
-        self.mdl_populate_tree_dict = {}
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         # db_name must include the entire path too!
@@ -435,12 +435,12 @@ class retrieveSpecificPlacementPOSData():
     def return_existing_pos_dict(self):
         return self.existing_pos_dict
     
-
     def return_existing_rot_dict(self):
         return self.existing_rot_dict
     
     def return_existing_plane_dict(self):
         return self.existing_plane_dict
+
 
 class updateSpecificPlacementPOSData():
     def __init__(self, directory, module_name, unique_id, side, updated_pos_dict):
@@ -717,7 +717,6 @@ class CheckMirrorData():
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")
             return False
-
 
 
     def return_mirror_database_exists(self):

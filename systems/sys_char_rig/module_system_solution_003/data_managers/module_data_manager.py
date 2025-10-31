@@ -17,7 +17,7 @@ class ModuleDataManager:
 
         # _function_name(): function is meant for internal use within the class
     
-    
+
     def _validate_data(self):
         '''
         # Description:
