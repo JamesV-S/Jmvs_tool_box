@@ -179,10 +179,12 @@ class RetrieveModuleTable(RetrieveDatabase):
             mdl_data_dict = {database_name: []}
             print(f" <~> {database_name} 003 > rows = {rows}")
             if rows:
+                print(f"Yes rows")
+                
                 for row in rows:
                     unique_id, side = row[0], row[1]
                     mdl_data_dict[database_name].append((unique_id, side))
-            
+                    print(f"Yes rows, mdl_data_dict = {mdl_data_dict}")
             return mdl_data_dict
 
         except sqlite3.Error as e:
