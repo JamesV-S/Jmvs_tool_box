@@ -238,7 +238,7 @@ class CharLayoutModel:
                     data_retriever = database_schema_003.RetrieveModuleTable(
                         rig_db_directory, db_name
                     )
-                    db_data[db_name] = data_retriever.mdl_data_dict(db_name, [])
+                    db_data[db_name] = data_retriever.retrieve_data()
                 
                 else:
                     print(f"NO database file found in: {rig_db_directory}")
