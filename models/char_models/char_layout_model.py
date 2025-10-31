@@ -223,6 +223,7 @@ class CharLayoutModel:
         # gather a list of database found in the folder: 
         db_names = []
         db_data = {}
+        db_test = {}
         if os.path.exists(rig_db_directory):
             for db_name in os.listdir(rig_db_directory):
                 if db_name.startswith("DB_") and db_name.endswith(".db"):
@@ -232,8 +233,8 @@ class CharLayoutModel:
                     # query the unique_id & side from each row
                     # store into a dictionary to pass to pop `populate_tree_views()`
                     
-                    # data_retriever = database_schema_002.retrieveModulesData(rig_db_directory, db)
-                    # db_data[db] = data_retriever.mdl_populate_tree_dict.get(db, [])
+                    data_retriever = database_schema_002.retrieveModulesData(rig_db_directory, db)
+                    db_test[db_name] = data_retriever.mdl_populate_tree_dict.get(db_name, [])
                     
                     data_retriever = database_schema_003.RetrieveModuleTable(
                         rig_db_directory, db_name
@@ -248,7 +249,10 @@ class CharLayoutModel:
         
         # clear the modules everytime the active db is switched
         mdl_tree_model.clear()
-        
+            
+        print(f"db_test = {db_test}")
+        print(f"db_data = {db_data}")
+
         # add all databases to the treeView
         self.populate_tree_views(mdl_tree_model, rig_folder_name, db_data)
         
