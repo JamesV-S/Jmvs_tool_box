@@ -460,6 +460,8 @@ class RetrieveModuleTable(RetrieveDatabase):
         except sqlite3.Error as e:
             print(f"Module component data retireval error: {e}")
 
+        print(f"class module data `self.mdl_data_dict` = {self.mdl_data_dict}")
+
         return self.mdl_data_dict
     
 
