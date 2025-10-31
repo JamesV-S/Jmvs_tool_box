@@ -148,9 +148,10 @@ class RetrieveModuleTable(RetrieveDatabase):
         db_path = os.path.join(db_directory, self.db_name)
         try:
             with self.connect(db_path) as conn:
-                self.mdl_populate_tree_dict = self.dict_from_table(
+                self.mdl_data_dict = self.dict_from_table(
                     'modules', self.db_name
                     )
+                print(f"self.mdl_data_dict = {self.mdl_data_dict}")
         except sqlite3.Error as e:
             print(f"Module component data retireval error: {e}")
 
@@ -180,7 +181,6 @@ class RetrieveModuleTable(RetrieveDatabase):
             print(f" <~> {database_name} 003 > rows = {rows}")
             if rows:
                 print(f"Yes rows")
-                
                 for row in rows:
                     unique_id, side = row[0], row[1]
                     mdl_data_dict[database_name].append((unique_id, side))
@@ -190,7 +190,11 @@ class RetrieveModuleTable(RetrieveDatabase):
         except sqlite3.Error as e:
             print(f"sqlite3.Error: {e}")
             return {}
-        
+
+    
+    @property
+    def mdl_data_dict(self):
+        return self.mdl_data_dict 
 
 
 class RetrieveCompData(RetrieveDatabase):

@@ -224,6 +224,7 @@ class CharLayoutModel:
         db_names = []
         db_data = {}
         db_new = {}
+        db_other = {}
         if os.path.exists(rig_db_directory):
             for db in os.listdir(rig_db_directory):
                 if db.startswith("DB_") and db.endswith(".db"):
@@ -245,6 +246,7 @@ class CharLayoutModel:
                     db_new[db] = data_retriever.retrieve_mdl_data().get(db, [])
                     print(f"data = {data_retriever.retrieve_mdl_data()}")
                     
+                    db_other[db] = data_retriever.mdl_data_dict
 
                 
                 else:
@@ -255,6 +257,7 @@ class CharLayoutModel:
         
         print(f"db_data = {db_data}")
         print(f"db_new = {db_new}")
+        print(f"db_new = {db_other}")
 
         # clear the modules everytime the active db is switched
         mdl_tree_model.clear()
