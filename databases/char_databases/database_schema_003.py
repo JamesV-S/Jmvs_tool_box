@@ -447,7 +447,7 @@ class RetrieveModuleTable(RetrieveDatabase):
         self.mdl_data_dict = {}
         
     
-    def retrieve_data(self):
+    def retrieve_mdl_data(self):
         # db_path = self.get_db_path()
         db_directory = os.path.expanduser(self.directory)
         os.makedirs(db_directory, exist_ok=True)
