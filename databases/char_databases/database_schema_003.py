@@ -452,12 +452,12 @@ class RetrieveModuleTable(RetrieveDatabase):
         db_directory = os.path.expanduser(self.directory)
         os.makedirs(db_directory, exist_ok=True)
         db_path = os.path.join(db_directory, self.db_name)
+        print(f"> db_path = {db_path}")
         try:
             with self.connect(db_path) as conn:
                 self.mdl_populate_tree_dict = self.dict_from_table(
                     'modules', self.db_name
                     )
-            print(f" * Running retrieve_data")
         except sqlite3.Error as e:
             print(f"Module component data retireval error: {e}")
 
