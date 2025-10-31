@@ -16,13 +16,9 @@ from utils import (
     utils_json
 )
 
-from databases.char_databases import (
-    database_schema_002,
-    database_schema_003
-    )
+from databases.char_databases import database_schema_002
 
 importlib.reload(database_schema_002)
-importlib.reload(database_schema_003)
 importlib.reload(utils_os)
 importlib.reload(utils_json)
 
@@ -211,7 +207,7 @@ class CharLayoutModel:
             print(f"No component exists in the scene of '{component_selection}'")
             print(f"error: {e}")
         cmds.select(cl=1)
-
+        
 
     def visualise_active_db(self, val_availableRigComboBox, mdl_tree_model):
         # get directory of current chosen rig folder!
@@ -223,23 +219,18 @@ class CharLayoutModel:
         # gather a list of database found in the folder: 
         db_names = []
         db_data = {}
-        db_test = {}
         if os.path.exists(rig_db_directory):
-            for db_name in os.listdir(rig_db_directory):
-                if db_name.startswith("DB_") and db_name.endswith(".db"):
-                    db_names.append(db_name)
+            for db in os.listdir(rig_db_directory):
+                if db.startswith("DB_") and db.endswith(".db"):
+                    db_names.append(db)
                     
                     # get the table data `modules` from each database
                     # query the unique_id & side from each row
-                    # store into a dictionary to pass to pop populate_tree_views()
-                    
-                    data_ret = database_schema_002.retrieveModulesData(rig_db_directory, db_name)
-                    db_test[db_name] = data_ret.mdl_populate_tree_dict.get(db_name, [])
-                    
-                    print(f"Test = {data_ret.mdl_populate_tree_dict}")
-
-
-
+                    # store into a dictionary to pass to pop `populate_tree_views()`
+                    data_retriever = database_schema_002.retrieveModulesData(
+                        rig_db_directory, db)
+                    db_data[db] = data_retriever.mdl_populate_tree_dict.get(db, [])
+                
                     # data_retriever = database_schema_003.RetrieveModuleTable(
                     #     rig_db_directory, db_name
                     # )
@@ -247,19 +238,16 @@ class CharLayoutModel:
                     # print(f"data = {data_retriever.retrieve_mdl_data()}")
                     
 
-
+                
                 else:
-                    print(f"NO database file found in: {rig_db_directory}")
+                    print(f"NO database file found in:{rig_db_directory}")
         else:
             print(f"directory does NOT exist: {rig_db_directory}")
         print(f"rig_folder_name: {rig_folder_name} & in that, {db_names}")
         
         # clear the modules everytime the active db is switched
         mdl_tree_model.clear()
-            
-        print(f"db_test = {db_test}")
-        print(f"db_data = {db_data}")
-
+        
         # add all databases to the treeView
         self.populate_tree_views(mdl_tree_model, rig_folder_name, db_data)
         
