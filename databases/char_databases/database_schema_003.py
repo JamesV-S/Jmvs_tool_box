@@ -352,7 +352,7 @@ class RetrieveSpecificData():
 
 # Class Parent
 class RetrieveDatabase():
-    def __init__(self, directory, module_name, unique_id, side):
+    def __init__(self, directory, module_name=None, unique_id=None, side=None):
         '''
         # Description:
             Prent class for all operation's to do with 'Retrieval'.
