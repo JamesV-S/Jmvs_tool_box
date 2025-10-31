@@ -16,7 +16,10 @@ from utils import (
     utils_json
 )
 
-from databases.char_databases import database_schema_002
+from databases.char_databases import (
+    database_schema_002, 
+    database_schema_003
+    )
 
 importlib.reload(database_schema_002)
 importlib.reload(utils_os)
@@ -219,6 +222,7 @@ class CharLayoutModel:
         # gather a list of database found in the folder: 
         db_names = []
         db_data = {}
+        db_new = {}
         if os.path.exists(rig_db_directory):
             for db in os.listdir(rig_db_directory):
                 if db.startswith("DB_") and db.endswith(".db"):
@@ -227,15 +231,18 @@ class CharLayoutModel:
                     # get the table data `modules` from each database
                     # query the unique_id & side from each row
                     # store into a dictionary to pass to pop `populate_tree_views()`
+                    
+                    # schema_002
                     data_retriever = database_schema_002.retrieveModulesData(
                         rig_db_directory, db)
                     db_data[db] = data_retriever.mdl_populate_tree_dict.get(db, [])
                 
-                    # data_retriever = database_schema_003.RetrieveModuleTable(
-                    #     rig_db_directory, db_name
-                    # )
-                    # db_data[db_name] = data_retriever.retrieve_mdl_data().get(db_name, [])
-                    # print(f"data = {data_retriever.retrieve_mdl_data()}")
+                    # schema_003
+                    data_retriever = database_schema_003.RetrieveModuleTable(
+                        rig_db_directory, db
+                    )
+                    db_new[db] = data_retriever.retrieve_mdl_data().get(db, [])
+                    print(f"data = {data_retriever.retrieve_mdl_data()}")
                     
 
                 
@@ -245,6 +252,9 @@ class CharLayoutModel:
             print(f"directory does NOT exist: {rig_db_directory}")
         print(f"rig_folder_name: {rig_folder_name} & in that, {db_names}")
         
+        print(f"db_data = {db_data}")
+        print(f"db_new = {db_new}")
+
         # clear the modules everytime the active db is switched
         mdl_tree_model.clear()
         
