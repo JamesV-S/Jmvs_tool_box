@@ -246,7 +246,7 @@ class CharLayoutModel:
                     db_new[db] = data_retriever.retrieve_mdl_data().get(db, [])
                     print(f"data = {data_retriever.retrieve_mdl_data()}")
                     
-                    db_other = data_retriever.mdl_data_dict
+                    db_other = data_retriever.return_mdl_data_dict()
 
                 
                 else:
