@@ -172,7 +172,7 @@ class CreateDatabase():
             sql = f""" INSERT INTO {table} (unique_id, module_name, side) VALUES (?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'placement':
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[2])
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
             
             print(f"888888888888888888 placement VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot, side) VALUES (?, ?, ?, ?)"""
