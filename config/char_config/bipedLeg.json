@@ -19,14 +19,6 @@
         }
     },
     "constant": {
-        "space_swap": [["world", "COG", "hip", "custom"],
-            ["world", "ankle"],
-            ["world", "spine_0"]],
-        "ik_settings": {
-            "start_joint": "hip",
-            "end_joint": "ankle",
-            "pv_joint": "knee"
-        },
         "guides_connection": [
             {"key": "spine_spine0", "typ": "point", "constrained": "hip", "attr": {"all": true}},
             {"key": "root_ROOT", "typ": "point", "constrained": "ankle", "attr": {"all": true}},
@@ -36,7 +28,9 @@
             {"key": "hip", "typ": "point", "constrained": "knee", "attr": {"all": true}},
             {"key": "foot", "typ": "parent", "constrained": "ball", "attr": {"all": true}},
             {"key": "foot", "typ": "parent", "constrained": "toe", "attr": {"all": true}}
-        ]
+        ],
+        "hock_name": false,
+        "ik_end_ori": true
     }, 
     "user_settings": {
         "mirror_rig": false,

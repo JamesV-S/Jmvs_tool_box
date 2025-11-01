@@ -18,13 +18,6 @@
         }
     },
     "constant": {
-        "space_swap": ["world", "tailRoot"],
-        "ik_settings": {
-            "start_joint": "tail0",
-            "end_joint": "tail4",
-            "pv_joint": null,
-            "world_orientation": true
-        },
         "guides_connection": [
             {"key": "root_COG", "typ": "parent", "constrained": "tail0", "attr": {"all": true}}
         ],

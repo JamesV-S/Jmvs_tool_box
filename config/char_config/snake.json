@@ -14,8 +14,8 @@
         }
     },
     "constant": {
-        "space_swap": [],
-        "ik_settings": {}
+        "guides_connection": [],
+        "guides_follow": []
     },
     "user_settings": {
         "mirror_rig": false,

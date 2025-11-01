@@ -21,15 +21,6 @@
         }
     },
     "constant": {
-        "space_swap": [["world", "COG", "hip", "custom"],
-            ["world", "ankle"],
-            ["world", "spine_0"]],
-        "ik_settings": {
-            "start_joint": "hip",
-            "end_joint": "ankle",
-            "pv_joint": "knee",
-            "hock_joint": "calf"
-        },
         "guides_connection": [
             {"key": "spine_spine0", "typ": "point", "constrained": "hip", "attr": {"all": true}},
             {"key": "root_ROOT", "typ": "point", "constrained": "calf", "attr": {"all": true}},

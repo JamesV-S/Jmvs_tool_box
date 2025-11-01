@@ -16,8 +16,6 @@
         }
     },
     "constant": {
-        "space_swap": ["world", "neckRoot"],
-        "ik_settings": {},
         "guides_connection": [
             {"key": "spine_spine4",  "typ":"parent", "constrained":"neck0", "attr": {"all": true}}
         ],

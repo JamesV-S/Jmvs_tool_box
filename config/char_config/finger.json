@@ -17,17 +17,8 @@
         }
     },
     "constant": {
-        "space_swap": [["world", "COG", "wrist", "custom"],
-                        ["world", "bipedPhalDEnd"],
-                        ["world", "bipedPhalProximal"],
-                        ["world", "wirst"]],
-        "ik_settings": {
-            "start_joint": "bipedPhalProximal",
-            "end_joint": "bipedPhalDistal",
-            "pv_joint": "bipedPhalMiddle",
-            "world_orientation": false,
-            "last_joint": "bipedPhalDEnd"
-        }
+        "guides_connection": [],
+        "guides_follow": []
     },
     "user_settings": {
         "mirror_rig": false,

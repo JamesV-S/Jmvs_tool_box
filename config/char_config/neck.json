@@ -18,13 +18,8 @@
         }
     },
     "constant": {
-        "space_swap": ["world", "neckRoot"],
-        "ik_settings": {
-            "start_joint": "neck0",
-            "end_joint": "neck4",
-            "pv_joint": null,
-            "world_orientation": true
-        }
+        "guides_connection": [],
+        "guides_follow": []
     },
     "user_settings": {
         "mirror_rig": false,

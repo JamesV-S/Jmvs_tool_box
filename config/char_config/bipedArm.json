@@ -23,7 +23,9 @@
             {"key": "root_ROOT", "typ": "point", "constrained": "elbow", "attr": {"all": true}},
             {"key": "root_ROOT", "typ": "point", "constrained": "wrist", "attr": {"all": true}}
         ],
-        "guides_follow": []
+        "guides_follow": [],
+        "hock_name": false,
+        "ik_end_wld_ori": false
     },
     "user_settings":{
         "mirror_rig": false,

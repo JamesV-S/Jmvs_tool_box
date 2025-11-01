@@ -19,13 +19,6 @@
         }
     },
     "constant": {
-        "space_swap": [],
-        "ik_settings": {
-            "start_joint": "spine0",
-            "end_joint": "spine4",
-            "pv_joint": null,
-            "world_orientation": true
-        },
         "guides_connection": [
             {"key": "root_COG", "typ": "parent", "constrained": "spine0", "attr": {"all":true}}
             ],
