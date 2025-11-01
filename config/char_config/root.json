@@ -6,7 +6,7 @@
             "ROOT": [0.0, 0.0, 0.0],
             "COG": [0, 150, 0]
         },
-        "component_rot_xyz": {
+        "component_rot": {
             "ROOT": [0.0, 0.0, 0.0],
             "COG": [0.0, 0.0, 0.0]
         }
