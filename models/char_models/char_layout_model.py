@@ -331,7 +331,7 @@ class CharLayoutModel:
                 'elbow': [53.69795846939088, 197.98831176757807, 6.61050152778626], 
                 'wrist': [76.10134363174441, 169.30845642089832, 30.106774568557817]
                 }, 
-            'component_rot_xyz': {'clavicle': [0.0, 0.0, 0.0], 'shoulder': [0.0, 0.0, 0.0], 'elbow': [0.0, 0.0, 0.0], 'wrist': [0.0, 0.0, 0.0]}, 'component_rot_yzx': {'clavicle': [0.0, 0.0, 0.0], 'shoulder': [0.0, 0.0, 0.0], 'elbow': [0.0, 0.0, 0.0], 'wrist': [0.0, 0.0, 0.0]}}
+            'component_rot': {'clavicle': [0.0, 0.0, 0.0], 'shoulder': [0.0, 0.0, 0.0], 'elbow': [0.0, 0.0, 0.0], 'wrist': [0.0, 0.0, 0.0]}, 'component_rot_yzx': {'clavicle': [0.0, 0.0, 0.0], 'shoulder': [0.0, 0.0, 0.0], 'elbow': [0.0, 0.0, 0.0], 'wrist': [0.0, 0.0, 0.0]}}
 
             '''
 

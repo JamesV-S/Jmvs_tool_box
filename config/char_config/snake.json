@@ -11,8 +11,6 @@
             "tail0": [0.0, 0.0, 0.0]
         },
         "component_rot_xyz": {
-        },
-        "component_rot_yzx": {
         }
     },
     "constant": {

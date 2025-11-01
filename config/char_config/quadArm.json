@@ -16,13 +16,6 @@
             "elbow": [0.0, 0.0, 0.0],
             "carpus": [0.0, 0.0, 0.0],
             "metacarpus": [0.0, 0.0, 0.0]
-        },
-        "component_rot_yzx": {
-            "scapula": [0.0, 0.0, 0.0],
-            "humerus": [0.0, 0.0, 0.0],
-            "elbow": [0.0, 0.0, 0.0],
-            "carpus": [0.0, 0.0, 0.0],
-            "metacarpus": [0.0, 0.0, 0.0]
         }
     },
     "constant": {

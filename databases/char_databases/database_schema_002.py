@@ -77,8 +77,7 @@ class CreateDatabase():
                 self.update_db(conn, "placement", (
                     self.unique_id, 
                     placement_dict['component_pos'], 
-                    placement_dict['component_rot_xyz'], 
-                    placement_dict['component_rot_yzx'], 
+                    placement_dict['component_rot_xyz'],
                     side
                     ))
                 # constant data
@@ -128,7 +127,6 @@ class CreateDatabase():
             unique_id INT,
             component_pos TEXT,
             component_rot_xyz TEXT,
-            component_rot_yzx TEXT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS constant (
@@ -174,9 +172,9 @@ class CreateDatabase():
             sql = f""" INSERT INTO {table} (unique_id, module_name, side) VALUES (?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'placement':
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[4])
             print(f"888888888888888888 H H placement VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot_xyz, component_rot_yzx, side) VALUES (?, ?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot_xyz, side) VALUES (?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'constant':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])

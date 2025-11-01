@@ -9,10 +9,6 @@
         "component_rot_xyz": {
             "ROOT": [0.0, 0.0, 0.0],
             "COG": [0.0, 0.0, 0.0]
-        },
-        "component_rot_yzx": {
-            "ROOT": [0.0, 0.0, 0.0],
-            "COG": [0.0, 0.0, 0.0]
         }
     },
     "constant": {
