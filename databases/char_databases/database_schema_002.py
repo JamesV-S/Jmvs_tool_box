@@ -174,7 +174,7 @@ class CreateDatabase():
         elif table == 'placement':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
             '''
-            
+            changinggggg
             '''
             print(f"888888888888888888 H H placement VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot, side) VALUES (?, ?, ?, ?)"""
