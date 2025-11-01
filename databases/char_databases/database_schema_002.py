@@ -6,6 +6,12 @@ import sys
 import os
 
 '''
+
+push test
+
+'''
+
+'''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
@@ -720,3 +726,9 @@ class CheckMirrorData():
 
     def return_mirror_database_exists(self):
         return self.mirror_database_exists
+    
+
+
+class Testing_git_commit():
+    def __init__(self):
+        pass
