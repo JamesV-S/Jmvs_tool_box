@@ -17,15 +17,6 @@
         }
     },
     "constant":{
-        "space_swap": [["world", "COG", "shoulder", "custom"], 
-                        ["world", "wrist"], ["world", "clavicle"], 
-                        ["world", "spine"]],
-        "ik_settings":{
-            "start_joint": "shoulder",
-            "end_joint": "wrist", 
-            "pv_joint": "elbow",
-            "top_joint": "clavicle"
-        },
         "guides_connection": [
             {"key": "spine_spine3", "typ": "parent", "constrained": "clavicle", "attr": {"all": true}},
             {"key": "spine_spine3", "typ": "parent", "constrained": "shoulder", "attr": {"all": true}},
