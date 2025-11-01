@@ -6,12 +6,6 @@ import sys
 import os
 
 '''
-
-push test
-
-'''
-
-'''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
@@ -83,7 +77,7 @@ class CreateDatabase():
                 self.update_db(conn, "placement", (
                     self.unique_id, 
                     placement_dict['component_pos'], 
-                    placement_dict['component_rot_xyz'],
+                    placement_dict['component_rot'],
                     side
                     ))
                 # constant data
@@ -132,7 +126,7 @@ class CreateDatabase():
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
             component_pos TEXT,
-            component_rot_xyz TEXT,
+            component_rot TEXT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS constant (
@@ -180,7 +174,7 @@ class CreateDatabase():
         elif table == 'placement':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[4])
             print(f"888888888888888888 H H placement VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot_xyz, side) VALUES (?, ?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot, side) VALUES (?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'constant':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
@@ -315,7 +309,7 @@ class retrieveSpecificComponentdata():
 
     def rotation_dict_from_table(self, conn):
         cursor = conn.cursor()
-        placement_sql = f"SELECT component_rot_xyz FROM placement WHERE unique_id = ? AND side = ? "
+        placement_sql = f"SELECT component_rot FROM placement WHERE unique_id = ? AND side = ? "
         try:
             cursor.execute(placement_sql, (self.unique_id, self.side,))
             row = cursor.fetchone()
@@ -406,7 +400,7 @@ class retrieveSpecificPlacementPOSData():
 
     def component_rot_dict_from_table(self, conn):
         cursor = conn.cursor()
-        placement_sql = f"SELECT component_rot_xyz FROM placement WHERE unique_id = ? AND side = ? "
+        placement_sql = f"SELECT component_rot FROM placement WHERE unique_id = ? AND side = ? "
         try:
             cursor.execute(placement_sql, (self.unique_id, self.side,))
             row = cursor.fetchone()
@@ -483,7 +477,7 @@ class UpdatePlacementROTData():
             with sqlite3.connect(db_name) as conn:
                 self.update_rot_data(conn, "placement", (updated_rot_dict, unique_id, side))
                 self.update_plane_data(conn, "controls", (updated_plane_dict, unique_id, side))
-                print(f"Updated database `component_rot_xyz`: {db_name} with {updated_rot_dict}, where its unique_id = {unique_id} & side = {side}")
+                print(f"Updated database `component_rot`: {db_name} with {updated_rot_dict}, where its unique_id = {unique_id} & side = {side}")
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
     
@@ -491,7 +485,7 @@ class UpdatePlacementROTData():
     def update_rot_data(self, conn, table, values):
         cursor = conn.cursor()
         if table == 'placement':
-            sql = f'UPDATE {table} SET component_rot_xyz = ? WHERE unique_id = ? AND side = ?'
+            sql = f'UPDATE {table} SET component_rot = ? WHERE unique_id = ? AND side = ?'
             values = (json.dumps(values[0]), values[1], values[2])
             cursor.execute(sql, values)
         conn.commit()
@@ -726,9 +720,3 @@ class CheckMirrorData():
 
     def return_mirror_database_exists(self):
         return self.mirror_database_exists
-    
-
-
-class Testing_git_commit():
-    def __init__(self):
-        pass
