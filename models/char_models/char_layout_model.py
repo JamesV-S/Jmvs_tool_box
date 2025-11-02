@@ -304,6 +304,7 @@ class CharLayoutModel:
                     constant_dict = values['constant']
                     user_settings_dict =  values['user_settings']
                     controls_dict =  values['controls']
+            print(f"constant_dict >> {constant_dict}")
             print(f"mdl_object_list >> {mdl_object_list}")
             print(f"placement_dict >> {placement_dict}")
             print(f"user_settings_dict >> {user_settings_dict}")

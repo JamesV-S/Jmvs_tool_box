@@ -51,7 +51,7 @@ importlib.reload(utils_db)
 # u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_sys': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
 
 class CreateDatabase():
-    def __init__(self, directory, mdl_name, side, object_list, placement_dict, constant_dict, user_settings_dict, controls_dict):
+    def __init__(self, directory, mdl_name, side, item_name_list, placement_dict, constant_dict, user_settings_dict, controls_dict):
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         db_name = os.path.join(db_directory, f'DB_{mdl_name}.db')
@@ -71,7 +71,7 @@ class CreateDatabase():
                 curve_info_dict = utils_db.cr_curve_info_dictionary(controls_dict['FK_ctrls'], controls_dict['IK_ctrls'], self.unique_id, side)
                 
                 # cr ori plane dict
-                ori_plane_dict = utils_db.cr_ori_plane_dict(object_list[:-1], 10)
+                ori_plane_dict = utils_db.cr_ori_plane_dict(item_name_list[:-1], 10)
                 
                 # update the tables!
                 self.update_db(conn, "modules", (
@@ -91,12 +91,14 @@ class CreateDatabase():
                     side
                     ))
                 # constant data
-                print(f"constant table: object_list = {object_list}")
+                print(f"constant table: item_name_list = {item_name_list}")
                 self.update_db(conn, "constant", (
                     self.unique_id,
                     constant_dict['guides_connection'], 
                     constant_dict['guides_follow'],
-                    object_list,
+                    item_name_list,
+                    constant_dict['hock_name'],
+                    constant_dict['ik_wld_ori'],
                     side
                     ))
                 self.update_db(conn, "user_settings", (
@@ -146,6 +148,8 @@ class CreateDatabase():
             guides_connection TEXT,
             guides_follow TEXT,
             items TEXT,
+            hock_name TEXT,
+            ik_wld_ori TEXT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS user_settings (
@@ -188,9 +192,9 @@ class CreateDatabase():
             sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot, side) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'constant':
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4], values[5], values[6])
             print(f"888888888888888888 > constant VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, items, side) VALUES (?, ?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, items, hock_name, ik_wld_ori, side) VALUES (?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'user_settings':
             print(f"888888888888888888 > user_settings VALUES: {values}")
