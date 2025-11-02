@@ -30,7 +30,9 @@
             {"key": "hip", "typ": "point", "constrained": "knee", "attr": {"all": true}},
             {"key": "hip", "typ": "point", "constrained": "ball", "attr": {"all": true}},
             {"key": "ankle", "typ": "point", "constrained": "end", "attr": {"all": true}}
-        ]
+        ],
+        "hock_name": "calf",
+        "ik_wld_ori": true
     }, 
     "user_settings": {
         "mirror_rig": false,

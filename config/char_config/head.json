@@ -16,14 +16,10 @@
         }
     },
     "constant": {
-        "guides_connection": [
-            {"key": "spine_spine4",  "typ":"parent", "constrained":"neck0", "attr": {"all": true}}
-        ],
-        "guides_follow": [
-            {"key": "neck0", "typ": "point", "constrained": "neck1", "attr": {"all": true}},
-            {"key": "neck0", "typ": "point", "constrained": "neck2", "attr": {"all": true}},
-            {"key": "neck0", "typ": "point", "constrained": "neck3", "attr": {"all": true}}
-        ]
+        "guides_connection": [],
+        "guides_follow": [],
+        "hock_name": false,
+        "ik_wld_ori": false
     },
     "user_settings": {
         "mirror_rig": false,

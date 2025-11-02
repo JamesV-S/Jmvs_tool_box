@@ -15,7 +15,9 @@
         "guides_connection": [],
         "guides_follow": [
             {"key": "ROOT", "typ": "point", "constrained": "COG", "attr": {"all": true}}
-        ]
+        ],
+        "hock_name": false,
+        "ik_wld_ori": false
     },
     "user_settings": {
         "mirror_rig": false,

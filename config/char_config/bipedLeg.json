@@ -30,7 +30,7 @@
             {"key": "foot", "typ": "parent", "constrained": "toe", "attr": {"all": true}}
         ],
         "hock_name": false,
-        "ik_end_ori": true
+        "ik_wld_ori": true
     }, 
     "user_settings": {
         "mirror_rig": false,

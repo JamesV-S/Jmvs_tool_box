@@ -72,9 +72,13 @@ class CreateDatabase():
                 
                 # cr ori plane dict
                 ori_plane_dict = utils_db.cr_ori_plane_dict(object_list[:-1], 10)
-
+                
                 # update the tables!
-                self.update_db(conn, "modules", (self.unique_id, mdl_name, side))
+                self.update_db(conn, "modules", (
+                    self.unique_id, 
+                    mdl_name, 
+                    side
+                    ))
                 # table user_settings
                 rig_options = ', '.join(user_settings_dict['rig_sys']['options'])
                 print(f"DB* user_settings_dict['twist']= `{user_settings_dict['twist']}`" )
@@ -87,6 +91,7 @@ class CreateDatabase():
                     side
                     ))
                 # constant data
+                print(f"constant table: object_list = {object_list}")
                 self.update_db(conn, "constant", (
                     self.unique_id,
                     constant_dict['guides_connection'], 
@@ -174,25 +179,25 @@ class CreateDatabase():
     def update_db(self, conn, table, values):
         cursor = conn.cursor()
         if table == 'modules':
-            print(f"888888888888888888 H H module VALUES: {values}")
+            print(f"888888888888888888 > module VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, module_name, side) VALUES (?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'placement':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
-            print(f"888888888888888888 placement VALUES: {values}")
+            print(f"888888888888888888 > placement VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot, side) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'constant':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4])
-            print(f"H H constant VALUES: {values}")
+            print(f"888888888888888888 > constant VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, items, side) VALUES (?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'user_settings':
-            print(f"888888888888888888 H H user_settings VALUES: {values}")
+            print(f"888888888888888888 > user_settings VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, twist, rig_options, rig_default, joint_num, size, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
         elif table == 'controls':
-            print(f"888888888888888888 H H controls VALUES: {values[3]}")
+            print(f"888888888888888888 > controls VALUES: {values[3]}")
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), json.dumps(values[4]), values[5])
             sql = f""" INSERT INTO {table} (unique_id, FK_ctrls, IK_ctrls, curve_info, ori_plane_info, side) VALUES (?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)

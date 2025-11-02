@@ -27,7 +27,9 @@
         ],
         "guides_follow": [
             {"key": "scapula", "typ": "point", "constrained": "humerus", "attr": {"all": true}}
-        ]
+        ],
+        "hock_name": "carpus",
+        "ik_wld_ori": false
     }, 
     "user_settings": {
         "mirror_rig": false,
