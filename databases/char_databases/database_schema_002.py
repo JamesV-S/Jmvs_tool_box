@@ -9,6 +9,13 @@ import os
 
 LETS SEE IF IT'S WORKING NOW
 
+constant_dict >> {
+    'guides_connection': [{'key': 'spine_spine3', 'typ': 'parent', 'constrained': 'clavicle', 'attr': {'all': True}}, {'key': 'spine_spine3', 'typ': 'parent', 'constrained': 'shoulder', 'attr': {'all': True}}, {'key': 'root_ROOT', 'typ': 'point', 'constrained': 'elbow', 'attr': {'all': True}}, {'key': 'root_ROOT', 'typ': 'point', 'constrained': 'wrist', 'attr': {'all': True}}], 
+    'guides_follow': [], 
+    'hock_name': None, 
+    'ik_wld_ori': False
+    }
+
 '''
 
 '''

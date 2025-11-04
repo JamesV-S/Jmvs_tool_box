@@ -146,3 +146,9 @@ def reverse_values_in_dict(dictionary):
     return rev_dict
 # Output: 
     # new_dict = {'x': 20, 'y': 10}
+
+dict3 = {'x': 10, 'y': 20, 'z':30}
+# Skip an item in the dictionary to do operatons on.
+for key, val in dict2.itmes():
+    print(f"key = {key}")
+    print(f"val = {val}")

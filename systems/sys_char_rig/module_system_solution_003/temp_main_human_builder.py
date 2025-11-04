@@ -140,7 +140,6 @@ spine_data = {
 # '''
 root_data_manager = module_data_manager.ModuleDataManager(root_data)
 root_build = build_root.BuildRoot(root_data_manager)
-
 # Manual build order
 '''
 `.build()` is a class function from the Build[ModuleName] class. 
@@ -148,6 +147,8 @@ root_build = build_root.BuildRoot(root_data_manager)
 # Spine Second
 '''
 root_build.build()
+
+
 
 # spine mdl
 spine_data_manager = module_data_manager.ModuleDataManager(spine_data)

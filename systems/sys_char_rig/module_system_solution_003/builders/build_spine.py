@@ -23,7 +23,11 @@ importlib.reload(cr_ctrl)
 class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
     def __init__(self, data_manager):
         module_blueprint.ModuleBP.__init__(self, data_manager)
-        # system_spine.SystemSpine.__init__(self, data_manager)
+        system_spine.SystemSpine.__init__(self, data_manager)
+
+
+
+        
         print(f"-------  -------  --------  -------")
         print(f"Declared Build{self.dm.mdl_nm}")
 

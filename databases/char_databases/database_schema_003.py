@@ -192,8 +192,8 @@ class RetrieveModuleTable(RetrieveDatabase):
             return {}
 
     
-    @property
-    def mdl_data_dict(self):
+    
+    def return_mdl_data_dict(self):
         return self.mdl_data_dict 
 
 
@@ -246,7 +246,7 @@ class RetrieveCompData(RetrieveDatabase):
         
 
     def rotation_dict_from_table(self):
-        query = f"SELECT component_rot_xyz FROM placement WHERE unique_id = ? AND side = ? "
+        query = f"SELECT component_rot FROM placement WHERE unique_id = ? AND side = ? "
         try:
             # cursor.execute(placement_sql, (self.unique_id, self.side,))
             cursor = self.execute_query(query, (self.unique_id, self.side))

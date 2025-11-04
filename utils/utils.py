@@ -634,12 +634,12 @@ def get_selection_rot_dict(selection):
     #     rot_ls = cmds.xform(sel, q=1, rotation=1, worldSpace=1)
     #     rotation_pos[sel] = list(rot_ls)
     
-    rotation_pos = {
+    rotation_dict = {
         sel:list(cmds.xform(sel, q=1, rotation=1, worldSpace=1))
         for sel in selection
         }
 
-    return rotation_pos
+    return rotation_dict
 
 
 def get_sel_ori_plane_dict(selection, attr_name):    
@@ -950,6 +950,34 @@ def joint_from_sel():
           new_name = cmds.rename(s, f"jnt_rig_{s}")
           cmds.joint(name=new_name, parent=None)
 
+    
+def align_source_rotX_to_target(rot_dict):
+    '''
+    # Description:
+        Set the X (first item of a rotation list) to the same as the last iitem 
+        in the dictonary's X int.
+    # Attributes:
+        rot_dict (dict): key: ori_guide name, value: ori_guide rotation list. 
+    # Returns: N/A 
+    '''
+    # Get the first 'int' item from the target's rotation list.  
+    target_rot = list(rot_dict.values())[-1]
+    target_index_0 = target_rot[0]
+    
+    # New dict without the target item in it.
+    src_rot_dict = {k:v for (k,v) in zip(list(rot_dict.keys())[:-1], list(rot_dict.values())[:-1])}
+
+    for src_key, src_rot_val in src_rot_dict.items():
+        print(f"src_key = {src_key}")
+        # print(f"src_rot_val = {src_rot_val}")
+        src_rot_val[0] = target_index_0
+        print(f"new src_rot_val = {src_rot_val}")
+        print("_ _ _")
+        cmds.xform(src_key, rotation=src_rot_val, ws=1)
+
+Rots_dictionary =  {
+    'ori_quadLeg_knee_0_L': [-102.78287471567256, 34.07909129381282, -97.16610453396078],
+    'ori_quadLeg_hip_0_L': [52.098700192501376, -22.22830827463846, -86.18971347166391]}
 
 #--------------------------------- MATRIX -------------------------------------
 def clean_opm(obj):
@@ -1021,11 +1049,11 @@ def wire_ofs_mtxIn0_1_to_1(source_pos_rot_dicts_ls, target_pos_rot_dicts_ls,
     # build the temp locators
     src_tgt_temp_loc = []
     for (src_key, src_pos_val), (_, src_rot_val), (tgt_key, tgt_pos_val), (_, tgt_rot_val) in zip(
-        source_pos_dict_index.items(), 
-        source_rot_dict_index.items(), 
-        target_pos_dict_index.items(), 
-        target_rot_dict_index.items()
-        ):
+                                                                                            source_pos_dict_index.items(), 
+                                                                                            source_rot_dict_index.items(), 
+                                                                                            target_pos_dict_index.items(), 
+                                                                                            target_rot_dict_index.items()
+                                                                                            ):
         # source locator
         src_loc_nm = f"loc_temp_{src_key}"
         src_tgt_temp_loc.append(src_loc_nm)
@@ -1166,8 +1194,6 @@ def mtxCon_no_ofs(driver, driven):
         connect_attr(f"{driver}{Plg.wld_mtx_plg}", f"{MM}{Plg.mtx_ins[1]}")
         connect_attr(f"{MM}{Plg.mtx_sum_plg}", f"{driven}{Plg.opm_plg}")
         return MM
-
-
 
 
 def invert_sign(values_ls):

@@ -586,3 +586,16 @@ class CharLayoutModel:
         if val_ctrl_editing_checkBox:
             print(f"ctrl editing model functions running")
         
+
+    # ---- Orientation guides functions ----
+    def align_orientation_to_last(self, guide_selection):
+        '''
+        # Description:
+        Call util functions to set the X (first item of a rotation list) of 
+        selected ori_guides to the same as the last orig_guide in the list
+        # Attributes:
+            guide_selection (list): Selected ori_guides in the scene. 
+        # Returns: N/A 
+        '''
+        ori_rot_dict = utils.get_selection_rot_dict(guide_selection)
+        utils.align_source_rotX_to_target(ori_rot_dict)

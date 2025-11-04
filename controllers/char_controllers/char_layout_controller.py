@@ -150,7 +150,7 @@ class CharLayoutController:
         self.view.lock_btn.clicked.connect(self.sig_lock_btn)
         self.view.unlock_btn.clicked.connect(self.sig_unlock_btn)
         
-            # ---- Tab2 - Edit module ----
+            # ---- Tab2 - Edit module ---- 
         self.view.entire_comp_radioBtn.clicked.connect(self.sig_entire_comp_radioBtn)
         self.view.sel_comp_radioBtn.clicked.connect(self.sig_sel_comp_radioBtn)
         self.view.update_comp_data_checkBox.stateChanged.connect(self.sig_update_comp_data_checkBox)

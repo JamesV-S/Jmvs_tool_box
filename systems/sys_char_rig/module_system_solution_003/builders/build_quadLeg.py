@@ -20,12 +20,13 @@ importlib.reload(system_quadLeg)
 importlib.reload(utils)
 importlib.reload(cr_ctrl)
 
+
 class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
     def __init__(self, data_manager):
         module_blueprint.ModuleBP.__init__(self, data_manager)
-        system_quadLeg.SystemQuadLeg.__init__(self, data_manager)
-        # print(f"-------  -------  --------  -------")
-        # print(f"Declared Build{self.dm.mdl_nm}")
+        system_quadLeg.SystemQuadLeg.__init__(self, data_manager) 
+
+
 
 
     def build(self):

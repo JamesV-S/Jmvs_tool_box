@@ -53,24 +53,6 @@ class SystemRoot:
         for node_name in MM_list:
             utils.cr_node_if_not_exists(1, "multMatrix", node_name)
 
-        # def cog_offset_ctrls():
-            # self.MD_cog_ofs = f"MD_ctrl_cog_offset"
-            # self.MD_rev_cog_ofs = f"MD_ctrl_cog_offset_rev"
-            # self.CM_cog_ofs = f"CM_ctrl_cog_offset"
-            # self.CM_inv_cog_ofs = f"CM_inv_ctrl_cog_offset"
-            # utils.cr_node_if_not_exists(1, "multiplyDivide", self.MD_cog_ofs, {"input1Y" : cog_y})
-            # utils.cr_node_if_not_exists(1, "multiplyDivide", self.MD_rev_cog_ofs, {"input1X":-1, "input1Y":-1, "input1Z":-1})
-            # utils.cr_node_if_not_exists(1, "composeMatrix", self.CM_cog_ofs)
-            # utils.cr_node_if_not_exists(1, "composeMatrix", self.CM_inv_cog_ofs)
-            # if cog_x == 0:
-            #     cmds.setAttr(f"{self.MD_cog_ofs}.input1X", 10)
-            # else:
-            #     cmds.setAttr(f"{self.MD_cog_ofs}.input1X", cog_x)
-            # if cog_z == 0:
-            #     cmds.setAttr(f"{self.MD_cog_ofs}.input1Z", 10)
-            # else:
-            #     cmds.setAttr(f"{self.MD_cog_ofs}.input1Z", cog_z)
-
         # connections
         utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{fm_global_scale}{utils.Plg.flt_A}")
         utils.connect_attr(f"{root_ctrl}.{self.dm.global_scale_attr}", f"{fm_global_scale}{utils.Plg.flt_B}")
