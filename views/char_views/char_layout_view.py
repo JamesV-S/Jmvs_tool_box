@@ -206,8 +206,8 @@ class CharLayoutView(QtWidgets.QWidget):
         mop_tabs.setStyleSheet(self.stylesheet)
 
         self.operations_tab_ui(mop_tabs)        
-        self.module_editing_ui(mop_tabs)
-        # self.recover_module_ui(mop_tabs)
+        self.module_editing_tab_ui(mop_tabs)
+        # self.recover_module_tab_ui(mop_tabs)
 
         mop_container, chk_none = self.cr_container_funcUI("Management Options", mop_tabs)
         widgets_layout.addLayout(mop_container)
@@ -308,7 +308,7 @@ class CharLayoutView(QtWidgets.QWidget):
               self.select_data_in_comp_btn])
 
 
-    def module_editing_ui(self, tab):
+    def module_editing_tab_ui(self, tab):
         parent_widget = QtWidgets.QWidget()
 
         layV_module_editing = QtWidgets.QVBoxLayout(parent_widget)
@@ -412,7 +412,7 @@ class CharLayoutView(QtWidgets.QWidget):
                self.ctrl_type_comboBox, self.ctrl_num_spinBox, self.commit_module_edits_btn])
 
 
-    def recover_module_ui(self, tab):
+    def recover_module_tab_ui(self, tab):
         parent_widget = QtWidgets.QTabWidget(self)
         
         # Initialise the layouts
@@ -484,14 +484,14 @@ class CharLayoutView(QtWidgets.QWidget):
 
         # -- delete mdl btns --
         layH_mdl_delete = QtWidgets.QHBoxLayout()
-        self.delete_mdl_btn = QtWidgets.QPushButton("Remove module") # selected mdl
-        self.delete_blueprint_btn = QtWidgets.QPushButton("Delete Blueprint") # entire blueprint
+        self.delete_comp_btn = QtWidgets.QPushButton("Delete Component") # selected mdl
+        self.delete_mdl_btn = QtWidgets.QPushButton("Delete Module") # entire blueprint
+        layH_mdl_delete.addWidget(self.delete_comp_btn)
         layH_mdl_delete.addWidget(self.delete_mdl_btn)
-        layH_mdl_delete.addWidget(self.delete_blueprint_btn)
         
         # -- add mdl btns --
         layH_mdl_add = QtWidgets.QHBoxLayout()
-        self.add_mdl_btn = QtWidgets.QPushButton("Add module") # selected mdl
+        self.add_mdl_btn = QtWidgets.QPushButton("Add Module") # selected mdl
         self.add_blueprint_btn = QtWidgets.QPushButton("Create Blueprint") # add entire blueprint(deletes old and remakes it)
         layH_mdl_add.addWidget(self.add_mdl_btn)
         layH_mdl_add.addWidget(self.add_blueprint_btn)
@@ -501,15 +501,15 @@ class CharLayoutView(QtWidgets.QWidget):
 
         self.add_mdl_btn.setObjectName("add_mdl_btn")
         self.add_blueprint_btn.setObjectName("add_blueprint_btn")
-        self.delete_mdl_btn.setObjectName("remove_mdl_btn")
-        self.delete_blueprint_btn.setObjectName("delete_blueprint_btn")
+        self.delete_comp_btn.setObjectName("delete_comp_btn")
+        self.delete_mdl_btn.setObjectName("delete_mdl_btn")
         
         module_scene_actions_container, chk_none = self.cr_container_funcUI("Module Actions", layV_module_scene_actions, True)
     
         widgets_layout.addLayout(module_scene_actions_container)
         
         utils_view.assign_style_ls(self.style_treeview_ui, 
-             [self.add_mdl_btn, self.add_blueprint_btn, self.delete_mdl_btn, self.delete_blueprint_btn])
+             [self.add_mdl_btn, self.add_blueprint_btn, self.delete_comp_btn, self.delete_mdl_btn])
              
 
     def debugging_ui(self, widgets_layout):

@@ -4,6 +4,7 @@ import json
 import importlib
 import sys
 import os
+import gc
 
 '''
 
@@ -49,8 +50,13 @@ from utils import (
     utils_db
 )
 
-from databases import database_manager
+from databases import (
+    database_manager,
+    db_connection_tracker
+    )
+
 importlib.reload(database_manager)
+importlib.reload(db_connection_tracker)
 importlib.reload(utils)
 importlib.reload(utils_db)
 
@@ -65,7 +71,7 @@ class CreateDatabase():
         
         self.unique_id_tracker = {}
         try:
-            with sqlite3.connect(db_name) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
                 # interasct with datsabase
                 self.add_table(conn)
                 print(f"module {mdl_name}_{side} has connected to database {db_name}")
@@ -132,7 +138,7 @@ class CreateDatabase():
                 ''''''
         except sqlite3.Error as e:
             print(e)
-    
+
 
     def add_table(self, conn): 
         sql_cr_table_state = [
@@ -223,10 +229,9 @@ class CreateDatabase():
             mdl_name, side, max_id = row
             self.unique_id_tracker[(mdl_name, side)] = max_id
 
-
-    '''function updates the next unique_id for a given combination. '''
     # global so the dict can keep track over multiple calls, to generate new unique_ids as expected
     def get_unique_id_sequence(self, mdl_name, side):
+        '''function updates the next unique_id for a given combination. '''
         key = (mdl_name, side)
         print(f"key = {key} / self.unique_id_tracker = {self.unique_id_tracker}" )
         if key not in self.unique_id_tracker:
@@ -247,7 +252,7 @@ class retrieveModulesData():
         db_name = os.path.join(db_directory, database_name)
 
         try:
-            with sqlite3.connect(db_name) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
                 print(f">> db_name = {db_name}")
                 self.mdl_populate_tree_dict = self.dict_from_table(
                     conn, 'modules', database_name
@@ -294,7 +299,7 @@ class retrieveSpecificComponentdata():
         self.side = side
 
         try:
-            with sqlite3.connect(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
                 pos_dict = self.position_dict_from_table(conn)
                 self.rot_dict = self.rotation_dict_from_table(conn)
                 self.controls_dict = self.controls_dict_from_table(conn)
@@ -394,7 +399,7 @@ class retrieveSpecificPlacementPOSData():
         self.side = side
 
         try:
-            with sqlite3.connect(db_name) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
                 self.existing_pos_dict = self.component_pos_dict_from_table(conn)
                 self.existing_rot_dict = self.component_rot_dict_from_table(conn)
                 self.existing_plane_dict = self.component_ori_plane_dict_from_table(conn)
@@ -471,7 +476,7 @@ class updateSpecificPlacementPOSData():
         database_name = f"DB_{module_name}.db"
         db_name = os.path.join(db_directory, database_name)
         try:
-            with sqlite3.connect(db_name) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
                 self.update_db(conn, "placement", (updated_pos_dict, unique_id, side))
                 print(f"Updated database `component_pos`: {db_name} with {updated_pos_dict}, where its unique_id = {unique_id} & side = {side}")
         except sqlite3.Error as e:
@@ -496,7 +501,7 @@ class UpdatePlacementROTData():
         database_name = f"DB_{module_name}.db"
         db_name = os.path.join(db_directory, database_name)
         try:
-            with sqlite3.connect(db_name) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
                 self.update_rot_data(conn, "placement", (updated_rot_dict, unique_id, side))
                 self.update_plane_data(conn, "controls", (updated_plane_dict, unique_id, side))
                 print(f"Updated database `component_rot`: {db_name} with {updated_rot_dict}, where its unique_id = {unique_id} & side = {side}")
@@ -529,7 +534,7 @@ class CurveInfoData():
         self.unique_id = unique_id
         self.side = side
         try:
-            with sqlite3.connect(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
                 self.comp_control_ls, self.curve_info_dict = self.curve_info_from_row(conn)
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
@@ -569,7 +574,7 @@ class UpdateCurveInfo():
         self.unique_id = unique_id
         self.side = side
         try:
-            with sqlite3.connect(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
                 self.update_db(conn, "controls", (comp_ctrl_data, unique_id, side))
                 print(f"Updated database `curve_info`: DB_{module_name}.db with {comp_ctrl_data}, where its unique_id = {unique_id} & side = {side}")
         except sqlite3.Error as e:
@@ -591,7 +596,7 @@ class UpdateUserSettings():
         self.unique_id = unique_id
         self.side = side
         try:
-            with sqlite3.connect(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
                 self.update_user_setting(conn, "user_settings", umo_dict)
         except sqlite3.Error as e:
             print(f"DB* module umo update Error: {e}")
@@ -612,7 +617,7 @@ class UpdateJointNum():
         self.unique_id = unique_id
         self.side = side
         try:
-            with sqlite3.connect(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
                 self.update_joint_num(conn, "user_settings", jnt_num)
         except sqlite3.Error as e:
             print(f"DB* module umo update Error: {e}")
@@ -632,7 +637,7 @@ class RetrieveSpecificData():
         self.unique_id = unique_id
         self.side = side
         try:
-            with sqlite3.connect(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
                 self.jnt_num = self.get_jnt_num(conn, "user_settings")
                 self.guides_connection, self.guides_follow = self.get_guide_data(conn, "constant")
                 self.ori_plane_dict = self.get_ori_plane_data(conn, "controls")
@@ -717,7 +722,7 @@ class CheckMirrorData():
         self.unique_id = unique_id
         self.side = side
         try:
-            with sqlite3.connect(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
                 self.mirror_database_exists = self.get_database_side_exists(conn, "modules")
         except sqlite3.Error as e:
             print(f"DB* check mirror data Error: {e}")
@@ -742,3 +747,46 @@ class CheckMirrorData():
 
     def return_mirror_database_exists(self):
         return self.mirror_database_exists
+    
+
+class DeleteComponentRows():
+    def __init__(self, directory, module_name, unique_id, side):
+        '''
+        # Description:
+            Delete all traces of the specific component's rows to delete it from the db file. 
+        # Attributes:
+            directory (string path): Path to the folder the db is stored in.
+            module_name (string): Name of the db module
+            unique_id (string): unique_id of the db module
+            side (string): side of the db module
+        # Returns: N/A 
+        '''
+        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.unique_id = unique_id
+        self.side = side
+
+        print(f"Del_comp row: db_path = {db_path}")
+
+        try:
+            with sqlite3.connect(db_path) as conn:
+                self.delete_row(conn, "constant")
+                self.delete_row(conn, "controls")
+                self.delete_row(conn, "modules")
+                self.delete_row(conn, "placement")
+                self.delete_row(conn, "user_settings")
+                print(f"schema: Compoonent deletion successful")
+        except sqlite3.Error as e:
+            print(f"schema: Component deletion Error: {e}")
+    
+
+    def delete_row(self, conn, table):
+        cursor = conn.cursor()
+        del_sql = f'DELETE FROM {table} WHERE unique_id = ? AND side = ?'
+        values = (self.unique_id, self.side)
+        print(f"Delete table {table} row with VALUES: {values}")
+        cursor.execute(del_sql, values)
+
+
+
+
+        

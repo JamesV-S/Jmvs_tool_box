@@ -13,7 +13,8 @@ except ModuleNotFoundError:
 from utils import (
     utils,
     utils_os,
-    utils_json
+    utils_json,
+    utils_QTree
 )
 
 from databases.char_databases import (
@@ -21,10 +22,17 @@ from databases.char_databases import (
     database_schema_003
     )
 
+from databases import (
+    db_connection_tracker
+)
+
 importlib.reload(database_schema_002)
 importlib.reload(database_schema_003)
+importlib.reload(db_connection_tracker)
+importlib.reload(utils)
 importlib.reload(utils_os)
 importlib.reload(utils_json)
+importlib.reload(utils_QTree)
 
 class CharLayoutModel:
     def __init__(self):        
@@ -269,7 +277,7 @@ class CharLayoutModel:
     def populate_tree_views(self, mdl_tree_model, rig_folder_name, db_data_dict):
         print(f"Populating Tree with `{rig_folder_name}'s` databases: {list(db_data_dict.keys())}")
         tree_parent_item = mdl_tree_model.invisibleRootItem()
-
+        
         if not db_data_dict:
             print(f"NO databases in the folder `{rig_folder_name}`")
         else:
@@ -599,3 +607,98 @@ class CharLayoutModel:
         '''
         ori_rot_dict = utils.get_selection_rot_dict(guide_selection)
         utils.align_source_rotX_to_target(ori_rot_dict)
+
+
+    # ---- Delete database functions ----
+    def delete_database_module(self, module_name, val_availableRigComboBox, mdl_tree_model):
+        '''
+        # Description:
+            Delete the .db file of the given module. 
+        # Attributes:
+            db_folder_path (string): Path of the folder the .db modules are in
+            module_name (string): Name of the module to delete.
+                        val_availableRigComboBox (string): Name of the db rig grp. 
+            mdl_tree_model (QTreeModel): model of the tree view.
+        # Returns: N/A 
+        '''
+        # cr .db name
+        db_folder_path = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        db_name = f"DB_{module_name}.db"
+        db_path = f"{db_folder_path}/{db_name}"
+
+        # Force all connections closed first
+        db_connection_tracker.DBConnectionTracker.force_close_all()
+
+        # Now safely delete the file
+        try:
+            os.unlink(db_path)
+            print(f"{db_name} successfully deleted from {db_folder_path}")
+        except Exception as e:
+            print(f"{db_name} delete failed: {e}")
+        self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
+
+
+    def delete_database_component(self, component_selection, val_availableRigComboBox, mdl_tree_model):
+        '''
+        # Description:
+            Delete the specific component from the .db file of the given module. 
+        # Attributes:
+            component_selection (string): Name of the selected component (1 only, not multiple). 
+            val_availableRigComboBox (string): Name of the db rig grp. 
+            mdl_tree_model (QTreeModel): model of the tree view.
+        # Returns: N/A 
+        '''
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        
+        database_schema_002.DeleteComponentRows(rig_db_directory, module, unique_id, side)
+        self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
+
+
+    def delete_scene_component(self, component_selection):
+        '''
+        # Description:
+            Delete all traces of the given component in the module from the 
+            current maya scene if they exist. 
+        # Attributes:
+            module_name (string): Name of the module to delete.
+        # Returns: N/A 
+        '''
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+
+        # check if the module has been added to the scene by checking for grp:
+        # grp_ctrl_*module_component_*uniqueID_*side
+        # grp_misc_*module_component_*uniqueID_*side
+        # xfm_grp_*module_component_*uniqueID_*side
+        # grp_ori_*module_component_*uniqueID_*side
+            # then delete them
+        
+        for name in ["ctrl", "misc", "xfm", "ori"]:
+            grp_name = f"grp_{name}_{module}_component_{unique_id}_{side}"
+            if cmds.objExists(grp_name):
+                cmds.delete(grp_name)
+                print(f"Deleted grp_name from component `{component_selection}`")
+            else:
+                print(f"del_comp Not exist: {grp_name}")
+
+
+    def delete_scene_module(self, module_name, tree_model):
+        '''
+        # Description:
+            Delete all traces of the given module from the current maya scene if they exist. 
+        # Attributes:
+            component_list (list): Name components in the module.
+        # Returns: N/A 
+        '''
+        # check if the module has been added to the scene by checking for grp:
+        component_list = utils_QTree.get_components_of_selected_module(tree_model, module_name)
+
+        for component in component_list:
+            print(f"del module, component = {component}")
+            self.delete_scene_component(component)

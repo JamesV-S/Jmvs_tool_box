@@ -5,7 +5,7 @@ except ModuleNotFoundError:
 
 
 def util_o_thru_items(parent_item):
-    # collect items by goiun thru the tree 
+    # collect items by going thru the tree 
     module_item_list = []
     for row in range(parent_item.rowCount()):
         child_item = parent_item.child(row)
@@ -64,3 +64,24 @@ def get_components_of_selected_module(tree_model, module_name):
         print(f"NOTHING")
         return []
 
+
+def get_module_name_TreeSel(tree_view, tree_model):
+    # get selection model of all items in the treeView
+    selection_model = tree_view.selectionModel()
+    selected_indexes = selection_model.selectedIndexes()
+
+    # is there an item to be selected?
+    if selected_indexes:
+        multi_selection = selected_indexes
+        parent_selection_list = []
+        for index in multi_selection:
+            item = tree_model.itemFromIndex(index)
+        
+            # Check if this is a root/parent item (no parent)
+            if item.parent() is None:
+                name = item.text()
+                parent_selection_list.append(name)
+        
+        return parent_selection_list
+    
+    return []  # Return empty list if no selection

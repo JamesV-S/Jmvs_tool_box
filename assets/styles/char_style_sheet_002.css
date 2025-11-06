@@ -694,41 +694,41 @@ QPushButton#add_blueprint_btn:pressed {
 }
 
 
-QPushButton#remove_mdl_btn {
+QPushButton#delete_comp_btn {
     background-color: #0f0f0f;
 }
-QPushButton#remove_mdl_btn:hover {
+QPushButton#delete_comp_btn:hover {
     background-color: #0f0f0f;
-    border-right-color: #9a46bb;
-    border-bottom-color: #9a46bb;
+    border-right-color: #e85656;
+    border-bottom-color: #e85656;
 }
-QPushButton#remove_mdl_btn:pressed {
+QPushButton#delete_comp_btn:pressed {
     border-top-style:none;
     border-left-style:none;
     color: white;
     background-color: #0f0f0f;
-    border-right-color: #9a46bb;
-    border-bottom-color: #9a46bb;
+    border-right-color: #e85656;
+    border-bottom-color: #e85656;
 }
 
 
-QPushButton#delete_blueprint_btn {
+QPushButton#delete_mdl_btn {
     background-color: #0f0f0f;
 }
-QPushButton#delete_blueprint_btn:hover {
+QPushButton#delete_mdl_btn:hover {
     /* color:black; */
     font-weight: bold;
     background-color: #0f0f0f;
-    border-right-color: #565be8;
-    border-bottom-color: #565be8;
+    border-right-color: #e85656;
+    border-bottom-color: #e85656;
 }
-QPushButton#delete_blueprint_btn:pressed {
+QPushButton#delete_mdl_btn:pressed {
     border-top-style:none;
     border-left-style:none;
     color: white;
     background-color: #0f0f0f;
-    border-right-color: #565be8;
-    border-bottom-color: #565be8;
+    border-right-color: #e85656;
+    border-bottom-color: #e85656;
 }
 
 QTabWidget

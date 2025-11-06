@@ -35,7 +35,7 @@ class BuildOrientation():
         ori_master_grp = f"grp_ori_components"
         if not cmds.objExists(ori_master_grp):
             cmds.group(n=ori_master_grp, em=1)
-        ori_module_group = f"grp_ori_{self.module}_{self.unique_id}_{self.side}"
+        ori_module_group = f"grp_ori_{self.module}_component_{self.unique_id}_{self.side}"
         
         ori_parent_grp_list, ori_guide_list = self.cr_ori_guide()
         self.position_ori_groups(ori_module_group, ori_parent_grp_list)

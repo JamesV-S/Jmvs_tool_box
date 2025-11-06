@@ -20,15 +20,14 @@ import os.path
 
 from utils import (
     utils,
-    utils_json
+    utils_json,
+    utils_QTree
 )
 
 from systems.sys_char_rig import (
     cr_guides, 
     cr_ctrl
 )
-
-from controllers import utils_QTree
 
 from models.char_models import char_layout_model
 from views.char_views import char_layout_view
@@ -121,9 +120,12 @@ class CharLayoutController:
         
         self.view.publish_btn.clicked.connect(self.sig_publish_btn)
         
-        # -- add blueprints --
+        # -- add modules --
         self.view.add_mdl_btn.clicked.connect(self.sig_add_module)
         self.view.add_blueprint_btn.clicked.connect(self.sig_add_blueprint)
+        # -- delete modules --
+        self.view.delete_comp_btn.clicked.connect(self.sig_del_comp)
+        self.view.delete_mdl_btn.clicked.connect(self.sig_del_module)
 
         # ------------ Management options ------------
             # ---- Tab1 - Curves ----
@@ -327,6 +329,27 @@ class CharLayoutController:
         self.func_create_guides(component_selection)
         self.model.func_unlocked_all(component_selection, self.val_availableRigComboBox)
         self.update_progress(0, f"DONE: '{self.val_availableRigComboBox}' Blueprint")
+
+
+    # -- delete modules --
+    def sig_del_comp(self):
+        print(f"delete comp button clicked")
+        component_selection_ls = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view, self.view.mdl_tree_model)
+        
+        print(f"Del_Comp > `component_selection_ls` = `{component_selection_ls}`")
+        for comp_sel in component_selection_ls:
+            self.model.delete_database_component(comp_sel, self.val_availableRigComboBox, self.view.mdl_tree_model)
+            self.model.delete_scene_component(comp_sel)
+
+
+    def sig_del_module(self):
+        print(f"delete module button clicked")
+        module_selection_ls = utils_QTree.get_module_name_TreeSel(self.view.mdl_tree_view, self.view.mdl_tree_model)
+        print(f"module_selection_ls = {module_selection_ls}")
+        for module in module_selection_ls:
+            self.model.delete_scene_module(module, self.view.mdl_tree_model)
+            self.model.delete_database_module(module, self.val_availableRigComboBox, self.view.mdl_tree_model)
+
 
     # ------------ management options siFunc ------------
     # ---- Tab 1 - select data ----

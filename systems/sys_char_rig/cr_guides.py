@@ -76,7 +76,7 @@ class CreateXfmGuides():
         
         # group guides 
         gd_master_group = f"grp_xfm_components"
-        gd_component_grp_name = f"xfm_grp_{module_name}_component_{unique_id}_{side}"
+        gd_component_grp_name = f"grp_xfm_{module_name}_component_{unique_id}_{side}"
         if not cmds.objExists(gd_component_grp_name):
             cmds.group(n=gd_component_grp_name, em=1)
         if not cmds.objExists(gd_master_group):
@@ -118,7 +118,7 @@ class CreateXfmGuides():
         #----------------------------------------------------------------------
         # group ctrls
         master_group = f"grp_ctrl_components"
-        grp_name = f"ctrl_{module_name}_grp_component_{side}"
+        grp_name = f"grp_ctrl_{module_name}_component_{unique_id}_{side}"
         if not cmds.objExists(grp_name):
             cmds.group(n=grp_name, em=1)
         if not cmds.objExists(master_group):
