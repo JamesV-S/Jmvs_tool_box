@@ -28,8 +28,8 @@
         ],
         "guides_follow": [
             {"key": "hip", "typ": "point", "constrained": "knee", "attr": {"all": true}},
-            {"key": "ankle", "typ": "point", "constrained": "ball", "attr": {"all": true}},
-            {"key": "ankle", "typ": "point", "constrained": "end", "attr": {"all": true}}
+            {"key": "ankle", "typ": "parent", "constrained": "ball", "attr": {"all": true}},
+            {"key": "ankle", "typ": "parent", "constrained": "end", "attr": {"all": true}}
         ],
         "hock_name": "calf",
         "ik_wld_ori": true
@@ -53,8 +53,7 @@
             "fk_quadLeg_knee": "circle",
             "fk_quadLeg_calf": "circle",
             "fk_quadLeg_ankle": "circle",
-            "fk_quadLeg_ball": "circle",
-            "fk_quadLeg_end": "circle"
+            "fk_quadLeg_ball": "circle"
         },
         "IK_ctrls": {
             "ik_quadLeg_hip":"prism",

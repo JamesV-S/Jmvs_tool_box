@@ -126,6 +126,7 @@ class CreateDatabase():
                     side
                     ))
                 # module controls
+                print(f"Cr db controls_dict = `{controls_dict}`")
                 self.update_db(conn, "controls", (
                     self.unique_id, 
                     controls_dict['FK_ctrls'], 
@@ -181,12 +182,20 @@ class CreateDatabase():
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
             FK_ctrls TEXT,
-            IK_ctrls TEXT,
+            IK_ctrls TEXT,            
             curve_info TEXT,
             ori_plane_info TEXT,
             side text
         );"""
         ]
+
+        '''
+            fk_pos TEXT,
+            fk_rot TEXT,
+            ik_pos TEXT,
+            ik_rot TEXT,
+        '''
+
         cursor = conn.cursor()
         for state in sql_cr_table_state:
             cursor.execute(state)

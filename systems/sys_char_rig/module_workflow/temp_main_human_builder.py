@@ -2,7 +2,7 @@
 ''' Without the Registry (single module build at a time)'''
 '''
 import importlib
-from Jmvs_tool_box.systems.sys_char_rig.module_system_solution_003 import temp_main_human_builder
+from Jmvs_tool_box.systems.sys_char_rig.module_workflow import temp_main_human_builder
 
 importlib.reload(temp_main_human_builder)
 '''
@@ -11,8 +11,8 @@ importlib.reload(temp_main_human_builder)
 import importlib
 
 # from data_managers import (module_data_manager)
-from systems.sys_char_rig.module_system_solution_003.data_managers import (module_data_manager)
-from systems.sys_char_rig.module_system_solution_003.builders import (
+from systems.sys_char_rig.module_workflow.data_managers import (module_data_manager)
+from systems.sys_char_rig.module_workflow.builders import (
     build_root,
     build_spine 
     )

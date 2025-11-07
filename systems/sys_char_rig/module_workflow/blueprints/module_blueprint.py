@@ -3,7 +3,7 @@ import importlib
 import maya.cmds as cmds
 
 ''' in 'main.py' set the directory of the four folders for this workflow '''
-from systems.sys_char_rig.module_system_solution_003.data_managers import module_data_manager
+from systems.sys_char_rig.module_workflow.data_managers import module_data_manager
 
 from utils import (
     utils
