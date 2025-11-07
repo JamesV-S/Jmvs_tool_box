@@ -20,8 +20,9 @@
     "constant": {
         "guides_connection": [],
         "guides_follow": [],
+        "limbRoot_name": false,
         "hock_name": false,
-        "ik_wld_ori": false
+        "ik_wld_name": false
     },
     "user_settings": {
         "mirror_rig": false,

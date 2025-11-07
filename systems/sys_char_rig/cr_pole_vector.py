@@ -4,7 +4,7 @@ from maya import cmds, OpenMaya
 import math
 import os
 
-def create_pole_vector(top_joint, pv_joint, end_joint):
+def get_pv_pos_rot(top_joint, pv_joint, end_joint):
         '''
         PV_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                                 "..", "imports","pv_ctrl_import.abc")
@@ -51,17 +51,20 @@ def create_pole_vector(top_joint, pv_joint, end_joint):
 
         rot = matrixFn.eulerRotation()
 
-        # imported = cmds.file(PV_FILE, i=1, namespace="imp_pv", rnn=1)
-        imported = cmds.spaceLocator()
-        cmds.scale(4, 4, 4, imported)
-        pv_ctrl = cmds.rename(imported[0], f"ctrl_pv_import")
+        # # imported = cmds.file(PV_FILE, i=1, namespace="imp_pv", rnn=1)
+        # imported = cmds.spaceLocator()
+        # cmds.scale(4, 4, 4, imported)
+        # pv_ctrl = cmds.rename(imported[0], f"ctrl_pv_import")
         # loc = cmds.spaceLocator() # pv
+        
+        pv_pos = (finalV.x, finalV.y, finalV.z)
+        pv_rot = ((rot.x/math.pi*180.0), (rot.y/math.pi*180.0), (rot.z/math.pi*180.0))
 
-        cmds.xform(pv_ctrl, ws=1,t=(finalV.x, finalV.y, finalV.z))
-        cmds.xform(pv_ctrl, ws=1, rotation = ((rot.x/math.pi*180.0),
-                                        (rot.y/math.pi*180.0),
-                                        (rot.z/math.pi*180.0)))
+        # cmds.xform(pv_ctrl, ws=1,t=(finalV.x, finalV.y, finalV.z))
+        # cmds.xform(pv_ctrl, ws=1, rotation = ((rot.x/math.pi*180.0),
+        #                                 (rot.y/math.pi*180.0),
+        #                                 (rot.z/math.pi*180.0)))
 
-        return pv_ctrl 
+        return pv_pos, pv_rot
 
-create_pole_vector("jnt_rig_bipedArm_shoulder_0_L", "jnt_rig_bipedArm_elbow_0_L", "jnt_rig_bipedArm_wrist_0_L")
+# get_pv_pos_rot("jnt_rig_bipedArm_shoulder_0_L", "jnt_rig_bipedArm_elbow_0_L", "jnt_rig_bipedArm_wrist_0_L")

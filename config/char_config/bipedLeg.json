@@ -11,11 +11,11 @@
             "toe": [24.084232330322276, -1.1379786002407858e-14, 29.18881988525391]
         },
         "component_rot": {
-            "hip": [0.0, 0.0, 0.0],
-            "knee": [0.0, 0.0, 0.0],
-            "ankle": [0.0, 0.0, 0.0],
-            "ball": [0.0, 0.0, 0.0],
-            "toe": [0.0, 0.0, 0.0]
+            "hip": [-6.973201172298192, 0.43670082003745525, -86.4341973338905], 
+            "knee": [-6.973201172298191, 2.5051020846071803, -86.64997366337425], 
+            "ankle": [90.59426221884772, -59.55357811140123, -90.51232019066205], 
+            "ball": [0.0, -89.99999999999993, 0.0], 
+            "toe": [0.0, -89.99999999999993, 0.0]
         }
     },
     "constant": {
@@ -29,8 +29,9 @@
             {"key": "foot", "typ": "parent", "constrained": "ball", "attr": {"all": true}},
             {"key": "foot", "typ": "parent", "constrained": "toe", "attr": {"all": true}}
         ],
+        "limbRoot_name": "hip",
         "hock_name": false,
-        "ik_wld_ori": true
+        "ik_wld_name": "ankle"
     }, 
     "user_settings": {
         "mirror_rig": false,
@@ -50,15 +51,12 @@
             "fk_bipedLeg_hip":"circle",
             "fk_bipedLeg_knee": "circle",
             "fk_bipedLeg_ankle": "circle",
-            "fk_bipedLeg_ball": "circle",
-            "fk_bipedLeg_toe": "circle"
+            "fk_bipedLeg_ball": "circle"
         },
         "IK_ctrls": {
             "ik_bipedLeg_hip":"cube",
             "ik_bipedLeg_knee": "pv",
-            "ik_bipedLeg_ankle": "cube",
-            "ik_bipedLeg_ball": "None",
-            "ik_bipedLeg_toe": "None"
+            "ik_bipedLeg_ankle": "cube"
         }
 }
 }

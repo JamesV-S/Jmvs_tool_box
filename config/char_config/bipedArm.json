@@ -11,11 +11,11 @@
         },
         "component_rot":{
             "clavicle": [0.0, 0.0, 0.0], 
-            "shoulder": [0.0, 0.0, 0.0], 
-            "elbow": [0.0, 0.0, 0.0], 
-            "wrist": [0.0, 0.0, 0.0]
+            "shoulder": [7.042431639335366, -5.366417614476933, -52.87199475566796], 
+            "elbow": [7.04243163933536, -32.847391136978864, -52.004681579832805], 
+            "wrist": [7.04243163933536, -32.847391136978864, -52.004681579832805]
         }
-    },
+    },  
     "constant":{
         "guides_connection": [
             {"key": "spine_spine3", "typ": "parent", "constrained": "clavicle", "attr": {"all": true}},
@@ -24,8 +24,9 @@
             {"key": "root_ROOT", "typ": "point", "constrained": "wrist", "attr": {"all": true}}
         ],
         "guides_follow": [],
-        "hock_name": null,
-        "ik_wld_ori": false
+        "limbRoot_name": "shoulder",
+        "hock_name": false,
+        "ik_wld_name": false
     },
     "user_settings":{
         "mirror_rig": false,

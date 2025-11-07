@@ -9,17 +9,18 @@
             "neck3": [0.0, 128.51375763303932, 0.0]
         },
         "component_rot": {
-            "neck0": [0.0, 0.0, 0.0], 
-            "neck1": [0.0, 0.0, 0.0], 
-            "neck2": [0.0, 0.0, 0.0],
-            "neck3": [0.0, 0.0, 0.0]
+            "neck0": [0.0, 0.0, 90.0], 
+            "neck1": [0.0, 0.0, 90.0], 
+            "neck2": [0.0, 0.0, 90.0], 
+            "neck3": [0.0, 0.0, 90.0]
         }
     },
     "constant": {
         "guides_connection": [],
         "guides_follow": [],
+        "limbRoot_name": false,
         "hock_name": false,
-        "ik_wld_ori": false
+        "ik_wld_name": false
     },
     "user_settings": {
         "mirror_rig": false,

@@ -1,5 +1,6 @@
 
 import maya.cmds as cmds
+from maya import cmds, OpenMaya
 import math
 import maya.api.OpenMaya as om
 import maya.OpenMayaAnim as oma
@@ -110,6 +111,7 @@ class Plg():
     inMtx_plg = ".inMatrix"
     ovrride_plg = ".overrideEnabled"
     dispTyp_plg = ".overrideDisplayType"
+
 
 def check_non_default_transforms(obj):
     attributes = ['translate', 'rotate', 'scale']
@@ -476,6 +478,55 @@ def group_module(module_name, unique_id, side, input_grp, output_grp, ctrl_grp=N
 
 
 # ------------------------------- GET DATA ------------------------------------
+def get_pv_pos_rot(top_obj, pv_obj, end_obj):
+        # start = cmds.xform(top_obj, q=1,ws=1,t=1)
+        # mid = cmds.xform(pv_obj, q=1,ws=1,t=1)
+        # end = cmds.xform(end_obj, q=1,ws=1,t=1)
+
+        startV = OpenMaya.MVector(top_obj[0], top_obj[1], top_obj[2])
+        midV = OpenMaya.MVector(pv_obj[0], pv_obj[1], pv_obj[2])
+        endV = OpenMaya.MVector(end_obj[0], end_obj[1], end_obj[2])
+
+        startEnd = endV - startV
+        startMid = midV - startV
+
+        dotP = startMid * startEnd
+
+        proj = float(dotP) / float(startEnd.length())
+
+        startEndN = startEnd.normal()
+
+        projV = startEndN * proj
+        arrowV = startMid - projV
+        finalV = arrowV + midV
+
+        cross1= startEnd ^ startMid
+        cross1.normalize()
+
+        cross2 = cross1 ^ arrowV
+        cross2.normalize()
+        arrowV.normalize()
+
+        matrixV = [arrowV.x, arrowV.y, arrowV.z, 0,
+                cross1.x, cross1.y, cross1.z, 0,
+                cross2.x, cross2.y, cross2.z, 0,
+                0,0,0,1]
+                
+        matrixM = OpenMaya.MMatrix()
+        OpenMaya.MScriptUtil.createMatrixFromList(matrixV, matrixM)
+
+        matrixFn = OpenMaya.MTransformationMatrix(matrixM)
+
+        rot = matrixFn.eulerRotation()
+
+        pv_pos = [finalV.x, finalV.y, finalV.z]
+        pv_rot = [(rot.x/math.pi*180.0), (rot.y/math.pi*180.0), (rot.z/math.pi*180.0)]
+
+        return pv_pos, pv_rot
+
+# create_pole_vector("jnt_rig_bipedArm_shoulder_0_L", "jnt_rig_bipedArm_elbow_0_L", "jnt_rig_bipedArm_wrist_0_L")
+
+
 def get_selection_trans_rots_dictionary():
     selection = cmds.ls(sl=1, type="transform")
     

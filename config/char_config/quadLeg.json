@@ -23,16 +23,17 @@
     "constant": {
         "guides_connection": [
             {"key": "spine_spine0", "typ": "point", "constrained": "hip", "attr": {"all": true}},
-            {"key": "root_ROOT", "typ": "point", "constrained": "calf", "attr": {"all": true}},
             {"key": "root_ROOT", "typ": "point", "constrained": "ankle", "attr": {"all": true}}
         ],
         "guides_follow": [
             {"key": "hip", "typ": "point", "constrained": "knee", "attr": {"all": true}},
+            {"key": "ankle", "typ": "parent", "constrained": "calf", "attr": {"all": true}},
             {"key": "ankle", "typ": "parent", "constrained": "ball", "attr": {"all": true}},
             {"key": "ankle", "typ": "parent", "constrained": "end", "attr": {"all": true}}
         ],
+        "limbRoot_name": "hip",
         "hock_name": "calf",
-        "ik_wld_ori": true
+        "ik_wld_name": "ankle"
     }, 
     "user_settings": {
         "mirror_rig": false,

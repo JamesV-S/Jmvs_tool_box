@@ -27,8 +27,9 @@
             {"key": "tail0", "typ": "parent", "constrained": "tail3", "attr": {"all": true}},
             {"key": "tail0", "typ": "parent", "constrained": "tail4", "attr": {"all": true}}
         ],
+        "limbRoot_name": false,
         "hock_name": false,
-        "ik_wld_ori": false
+        "ik_wld_name": false
     },
     "user_settings": {
         "mirror_rig": false,

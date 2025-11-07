@@ -14,7 +14,7 @@ constant_dict >> {
     'guides_connection': [{'key': 'spine_spine3', 'typ': 'parent', 'constrained': 'clavicle', 'attr': {'all': True}}, {'key': 'spine_spine3', 'typ': 'parent', 'constrained': 'shoulder', 'attr': {'all': True}}, {'key': 'root_ROOT', 'typ': 'point', 'constrained': 'elbow', 'attr': {'all': True}}, {'key': 'root_ROOT', 'typ': 'point', 'constrained': 'wrist', 'attr': {'all': True}}], 
     'guides_follow': [], 
     'hock_name': None, 
-    'ik_wld_ori': False
+    'ik_wld_name': False
     }
 
 '''
@@ -104,14 +104,15 @@ class CreateDatabase():
                     side
                     ))
                 # constant data
-                print(f"constant table: item_name_list = {item_name_list}")
+                print(f"constant dict = {constant_dict}")
                 self.update_db(conn, "constant", (
                     self.unique_id,
                     constant_dict['guides_connection'], 
                     constant_dict['guides_follow'],
                     item_name_list,
+                    constant_dict['limbRoot_name'],
                     constant_dict['hock_name'],
-                    constant_dict['ik_wld_ori'],
+                    constant_dict['ik_wld_name'],
                     side
                     ))
                 self.update_db(conn, "user_settings", (
@@ -130,13 +131,34 @@ class CreateDatabase():
                 self.update_db(conn, "controls", (
                     self.unique_id, 
                     controls_dict['FK_ctrls'], 
-                    controls_dict['IK_ctrls'], 
+                    controls_dict['IK_ctrls'],
+                    {},
+                    {},
+                    {},
+                    {}, 
                     curve_info_dict,
                     ori_plane_dict,
                     side
                     ))
                 
-                ''''''
+                '''
+                Cr db controls_dict = `{
+                    'FK_ctrls': {
+                        'fk_bipedArm_clavicle': 'circle', 
+                        'fk_bipedArm_shoulder': 'circle', 
+                        'fk_bipedArm_elbow': 'circle', 
+                        'fk_bipedArm_wrist': 'circle'
+                        }, 
+                    'IK_ctrls': {
+                        'ik_bipedArm_clavicle': 'cube', 
+                        'ik_bipedArm_shoulder': 'cube', 
+                        'ik_bipedArm_elbow': 
+                        'pv', 
+                        'ik_bipedArm_wrist': 'cube'
+                        }
+                        }`
+                '''
+
         except sqlite3.Error as e:
             print(e)
 
@@ -162,8 +184,9 @@ class CreateDatabase():
             guides_connection TEXT,
             guides_follow TEXT,
             items TEXT,
+            limbRoot_name TEXT,
             hock_name TEXT,
-            ik_wld_ori TEXT,
+            ik_wld_name TEXT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS user_settings (
@@ -182,7 +205,13 @@ class CreateDatabase():
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
             FK_ctrls TEXT,
-            IK_ctrls TEXT,            
+            IK_ctrls TEXT,
+            
+            fk_pos TEXT,
+            fk_rot TEXT,
+            ik_pos TEXT,
+            ik_rot TEXT,
+
             curve_info TEXT,
             ori_plane_info TEXT,
             side text
@@ -205,28 +234,39 @@ class CreateDatabase():
     def update_db(self, conn, table, values):
         cursor = conn.cursor()
         if table == 'modules':
-            print(f"888888888888888888 > module VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, module_name, side) VALUES (?, ?, ?)"""
             cursor.execute(sql, values)
+
         elif table == 'placement':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
-            print(f"888888888888888888 > placement VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot, side) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
+
         elif table == 'constant':
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4], values[5], values[6])
-            print(f"888888888888888888 > constant VALUES: {values}")
-            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, items, hock_name, ik_wld_ori, side) VALUES (?, ?, ?, ?, ?, ?, ?)"""
+            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4], values[5], values[6], values[7])
+            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, items, limbRoot_name, hock_name, ik_wld_name, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
+
         elif table == 'user_settings':
-            print(f"888888888888888888 > user_settings VALUES: {values}")
             sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, twist, rig_options, rig_default, joint_num, size, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
+
         elif table == 'controls':
-            print(f"888888888888888888 > controls VALUES: {values[3]}")
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), json.dumps(values[4]), values[5])
-            sql = f""" INSERT INTO {table} (unique_id, FK_ctrls, IK_ctrls, curve_info, ori_plane_info, side) VALUES (?, ?, ?, ?, ?, ?)"""
+            values = (values[0], 
+                      json.dumps(values[1]), json.dumps(values[2]), 
+                      json.dumps(values[3]), json.dumps(values[4]), json.dumps(values[5]), json.dumps(values[6]),
+                      json.dumps(values[7]), 
+                      json.dumps(values[8]), 
+                      values[9])
+            sql = f""" INSERT INTO {table} 
+                        (unique_id, 
+                        FK_ctrls, IK_ctrls, 
+                        fk_pos, fk_rot, ik_pos, ik_rot,
+                        curve_info, 
+                        ori_plane_info, 
+                        side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
+
         conn.commit()
 
        
