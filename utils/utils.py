@@ -1303,3 +1303,11 @@ def matrix_parent_con(parent, child, pos_dict, rot_dict):
     cmds.connectAttr(parent + ".worldMatrix[0]", mm_node + ".matrixIn[1]", f=True)
 
     return mm_node
+
+#------------------------------- RAW DATA -------------------------------------
+def get_constant_attr_from_constant_dict(constant_dict):
+    return {
+        list(constant_dict.keys())[-3]:list(constant_dict.values())[-3],
+        list(constant_dict.keys())[-2]:list(constant_dict.values())[-2],
+        list(constant_dict.keys())[-1]:list(constant_dict.values())[-1]
+        }

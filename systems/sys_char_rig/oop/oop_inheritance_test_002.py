@@ -1,3 +1,4 @@
+
 # INHERITENCE with Object-Orientated Programming. 
 class Person: # Parent class
     def __init__(self, name, age):

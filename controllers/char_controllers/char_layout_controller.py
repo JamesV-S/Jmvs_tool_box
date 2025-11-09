@@ -26,7 +26,8 @@ from utils import (
 
 from systems.sys_char_rig import (
     cr_guides, 
-    cr_ctrl
+    cr_ctrl,
+    raw_data_fkik_dicts
 )
 
 from models.char_models import char_layout_model
@@ -38,6 +39,7 @@ importlib.reload(utils_json)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
+importlib.reload(raw_data_fkik_dicts)
 importlib.reload(char_layout_model)
 importlib.reload(char_layout_view)
 
@@ -60,9 +62,6 @@ class CharLayoutController:
         self.setup_connections()
         
         self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
-        
-        # tree_name = self.val_availableRigComboBox.replace("DB_", "")
-        # self.view.tree_view_name_lbl.setText(f"Database: `{tree_name}`")
 
 
     def set_prerequisite_signals(self):
@@ -185,14 +184,25 @@ class CharLayoutController:
 
 
     def sig_rpl_live_component(self):
+        '''
+        # Description:
+            Retrieve the selected component(in GUI) and update its database with Pos, Rot & 
+            fk/ik_pos/rot raw control data.
+        # Attributes: N/A 
+        # Returns: N/A 
+        '''
         # print selection in ui:
         component_selection = utils_QTree.get_component_name_TreeSel(self.view.mdl_tree_view , self.view.mdl_tree_model)
         # for component in component_selection:
         total_index = len(component_selection)
         for stp, component in enumerate(component_selection):
+            module, unique_id, side = utils.get_name_id_data_from_component(component)
             self.model.record_component_position(component, self.val_availableRigComboBox)
             self.model.record_compnonent_orientation(component, self.val_availableRigComboBox)
-            # add 'record_compnonent_orientation'
+
+            # Update the fk/ik_pos/rot raw data!
+            self.model.update_component_fkik_control_dicts(component, self.val_availableRigComboBox)
+
             progress_value = utils.progress_value(stp, total_index)
             self.update_progress(progress_value, f"Replacing {component} positional data")
         

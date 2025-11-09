@@ -127,7 +127,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.mdl_tree_view.setEditTriggers(QtWidgets.QAbstractItemView.SelectedClicked)
         layV_module_visualisation.setSpacing(5)
 
-        self.rpl_live_component = QtWidgets.QPushButton("Record live Component")
+        self.rpl_live_component = QtWidgets.QPushButton("Record Live Component")
         
         # Assign layouts
         container_layout = QtWidgets.QVBoxLayout()

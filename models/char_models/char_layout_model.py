@@ -26,13 +26,19 @@ from databases import (
     db_connection_tracker
 )
 
-importlib.reload(database_schema_002)
-importlib.reload(database_schema_003)
-importlib.reload(db_connection_tracker)
+from systems.sys_char_rig import (
+    raw_data_fkik_dicts
+)
+
 importlib.reload(utils)
 importlib.reload(utils_os)
 importlib.reload(utils_json)
 importlib.reload(utils_QTree)
+importlib.reload(database_schema_002)
+importlib.reload(database_schema_003)
+importlib.reload(db_connection_tracker)
+importlib.reload(raw_data_fkik_dicts)
+
 
 class CharLayoutModel:
     def __init__(self):        
@@ -94,13 +100,13 @@ class CharLayoutModel:
             self.db_rig_location, rig_folder_name
             )
         print(f"rig_db_directory = {rig_db_directory}")
-        retrieve_mdl_component_dict = database_schema_002.retrieveSpecificComponentdata(rig_db_directory, module, unique_id, side)
+        retrieve_mdl_component_dict = database_schema_002.RetrievePlacementData(rig_db_directory, module, unique_id, side)
         mdl_component_dict = retrieve_mdl_component_dict.return_mdl_component_dict()
         print(f"mdl_component_dict = {mdl_component_dict}")
         return mdl_component_dict
 
 
-    # ---- TreeView functions ----
+    # ---- TreeView 'Record Live Component' functions ----
     def record_component_position(self, component_selection, val_availableRigComboBox):
         module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
         find_guide = f"xfm_guide_{module}_*_{unique_id}_{side}"
@@ -123,7 +129,7 @@ class CharLayoutModel:
                 "Jmvs_tool_box", "databases", "char_databases", 
                 self.db_rig_location, rig_folder_name
                 )
-            retrieved_existing_dict = database_schema_002.retrieveSpecificPlacementPOSData(
+            retrieved_existing_dict = database_schema_002.RetrievePlacementData(
                 rig_db_directory, module, unique_id, side
                 )
             existing_pos_dict = retrieved_existing_dict.return_existing_pos_dict()
@@ -132,7 +138,6 @@ class CharLayoutModel:
             updated_existing_pos_dict = {}
             for key in existing_pos_dict.keys():
                 for new_key, new_value in new_component_pos_dict.items():
-                    print(f"if key:`{key}` in new_key:`{new_key}`")
                     if key in new_key:
                         updated_existing_pos_dict[key] = new_value
                         updated_dict = True
@@ -142,7 +147,7 @@ class CharLayoutModel:
             if updated_dict:
                 print(f"Updated `existing_dict` : {updated_existing_pos_dict}")
                 ''' with new dict, update the database! '''
-                database_schema_002.updateSpecificPlacementPOSData(
+                database_schema_002.UpdateSpecificPlacementPOSData(
                     rig_db_directory, module, unique_id, side, updated_existing_pos_dict
                     )
             
@@ -160,11 +165,11 @@ class CharLayoutModel:
                 "Jmvs_tool_box", "databases", "char_databases", 
                 self.db_rig_location, val_availableRigComboBox
                 )
-            retrieve_rot_data = database_schema_002.retrieveSpecificComponentdata(
+            retrieve_rot_data = database_schema_002.RetrievePlacementData(
             rig_db_directory, module, unique_id, side)
             
             # Establish the ori guides for the component
-            comp_rot_dict = retrieve_rot_data.return_rot_component_dict()
+            comp_rot_dict = retrieve_rot_data.return_existing_rot_dict()
             ori_guides_keys = [key for key, rot in list(comp_rot_dict.items())]
             ori_guides = [f"ori_{module}_{ori_guides_keys[x]}_{unique_id}_{side}" for x in range(len(ori_guides_keys))]
             print(f"ORI record: ori_guides = `{ori_guides}`")
@@ -172,29 +177,16 @@ class CharLayoutModel:
             # Get rot  
             new_component_rot_dict = utils.get_selection_rot_dict(ori_guides[:-1])
             print(f"ORI recording: new_component_rot_dict = `{new_component_rot_dict}`")
-            """
-            new_component_rot_dict = {
-            'ori_bipedArm_clavicle_0_L': [0.0, 0.0, -25.14671680808026], 
-            'ori_bipedArm_shoulder_0_L': [-32.63938984529915, 34.55844334711877, -48.47071953609031], 
-            'ori_bipedArm_elbow_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723]
-            }
-            """
+ 
             # Copy the data of 'second to last' ori guide and paste it to the last ori guide in the stored dict!
             new_component_rot_dict[ori_guides[-1]] = new_component_rot_dict[ori_guides[-2]]
             print(f"NEW ORI recording: new_component_rot_dict = `{new_component_rot_dict}`")
-            """
-            {
-            'ori_bipedArm_clavicle_0_L': [0.0, 0.0, -25.14671680808026], 
-            'ori_bipedArm_shoulder_0_L': [-32.63938984529915, 34.55844334711877, -48.47071953609031], 
-            'ori_bipedArm_elbow_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723], 
-            'ori_bipedArm_wrist_0_L': [121.21093795508934, -84.46437211672716, -121.09236735327723]}
-            """
+
             # -- Orientation data --
             # Update the database with just the keys as the keys and not the name of ori!
             updated_rot_dict = {}
             for key in comp_rot_dict.keys():
                 for new_key, new_value in new_component_rot_dict.items():
-                    print(f"if key:`{key}` in new_key:`{new_key}`")
                     if key in new_key:
                         updated_rot_dict[key] = new_value
             print(f"ORI UPDATE - updated_rot_dict = `{updated_rot_dict}`")
@@ -219,7 +211,61 @@ class CharLayoutModel:
             print(f"No component exists in the scene of '{component_selection}'")
             print(f"error: {e}")
         cmds.select(cl=1)
-        
+    
+
+    def update_component_fkik_control_dicts(self, component_selection, val_availableRigComboBox):
+        '''
+        # Description:
+            Update the component's database with by cl;acualting NEW fk/ik_pos/rot 
+            raw data! 
+        # Attributes:
+            component_selection (string): Name of the selected component on GUI.
+            val_availableRigComboBox (string): Name of the folder the .db file 
+            of this component resides in.
+        # Returns: N/A 
+        '''
+        module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
+        rig_db_directory = utils_os.create_directory(
+                        "Jmvs_tool_box", "databases", "char_databases", 
+                        self.db_rig_location, val_availableRigComboBox
+                        )
+        # retrun constant_dict
+        retrieve_constant_data = database_schema_002.RetrieveConstantData(rig_db_directory, module, unique_id, side)
+        limbRoot_name_attr = retrieve_constant_data.return_limbRoot_name()
+        hock_name_attr = retrieve_constant_data.return_hock_name()
+        ik_wld_name_attr = retrieve_constant_data.return_ik_wld_name()
+        print(f"MODEL fkik: limbRoot_name_attr = {limbRoot_name_attr}")
+        print(f"MODEL fkik: hock_name_attr = {hock_name_attr}")
+        print(f"MODEL fkik: ik_wld_name_attr = {ik_wld_name_attr}")
+        const_attr_dict = {
+            "limbRoot_name":retrieve_constant_data.return_limbRoot_name(),
+            "hock_name":retrieve_constant_data.return_hock_name(),
+            "ik_wld_name":retrieve_constant_data.return_ik_wld_name()
+        }
+        print(f"MODEL fkik: const_attr_dict = {const_attr_dict}")
+
+        # return placement_dict
+        retrieve_placement_data = database_schema_002.RetrievePlacementData(rig_db_directory, module, unique_id, side)
+        component_pos_dict = retrieve_placement_data.return_existing_pos_dict()
+        component_rot_dict = retrieve_placement_data.return_existing_rot_dict()
+        controls_typ_dict = retrieve_placement_data.return_controls_typ_dict()
+        print(f"MODEL fkik: component_pos_dict = {dict(component_pos_dict)}")
+
+        # Get constant attr dict
+        constant_attr_dict = utils.get_constant_attr_from_constant_dict(const_attr_dict)
+        # Get fkik contrrol raw dicts 
+        raw_fkik_data = raw_data_fkik_dicts.RawDataFkIKDicts(
+                        controls_typ_dict['FK_ctrls'], controls_typ_dict['IK_ctrls'],
+                        component_pos_dict, component_rot_dict,
+                        constant_attr_dict, unique_id, side)
+        fk_pos, fk_rot, ik_pos, ik_rot = raw_fkik_data.return_RawDataFkIKDicts()
+
+        print(f"MODEL fkik: ik_rot = {ik_rot}")
+
+        # update database with the dicts
+        database_schema_002.UpdateControlsRawData(rig_db_directory, module, unique_id, side, 
+                                                  fk_pos, fk_rot, ik_pos, ik_rot)
+
 
     def visualise_active_db(self, val_availableRigComboBox, mdl_tree_model):
         # get directory of current chosen rig folder!
@@ -243,7 +289,7 @@ class CharLayoutModel:
                     # store into a dictionary to pass to pop `populate_tree_views()`
                     
                     # schema_002
-                    data_retriever = database_schema_002.retrieveModulesData(
+                    data_retriever = database_schema_002.RetrieveModulesData(
                         rig_db_directory, db)
                     db_data[db] = data_retriever.mdl_populate_tree_dict.get(db, [])
                 
@@ -419,6 +465,8 @@ class CharLayoutModel:
         
 
     # ---- Control data recording ----
+
+
     def store_component_control_data(self, component_selection, val_availableRigComboBox):
         module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
         #  func to return list of controls. Arg = component_selection is handled in tge database operation
@@ -451,7 +499,7 @@ class CharLayoutModel:
         get_control_names = database_schema_002.CurveInfoData(rig_db_directory, module, unique_id, side)
         control_names_ls = get_control_names.return_comp_ctrl_ls()
         print(control_names_ls)
-        access_data = database_schema_002.retrieveSpecificComponentdata(
+        access_data = database_schema_002.RetrievePlacementData(
             rig_db_directory, module, unique_id, side)
         comp_dict = access_data.return_mdl_component_dict()
         get_names_dict = comp_dict["component_pos"]
@@ -545,7 +593,7 @@ class CharLayoutModel:
 
             if val_guide_crv_edit_checkBox:
                 # need the positional data of the current component!
-                retrieved_existing_dict = database_schema_002.retrieveSpecificPlacementPOSData(
+                retrieved_existing_dict = database_schema_002.RetrievePlacementData(
                     rig_db_directory, module, unique_id, side)
                 existing_pos_dict = retrieved_existing_dict.return_existing_pos_dict()
                 existing_rot_dict = retrieved_existing_dict.return_existing_rot_dict()
@@ -562,7 +610,7 @@ class CharLayoutModel:
                 print(f"MIRROR: ORI: existing_rot_dict = {existing_rot_dict}")
                 # mirror
                 # apply these to the mirrored component
-                database_schema_002.updateSpecificPlacementPOSData(
+                database_schema_002.UpdateSpecificPlacementPOSData(
                     rig_db_directory, module, unique_id, mirror_side, existing_pos_dict
                     )
                 database_schema_002.UpdatePlacementROTData(

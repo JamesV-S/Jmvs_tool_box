@@ -55,6 +55,8 @@ class CreateXfmGuides():
         
         # lock & hide scale & visibilty
         for x in range(len(guides)):
+            cmds.setAttr(f"{guides[x]}.rx", lock=1, keyable=0, channelBox=0)
+            cmds.setAttr(f"{guides[x]}.rz", lock=1, keyable=0, channelBox=0)
             cmds.setAttr(f"{guides[x]}.sx", lock=1, keyable=0, channelBox=0)
             cmds.setAttr(f"{guides[x]}.sy", lock=1, keyable=0, channelBox=0)
             cmds.setAttr(f"{guides[x]}.sz", lock=1, keyable=0, channelBox=0)

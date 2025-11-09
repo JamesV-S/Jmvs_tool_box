@@ -7,19 +7,6 @@ import os
 import gc
 
 '''
-
-LETS SEE IF IT'S WORKING NOW
-
-constant_dict >> {
-    'guides_connection': [{'key': 'spine_spine3', 'typ': 'parent', 'constrained': 'clavicle', 'attr': {'all': True}}, {'key': 'spine_spine3', 'typ': 'parent', 'constrained': 'shoulder', 'attr': {'all': True}}, {'key': 'root_ROOT', 'typ': 'point', 'constrained': 'elbow', 'attr': {'all': True}}, {'key': 'root_ROOT', 'typ': 'point', 'constrained': 'wrist', 'attr': {'all': True}}], 
-    'guides_follow': [], 
-    'hock_name': None, 
-    'ik_wld_name': False
-    }
-
-'''
-
-'''
 # for running in VSCODE!
 def determine_levels_to_target(current_dir, target_folder_name):
     #parts = current_dir.split(os.sep) 
@@ -55,10 +42,15 @@ from databases import (
     db_connection_tracker
     )
 
-importlib.reload(database_manager)
-importlib.reload(db_connection_tracker)
+from systems.sys_char_rig import (
+    raw_data_fkik_dicts
+)
+
 importlib.reload(utils)
 importlib.reload(utils_db)
+importlib.reload(database_manager)
+importlib.reload(db_connection_tracker)
+importlib.reload(raw_data_fkik_dicts)
 
 # Temporary, this is already gathered automarically from the JSON
 # u_s_dict = {'mirror_rig': False, 'stretch': False, 'rig_sys': {'options': ['FK', 'IK', 'IKFK'], 'default': 'FK'}, 'size': 1} 
@@ -80,31 +72,20 @@ class CreateDatabase():
                 self.query_uniqueID_tracker(conn) # BEFORE processing new data.
                 self.unique_id = self.get_unique_id_sequence(mdl_name, side)
                 
-                # cr curve_info dictionary!
-                curve_info_dict = utils_db.cr_curve_info_dictionary(controls_dict['FK_ctrls'], controls_dict['IK_ctrls'], self.unique_id, side)
-                
-                # cr ori plane dict
-                ori_plane_dict = utils_db.cr_ori_plane_dict(item_name_list[:-1], 10)
-                
-                # update the tables!
+                # tables modules ----------------------------------------------
                 self.update_db(conn, "modules", (
                     self.unique_id, 
                     mdl_name, 
                     side
                     ))
-                # table user_settings
-                rig_options = ', '.join(user_settings_dict['rig_sys']['options'])
-                print(f"DB* user_settings_dict['twist']= `{user_settings_dict['twist']}`" )
-                ''''''
-                # table placement
+                # table placement ---------------------------------------------
                 self.update_db(conn, "placement", (
                     self.unique_id, 
                     placement_dict['component_pos'], 
                     placement_dict['component_rot'],
                     side
                     ))
-                # constant data
-                print(f"constant dict = {constant_dict}")
+                # constant data -----------------------------------------------
                 self.update_db(conn, "constant", (
                     self.unique_id,
                     constant_dict['guides_connection'], 
@@ -115,6 +96,9 @@ class CreateDatabase():
                     constant_dict['ik_wld_name'],
                     side
                     ))
+                # table user_settings -----------------------------------------
+                rig_options = ', '.join(user_settings_dict['rig_sys']['options'])
+                # print(f"DB* user_settings_dict['twist']= `{user_settings_dict['twist']}`" )
                 self.update_db(conn, "user_settings", (
                     self.unique_id, 
                     user_settings_dict['mirror_rig'], 
@@ -126,38 +110,31 @@ class CreateDatabase():
                     user_settings_dict['size'],
                     side
                     ))
-                # module controls
-                print(f"Cr db controls_dict = `{controls_dict}`")
+                # controls data -----------------------------------------------
+                    # Get constant attr dict
+                constant_attr_dict = utils.get_constant_attr_from_constant_dict(constant_dict)
+                    # Get fkik contrrol raw dicts
+                raw_fkik_data = raw_data_fkik_dicts.RawDataFkIKDicts(
+                    controls_dict['FK_ctrls'], controls_dict['IK_ctrls'],
+                    placement_dict['component_pos'], placement_dict['component_rot'],
+                    constant_attr_dict, self.unique_id, side)
+                fk_pos, fk_rot, ik_pos, ik_rot = raw_fkik_data.return_RawDataFkIKDicts()
+                     # cr curve_info dictionary!
+                curve_info_dict = utils_db.cr_curve_info_dictionary(controls_dict['FK_ctrls'], controls_dict['IK_ctrls'], self.unique_id, side)
+                    # cr ori plane dict
+                ori_plane_dict = utils_db.cr_ori_plane_dict(item_name_list[:-1], 10)
                 self.update_db(conn, "controls", (
                     self.unique_id, 
                     controls_dict['FK_ctrls'], 
                     controls_dict['IK_ctrls'],
-                    {},
-                    {},
-                    {},
-                    {}, 
+                    fk_pos,
+                    fk_rot,
+                    ik_pos,
+                    ik_rot, 
                     curve_info_dict,
                     ori_plane_dict,
                     side
                     ))
-                
-                '''
-                Cr db controls_dict = `{
-                    'FK_ctrls': {
-                        'fk_bipedArm_clavicle': 'circle', 
-                        'fk_bipedArm_shoulder': 'circle', 
-                        'fk_bipedArm_elbow': 'circle', 
-                        'fk_bipedArm_wrist': 'circle'
-                        }, 
-                    'IK_ctrls': {
-                        'ik_bipedArm_clavicle': 'cube', 
-                        'ik_bipedArm_shoulder': 'cube', 
-                        'ik_bipedArm_elbow': 
-                        'pv', 
-                        'ik_bipedArm_wrist': 'cube'
-                        }
-                        }`
-                '''
 
         except sqlite3.Error as e:
             print(e)
@@ -206,24 +183,15 @@ class CreateDatabase():
             unique_id INT,
             FK_ctrls TEXT,
             IK_ctrls TEXT,
-            
             fk_pos TEXT,
             fk_rot TEXT,
             ik_pos TEXT,
             ik_rot TEXT,
-
             curve_info TEXT,
             ori_plane_info TEXT,
             side text
         );"""
         ]
-
-        '''
-            fk_pos TEXT,
-            fk_rot TEXT,
-            ik_pos TEXT,
-            ik_rot TEXT,
-        '''
 
         cursor = conn.cursor()
         for state in sql_cr_table_state:
@@ -243,8 +211,19 @@ class CreateDatabase():
             cursor.execute(sql, values)
 
         elif table == 'constant':
-            values = (values[0], json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), values[4], values[5], values[6], values[7])
-            sql = f""" INSERT INTO {table} (unique_id, guides_connection, guides_follow, items, limbRoot_name, hock_name, ik_wld_name, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
+            values = (values[0], 
+                      json.dumps(values[1]), json.dumps(values[2]), json.dumps(values[3]), 
+                      values[4], 
+                      values[5], 
+                      values[6], 
+                      values[7])
+            sql = f""" INSERT INTO {table} 
+                        (unique_id, 
+                        guides_connection, guides_follow, items, 
+                        limbRoot_name, 
+                        hock_name, 
+                        ik_wld_name, 
+                        side) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
             cursor.execute(sql, values)
 
         elif table == 'user_settings':
@@ -291,8 +270,8 @@ class CreateDatabase():
             self.unique_id_tracker[key] += 1
         return self.unique_id_tracker[key]
 
-
-class retrieveModulesData():
+#------------------------------------------------------------------------------
+class RetrieveModulesData():
     def __init__(self, directory, database_name):
         self.mdl_populate_tree_dict = {}
         db_directory = os.path.expanduser(directory)
@@ -330,128 +309,33 @@ class retrieveModulesData():
             print(f"sqlite3.Error: {e}")
             return {}
         
-
-class retrieveSpecificComponentdata():
+# ---- Inheritance ----
+class DatabaseSchema():
     def __init__(self, directory, module_name, unique_id, side):
-        print(f" Retrieve specific component data MODULE_NAME: {module_name} ")
-        # self.mdl_populate_tree_dict = {}
-        # db_directory = os.path.expanduser(directory)
-        # os.makedirs(db_directory, exist_ok=1)
-        # # db_name must include the entire path too!
-        # database_name = f"DB_{module_name}.db"
-        # db_name = os.path.join(db_directory, database_name)
-        db_path = utils_db.get_database_name_path(directory, module_name)
+        self.db_path = utils_db.get_database_name_path(directory, module_name)
 
-        # constants:
         self.module_name = module_name
         self.unique_id = unique_id
         self.side = side
 
+
+class RetrievePlacementData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side):
+        super().__init__(directory, module_name, unique_id, side)
         try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
-                pos_dict = self.position_dict_from_table(conn)
-                self.rot_dict = self.rotation_dict_from_table(conn)
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.existing_pos_dict = self.component_pos_dict_from_table(conn)
+                self.existing_rot_dict = self.component_rot_dict_from_table(conn)
+                self.existing_plane_dict = self.component_ori_plane_dict_from_table(conn)
                 self.controls_dict = self.controls_dict_from_table(conn)
+
                 self.mdl_component_dict = {
                     "module_name":self.module_name, 
                     "unique_id":int(self.unique_id),
                     "side":self.side,
-                    "component_pos": pos_dict,
+                    "component_pos": self.existing_pos_dict,
                     "controls": self.controls_dict
                     }
-                print(f"THE DICT :: self.mdl_component_dict = {self.mdl_component_dict}")
-                
-        except sqlite3.Error as e:
-            print(f"module component retrieval sqlite3.Error: {e}")
-    
-
-    def position_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        placement_sql = f"SELECT component_pos FROM placement WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(placement_sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                component_pos_json = row[0]
-                # use Python's 'json module' to load json dict into python dictionary's
-                component_pos_dict = json.loads(component_pos_json)
-                print(f"component_pos = {component_pos_dict}")
-            return component_pos_dict              
-
-        except sqlite3.Error as e:
-            print(f"placement sqlite3.Error: {e}")
-            return {}
-        
-
-    def rotation_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        placement_sql = f"SELECT component_rot FROM placement WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(placement_sql, (self.unique_id, self.side,))
-            row = cursor.fetchone()
-            if row:
-                comp_rot_json = row[0]
-                # use Python's 'json module' to load json dict into python dictionary's
-                comp_rot_dict = json.loads(comp_rot_json)
-                print(f"component_pos = {comp_rot_dict}")
-            return comp_rot_dict              
-
-        except sqlite3.Error as e:
-            print(f"table placement, ROT sqlite3.Error: {e}")
-            return {}
-        
-
-    def controls_dict_from_table(self, conn):
-        cursor = conn.cursor()
-        controls_sql = f"SELECT FK_ctrls, IK_ctrls FROM controls WHERE unique_id = ? AND side = ? "
-        try:
-            cursor.execute(controls_sql, (self.unique_id, self.side,))
-            rows = cursor.fetchall()
-            controls_dict = {"FK_ctrls":{}, "IK_ctrls":{}}
-            if rows:
-                for row in rows:
-                    fk_ctrls_sjon =row[0] 
-                    ik_ctrl_json = row[1]
-                    # use Python's 'json module' to load json dict into python dictionary's
-                    controls_dict["FK_ctrls"] = json.loads(fk_ctrls_sjon)
-                    controls_dict["IK_ctrls"] = json.loads(ik_ctrl_json)
-                    print(f"controls_dict = {controls_dict}")
-            return controls_dict
-
-        except sqlite3.Error as e:
-            print(f"controls sqlite3.Error: {e}")
-            return {}
-        
-
-    def return_mdl_component_dict(self):
-        return self.mdl_component_dict
-
-    
-    def return_rot_component_dict(self):
-        return self.rot_dict
-    
-    def return_pos_dict(self):
-        return self.controls_dict
-    
-
-class retrieveSpecificPlacementPOSData():
-    def __init__(self, directory, module_name, unique_id, side):
-        db_directory = os.path.expanduser(directory)
-        os.makedirs(db_directory, exist_ok=1)
-        # db_name must include the entire path too!
-        database_name = f"DB_{module_name}.db"
-        db_name = os.path.join(db_directory, database_name)
-
-        # constants:
-        self.module_name = module_name
-        self.unique_id = unique_id
-        self.side = side
-
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
-                self.existing_pos_dict = self.component_pos_dict_from_table(conn)
-                self.existing_rot_dict = self.component_rot_dict_from_table(conn)
-                self.existing_plane_dict = self.component_ori_plane_dict_from_table(conn)
                 
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
@@ -507,186 +391,92 @@ class retrieveSpecificPlacementPOSData():
             return {}
 
 
-    def return_existing_pos_dict(self):
-        return self.existing_pos_dict
-    
-    def return_existing_rot_dict(self):
-        return self.existing_rot_dict
-    
-    def return_existing_plane_dict(self):
-        return self.existing_plane_dict
-
-
-class updateSpecificPlacementPOSData():
-    def __init__(self, directory, module_name, unique_id, side, updated_pos_dict):
-        db_directory = os.path.expanduser(directory)
-        os.makedirs(db_directory, exist_ok=1)
-        # db_name must include the entire path too!
-        database_name = f"DB_{module_name}.db"
-        db_name = os.path.join(db_directory, database_name)
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
-                self.update_db(conn, "placement", (updated_pos_dict, unique_id, side))
-                print(f"Updated database `component_pos`: {db_name} with {updated_pos_dict}, where its unique_id = {unique_id} & side = {side}")
-        except sqlite3.Error as e:
-            print(f"module component retrieval sqlite3.Error: {e}")
-    
-
-    def update_db(self, conn, table, values):
+    def controls_dict_from_table(self, conn):
         cursor = conn.cursor()
-        if table == 'placement':
-            print(f"H H placement VALUES: {values}")
-            sql = f'UPDATE {table} SET component_pos = ? WHERE unique_id = ? AND side = ?'
-            values = (json.dumps(values[0]), values[1], values[2])
-            cursor.execute(sql, values)
-        conn.commit()
-
-
-class UpdatePlacementROTData():
-    def __init__(self, directory, module_name, unique_id, side, updated_rot_dict, updated_plane_dict):
-        db_directory = os.path.expanduser(directory)
-        os.makedirs(db_directory, exist_ok=1)
-        # db_name must include the entire path too!
-        database_name = f"DB_{module_name}.db"
-        db_name = os.path.join(db_directory, database_name)
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
-                self.update_rot_data(conn, "placement", (updated_rot_dict, unique_id, side))
-                self.update_plane_data(conn, "controls", (updated_plane_dict, unique_id, side))
-                print(f"Updated database `component_rot`: {db_name} with {updated_rot_dict}, where its unique_id = {unique_id} & side = {side}")
-        except sqlite3.Error as e:
-            print(f"module component retrieval sqlite3.Error: {e}")
-    
-
-    def update_rot_data(self, conn, table, values):
-        cursor = conn.cursor()
-        if table == 'placement':
-            sql = f'UPDATE {table} SET component_rot = ? WHERE unique_id = ? AND side = ?'
-            values = (json.dumps(values[0]), values[1], values[2])
-            cursor.execute(sql, values)
-        conn.commit()
-    
-    def update_plane_data(self, conn, table, values):
-        cursor = conn.cursor()
-        if table == 'controls':
-            sql = f'UPDATE {table} SET ori_plane_info = ? WHERE unique_id = ? AND side = ?'
-            values = (json.dumps(values[0]), values[1], values[2])
-            cursor.execute(sql, values)
-        conn.commit()
-
-
-class CurveInfoData():
-    def __init__(self, directory, module_name, unique_id, side):
-        # To Find correct row use: `db_id`| `unique_id`| `side`
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.module_name = module_name
-        self.unique_id = unique_id
-        self.side = side
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
-                self.comp_control_ls, self.curve_info_dict = self.curve_info_from_row(conn)
-        except sqlite3.Error as e:
-            print(f"module component retrieval sqlite3.Error: {e}")
-    
-
-    def curve_info_from_row(self, conn):
-        cursor = conn.cursor()
-        controls_sql = f"SELECT curve_info FROM controls WHERE unique_id = ? AND side = ? "
+        controls_sql = f"SELECT FK_ctrls, IK_ctrls FROM controls WHERE unique_id = ? AND side = ? "
         try:
             cursor.execute(controls_sql, (self.unique_id, self.side,))
             rows = cursor.fetchall()
-            controls_list = []
+            controls_dict = {"FK_ctrls":{}, "IK_ctrls":{}}
             if rows:
                 for row in rows:
-                    ctrls_sjon =row[0]
-                    controls_list = list(json.loads(ctrls_sjon).keys())
-                curv_info_dict = json.loads(ctrls_sjon)
-            return controls_list, curv_info_dict
+                    fk_ctrls_sjon =row[0] 
+                    ik_ctrl_json = row[1]
+                    # use Python's 'json module' to load json dict into python dictionary's
+                    controls_dict["FK_ctrls"] = json.loads(fk_ctrls_sjon)
+                    controls_dict["IK_ctrls"] = json.loads(ik_ctrl_json)
+            return controls_dict
 
         except sqlite3.Error as e:
             print(f"controls sqlite3.Error: {e}")
             return {}
-        
-    
-    def return_comp_ctrl_ls(self):
-        return self.comp_control_ls
-    
 
-    def return_curve_info_dict(self):
-        return self.curve_info_dict
+
+    def return_existing_pos_dict(self):
+        return self.existing_pos_dict
     
 
-class UpdateCurveInfo():
-    def __init__(self, directory, module_name, unique_id, side, comp_ctrl_data):
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.module_name = module_name
-        self.unique_id = unique_id
-        self.side = side
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
-                self.update_db(conn, "controls", (comp_ctrl_data, unique_id, side))
-                print(f"Updated database `curve_info`: DB_{module_name}.db with {comp_ctrl_data}, where its unique_id = {unique_id} & side = {side}")
-        except sqlite3.Error as e:
-            print(f"DB* module component retrieval sqlite3.Error: {e}")
-
+    def return_existing_rot_dict(self):
+        return self.existing_rot_dict
     
-    def update_db(self, conn, table, values):
-        cursor = conn.cursor()
-        if table == 'controls':
-            sql = f'UPDATE {table} SET curve_info = ? WHERE unique_id = ? AND side = ?'
-            values = (json.dumps(values[0]), values[1], values[2])
-            cursor.execute(sql, values)
-        conn.commit()
+
+    def return_existing_plane_dict(self):
+        return self.existing_plane_dict
 
 
-class UpdateUserSettings():
-    def __init__(self, directory, module_name, unique_id, side, umo_dict):
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.unique_id = unique_id
-        self.side = side
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
-                self.update_user_setting(conn, "user_settings", umo_dict)
-        except sqlite3.Error as e:
-            print(f"DB* module umo update Error: {e}")
+    def return_controls_typ_dict(self):
+        return self.controls_dict
 
 
-    def update_user_setting(self, conn, table, umo_dict):
-        cursor = conn.cursor()
-        # get values!
-        if table == 'user_settings':
-            sql = f'UPDATE {table} SET mirror_rig = ?, stretch = ?, twist = ?, rig_default = ? WHERE unique_id = ? AND side = ?'
-            values = (umo_dict["mirror_rig"], umo_dict["stretch"], umo_dict["twist"], umo_dict["rig_sys"], self.unique_id, self.side)
-            cursor.execute(sql, values)
+    def return_mdl_component_dict(self):
+        return self.mdl_component_dict
 
 
-class UpdateJointNum():
-    def __init__(self, directory, module_name, unique_id, side, jnt_num):
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.unique_id = unique_id
-        self.side = side
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
-                self.update_joint_num(conn, "user_settings", jnt_num)
-        except sqlite3.Error as e:
-            print(f"DB* module umo update Error: {e}")
-
-
-    def update_joint_num(self, conn, table, jnt_num):
-        cursor = conn.cursor()
-        if table == 'user_settings':
-            sql = f'UPDATE {table} SET joint_num = ? WHERE unique_id = ? AND side = ?'
-            values = (jnt_num, self.unique_id, self.side)
-            cursor.execute(sql, values)
-
-
-class RetrieveSpecificData():
+class RetrieveConstantData(DatabaseSchema):
     def __init__(self, directory, module_name, unique_id, side):
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.unique_id = unique_id
-        self.side = side
+        super().__init__(directory, module_name, unique_id, side)
+
         try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.limbRoot_name = self.get_constant_attr_from_table(conn, "limbRoot_name")
+                self.hock_name = self.get_constant_attr_from_table(conn, "hock_name")
+                self.ik_wld_name = self.get_constant_attr_from_table(conn, "ik_wld_name")
+        except sqlite3.Error as e:
+            print(f"Constant Data Retrieval sqlite3.Error: {e}")
+
+
+    def get_constant_attr_from_table(self, conn, attr_name):
+        cursor = conn.cursor()
+        placement_sql = f"SELECT {attr_name} FROM constant WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(placement_sql, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                const_attr = row[0]
+            return const_attr
+
+        except sqlite3.Error as e:
+            print(f"Constant Data Retrieval sqlite3.Error: {e}")
+            return None
+        
+
+    def return_limbRoot_name(self):
+        return self.limbRoot_name
+    
+
+    def return_hock_name(self):
+        return self.hock_name
+    
+
+    def return_ik_wld_name(self):
+        return self.ik_wld_name
+        
+
+class RetrieveSpecificData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
                 self.jnt_num = self.get_jnt_num(conn, "user_settings")
                 self.guides_connection, self.guides_follow = self.get_guide_data(conn, "constant")
                 self.ori_plane_dict = self.get_ori_plane_data(conn, "controls")
@@ -764,14 +554,179 @@ class RetrieveSpecificData():
     def return_ori_plane_dict(self):
         return self.ori_plane_dict
     
-
-class CheckMirrorData():
-    def __init__(self, directory, module_name, unique_id, side):
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.unique_id = unique_id
-        self.side = side
+#------------------------------------------------------------------------------
+class UpdateSpecificPlacementPOSData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side, updated_pos_dict):
+        super().__init__(directory, module_name, unique_id, side)
         try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(db_path) as conn:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.update_db(conn, "placement", (updated_pos_dict, unique_id, side))
+                print(f"Updated database `component_pos`: {self.db_path} with {updated_pos_dict}, where its unique_id = {unique_id} & side = {side}")
+        except sqlite3.Error as e:
+            print(f"module component retrieval sqlite3.Error: {e}")
+    
+
+    def update_db(self, conn, table, values):
+        cursor = conn.cursor()
+        if table == 'placement':
+            print(f"H H placement VALUES: {values}")
+            sql = f'UPDATE {table} SET component_pos = ? WHERE unique_id = ? AND side = ?'
+            values = (json.dumps(values[0]), values[1], values[2])
+            cursor.execute(sql, values)
+        conn.commit()
+
+
+class UpdatePlacementROTData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side, updated_rot_dict, updated_plane_dict):
+        super().__init__(directory, module_name, unique_id, side)
+
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.update_rot_data(conn, "placement", (updated_rot_dict, unique_id, side))
+                self.update_plane_data(conn, "controls", (updated_plane_dict, unique_id, side))
+                print(f"Updated database `component_rot`: {self.db_path} with {updated_rot_dict}, where its unique_id = {unique_id} & side = {side}")
+        except sqlite3.Error as e:
+            print(f"module component retrieval sqlite3.Error: {e}")
+    
+
+    def update_rot_data(self, conn, table, values):
+        cursor = conn.cursor()
+        if table == 'placement':
+            sql = f'UPDATE {table} SET component_rot = ? WHERE unique_id = ? AND side = ?'
+            values = (json.dumps(values[0]), values[1], values[2])
+            cursor.execute(sql, values)
+        conn.commit()
+    
+
+    def update_plane_data(self, conn, table, values):
+        cursor = conn.cursor()
+        if table == 'controls':
+            sql = f'UPDATE {table} SET ori_plane_info = ? WHERE unique_id = ? AND side = ?'
+            values = (json.dumps(values[0]), values[1], values[2])
+            cursor.execute(sql, values)
+        conn.commit()
+
+
+class UpdateControlsRawData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side, fk_pos, fk_rot, ik_pos, ik_rot):
+        super().__init__(directory, module_name, unique_id, side)
+
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.update_controls_raw_dict(conn, "fk_pos", (fk_pos, unique_id, side))
+                self.update_controls_raw_dict(conn, "fk_rot", (fk_rot, unique_id, side))
+                self.update_controls_raw_dict(conn, "ik_pos", (ik_pos, unique_id, side))
+                self.update_controls_raw_dict(conn, "ik_rot", (ik_rot, unique_id, side))
+        except sqlite3.Error as e:
+            print(f"Constant Data Retrieval sqlite3.Error: {e}")
+    
+
+    def update_controls_raw_dict(self, conn, dict_name, values):
+        cursor = conn.cursor()
+        sql = f'UPDATE controls SET {dict_name} = ? WHERE unique_id = ? AND side = ?'
+        values = (json.dumps(values[0]), values[1], values[2])
+        cursor.execute(sql, values)
+        conn.commit()
+
+
+class CurveInfoData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.comp_control_ls, self.curve_info_dict = self.curve_info_from_row(conn)
+        except sqlite3.Error as e:
+            print(f"module component retrieval sqlite3.Error: {e}")
+    
+
+    def curve_info_from_row(self, conn):
+        cursor = conn.cursor()
+        controls_sql = f"SELECT curve_info FROM controls WHERE unique_id = ? AND side = ? "
+        try:
+            cursor.execute(controls_sql, (self.unique_id, self.side,))
+            rows = cursor.fetchall()
+            controls_list = []
+            if rows:
+                for row in rows:
+                    ctrls_sjon =row[0]
+                    controls_list = list(json.loads(ctrls_sjon).keys())
+                curv_info_dict = json.loads(ctrls_sjon)
+            return controls_list, curv_info_dict
+
+        except sqlite3.Error as e:
+            print(f"controls sqlite3.Error: {e}")
+            return {}
+        
+    
+    def return_comp_ctrl_ls(self):
+        return self.comp_control_ls
+    
+
+    def return_curve_info_dict(self):
+        return self.curve_info_dict
+    
+
+class UpdateCurveInfo(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side, comp_ctrl_data):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.update_db(conn, (comp_ctrl_data, unique_id, side))
+                print(f"Updated database `curve_info`: DB_{module_name}.db with {comp_ctrl_data}, where its unique_id = {unique_id} & side = {side}")
+        except sqlite3.Error as e:
+            print(f"DB* module component retrieval sqlite3.Error: {e}")
+
+    
+    def update_db(self, conn, values):
+        cursor = conn.cursor()
+        sql = f'UPDATE controls SET curve_info = ? WHERE unique_id = ? AND side = ?'
+        values = (json.dumps(values[0]), values[1], values[2])
+        cursor.execute(sql, values)
+        conn.commit()
+
+
+class UpdateUserSettings(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side, umo_dict):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.update_user_setting(conn, "user_settings", umo_dict)
+        except sqlite3.Error as e:
+            print(f"DB* module umo update Error: {e}")
+
+
+    def update_user_setting(self, conn, table, umo_dict):
+        cursor = conn.cursor()
+        # get values!
+        if table == 'user_settings':
+            sql = f'UPDATE {table} SET mirror_rig = ?, stretch = ?, twist = ?, rig_default = ? WHERE unique_id = ? AND side = ?'
+            values = (umo_dict["mirror_rig"], umo_dict["stretch"], umo_dict["twist"], umo_dict["rig_sys"], self.unique_id, self.side)
+            cursor.execute(sql, values)
+
+
+class UpdateJointNum(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side, jnt_num):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.update_joint_num(conn, "user_settings", jnt_num)
+        except sqlite3.Error as e:
+            print(f"DB* module umo update Error: {e}")
+
+
+    def update_joint_num(self, conn, table, jnt_num):
+        cursor = conn.cursor()
+        if table == 'user_settings':
+            sql = f'UPDATE {table} SET joint_num = ? WHERE unique_id = ? AND side = ?'
+            values = (jnt_num, self.unique_id, self.side)
+            cursor.execute(sql, values)
+
+#------------------------------------------------------------------------------
+class CheckMirrorData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
                 self.mirror_database_exists = self.get_database_side_exists(conn, "modules")
         except sqlite3.Error as e:
             print(f"DB* check mirror data Error: {e}")
@@ -797,8 +752,8 @@ class CheckMirrorData():
     def return_mirror_database_exists(self):
         return self.mirror_database_exists
     
-
-class DeleteComponentRows():
+#------------------------------------------------------------------------------
+class DeleteComponentRows(DatabaseSchema):
     def __init__(self, directory, module_name, unique_id, side):
         '''
         # Description:
@@ -810,14 +765,12 @@ class DeleteComponentRows():
             side (string): side of the db module
         # Returns: N/A 
         '''
-        db_path = utils_db.get_database_name_path(directory, module_name)
-        self.unique_id = unique_id
-        self.side = side
+        super().__init__(directory, module_name, unique_id, side)
 
-        print(f"Del_comp row: db_path = {db_path}")
+        print(f"Del_comp row: db_path = {self.db_path}")
 
         try:
-            with sqlite3.connect(db_path) as conn:
+            with sqlite3.connect(self.db_path) as conn:
                 self.delete_row(conn, "constant")
                 self.delete_row(conn, "controls")
                 self.delete_row(conn, "modules")

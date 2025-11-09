@@ -26,9 +26,9 @@ class BuildOrientation():
         # component pos dict
 
         self.comp_pos_dict, self.rig_db_directory, self.module, self.unique_id, self.side = comp_pos_dict, rig_db_directory, module, unique_id, side
-        retrieve_rot_data = database_schema_002.retrieveSpecificComponentdata(
+        retrieve_rot_data = database_schema_002.RetrievePlacementData(
             self.rig_db_directory, self.module, self.unique_id, self.side)
-        self.comp_rot_dict = retrieve_rot_data.return_rot_component_dict()
+        self.comp_rot_dict = retrieve_rot_data.return_existing_rot_dict()
         print(f"BuildOrientation: module = `{module}`/ unique_id = `{unique_id}` / side = `{side}` / comp_rot_dict = `{self.comp_rot_dict}`")
         
         # Initialise group hierarchy
