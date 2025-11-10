@@ -124,9 +124,9 @@ spine_data = {
             'ctrl_ik_spine_spine_top_0_M': [0.0, 143.59873962402344, 3.0]
             },
         "ik_rot":{
-            'ctrl_ik_spine_spine_bottom_0_M': [0.0, 0.0, 0.0], 
-            'ctrl_ik_spine_spine_middle_0_M': [0.0, 0.0, 0.0], 
-            'ctrl_ik_spine_spine_top_0_M': [0.0, 0.0, 0.0]
+            'ctrl_ik_spine_bottom_0_M': [0.0, 0.0, 0.0], 
+            'ctrl_ik_spine_middle_0_M': [0.0, 0.0, 0.0], 
+            'ctrl_ik_spine_top_0_M': [0.0, 0.0, 0.0]
             }
         },
     "axis_dict":{

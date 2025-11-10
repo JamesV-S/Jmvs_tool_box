@@ -5,8 +5,8 @@ import importlib
 import maya.cmds as cmds
 
 # from data_managers import module_data_manager
-from systems.sys_char_rig.module_system_solution_003.blueprints import module_blueprint
-from systems.sys_char_rig.module_system_solution_003.mdl_systems import system_root
+from systems.sys_char_rig.module_workflow.blueprints import module_blueprint
+from systems.sys_char_rig.module_workflow.mdl_systems import system_root
 
 from utils import (
     utils

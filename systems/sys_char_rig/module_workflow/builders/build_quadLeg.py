@@ -5,8 +5,8 @@ import importlib
 import maya.cmds as cmds
 
 # from data_managers import module_data_manager
-from systems.sys_char_rig.module_system_solution_003.blueprints import module_blueprint
-from systems.sys_char_rig.module_system_solution_003.mdl_systems import system_quadLeg
+from systems.sys_char_rig.module_workflow.blueprints import module_blueprint
+from systems.sys_char_rig.module_workflow.mdl_systems import system_quadLeg
 
 from utils import (
     utils
@@ -25,8 +25,6 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
     def __init__(self, data_manager):
         module_blueprint.ModuleBP.__init__(self, data_manager)
         system_quadLeg.SystemQuadLeg.__init__(self, data_manager) 
-
-
 
 
     def build(self):

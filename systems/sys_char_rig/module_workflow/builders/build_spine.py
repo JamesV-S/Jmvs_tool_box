@@ -5,8 +5,8 @@ import importlib
 import maya.cmds as cmds
 
 # from data_managers import module_data_manager
-from systems.sys_char_rig.module_system_solution_003.blueprints import module_blueprint
-from systems.sys_char_rig.module_system_solution_003.mdl_systems import system_spine
+from systems.sys_char_rig.module_workflow.blueprints import module_blueprint
+from systems.sys_char_rig.module_workflow.mdl_systems import system_spine
 
 from utils import (
     utils
@@ -24,9 +24,6 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
     def __init__(self, data_manager):
         module_blueprint.ModuleBP.__init__(self, data_manager)
         system_spine.SystemSpine.__init__(self, data_manager)
-
-
-
         
         print(f"-------  -------  --------  -------")
         print(f"Declared Build{self.dm.mdl_nm}")

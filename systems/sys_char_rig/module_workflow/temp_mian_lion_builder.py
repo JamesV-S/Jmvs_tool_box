@@ -120,14 +120,14 @@ spine_data = {
         },
     "ik_dict":{
         "ik_pos":{
-            'ctrl_ik_spine_spine_bottom_0_M': [0.0, 80.93791961669922, -33.59365463256836], 
-            'ctrl_ik_spine_spine_middle_0_M': [4.867957440048162e-15, 79.35285659322577, 4.382755211832176],
-            'ctrl_ik_spine_spine_top_0_M': [0.0, 72.63502366683598, 46.45413490035679]
+            'ctrl_ik_spine_bottom_0_M': [0.0, 80.93791961669922, -33.59365463256836], 
+            'ctrl_ik_spine_middle_0_M': [4.867957440048162e-15, 79.35285659322577, 4.382755211832176],
+            'ctrl_ik_spine_top_0_M': [0.0, 72.63502366683598, 46.45413490035679]
             },
         "ik_rot":{
-            'ctrl_ik_spine_spine_bottom_0_M': [0.0, -91.18865815650966, -90.0], 
-            'ctrl_ik_spine_spine_middle_0_M': [4.17290486988409, -83.45439685986587, -90.0], 
-            'ctrl_ik_spine_spine_top_0_M': [0.0, -79.42944934192093, -90.0] # [-83.05738785592176, -79.75815644450279, -90.01607472073135]
+            'ctrl_ik_spine_bottom_0_M': [0.0, -91.18865815650966, -90.0], 
+            'ctrl_ik_spine_middle_0_M': [4.17290486988409, -83.45439685986587, -90.0], 
+            'ctrl_ik_spine_top_0_M': [0.0, -79.42944934192093, -90.0] # [-83.05738785592176, -79.75815644450279, -90.01607472073135]
             }
         },
     "axis_dict":{
@@ -209,13 +209,13 @@ root_data_manager = module_data_manager.ModuleDataManager(root_data)
 root_build = build_root.BuildRoot(root_data_manager)
 root_build.build()
 
-# # # spine mdl
+# spine mdl
 spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
 spine_build = build_spine.BuildSpine(spine_data_manager)
 spine_build.build()
 
-# quadLeg mdl
-quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
-quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
-quadLeg_build.build()
+# # quadLeg mdl
+# quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
+# quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
+# quadLeg_build.build()
 
