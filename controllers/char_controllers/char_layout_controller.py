@@ -91,16 +91,8 @@ class CharLayoutController:
         self.view.joint_editing_checkBox.setChecked(False)
         self.view.ctrl_editing_checkBox.setChecked(False)
     
-        self.sig_update_comp_data_checkBox()
         self.sig_joint_editing_checkBox()
         self.sig_ctrl_editing_checkBox()
-
-        '''
-        self.sig_umo_rigType_comboBox()
-        self.sig_umo_mirror_checkBox()
-        self.sig_umo_stretch_checkBox()
-        self.sig_umo_twist_checkBox()
-        '''
 
 
     def setup_connections(self):
@@ -157,13 +149,8 @@ class CharLayoutController:
         self.view.entire_comp_radioBtn.clicked.connect(self.sig_entire_comp_radioBtn)
         self.view.sel_comp_radioBtn.clicked.connect(self.sig_sel_comp_radioBtn)
 
-        '''
-        self.view.update_comp_data_checkBox.stateChanged.connect(self.sig_update_comp_data_checkBox)
-        self.view.umo_rigType_comboBox.currentIndexChanged.connect(self.sig_umo_rigType_comboBox)
-        self.view.umo_mirror_checkBox.stateChanged.connect(self.sig_umo_mirror_checkBox)
-        self.view.umo_stretch_checkBox.stateChanged.connect(self.sig_umo_stretch_checkBox)
-        self.view.umo_twist_checkBox.stateChanged.connect(self.sig_umo_twist_checkBox)
-        '''
+            # External Inout Hook Matrix
+            # Output Hook Matrix
 
         self.view.joint_editing_checkBox.stateChanged.connect(self.sig_joint_editing_checkBox)
         self.view.ctrl_editing_checkBox.stateChanged.connect(self.sig_ctrl_editing_checkBox)
@@ -579,30 +566,6 @@ class CharLayoutController:
         self.val_sel_comp_radioBtn = self.view.sel_comp_radioBtn.isChecked()
         self.val_entire_comp_radioBtn = False
 
-    # current module data! -> this data will be passed to the database!
-    def sig_update_comp_data_checkBox(self):
-        '''self.val_update_comp_data_checkBox = self.view.update_comp_data_checkBox.isChecked()
-        if self.val_update_comp_data_checkBox:
-            self.view.umo_rigType_comboBox.setEnabled(True)
-            self.view.umo_mirror_checkBox.setEnabled(True)
-            self.view.umo_stretch_checkBox.setEnabled(True)
-            self.view.umo_twist_checkBox.setEnabled(True)
-        else:
-            self.view.umo_rigType_comboBox.setEnabled(False)
-            self.view.umo_mirror_checkBox.setEnabled(False)
-            self.view.umo_stretch_checkBox.setEnabled(False)
-            self.view.umo_twist_checkBox.setEnabled(False)'''
-
-
-    def sig_umo_rigType_comboBox(self):
-        self.val_umo_rigType_comboBox = self.view.umo_rigType_comboBox.currentText()
-    def sig_umo_mirror_checkBox(self):
-        self.val_umo_mirror_checkBox = self.view.umo_mirror_checkBox.isChecked()
-    def sig_umo_stretch_checkBox(self):
-        self.val_umo_stretch_checkBox = self.view.umo_stretch_checkBox.isChecked()
-    def sig_umo_twist_checkBox(self):
-        self.val_umo_twist_checkBox = self.view.umo_twist_checkBox.isChecked()
-
     
     def sig_commit_module_edits_btn(self):
         # update the database with data for each module
@@ -618,31 +581,24 @@ class CharLayoutController:
         else:
             comp_list = component_selection
             print(f"Entire radioButton is not being read {self.val_entire_comp_radioBtn}")
-        if self.val_joint_editing_checkBox:
-            umo_dict = {
-            "mirror_rig": self.val_umo_mirror_checkBox,
-            "stretch": self.val_umo_stretch_checkBox,
-            "twist": self.val_umo_twist_checkBox,
-            "rig_sys": self.val_umo_rigType_comboBox
-            }
-        else:
-            umo_dict = {}
+        # if self.val_joint_editing_checkBox:
+        #     umo_dict = {
+        #     "mirror_rig": self.val_umo_mirror_checkBox,
+        #     "stretch": self.val_umo_stretch_checkBox,
+        #     "twist": self.val_umo_twist_checkBox,
+        #     "rig_sys": self.val_umo_rigType_comboBox
+        #     }
+        # else:
+        #     umo_dict = {}
         
         # update the DB | pass joint number!
-        '''total_index = len(comp_list)
+        total_index = len(comp_list)
         for stp, comp in enumerate(comp_list):
-            self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, self.val_update_comp_data_checkBox, self.val_joint_editing_checkBox, self.val_ctrl_editing_checkBox, umo_dict, self.val_jnt_num_spinBox)
+            self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, self.val_joint_editing_checkBox, self.val_ctrl_editing_checkBox, self.val_jnt_num_spinBox)
             
             progress_value = utils.progress_value(stp, total_index)
             self.update_progress(progress_value, f"Commiting data: [{comp}]")
-        self.update_progress(0, f"DONE: Updated module options: {comp_list}")'''
-
-        # update the ui (current options + update options presets)
-        if self.val_joint_editing_checkBox:
-            self.update_umo_label("Rig sys", self.view.cmo_rigType_lbl, umo_dict["rig_sys"])
-            self.update_umo_label("Mirror", self.view.cmo_mirrorMdl_lbl, umo_dict["mirror_rig"])
-            self.update_umo_label("Stretch", self.view.cmo_stretch_lbl, umo_dict["stretch"])
-            self.update_umo_label("Twist", self.view.cmo_twist_lbl, umo_dict["twist"])
+        self.update_progress(0, f"DONE: Updated module options: {comp_list}")
 
 
     def sig_joint_editing_checkBox(self):
@@ -672,15 +628,6 @@ class CharLayoutController:
             self.val_jnt_num_spinBox = float(self.view.jnt_num_spinBox.value())
         except ValueError as e:
             cmds.error(f"error in 'sig_jnt_numm_spinBox': {e}")
-
-
-    def update_umo_label(self, name, qlabel, value):
-        ''' Args: QLabel, name, value'''
-        if value == "True":
-            value = "Yes"
-        elif value == "False":
-            value = "No"
-        qlabel.setText(f"{name}: {value}")
 
 
     def set_selected_module_label(self):

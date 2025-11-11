@@ -617,7 +617,7 @@ class CharLayoutModel:
                     rig_db_directory, module, unique_id, mirror_side, existing_rot_dict, existing_plane_dict)
 
 
-    def commit_module_edit_changes(self, component, val_availableRigComboBox, val_update_comp_data_checkBox, val_joint_editing_checkBox, val_ctrl_editing_checkBox, umo_dict, jnt_num):
+    def commit_module_edit_changes(self, component, val_availableRigComboBox, val_joint_editing_checkBox, val_ctrl_editing_checkBox, jnt_num):
         module, unique_id, side = utils.get_name_id_data_from_component(component)
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
@@ -625,12 +625,11 @@ class CharLayoutModel:
             )
         
         print(f"Module = `{module}`, unique_id = `{unique_id}`, side = `{side}`")
-        print(f"model | umo_dict = {umo_dict}")
  
         # update the user_settings DB
-        if val_update_comp_data_checkBox:
+        ''' if val_update_comp_data_checkBox:
             print(f"update modu;e l editing model functions running")
-            database_schema_002.UpdateUserSettings(rig_db_directory, module, unique_id, side, umo_dict)
+            database_schema_002.UpdateUserSettings(rig_db_directory, module, unique_id, side, umo_dict)'''
         # get the value in the db!
         if val_joint_editing_checkBox:
             print(f"joint editing model functions running")
