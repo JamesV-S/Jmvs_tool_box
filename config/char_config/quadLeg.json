@@ -36,13 +36,6 @@
         "ik_wld_name": "ankle"
     }, 
     "user_settings": {
-        "mirror_rig": false,
-        "stretch": false,
-        "twist": true,
-        "rig_sys": {
-            "options": ["FK", "IK", "IK,FK"],
-            "default": "IK,FK"
-        },
         "joint_num": null,
         "size": 1, 
         "side": ["L", "R"]

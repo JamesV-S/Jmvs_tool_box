@@ -33,13 +33,6 @@
         "ik_wld_name": false
     },
     "user_settings": {
-        "mirror_rig": false,
-        "stretch": false,
-        "twist": true,
-        "rig_sys": {
-            "options": ["FK", "IK", "IK,FK", "IK,FK,INV"],
-            "default": "IK,FK"
-        },
         "joint_num": 8,
         "size": 1,
         "side": ["M"]
@@ -48,9 +41,7 @@
         "FK_ctrls": {
             "fk_spine_spine0": "circle",
             "fk_spine_spine1": "circle",
-            "fk_spine_spine2": "circle",
-            "fk_spine_spine3": "circle",
-            "fk_spine_spine4": "circle"
+            "fk_spine_spine2": "circle"
         },
         "IK_ctrls": {
             "ik_spine_spine0": "cube",

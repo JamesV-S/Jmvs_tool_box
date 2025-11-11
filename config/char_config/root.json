@@ -21,13 +21,6 @@
         "ik_wld_name": false
     },
     "user_settings": {
-        "mirror_rig": false,
-        "stretch": false,
-        "twist": true,
-        "rig_sys": {
-            "options": ["FK"],
-            "default": "FK"
-        },
         "joint_num": null,
         "size": 1,
         "side": ["M"]

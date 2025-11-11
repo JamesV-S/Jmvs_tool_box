@@ -97,15 +97,10 @@ class CreateDatabase():
                     side
                     ))
                 # table user_settings -----------------------------------------
-                rig_options = ', '.join(user_settings_dict['rig_sys']['options'])
+                '''rig_options = ', '.join(user_settings_dict['rig_sys']['options'])'''
                 # print(f"DB* user_settings_dict['twist']= `{user_settings_dict['twist']}`" )
                 self.update_db(conn, "user_settings", (
-                    self.unique_id, 
-                    user_settings_dict['mirror_rig'], 
-                    user_settings_dict['stretch'], 
-                    user_settings_dict['twist'], 
-                    rig_options, 
-                    user_settings_dict['rig_sys']['default'], 
+                    self.unique_id,
                     user_settings_dict['joint_num'],
                     user_settings_dict['size'],
                     side
@@ -169,13 +164,8 @@ class CreateDatabase():
         """CREATE TABLE IF NOT EXISTS user_settings (
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
-            mirror_rig FLOAT,
-            stretch FLOAT,
-            twist FLOAT,
-            rig_options TEXT,
-            rig_default TEXT,
             joint_num INT,
-            size INT, 
+            size INT,
             side text
         );""",
         """CREATE TABLE IF NOT EXISTS controls (
@@ -227,7 +217,11 @@ class CreateDatabase():
             cursor.execute(sql, values)
 
         elif table == 'user_settings':
-            sql = f""" INSERT INTO {table} (unique_id, mirror_rig, stretch, twist, rig_options, rig_default, joint_num, size, side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
+            sql = f""" INSERT INTO {table} 
+                        (unique_id,
+                        joint_num,
+                        size,
+                        side) VALUES (?, ?, ?, ?)"""
             cursor.execute(sql, values)
 
         elif table == 'controls':
@@ -685,23 +679,23 @@ class UpdateCurveInfo(DatabaseSchema):
         conn.commit()
 
 
-class UpdateUserSettings(DatabaseSchema):
-    def __init__(self, directory, module_name, unique_id, side, umo_dict):
-        super().__init__(directory, module_name, unique_id, side)
-        try:
-            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
-                self.update_user_setting(conn, "user_settings", umo_dict)
-        except sqlite3.Error as e:
-            print(f"DB* module umo update Error: {e}")
+# class UpdateUserSettings(DatabaseSchema):
+#     def __init__(self, directory, module_name, unique_id, side, umo_dict):
+#         super().__init__(directory, module_name, unique_id, side)
+#         try:
+#             with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+#                 self.update_user_setting(conn, "user_settings", umo_dict)
+#         except sqlite3.Error as e:
+#             print(f"DB* module umo update Error: {e}")
 
 
-    def update_user_setting(self, conn, table, umo_dict):
-        cursor = conn.cursor()
-        # get values!
-        if table == 'user_settings':
-            sql = f'UPDATE {table} SET mirror_rig = ?, stretch = ?, twist = ?, rig_default = ? WHERE unique_id = ? AND side = ?'
-            values = (umo_dict["mirror_rig"], umo_dict["stretch"], umo_dict["twist"], umo_dict["rig_sys"], self.unique_id, self.side)
-            cursor.execute(sql, values)
+#     def update_user_setting(self, conn, table, umo_dict):
+#         cursor = conn.cursor()
+#         # get values!
+#         if table == 'user_settings':
+#             sql = f'UPDATE {table} SET mirror_rig = ?, stretch = ?, twist = ?, rig_default = ? WHERE unique_id = ? AND side = ?'
+#             values = (umo_dict["mirror_rig"], umo_dict["stretch"], umo_dict["twist"], umo_dict["rig_sys"], self.unique_id, self.side)
+#             cursor.execute(sql, values)
 
 
 class UpdateJointNum(DatabaseSchema):
