@@ -193,6 +193,10 @@ class RawDataFkIKDicts():
         # Arguments: N/A
         # Return: N/A
         '''
+        # IF True, calculate & return pv pos & rot data. IF False, return two empty lists.
+        # False means the module has no pv control to calculate in the first place.  
+        return_pv_data = True
+        
         # get component.key name for pv .value()
         pv_comp_name = []
 
@@ -206,6 +210,9 @@ class RawDataFkIKDicts():
                     comp_key_list.append(comp_name)
                     if ik_type == "pv":
                         pv_comp_name.append(comp_name)
+                    else:
+                        print(f"Module's ctrls have no pv type")
+                        return_pv_data = False
             except: pass
 
             # get the before & after component names for pv.
@@ -218,9 +225,13 @@ class RawDataFkIKDicts():
                 pv_before_after_comp_names.append(after_pv)
 
             # get the pv rot & pos
-        pv_pos, pv_rot = utils.get_pv_pos_rot(self.component_pos[pv_before_after_comp_names[0]], 
-                                              self.component_pos[pv_comp_name[0]],
-                                              self.component_pos[pv_before_after_comp_names[1]])
+        if return_pv_data:
+            pv_pos, pv_rot = utils.get_pv_pos_rot(self.component_pos[pv_before_after_comp_names[0]], 
+                                                self.component_pos[pv_comp_name[0]],
+                                                self.component_pos[pv_before_after_comp_names[1]])
+        else:
+            pv_pos, pv_rot = [], []
+
         return pv_pos, pv_rot
 
 
