@@ -316,18 +316,19 @@ class CharLayoutView(QtWidgets.QWidget):
 
         self.entire_comp_radioBtn = QtWidgets.QRadioButton("Work on components within moduls")
         self.sel_comp_radioBtn =  QtWidgets.QRadioButton("Work on individual components")
-        self.selected_module_label = QtWidgets.QLabel("-> Module")
         layH_sel_options.addWidget(self.entire_comp_radioBtn)
         layH_sel_options.addWidget(self.sel_comp_radioBtn)
 
         # ----------------------------------------------------------
         # update component options
         # self.update_comp_data_checkBox = QtWidgets.QCheckBox()
+        '''
         layGrid_upd_comp = self.update_component_data()
         upd_comp_container, self.update_comp_data_checkBox = self.cr_container_funcUI(
             label_name="Update comp data", widget_to_add=layGrid_upd_comp, 
             layout=True, child=True, checkbox=True)
-
+        '''
+        # ----------------------------------------------------------
         # Joint & control options!!
         layH_jnt_ctrl_editing = QtWidgets.QHBoxLayout()
         layV_joint_editing = QtWidgets.QVBoxLayout()
@@ -390,7 +391,7 @@ class CharLayoutView(QtWidgets.QWidget):
         # ----------------------------------------------------------
         # add these interfaces to the tab!
         layV_module_editing.addLayout(layH_sel_options)
-        layV_module_editing.addLayout(upd_comp_container)
+        '''layV_module_editing.addLayout(upd_comp_container)'''
         layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_module_editing.addLayout(layH_jnt_ctrl_editing)
         layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
@@ -407,7 +408,7 @@ class CharLayoutView(QtWidgets.QWidget):
         self.ik_operation_comboBox.addItem("rotate")
 
         utils_view.assign_style_ls(self.style_tab_1_ui, 
-             [self.entire_comp_radioBtn, self.sel_comp_radioBtn, self.selected_module_label,
+             [self.entire_comp_radioBtn, self.sel_comp_radioBtn,
                self.jnt_num_spinBox, self.ik_operation_comboBox, self.constraint_type_comboBox, 
                self.ctrl_type_comboBox, self.ctrl_num_spinBox, self.commit_module_edits_btn])
 
