@@ -87,7 +87,7 @@ class CharLayoutController:
         self.view.entire_comp_radioBtn.setChecked(True)
         self.val_entire_comp_radioBtn = True
         # ----
-        self.view.update_comp_data_checkBox.setChecked(False)
+        '''self.view.update_comp_data_checkBox.setChecked(False)'''
         self.view.joint_editing_checkBox.setChecked(False)
         self.view.ctrl_editing_checkBox.setChecked(False)
     
@@ -95,10 +95,12 @@ class CharLayoutController:
         self.sig_joint_editing_checkBox()
         self.sig_ctrl_editing_checkBox()
 
+        '''
         self.sig_umo_rigType_comboBox()
         self.sig_umo_mirror_checkBox()
         self.sig_umo_stretch_checkBox()
         self.sig_umo_twist_checkBox()
+        '''
 
 
     def setup_connections(self):
@@ -154,11 +156,15 @@ class CharLayoutController:
             # ---- Tab2 - Edit module ---- 
         self.view.entire_comp_radioBtn.clicked.connect(self.sig_entire_comp_radioBtn)
         self.view.sel_comp_radioBtn.clicked.connect(self.sig_sel_comp_radioBtn)
+
+        '''
         self.view.update_comp_data_checkBox.stateChanged.connect(self.sig_update_comp_data_checkBox)
         self.view.umo_rigType_comboBox.currentIndexChanged.connect(self.sig_umo_rigType_comboBox)
         self.view.umo_mirror_checkBox.stateChanged.connect(self.sig_umo_mirror_checkBox)
         self.view.umo_stretch_checkBox.stateChanged.connect(self.sig_umo_stretch_checkBox)
         self.view.umo_twist_checkBox.stateChanged.connect(self.sig_umo_twist_checkBox)
+        '''
+
         self.view.joint_editing_checkBox.stateChanged.connect(self.sig_joint_editing_checkBox)
         self.view.ctrl_editing_checkBox.stateChanged.connect(self.sig_ctrl_editing_checkBox)
         self.view.jnt_num_spinBox.valueChanged.connect(self.sig_jnt_num_spinBox)
@@ -575,7 +581,7 @@ class CharLayoutController:
 
     # current module data! -> this data will be passed to the database!
     def sig_update_comp_data_checkBox(self):
-        self.val_update_comp_data_checkBox = self.view.update_comp_data_checkBox.isChecked()
+        '''self.val_update_comp_data_checkBox = self.view.update_comp_data_checkBox.isChecked()
         if self.val_update_comp_data_checkBox:
             self.view.umo_rigType_comboBox.setEnabled(True)
             self.view.umo_mirror_checkBox.setEnabled(True)
@@ -585,7 +591,7 @@ class CharLayoutController:
             self.view.umo_rigType_comboBox.setEnabled(False)
             self.view.umo_mirror_checkBox.setEnabled(False)
             self.view.umo_stretch_checkBox.setEnabled(False)
-            self.view.umo_twist_checkBox.setEnabled(False)
+            self.view.umo_twist_checkBox.setEnabled(False)'''
 
 
     def sig_umo_rigType_comboBox(self):
@@ -623,13 +629,13 @@ class CharLayoutController:
             umo_dict = {}
         
         # update the DB | pass joint number!
-        total_index = len(comp_list)
+        '''total_index = len(comp_list)
         for stp, comp in enumerate(comp_list):
             self.model.commit_module_edit_changes(comp, self.val_availableRigComboBox, self.val_update_comp_data_checkBox, self.val_joint_editing_checkBox, self.val_ctrl_editing_checkBox, umo_dict, self.val_jnt_num_spinBox)
             
             progress_value = utils.progress_value(stp, total_index)
             self.update_progress(progress_value, f"Commiting data: [{comp}]")
-        self.update_progress(0, f"DONE: Updated module options: {comp_list}")
+        self.update_progress(0, f"DONE: Updated module options: {comp_list}")'''
 
         # update the ui (current options + update options presets)
         if self.val_joint_editing_checkBox:
