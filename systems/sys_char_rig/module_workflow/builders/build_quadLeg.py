@@ -68,7 +68,7 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[0], self.dm.ik_ctrl_list)
         
         # temp: 
-        ctrl_extrenal = f"ctrl_ik_spine_spine_bottom_0_M"
+        ctrl_extrenal = f"ctrl_ik_spine_bottom_0_M"
         
         self.wire_ik_ctrl_pv(input_grp, 1, self.dm.ik_ctrl_list, ctrl_extrenal)
         self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], ik_logic_jnt_ls[1], ik_ctrl_grp)

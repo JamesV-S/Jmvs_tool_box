@@ -39,6 +39,7 @@ class ModuleDataManager:
 
         # data to be shared to 'ModuleBlueprint', 'System[ModuleName]', 'Build[ModuleName]'
         self._external_plg_dict = self.raw_data['external_plg_dict']
+        self._output_hook_mtx_list = self.raw_data['output_hook_mtx_list']
         self._skel_pos_dict = skeleton_dict["skel_pos"]
         self._skel_rot_dict = skeleton_dict["skel_rot"]
         self._fk_pos_dict = fk_dict["fk_pos"]
@@ -65,7 +66,10 @@ class ModuleDataManager:
 
     @property
     def external_plg_dict(self):
-        return self._external_plg_dict 
+        return self._external_plg_dict
+    @property
+    def output_hook_mtx_list(self):
+        return self._output_hook_mtx_list 
     @property
     def skel_pos_dict(self):
         return self._skel_pos_dict 

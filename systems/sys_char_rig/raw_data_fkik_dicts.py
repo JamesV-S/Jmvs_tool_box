@@ -42,11 +42,34 @@ class RawDataFkIKDicts():
         self.hock_name = constant_attr_dict['hock_name']
         self.ik_wld_name = constant_attr_dict['ik_wld_name']
         self.unique_id, self.side = unique_id, side
-
-        self.fk_pos = self.get_fk_pos()
-        self.fk_rot = self.get_fk_rot()
-        self.ik_pos = self.get_ik_pos()
-        self.ik_rot = self.get_ik_rot()
+        
+        self.run_raw_data_calculation()
+    
+    def run_raw_data_calculation(self):
+        '''
+        # Description:
+            Call the functions to calculate fk/ik_pos/rot raw data dicts. 
+            Checking IF the fk or the ik control dicts are empty; returning 
+            empty dicts. 
+        # Arguments: N/A
+        # Return:
+            ik_rot(dict): keys = ik_*module_*bone : values = rot data. 
+        '''
+        if self.fk_control_dict == {}:
+            print(f" *** raw data fkik: fk ctrl dict =  {self.fk_control_dict}")
+            self.fk_pos = {}
+            self.fk_rot = {}
+        else:
+            self.fk_pos = self.get_fk_pos()
+            self.fk_rot = self.get_fk_rot()
+        
+        if self.ik_control_dict == {}:
+            print(f" *** raw data fkik: ik ctrl dict =  {self.ik_control_dict}")
+            self.ik_pos = {}
+            self.ik_rot = {}
+        else:
+            self.ik_pos = self.get_ik_pos()
+            self.ik_rot = self.get_ik_rot()
         
 
     def get_fk_pos(self):
@@ -195,6 +218,7 @@ class RawDataFkIKDicts():
         '''
         # IF True, calculate & return pv pos & rot data. IF False, return two empty lists.
         # False means the module has no pv control to calculate in the first place.  
+        
         return_pv_data = True
         
         # get component.key name for pv .value()
@@ -213,7 +237,11 @@ class RawDataFkIKDicts():
                     else:
                         print(f"Module's ctrls have no pv type")
                         return_pv_data = False
-            except: pass
+                else:
+                    print(f"Module has no ik ctrls")
+                    return_pv_data = False
+            except:
+                print("*** *** *** Module has no ik ctrls")
 
             # get the before & after component names for pv.
         pv_before_after_comp_names = []

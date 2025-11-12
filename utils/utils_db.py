@@ -31,3 +31,8 @@ def cr_ori_plane_dict(object_list, default_value):
     # Need the names of the object names! in the module, (ignoring the last one)
     ori_plane_dict = {name:default_value for name in object_list}
     return ori_plane_dict
+
+
+def get_constant_dict():
+    
+    return None

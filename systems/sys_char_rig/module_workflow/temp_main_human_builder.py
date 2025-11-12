@@ -27,43 +27,44 @@ root_data = {
     "external_plg_dict": {
         "global_scale_grp":"grp_Outputs_root_0_M",
         "global_scale_atr":"globalScale",
-        "base_plg_grp":"grp_Outputs_root_0_M",
-        "base_plg_atr":"mtx_root_ctrlCentre",
-        "hook_plg_grp":"grp_Outputs_root_0_M",
-        "hook_plg_atr":"mtx_root_ctrlCOG"
+        "base_plg_grp":None,
+        "base_plg_atr":None,
+        "hook_plg_grp":None,
+        "hook_plg_atr":None
         },
+    "output_hook_mtx_list": ["ctrl_fk_centre", "ctrl_fk_COG"],
     "skeleton_dict":{
         "skel_pos":{
-            "root":[0.0, 0.0, 0.0],
+            "rt":[0.0, 0.0, 0.0],
             "centre": [0.0, 0.0, 0.0],
             "COG":[0.0, 110.94277350608388, 3.4263498874367455]
             },
         "skel_rot":{
-            "root":[0.0, 0.0, 0.0],
+            "rt":[0.0, 0.0, 0.0],
             "centre": [0.0, 0.0, 0.0],
             "COG":[0.0, 0.0, 0.0]
             }
         },
     "fk_dict":{
         "fk_pos":{
-            "ctrl_fk_root_root_0_M":[0.0, 0.0, 0.0],
+            "ctrl_fk_root_rt_0_M":[0.0, 0.0, 0.0],
             "ctrl_fk_root_centre_0_M": [0.0, 0.0, 0.0],
             "ctrl_fk_root_COG_0_M":[0.0, 110.94277350608388, 3.4263498874367455]
             },
         "fk_rot":{
-            "ctrl_fk_root_root_0_M":[0.0, 0.0, 0.0],
+            "ctrl_fk_root_rt_0_M":[0.0, 0.0, 0.0],
             "ctrl_fk_root_centre_0_M": [0.0, 0.0, 0.0],
             "ctrl_fk_root_COG_0_M":[0.0, 0.0, 0.0]
             }
         },
     "ik_dict":{
         "ik_pos":{
-            "ctrl_fk_root_root_0_M": False,
+            "ctrl_fk_root_rt_0_M": False,
             "ctrl_fk_root_centre_0_M": False,
             "ctrl_fk_root_COG_0_M": False
             },
         "ik_rot":{
-            "ctrl_fk_root_root_0_M": False,
+            "ctrl_fk_root_rt_0_M": False,
             "ctrl_fk_root_centre_0_M": False,
             "ctrl_fk_root_COG_0_M": False
             }
@@ -79,10 +80,11 @@ spine_data = {
         "global_scale_grp":"grp_Outputs_root_0_M",
         "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
-        "base_plg_atr":"mtx_root_ctrlCentre",
+        "base_plg_atr":"mtx_root_ctrl_fk_centre",
         "hook_plg_grp":"grp_Outputs_root_0_M", 
-        "hook_plg_atr":"mtx_root_ctrlCOG"
+        "hook_plg_atr":"mtx_root_ctrl_fk_COG"
         },
+    "output_hook_mtx_list": ["jnt_skn_top", "jnt_skn_bottom"],
     "skeleton_dict":{
         "skel_pos":{
             'spine0' : [0.0, 108.51357426399493, 3.0], 

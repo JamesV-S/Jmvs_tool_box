@@ -29,43 +29,44 @@ root_data = {
     "external_plg_dict": {
         "global_scale_grp":"grp_Outputs_root_0_M",
         "global_scale_atr":"globalScale",
-        "base_plg_grp":"grp_Outputs_root_0_M",
-        "base_plg_atr":"mtx_root_ctrlCentre",
-        "hook_plg_grp":"grp_Outputs_root_0_M",
-        "hook_plg_atr":"mtx_root_ctrlCOG"
+        "base_plg_grp":None,
+        "base_plg_atr":None,
+        "hook_plg_grp":None,
+        "hook_plg_atr":None
         },
+    "output_hook_mtx_list": ["ctrl_fk_centre", "ctrl_fk_COG"],
     "skeleton_dict":{
         "skel_pos":{
-            "root": [0.0, 0.0, 0.0],
+            "rt": [0.0, 0.0, 0.0],
             "centre": [0.0, 0.0, 0.0],
             "COG": [0.0, 65.0, 0.0]
             },
         "skel_rot":{
-            "root": [0.0, 0.0, 0.0],
+            "rt": [0.0, 0.0, 0.0],
             "centre": [0.0, 0.0, 0.0],
             "COG": [0.0, 0.0, 0.0]
             }
         },
     "fk_dict":{
         "fk_pos":{
-            "ctrl_fk_root_root_0_M": [0.0, 0.0, 0.0],
+            "ctrl_fk_root_rt_0_M": [0.0, 0.0, 0.0],
             "ctrl_fk_root_centre_0_M": [0.0, 0.0, 0.0],
             "ctrl_fk_root_COG_0_M": [0.0, 65.0, 0.0]
             },
         "fk_rot":{
-            "ctrl_fk_root_root_0_M": [0.0, 0.0, 0.0],
+            "ctrl_fk_root_rt_0_M": [0.0, 0.0, 0.0],
             "ctrl_fk_root_centre_0_M": [0.0, 0.0, 0.0],
             "ctrl_fk_root_COG_0_M": [0.0, 0.0, 0.0]
             }
         },
     "ik_dict":{
         "ik_pos":{
-            "ctrl_fk_root_root_0_M": False,
+            "ctrl_fk_root_rt_0_M": False,
             "ctrl_fk_root_centre_0_M": False,
             "ctrl_fk_root_COG_0_M": False
             },
         "ik_rot":{
-            "ctrl_fk_root_root_0_M": False,
+            "ctrl_fk_root_rt_0_M": False,
             "ctrl_fk_root_centre_0_M": False,
             "ctrl_fk_root_COG_0_M": False
             }
@@ -81,10 +82,11 @@ spine_data = {
         "global_scale_grp":"grp_Outputs_root_0_M",
         "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
-        "base_plg_atr":"mtx_root_ctrlCentre",
+        "base_plg_atr":"mtx_root_ctrl_fk_centre",
         "hook_plg_grp":"grp_Outputs_root_0_M", 
-        "hook_plg_atr":"mtx_root_ctrlCOG"
+        "hook_plg_atr":"mtx_root_ctrl_fk_COG"
         },
+    "output_hook_mtx_list": ["jnt_skn_top", "jnt_skn_bottom"],
     "skeleton_dict":{
         "skel_pos":{
             'spine0': [0.0, 80.93791961669922, -33.59365463256836], 
@@ -141,10 +143,11 @@ quadLeg_data = {
         "global_scale_grp":"grp_Outputs_root_0_M",
         "global_scale_atr":"globalScale",
         "base_plg_grp":"grp_Outputs_root_0_M",
-        "base_plg_atr":"mtx_root_ctrlCentre",
+        "base_plg_atr":"mtx_root_ctrl_fk_centre",
         "hook_plg_grp":"grp_Outputs_spine_0_M", 
-        "hook_plg_atr":"mtx_spine_bottom"
+        "hook_plg_atr":"mtx_spine_jnt_skn_bottom"
         },
+    "output_hook_mtx_list": ["jnt_skn_ankle"],
     "skeleton_dict":{
         "skel_pos":{
             'hip': [9.427100479531633, 73.17778605595966, -41.283461318628305], 
@@ -214,8 +217,8 @@ spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
 spine_build = build_spine.BuildSpine(spine_data_manager)
 spine_build.build()
 
-# # quadLeg mdl
-# quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
-# quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
-# quadLeg_build.build()
+# quadLeg mdl
+quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
+quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
+quadLeg_build.build()
 

@@ -18,8 +18,7 @@ from utils import (
 )
 
 from databases.char_databases import (
-    database_schema_002, 
-    database_schema_003
+    database_schema_002
     )
 
 from databases import (
@@ -35,7 +34,6 @@ importlib.reload(utils_os)
 importlib.reload(utils_json)
 importlib.reload(utils_QTree)
 importlib.reload(database_schema_002)
-importlib.reload(database_schema_003)
 importlib.reload(db_connection_tracker)
 importlib.reload(raw_data_fkik_dicts)
 

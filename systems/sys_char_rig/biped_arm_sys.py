@@ -261,7 +261,7 @@ class BipedArmSystem():
         '''
         # Description:
             Add custom matrix to ouptut group -> this matrix lets other modules follow.
-        # Attributes:
+        # Arguments:
             outputs_grp (string): Outputgrpup for this module. 
             out_matrix_name_list (list): List of names for matrix attr.
         # Returns: N/A
@@ -284,7 +284,7 @@ class BipedArmSystem():
         '''
         # Description:
             Creates control group for a list of ctrls.
-        # Attributes:
+        # Arguments:
             ctrl_ls (list): list of given controls.
             ctrl_type (string): Name for the ctrl_grp.
         # Returns:
@@ -311,7 +311,7 @@ class BipedArmSystem():
         # Description:
             Creates start & end skin joints which are intended to be driven by
             their respective control & drive the geometry with skincluster.
-        # Attributes:
+        # Arguments:
             ik_pos (dict): key = fk ctrl name, value = positonal data.
         # Returns:
             skn_start_name (string): start skin joint name. 
@@ -338,7 +338,7 @@ class BipedArmSystem():
             Creates a perfectly straight 3-degrees curve between two positions 
             ( by evenly spacing the intermediate control verts ). To be used for 
             twisting & bending.
-        # Attributes:
+        # Arguments:
             pref (string): The name of this logic curve [upper/lower]
         # Returns:
             logic_curve (string): The logic curve created. 
@@ -363,7 +363,7 @@ class BipedArmSystem():
            The chain will always be a straight chain, it's position is determined 
            by the 'ctrl_ik_bipedArm_shoulder_0_L'.  
            Naming convention = jnt_skn_bipedArm_upper#/lower#_0_L
-        # Attributes:
+        # Arguments:
             twist_name (string): Name of the twist chain (upper#/lower#).
             start_pos (list): Position data for start of the chain.
             end_pos (list): Position data for end of the chain.
@@ -445,7 +445,7 @@ class BipedArmSystem():
         '''
         # Description:
             Creates joint group for this module.
-        # Attributes:
+        # Arguments:
             skn_start_end_ls (list): skin start and end oints.
             skn_jnt_chain (list): list of skin joint chain.
         # Returns:
@@ -466,7 +466,7 @@ class BipedArmSystem():
         '''
         # Description:
             Add module uniwue attributes to the input group.
-        # Attributes:
+        # Arguments:
             inputs_grp (string): Outputgrpup for this module.
         # Returns: N/A
         '''
@@ -481,7 +481,7 @@ class BipedArmSystem():
             The 'clavicle control' drives the 'clavicle skn_joint' > which drives 
             the 'arm root control' which will then be the root of the rest of the 
             arm module: Both FK & IK follow it.  
-        # Attributes:
+        # Arguments:
             input_grp (string): Group for input data for this module.
             ctrl_list (list): Contains ik_clavicle & ik_shoulder(armRoot) control names.
             skn_jnt_clav (string): Clavicle skin joint name.
@@ -538,7 +538,7 @@ class BipedArmSystem():
                 Temporary loactors are used to position the fk control's with 
                 rotation data, using the locators local space matrix as an offset.
                 After the data is passed to the control correctly, temp locs r deleted.  
-        # Attributes:
+        # Arguments:
             input_grp (string): Group for input data for this module.
             fk_ctrl_list (list): Contains 3 fk control names.
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
@@ -602,7 +602,7 @@ class BipedArmSystem():
         '''
         # Description:
             Cr 3 logic rig joints. Used for both fk & ik systems.  
-        # Attributes:
+        # Arguments:
             fk_ctrl_list (list): Contains 3 fk control names.
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
         # Returns: N/A
@@ -635,7 +635,7 @@ class BipedArmSystem():
         '''
         # Description:
             Need to store the distances of the the limb, to be used for PINNING!!!
-        # Attributes:
+        # Arguments:
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
         # Returns:
             d_shld_wrist (string): distance of shoulder to wrist [whole limb]. 
@@ -659,7 +659,7 @@ class BipedArmSystem():
             - stretches the fk ctrl's by translating the control in front. So to 
             "stretch" fk_0, the fk_1 is translated away.
             - This also acts as the default translation position of the fk ctrls. 
-        # Attributes:
+        # Arguments:
             fk_ctrl_list (list): Contains 3 fk control names.
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
         # Returns: N/A
@@ -704,7 +704,7 @@ class BipedArmSystem():
             driving the logic joints:
                 - parent logic joint is driven by arnRoot ctrl w/ 'blend_armRoot_node'
                 - child logic joints are driven by fk ctrl's direct rotations.
-        # Attributes:
+        # Arguments:
             blend_armRoot_node (utility): Arm root ctrl's (ik_shoulder) matrix follow.
             fk_ctrl_list (list): Contains 3 fk control names.
             logic_jnt_list (list): list of arm logic joints. 
@@ -727,7 +727,7 @@ class BipedArmSystem():
             driving the logic joints:
                 - parent logic joint is driven by arnRoot ctrl w/ 'blend_armRoot_node'
                 - child logic joints are driven by fk ctrl's direct rotations.
-        # Attributes:
+        # Arguments:
             inputs_grp (string): Group for input data for this module.
             ik_ctrl_list (list): Contains 4 ik control names.
         # Returns: N/A 
@@ -776,7 +776,7 @@ class BipedArmSystem():
         '''
         # Description:
             Positions & wires the follow swapping of the pv ctrl too
-        # Attributes:
+        # Arguments:
             inputs_grp (string): Group for input data for this module.
             ik_ctrl_list (list): Contains 4 ik control names.
             ik_spine_top_ctrl (string): Name of SPINE modules top ik control.
@@ -845,7 +845,7 @@ class BipedArmSystem():
             Create Ik_handle on the logic joints(Ik RPSolver on logic joints w/ pole vector.), 
             wire the pin arm setup, wire the ikfkStretch setup from pin setup, 
             wire into ik handle from ikfkstretch. skn_wrist drives Ik_handle.opm. 
-        # Attributes:
+        # Arguments:
             inputs_grp (string): Group for input data for this module.
             logic_jnt_list (list): list of arm logic joints. 
             ik_ctrl_list (list): Contains 4 ik control names.
@@ -1005,7 +1005,7 @@ class BipedArmSystem():
         '''
         # Description:
             Creates logic group for this module.
-        # Attributes:
+        # Arguments:
             logic_jnt_list (list): logic joints.
             logic_hdl (string): Logic ik handle.
             logic_curve_list (list): twist logic curves list.
@@ -1026,7 +1026,7 @@ class BipedArmSystem():
         # Description:
             Drive the 'skn_jnt_wrist', blending between 'ik wrist ctrl' & 'fk_wrist ctrl'.
             adding special follow ikfk attributes on the skn joint that drive the blending!  
-        # Attributes:
+        # Arguments:
             skn_jnt_wrist (string): Name of the wrist skin joint.
             logic_jnt_list (list): list of arm logic joints. 
             ik_ctrl_list (list): Contains 4 ik control names.
@@ -1107,7 +1107,7 @@ class BipedArmSystem():
         '''
         # Description:
             Settings Control alr exists in scene so wire its positon & ADD all it's attributes!
-        # Attributes: 
+        # Arguments: 
             skn_jnt_wrist (string): Name of the wrist skin joint.
             ik_ctrl_list (list): Contains 4 ik control names.
         # Returns:
@@ -1162,7 +1162,7 @@ class BipedArmSystem():
             > skn_jnt_wrist.{f"Follow_IK_Wrist_{self.mdl_nm}_{self.unique_id}"}
             > bc_ikfkStretch.blender
             > hdl.ik_blend
-        # Attributes:
+        # Arguments:
             skn_jnt_wrist_ik_plg (plug): ik follow plug SO the 
                                         ctrl_settings.IKFK_Switch drives the blending.
             skn_jnt_wrist_fk_plg (plug): fk follow plug SO the 
@@ -1211,7 +1211,7 @@ class BipedArmSystem():
             Gather each control into variables to make sure i'm working on the right 
             control becuase the order is unorganised beforehand.
             Organised order: 'shaper_main', 'shaper_upper', 'shaper_mid', 'shaper_lower'
-        # Attributes:
+        # Arguments:
             unorganised_shaper_ctrl_list (list) Contains 4 shaper contol names. (unorganied)
         # Returns:
             organised_shaper_ctrl_list (list) Contains 4 shaper contol names. (organied)
@@ -1237,7 +1237,7 @@ class BipedArmSystem():
             Wire the connections for all shaper controls so they are positioned. 
             'shaper_main' control drives all other shaper controls. Positons are 
             all sorted with matrix's and DO NOT need pos or rot data for them.
-        # Attributes:
+        # Arguments:
             shaper_ctrl_list (list) Contains 4 shaper contol names. (organied)
             logic_jnt_list (list): list of arm logic joints. 
             ik_ctrl_list (list): Contains 4 ik control names.
@@ -1316,7 +1316,7 @@ class BipedArmSystem():
             - The intermediate control points of the curves, have an offset in 
               the MM.matrixIn[0]. [#.#, 0.0, 0.0] means Y & Z values should be 
               0.0 to keep the curve straight!
-        # Attributes:
+        # Arguments:
             shaper_ctrl_list (list): Contains 4 shaper contol names. (organied)
             upper_curve (string): 
         # Returns: N/A
@@ -1411,7 +1411,7 @@ class BipedArmSystem():
         # Description:
             - Twist skin joints & Curves must be positioned first beforehand. 
             - Create IK spline handle for upper & lower joints w/ curves
-        # Attributes:
+        # Arguments:
             
         # Returns:
             hdl_upper_name (string): name of upper spring solver ik handle 
@@ -1434,7 +1434,7 @@ class BipedArmSystem():
             The parent of each joint chain (Upper/Lower) has driven OPM.
             - Upper prnt driven by 'arm root control' 
             - lower prnt driven by 'jnt logic elbow' 
-        # Attributes:
+        # Arguments:
             
         # Returns: N/A
         '''
@@ -1563,7 +1563,7 @@ class BipedArmSystem():
             ik handle's .twist attribute.
             - Upper handle twisting is driven by jnt_logic_shld & jnt_logic_elbow  
             - lower handle twisting is driven by jnt_logic_elbow & jnt_skn_wrist
-        # Attributes:
+        # Arguments:
             
         # Returns:
             hdl_upper_name (string): name of upper spring solver ik handle 
@@ -1641,7 +1641,7 @@ class BipedArmSystem():
         # Description:
             parent the 'ik clavicle & ik shoulder' controls to the parent ctrl grp 
             so 'they' don't get hidden with ikfk switch
-        # Attributes:
+        # Arguments:
             ik_ctrl_list (list): Contains 4 ik control names.
         # Returns: N/A
         '''
@@ -1653,7 +1653,7 @@ class BipedArmSystem():
         '''
         # Description:
             Create and wire a reference curve to from the jnt_elbow to the ctrl_elbow 
-        # Attributes:
+        # Arguments:
         # Returns: N/A
         '''
         # build control
@@ -1686,7 +1686,7 @@ class BipedArmSystem():
         # Description:
             Lock an assortment of ctrls of the module to make it animator friendly.
             (For testing of controls toggle this function).
-        # Attributes:
+        # Arguments:
             fk_ctrl_list (list): Contains 3 fk control names.
         # Returns: N/A
         '''
@@ -1703,7 +1703,7 @@ class BipedArmSystem():
                 Connects the object to attributes on this module's output group 
                 so another module's inpout group can have incoming plugs to allow
                 it to follow!
-        # Attributes:
+        # Arguments:
             mdl_output_grp (str): Name of this module's output group
             object_name_ls (list): Name of object that is what matrix data is 
                                     coming from for this attribute on the output 

@@ -21,6 +21,8 @@
         "ik_wld_name": false
     },
     "user_settings": {
+        "input_hook_mtx_plug":null,
+        "output_hook_mtx_list":null,
         "joint_num": 20,
         "size": 1,
         "side": ["M"]

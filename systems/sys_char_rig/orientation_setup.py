@@ -19,12 +19,6 @@ importlib.reload(database_schema_002)
 
 class BuildOrientation():
     def __init__(self, comp_pos_dict, rig_db_directory, ori_plane_dict, module, unique_id, side):
-        # Need:
-        # module name
-        # unique id
-        # side
-        # component pos dict
-
         self.comp_pos_dict, self.rig_db_directory, self.module, self.unique_id, self.side = comp_pos_dict, rig_db_directory, module, unique_id, side
         retrieve_rot_data = database_schema_002.RetrievePlacementData(
             self.rig_db_directory, self.module, self.unique_id, self.side)
@@ -46,11 +40,13 @@ class BuildOrientation():
         
         # parent module ori group to master ori grop in hierarchy!
         cmds.parent(ori_module_group, ori_master_grp)
-        
+
+        # Geo plane functions!
         planes_dict = self.cr_geo_planes()
         plane_grp_list = self.group_geo_planes(planes_dict, ori_parent_grp_list[:-1])
         self.geo_plane_orient_connection(ori_guide_list[:-1], plane_grp_list)
         self.geo_planes_adjusting_length(planes_dict, ori_parent_grp_list[:-1], ori_scale_attr)
+        
         self.locking_objects(ori_guide_list, plane_grp_list)
 
 
@@ -158,29 +154,52 @@ class BuildOrientation():
     
     
     def group_geo_planes(self, planes_dict, ori_parent_grp_list):
-        print(F"GROUP GEO PLANES")
-        # ori_parent_grp_list = ori_parent_grp_list[:-1]
+        '''
+        # Description:
+            Create the group that contains the two geometry planes for each 
+            orientation guide.
+        # Attributes:
+            planes_dict(dict): keys = orientation guide name : values = [geo_plane A name, geo_plane B name] .
+            ori_parent_grp_list(string): Top Parent group for each orientation 
+                                         guide constianing everything 
+                                         to do with that ori_guide.
+        # Return:
+        '''
         # create the groups for each key & match planes to corresponding ori grp
         plane_grp_list = []
-        for key, plane_list in planes_dict.items():
-            for ori_prnt in ori_parent_grp_list:
-                print(f"key = `{key}` & ori_prnt = `{ori_prnt}`")
-                if key in ori_prnt:
-                    # make groups for key planes
-                    pln_grp_name = f"grp_pln_{self.module}_{key}_{self.unique_id}_{self.side}"
-                    plane_grp_list.append(pln_grp_name)
-                    cmds.group(n=pln_grp_name, em=1)
-                    cmds.matchTransform(pln_grp_name, ori_prnt)
-                    cmds.parent(pln_grp_name, ori_prnt)
 
-                    # match planes to the corresponding ori_parent ws
-                    for plane in plane_list:
-                        cmds.matchTransform(plane, pln_grp_name)
-                        cmds.parent(plane, pln_grp_name)
-                    print(f"plane_list = `{plane_list}`")
+        for ori_guide_name, plane_list in planes_dict.items():
+            for ori_prnt in ori_parent_grp_list:
+
+                parent_ori_guide_name = ori_prnt.split("_")[-3]
+                '''
+                ^Example reason for 'parent_ori_guide_name':^
+                Iterate ONLY through 'parent_ori_guide_name' aka 'centre'!
+                'IF' you just check for the guide_name to create the plane 
+                group with 'ori_prnt' aka 'grp_pln_root_centre_0_M' the 
+                module_name 'root' will be mistaken as the ori_guide_name, instead of 
+                the correct part of the naming convention!
+                '''
+                
+                if ori_guide_name in parent_ori_guide_name:
+                    pln_grp_name = f"grp_pln_{self.module}_{ori_guide_name}_{self.unique_id}_{self.side}"
+                    
+                    # 'IF' the grp ('pln_grp_name') already exists then a duplicate 
+                    # has been made which is an error & rest of the method needs 
+                    # to be skipped.
+                    if not cmds.objExists(pln_grp_name):
+                        # make groups for ori_guide_name planes
+                        pln_grp_name = f"grp_pln_{self.module}_{ori_guide_name}_{self.unique_id}_{self.side}"
+                        plane_grp_list.append(pln_grp_name)
+                        cmds.group(n=pln_grp_name, em=1)
+                        cmds.matchTransform(pln_grp_name, ori_prnt)
+                        cmds.parent(pln_grp_name, ori_prnt)
+
+                        # match planes to the corresponding ori_parent ws
+                        for plane in plane_list:
+                            cmds.matchTransform(plane, pln_grp_name)
+                            cmds.parent(plane, pln_grp_name)
         
-        print(f"plane_grp_list == `{plane_grp_list}`")
-        # `['grp_pln_bipedArm_clavicle_0_L', 'grp_pln_bipedArm_shoulder_0_L', 'grp_pln_bipedArm_elbow_0_L']`
         return plane_grp_list
     
 

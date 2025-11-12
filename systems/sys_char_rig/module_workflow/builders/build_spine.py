@@ -50,7 +50,7 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
 
         # Phase 1 - Foundation
         input_grp, output_grp = self.cr_input_output_groups()
-        self.add_outputs_matrix_attr(output_grp, ["bottom", "top"])
+        self.add_outputs_matrix_attr(output_grp, self.dm.output_hook_mtx_list)
         if cmds.objExists(self.dm.external_plg_dict['global_scale_grp']):
             self.wire_input_grp(input_grp, self.dm.GLOBAL_SCALE_PLG, self.dm.BASE_MTX_PLG, self.dm.HOOK_MTX_PLG)
 
@@ -115,7 +115,7 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
                                               skn_jnt_chain, self.dm.ik_ctrl_list)
 
         # Phase 3 - Finalising
-        self.output_group_setup(output_grp, [skn_bott_name, skn_top_name], ["bottom", "top"])
+        self.output_group_setup(self.dm.output_hook_mtx_list)
 
         self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
                            input_grp, output_grp, 

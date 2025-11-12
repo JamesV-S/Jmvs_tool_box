@@ -1,33 +1,39 @@
 {
     "mdl_name": "root",
-    "names": ["ROOT", "COG"],
+    "names": ["rt", "centre", "COG"],
     "placement": {
         "component_pos": {
-            "ROOT": [0.0, 0.0, 0.0],
+            "rt": [0.0, 0.0, 0.0],
+            "centre": [0.0, 0.0, 0.0],
             "COG": [0, 150, 0]
         },
         "component_rot": {
-            "ROOT": [0.0, 0.0, 0.0],
+            "rt": [0.0, 0.0, 0.0],
+            "centre": [0.0, 0.0, 0.0],
             "COG": [0.0, 0.0, 0.0]
         }
     },
     "constant": {
         "guides_connection": [],
         "guides_follow": [
-            {"key": "ROOT", "typ": "point", "constrained": "COG", "attr": {"all": true}}
+            {"key": "rt", "typ": "point", "constrained": "COG", "attr": {"all": true}},
+            {"key": "rt", "typ": "point", "constrained": "centre", "attr": {"all": true}}
         ],
         "limbRoot_name": false,
         "hock_name": false,
         "ik_wld_name": false
     },
     "user_settings": {
+        "input_hook_mtx_plug": null,
+        "output_hook_mtx_list":["ctrl_fk_centre", "ctrl_fk_COG"],
         "joint_num": null,
         "size": 1,
         "side": ["M"]
     },
     "controls": {
         "FK_ctrls": {
-            "fk_root_ROOT": "root",
+            "fk_root_rt": "root",
+            "fk_root_centre": "circle",
             "fk_root_COG": "cog"
         },
         "IK_ctrls": {}

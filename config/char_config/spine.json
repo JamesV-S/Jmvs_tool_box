@@ -33,6 +33,8 @@
         "ik_wld_name": false
     },
     "user_settings": {
+        "input_hook_mtx_plug":["root.ctrl_fk_COG"],
+        "output_hook_mtx_list":["jnt_skn_top", "jnt_skn_bottom"],
         "joint_num": 8,
         "size": 1,
         "side": ["M"]

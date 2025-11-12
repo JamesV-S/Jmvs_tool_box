@@ -41,7 +41,7 @@ class SystemSpine:
         # Description:
             Creates start & end skin joints which are intended to be driven by
             their respective control & drive the geometry with skincluster.
-        # Attributes:
+        # Arguments:
             ik_pos (dict): key = fk ctrl name, value = positonal data.
         # Returns:
             skn_start_name (string): start skin joint name. 
@@ -66,7 +66,7 @@ class SystemSpine:
         '''
         # Description:
             Creates joint group for this module.
-        # Attributes:
+        # Arguments:
             skn_start_end_ls (list): skin start and end oints.
             skn_jnt_chain (list): list of skin joint chain.
         # Returns:
@@ -86,7 +86,7 @@ class SystemSpine:
         '''
         # Description:
             Add module uniwue attributes to the input group.
-        # Attributes:
+        # Arguments:
             inputs_grp (string): Outputgrpup for this module.
         # Returns: N/A
         '''
@@ -110,7 +110,7 @@ class SystemSpine:
             - IK Top & Bottom controls share the control over the middle control.
             This works by using the data of 'self.dm.fk_pos_dict (dict)' & 'self.dm.ik_pos_dict (dict)'
             but not any rotation values are applied atm. 
-        # Attributes:
+        # Arguments:
             input_grp (string): Group for input data for this module.
         # Returns: N/A
         '''
@@ -264,7 +264,7 @@ class SystemSpine:
             Creates all new logic joints (fk, inv, ik) & organises them into new 
             logic groups that are created here as well as the other logic joint 
             chains such as fw_jnt_chain's, bw_jnt_chain's and rig_jnt_chain's. 
-        # Attributes:
+        # Arguments:
             fk_pos (dict): key = fk ctrl name, value = positonal data.
             fk_rot (dict): key = fk ctrl name, value = rotational data.
             ik_pos (dict): key = ik ctrl name, value = positonal data.
@@ -341,7 +341,7 @@ class SystemSpine:
         '''        
         # Description:
             Creates a new logic curve & organises it into the logic_grp. 
-        # Attributes:
+        # Arguments:
             pref (string): name of the joint chain type.
             skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
             backwards (bool): If True, the curve direction is reversed (0-1).
@@ -365,7 +365,7 @@ class SystemSpine:
         # Description:
             Connects the data from provided curve & using utility nodes, retrieves 
             neccessary data for driving the joints to follow the curve, joints stretch, etc. 
-        # Attributes:
+        # Arguments:
             jnt_pref (string): name of the joint chai direction (Fw or Bw).
             logic_curve (string): The name of the new curve created.
             input_grp (string): Group for input data for this module.
@@ -401,7 +401,7 @@ class SystemSpine:
             a MultMatrix to directly connect the ctrl's mtx to joints' mtx. The 
             MultMatrix is if any offsets want to be included in the future, but 
             by default it has none. So becomes a derict connection essentially.  
-        # Attributes: N/A
+        # Arguments: N/A
         # Returns: N/A
         '''
         for fk_ctrl, inv_ctrl, ik_ctrl, fk_logic, inv_logic, ik_logic in zip(
@@ -426,7 +426,7 @@ class SystemSpine:
             Using skin joint chain's (top & bot) matrix's translation data.
             This seperated method is important to provide the best deformation 
             repective of the animator's control over the rig.  
-        # Attributes:
+        # Arguments:
             jnt_pref (string): name of the joint chain type -> needs to be 'skn'.
             skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
         # Returns: N/A
@@ -518,7 +518,7 @@ class SystemSpine:
         # Description:            
             Creates stretch setup on specified joint chain with an ik spline setup. 
             Intentionally keeping the stretch on at all time & not connecting the stretch_state attr.
-        # Attributes:
+        # Arguments:
             jnt_pref (string): name of the joint chain to cr stretch setup on.
             logic_curve (string): The name of the new curve created.
             skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
@@ -659,7 +659,7 @@ class SystemSpine:
         # Description:            
             Wires the data from the Input grp to the skin joint's scale attr to 
             control Volume preservation when the joint's stretch.
-        # Attributes:
+        # Arguments:
             jnt_pref (string): name of the joint chain to cr stretch setup on.
             skeleton_pos_dict (dict): key = name of spine iteration (spine#), value = positonal data.
             input_grp (string): Group for input data for this module.
@@ -700,7 +700,7 @@ class SystemSpine:
         '''
         # Description:            
             The 'non' joint chain now follow it's corresponding 'Str' joint chain 
-        # Attributes:
+        # Arguments:
             nonStr_jnt_chain (list): non stretch joint chain.
             Str_jnt_chain (lsit): stretch joint chain.
         # Returns: N/A
@@ -730,7 +730,7 @@ class SystemSpine:
             Pcon:(strFw_chain, strBw_chain) > rigStr.
             Pcon:(nonstrFw_chain, nonstrBw_chain) > nonrigStr.
             Pcon:(rigStr, nonrigStr) > skn_chain.
-        # Attributes:
+        # Arguments:
             strFw_chain (list): foward jnt stretch chain.
             strBw_chain (list): backward jnt stretch chain.
             rigStr (list): rig jnt stretch chain.

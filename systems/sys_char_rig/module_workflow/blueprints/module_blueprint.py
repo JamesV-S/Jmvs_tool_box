@@ -53,16 +53,16 @@ class ModuleBP:
         return input_grp, outputs_grp
     
 
-    def add_outputs_matrix_attr(self, outputs_grp, out_matrix_name_list):
+    def add_outputs_matrix_attr(self, outputs_grp, output_hook_atr_list):
         '''
         # Description:
             Add custom matrix to ouptut group -> this matrix lets other modules follow.
         # Attributes:
             outputs_grp (string): Outputgrpup for this module. 
-            out_matrix_name_list (list): List of names for matrix attr.
+            output_hook_atr_list (list): List of names for matrix attr.
         # Returns: N/A
         '''
-        for mtx_name in out_matrix_name_list:
+        for mtx_name in output_hook_atr_list:
             utils.add_attr_if_not_exists(outputs_grp, 
                                          f"mtx_{self.dm.mdl_nm}_{mtx_name}", 
                                         'matrix', False)
@@ -427,7 +427,7 @@ class ModuleBP:
 
 
     # Phase 3 - Finalising ( Phase 2 - Module-specific class functions in 'System[ModuleName]' )
-    def output_group_setup(self, mdl_output_grp, object_name_ls, out_matrix_name_list):
+    def output_group_setup(self, output_hook_atr_list):
         '''
         # Description:
             Iterate through the two lists:
@@ -439,7 +439,7 @@ class ModuleBP:
             object_name_ls (list): Name of object that is what matrix data is 
                                     coming from for this attribute on the output 
                                     grp(could be derived from the dict...)
-            out_matrix_name_list (list): Name of the corresponding matrix 
+            output_hook_atr_list (list): Name of the corresponding matrix 
                                         atttribute to connect to that exists on 
                                         the output grp.
         # Returns: N/A
@@ -447,7 +447,30 @@ class ModuleBP:
             Problem -> Handle the attrib names on the Input & Output grps in a way that can be shared between the other modules.
             Solution -> Store this data in the database & access it from there when neccessary by encoding it in a dictionary!
         '''
-        for obj_name, mtx_obj_name in zip(object_name_ls, out_matrix_name_list): # _top_mtx
+
+
+
+        # for obj_name, mtx_obj_name in zip(object_name_ls, output_hook_atr_list): # _top_mtx
+        #     MM_output_top = f"MM_output_{obj_name}"
+        #         # cr the MM nodes
+        #     utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
+        #     top_inverse_mtx = cmds.getAttr(f"{obj_name}{utils.Plg.wld_inv_mtx_plg}")
+        #         # > MM's
+        #     cmds.setAttr(f"{MM_output_top}{utils.Plg.mtx_ins[0]}", *top_inverse_mtx, type="matrix")
+        #     utils.connect_attr(f"{obj_name}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
+        #         # > mdl_output_grp.mtx_obj_name
+        #     utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.mtx_{self.dm.mdl_nm}_{mtx_obj_name}")
+
+
+        for output_hook_atr in output_hook_atr_list: # _top_mtx
+            obj_name = utils.return_output_hook_object(output_hook_atr)
+            output_hook_mtx_plg = utils.return_module_output_hook_plug(
+                                output_hook_atr, 
+                                self.dm.mdl_nm, 
+                                self.dm.unique_id, 
+                                self.dm.side
+                                )
+            
             MM_output_top = f"MM_output_{obj_name}"
                 # cr the MM nodes
             utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_top)
@@ -456,7 +479,8 @@ class ModuleBP:
             cmds.setAttr(f"{MM_output_top}{utils.Plg.mtx_ins[0]}", *top_inverse_mtx, type="matrix")
             utils.connect_attr(f"{obj_name}{utils.Plg.wld_mtx_plg}", f"{MM_output_top}{utils.Plg.mtx_ins[1]}")
                 # > mdl_output_grp.mtx_obj_name
-            utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", f"{mdl_output_grp}.mtx_{self.dm.mdl_nm}_{mtx_obj_name}")
+            utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", output_hook_mtx_plg)
+
 
 
     def group_module(self, module_name, unique_id, side, input_grp, output_grp, ctrl_grp=None, joint_grp=None, logic_grp=None):

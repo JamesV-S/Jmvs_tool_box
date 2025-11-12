@@ -1311,3 +1311,87 @@ def get_constant_attr_from_constant_dict(constant_dict):
         list(constant_dict.keys())[-2]:list(constant_dict.values())[-2],
         list(constant_dict.keys())[-1]:list(constant_dict.values())[-1]
         }
+
+
+def return_module_output_hook_plug(output_hook_attr, mdl_nm, unique_id, side):
+    '''
+    # Description:
+    # Arguments:
+        output_hook_attr (string): A module's ouput hook matrix list of 
+                                     attrs. e.g: "fk_centre" for root module
+                                     or "skn_top" for spine module.
+        mdl_nm (string): Name of Module.
+        unique_id (string): Name of unique_id of module.
+        side (string): Name of side of module.
+    # Return: 
+
+    '''
+    print(f" * output_hook_attr = `{output_hook_attr}`")
+
+    output_grp_name = f"grp_Outputs_{mdl_nm}_{unique_id}_{side}"
+    output_mtx_name = f"mtx_{mdl_nm}_{output_hook_attr}"
+
+    print(f" * output_grp_name = `{output_grp_name}`")
+    print(f" * output_mtx_name = `{output_mtx_name}`")
+
+    output_hook_mtx_plg_name = f"{output_grp_name}.{output_mtx_name}"
+    print(f" * output_hook_mtx_plg_name = `{output_hook_mtx_plg_name}`")
+
+    return output_hook_mtx_plg_name
+
+
+def return_output_hook_object(output_hook_attr, search_type="transform", case_sensitive=False):
+    """
+    # Description: 
+        Get the name of the Output Hook matrix obj that has the matrix data to 
+        be plugged into its Hook plug on th emodules Ouput Group. 
+    # Arguments:
+        output_hook_attr (string): A module's ouput hook matrix list of 
+                                attrs. e.g: "fk_centre" for root module
+                                or "skn_top" for spine module.
+        search_type (str): Type of Maya object to search for
+        case_sensitive (bool): If False, does case-insensitive search
+    # Returns:
+        matching_objects (str): Name of the found object, or None if no object 
+                                found
+    """
+    parts = output_hook_attr.split('_')
+    
+    # string1 = first two parts joined
+    string1 = '_'.join(parts[0:2])
+    
+    # string2 = all remaining parts joined
+    string2 = '_'.join(parts[2:])
+    
+    # print(f"string1 = {string1}")
+    # print(f"string2 = {string2}")
+
+    # Normalize strings for case-insensitive search
+    if not case_sensitive:
+        string1 = string1.lower()
+        string2 = string2.lower()
+    
+    # get all objects once (slowest operation)
+    all_objects = cmds.ls(type=search_type) or []
+    
+    # single-pass going thru
+    matching_objects = []
+    for obj in all_objects:
+        obj_name = obj.split('|')[-1]  # Get short name
+        
+        # store var for comparison
+        test_name = obj_name if case_sensitive else obj_name.lower()
+        
+        # check for both strings with string1 at beginning
+        if (test_name.startswith(string1) and 
+            string2 in test_name):
+            matching_objects.append(obj)
+    
+    if not matching_objects:
+        cmds.warning(f"No Output Hook Matrix objects found starting with '{string1}' and containing '{string2}'")
+        return None
+    elif len(matching_objects) == 1:
+        return matching_objects[0]
+    else:
+        cmds.warning(f"Multiple Hook Output Matrix objects found: {matching_objects}")
+        return matching_objects[0]  # Return first match

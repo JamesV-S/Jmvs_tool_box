@@ -74,36 +74,63 @@ class SystemRoot:
         utils.connect_attr(f"{MM_cog}{utils.Plg.mtx_sum_plg}", f"{cog_ctrl}{utils.Plg.opm_plg}")
 
 
-    def root_output_group_setup(self, global_scale_plg, base_mtx_plg, hook_mtx_plg, ctrl_root, ctrl_centre, ctrl_cog):
+    def root_output_group_setup(self, global_scale_plg, glabal_scale_ctrl, output_hook_atr_list):
         '''
         # Description:
+            A uniqye funtion for the root module, since it's the root!
             Connects the base and hook attributes on this module's output group 
             so another module's input group can have incoming plugs to allow it to follow!
-        # Attributes:
-            global_scale_plg (constant): base matrix plug
-            base_mtx_plg (constant): base matrix plug
-            hook_mtx_plg (constant): hook matrix plug
-            ctrl_centre (str): centre control name .
-            ctrl_cog (str): cog control name.
+        # Arguments:
+            global_scale_plg (constant): external glabal scale matrix plug.
+            output_hook_atr_list (lsit): This module's ouput hook matrix list of attrs. ["fk_centre", "fk_COG"]
+            glabal_scale_ctrl (string): The control name that has the global scale attr on it! (= the root control).
         # Returns: N/A
         '''
+        
+        '''
+        "grp_Outputs_root_0_M.mtx_root_ctrlCOG"
+        '''
+        # `output_base_obj_name` = ctrl_centre
+        # `output_hook_obj_name` = ctrl_cog
+        obj_output_base = utils.return_output_hook_object(output_hook_atr_list[0])
+        obj_output_hook = utils.return_output_hook_object(output_hook_atr_list[1])
+        print(f"obj_output_base (ctrl_centre) = `{obj_output_base}`")
+        print(f"obj_output_base (ctrl_cog) = `{obj_output_hook}`")
+
+        # output_base_mtx_plg (constant): ouput base matrix plug = output_hook_atr_list[0] -> "fk_centre"
+        output_base_mtx_plg  = utils.return_module_output_hook_plug(
+                                output_hook_atr_list[0], 
+                                self.dm.mdl_nm, 
+                                self.dm.unique_id, 
+                                self.dm.side
+                                )
+
+        # output hook matrix plug = output_hook_atr_list[1] -> "fk_COG"
+        output_hook_mtx_plg  = utils.return_module_output_hook_plug(
+                                output_hook_atr_list[1], 
+                                self.dm.mdl_nm, 
+                                self.dm.unique_id, 
+                                self.dm.side
+                                )
+        
+
         # cr two multMatrixs
         # MM_output_top = f"MM_output_{ctrl_spine_top}"
         # MM_output_bot = f"MM_output_{ctrl_spine_bottom}"
-        MM_output_centre = f"MM_output_{ctrl_centre}"
-        MM_output_cog = f"MM_output_{ctrl_cog}"
+        MM_output_base = f"MM_output_{obj_output_base}"
+        MM_output_hook = f"MM_output_{obj_output_hook}"
             
             # cr the MM nodes
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_centre)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_cog)
-        centre_inverse_mtx = cmds.getAttr(f"{ctrl_centre}{utils.Plg.wld_inv_mtx_plg}")
-        cog_inverse_mtx = cmds.getAttr(f"{ctrl_cog}{utils.Plg.wld_inv_mtx_plg}")
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_base)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_output_hook)
+        centre_inverse_mtx = cmds.getAttr(f"{obj_output_base}{utils.Plg.wld_inv_mtx_plg}")
+        cog_inverse_mtx = cmds.getAttr(f"{obj_output_hook}{utils.Plg.wld_inv_mtx_plg}")
         # Plugs - connect ik ctrl's to MM's
-        cmds.setAttr(f"{MM_output_centre}{utils.Plg.mtx_ins[0]}", *centre_inverse_mtx, type="matrix")
-        cmds.setAttr(f"{MM_output_cog}{utils.Plg.mtx_ins[0]}", *cog_inverse_mtx, type="matrix")
-        utils.connect_attr(f"{ctrl_centre}{utils.Plg.wld_mtx_plg}", f"{MM_output_centre}{utils.Plg.mtx_ins[1]}")
-        utils.connect_attr(f"{ctrl_cog}{utils.Plg.wld_mtx_plg}", f"{MM_output_cog}{utils.Plg.mtx_ins[1]}")
+        cmds.setAttr(f"{MM_output_base}{utils.Plg.mtx_ins[0]}", *centre_inverse_mtx, type="matrix")
+        cmds.setAttr(f"{MM_output_hook}{utils.Plg.mtx_ins[0]}", *cog_inverse_mtx, type="matrix")
+        utils.connect_attr(f"{obj_output_base}{utils.Plg.wld_mtx_plg}", f"{MM_output_base}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{obj_output_hook}{utils.Plg.wld_mtx_plg}", f"{MM_output_hook}{utils.Plg.mtx_ins[1]}")
         # Plugs - connect the MM to the spine output's attribs!  
-        utils.connect_attr(f"{MM_output_centre}{utils.Plg.mtx_sum_plg}", base_mtx_plg)
-        utils.connect_attr(f"{MM_output_cog}{utils.Plg.mtx_sum_plg}", hook_mtx_plg)
-        utils.connect_attr(f"{ctrl_root}.{self.dm.global_scale_attr}", global_scale_plg)
+        utils.connect_attr(f"{MM_output_base}{utils.Plg.mtx_sum_plg}", output_base_mtx_plg)
+        utils.connect_attr(f"{MM_output_hook}{utils.Plg.mtx_sum_plg}", output_hook_mtx_plg)
+        utils.connect_attr(f"{glabal_scale_ctrl}.{self.dm.global_scale_attr}", global_scale_plg)

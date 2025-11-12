@@ -78,6 +78,7 @@ class CreateDatabase():
                     mdl_name, 
                     side
                     ))
+                
                 # table placement ---------------------------------------------
                 self.update_db(conn, "placement", (
                     self.unique_id, 
@@ -85,6 +86,7 @@ class CreateDatabase():
                     placement_dict['component_rot'],
                     side
                     ))
+                
                 # constant data -----------------------------------------------
                 self.update_db(conn, "constant", (
                     self.unique_id,
@@ -96,15 +98,24 @@ class CreateDatabase():
                     constant_dict['ik_wld_name'],
                     side
                     ))
+                
                 # table user_settings -----------------------------------------
                 '''rig_options = ', '.join(user_settings_dict['rig_sys']['options'])'''
                 # print(f"DB* user_settings_dict['twist']= `{user_settings_dict['twist']}`" )
+                
+                print(f"DB Schema: user_settings = {user_settings_dict}")
+                print(f"DB Schema: input_hook_mtx_plug = {user_settings_dict['input_hook_mtx_plug']}")
+                print(f"DB Schema: output_hook_mtx_list = {user_settings_dict['output_hook_mtx_list']}")
+
                 self.update_db(conn, "user_settings", (
                     self.unique_id,
+                    user_settings_dict['input_hook_mtx_plug'],
+                    user_settings_dict['output_hook_mtx_list'],
                     user_settings_dict['joint_num'],
                     user_settings_dict['size'],
                     side
                     ))
+                
                 # controls data -----------------------------------------------
                     # Get constant attr dict
                 constant_attr_dict = utils.get_constant_attr_from_constant_dict(constant_dict)
@@ -164,6 +175,8 @@ class CreateDatabase():
         """CREATE TABLE IF NOT EXISTS user_settings (
             db_id INTEGER PRIMARY KEY,
             unique_id INT,
+            input_hook_mtx_plug TEXT,
+            output_hook_mtx_list TEXT,
             joint_num INT,
             size INT,
             side text
@@ -193,12 +206,18 @@ class CreateDatabase():
         cursor = conn.cursor()
         if table == 'modules':
             sql = f""" INSERT INTO {table} (unique_id, module_name, side) VALUES (?, ?, ?)"""
-            cursor.execute(sql, values)
+            try:
+                cursor.execute(sql, values)
+            except sqlite3.Error as e:
+                print(f"*** *** cr_DB_schema `constant` Error: {e}")
 
         elif table == 'placement':
             values = (values[0], json.dumps(values[1]), json.dumps(values[2]), values[3])
             sql = f""" INSERT INTO {table} (unique_id, component_pos, component_rot, side) VALUES (?, ?, ?, ?)"""
-            cursor.execute(sql, values)
+            try:
+                cursor.execute(sql, values)
+            except sqlite3.Error as e:
+                print(f"*** *** cr_DB_schema `constant` Error: {e}")
 
         elif table == 'constant':
             values = (values[0], 
@@ -210,19 +229,31 @@ class CreateDatabase():
             sql = f""" INSERT INTO {table} 
                         (unique_id, 
                         guides_connection, guides_follow, items, 
-                        limbRoot_name, 
+                        limbRoot_name,
                         hock_name, 
                         ik_wld_name, 
                         side) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"""
-            cursor.execute(sql, values)
+            try:
+                cursor.execute(sql, values)
+            except sqlite3.Error as e:
+                print(f"*** *** cr_DB_schema `constant` Error: {e}")
 
         elif table == 'user_settings':
-            sql = f""" INSERT INTO {table} 
+            values = (values[0], 
+                      json.dumps(values[1]), json.dumps(values[2]),
+                      values[3],
+                      values[4],
+                      values[5])
+            sql = f""" INSERT INTO {table}
                         (unique_id,
+                        input_hook_mtx_plug, output_hook_mtx_list,
                         joint_num,
                         size,
-                        side) VALUES (?, ?, ?, ?)"""
-            cursor.execute(sql, values)
+                        side) VALUES (?, ?, ?, ?, ?, ?)"""
+            try:
+                cursor.execute(sql, values)
+            except sqlite3.Error as e:
+                print(f"*** *** cr_DB_schema `user_settings` Error: {e}")
 
         elif table == 'controls':
             values = (values[0], 
@@ -238,7 +269,10 @@ class CreateDatabase():
                         curve_info, 
                         ori_plane_info, 
                         side) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-            cursor.execute(sql, values)
+            try:
+                cursor.execute(sql, values)
+            except sqlite3.Error as e:
+                print(f"*** *** cr_DB_schema `controls` Error: {e}")
 
         conn.commit()
 

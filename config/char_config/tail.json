@@ -32,6 +32,8 @@
         "ik_wld_name": false
     },
     "user_settings": {
+        "input_hook_mtx_plug":["spine.jnt_skn_bottom"],
+        "output_hook_mtx_list":["jnt_skn_end"],
         "joint_num": 8,
         "size": 1,
         "side": ["M"]
