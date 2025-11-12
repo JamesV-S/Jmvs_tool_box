@@ -29,6 +29,8 @@
         "ik_wld_name": false
     },
     "user_settings":{
+        "input_hook_mtx_plug":"spine.skn_top",
+        "output_hook_mtx_list":["skn_wrist", "skn_lower5"],
         "joint_num": null,
         "size": 1, 
         "side": ["L", "R"]
