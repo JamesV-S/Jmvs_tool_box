@@ -20,6 +20,7 @@ import os.path
 
 from utils import (
     utils,
+    utils_os,
     utils_json,
     utils_QTree
 )
@@ -30,16 +31,23 @@ from systems.sys_char_rig import (
     raw_data_fkik_dicts
 )
 
+from models.char_models import (
+    layout_qt_models
+)
+
 from models.char_models import char_layout_model
 from views.char_views import char_layout_view
 
 # importlib.reload(utils_os)
 importlib.reload(utils)
+importlib.reload(utils_os)
 importlib.reload(utils_json)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
 importlib.reload(raw_data_fkik_dicts)
+importlib.reload(layout_qt_models)
+
 importlib.reload(char_layout_model)
 importlib.reload(char_layout_view)
 
@@ -50,18 +58,24 @@ class CharLayoutController:
         self.view = char_layout_view.CharLayoutView()
         
         self.json_dict = utils_json.get_modules_json_dict('char_config')
-        self.user_module_data = {}
 
         self.db_rig_location = "db_rig_storage"
         name_of_rig_fld = self.model.get_available_DB_rig_folders(self.db_rig_location)
         self.populate_available_rig_comboBox(name_of_rig_fld)
         self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
+
+        self.db_rig_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, self.val_availableRigComboBox
+            )
+        
+        self.user_module_data = {}
         
         self.set_prerequisite_signals()
         # Connect signals and slots
         self.setup_connections()
         
-        self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
+        self.visualise_active_db()
 
 
     def set_prerequisite_signals(self):
@@ -172,7 +186,7 @@ class CharLayoutController:
         self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
         # tree_name = self.val_availableRigComboBox.replace("DB_", "")
         # self.view.tree_view_name_lbl.setText(f"Database: `{tree_name}`")
-        self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
+        self.visualise_active_db()
         print(f"available rig chosen: `{self.val_availableRigComboBox}`")
 
 
@@ -267,7 +281,7 @@ class CharLayoutController:
             #print(f"MDL::{mdl} & signals::{signals}")
             print(f"MDL::{mdl} & checkbox::{signals['mdl_checkBox']}, iteration::{signals['mdl_iteration']}, side::{signals['mdl_side']}")
             self.model.cr_mdl_json_database(self.val_availableRigComboBox, mdl, signals['mdl_checkBox'], signals['mdl_iteration'], signals['mdl_side'])
-            self.model.visualise_active_db(self.val_availableRigComboBox, self.view.mdl_tree_model)
+            self.visualise_active_db()
             
             # progress_value = utils.progress_value()
     
@@ -343,6 +357,7 @@ class CharLayoutController:
         for comp_sel in component_selection_ls:
             self.model.delete_database_component(comp_sel, self.val_availableRigComboBox, self.view.mdl_tree_model)
             self.model.delete_scene_component(comp_sel)
+            self.visualise_active_db()
 
 
     def sig_del_module(self):
@@ -352,6 +367,7 @@ class CharLayoutController:
         for module in module_selection_ls:
             self.model.delete_scene_module(module, self.view.mdl_tree_model)
             self.model.delete_database_module(module, self.val_availableRigComboBox, self.view.mdl_tree_model)
+            self.visualise_active_db()
 
 
     # ------------ management options siFunc ------------
@@ -408,6 +424,7 @@ class CharLayoutController:
         # try: 
         for stp, component in enumerate(component_selection):
             self.model.mirror_component_data(component, self.val_availableRigComboBox, self.view.mdl_tree_model, self.val_ctrl_crv_edit_checkbox, self.val_guide_crv_edit_checkBox)
+            self.visualise_active_db()
 
             progress_value = utils.progress_value(stp, total_index)
             self.update_progress(progress_value, f"Storing curve data: [{component}]")
@@ -604,12 +621,12 @@ class CharLayoutController:
     def sig_joint_editing_checkBox(self):
         self.val_joint_editing_checkBox = self.view.joint_editing_checkBox.isChecked()
         if self.val_joint_editing_checkBox:
-            self.view.constraint_type_comboBox.setEnabled(True)
-            self.view.ik_operation_comboBox.setEnabled(True)
+            # self.view.constraint_type_comboBox.setEnabled(True)
+            # self.view.ik_operation_comboBox.setEnabled(True)
             self.view.jnt_num_spinBox.setEnabled(True)
         else:
-            self.view.constraint_type_comboBox.setEnabled(False)
-            self.view.ik_operation_comboBox.setEnabled(False)
+            # self.view.constraint_type_comboBox.setEnabled(False)
+            # self.view.ik_operation_comboBox.setEnabled(False)
             self.view.jnt_num_spinBox.setEnabled(False)
 
 
@@ -617,10 +634,10 @@ class CharLayoutController:
         self.val_ctrl_editing_checkBox = self.view.ctrl_editing_checkBox.isChecked()
         if self.val_joint_editing_checkBox:
             self.view.ctrl_num_spinBox.setEnabled(True)
-            self.view.ctrl_type_comboBox.setEnabled(True)
+            self.view.ctrl_type_btn.setEnabled(True)
         else:
             self.view.ctrl_num_spinBox.setEnabled(False)
-            self.view.ctrl_type_comboBox.setEnabled(False)
+            self.view.ctrl_type_btn.setEnabled(False)
 
 
     def sig_jnt_num_spinBox(self):
@@ -655,3 +672,23 @@ class CharLayoutController:
             print(f"No rig folder name 'DB_jmvs_char*_rig' found in {self.db_rig_location}, please create one.")
 
     
+    def visualise_active_db(self):
+        '''
+        # Description:
+            call classes to update the gui with database iformation dynamically.
+        '''        
+        print(f"** trying to run new visualise_active_db_")
+        # QTreeView Update
+        layout_qt_models.UpdateQTreeModel(
+            self.db_rig_directory, self.val_availableRigComboBox, self.view)
+        
+        # External Input Hook Matrix QListView Update
+        layout_qt_models.UpdateExtInputHookQListModel(
+            self.db_rig_directory, self.val_availableRigComboBox, self.view)
+        
+        # Output Hook Matrix QListView Update
+        layout_qt_models.UpdateOutputHookQListModel(
+            self.db_rig_directory, self.val_availableRigComboBox, self.view)
+        
+
+

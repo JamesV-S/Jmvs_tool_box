@@ -25,6 +25,8 @@ from databases import (
     db_connection_tracker
 )
 
+
+
 from systems.sys_char_rig import (
     raw_data_fkik_dicts
 )
@@ -266,17 +268,36 @@ class CharLayoutModel:
 
 
     def visualise_active_db(self, val_availableRigComboBox, mdl_tree_model):
+        '''
+        # Description:
+        Update the gui with module information that is present in the database.
+        The ui container that are updated are:
+            -> 'Character Database' (QTreeView)
+            -> 'External Input Hook' (QListView)
+            -> 'Output Hook' (QListView)
+        # Attributes:
+            val_availableRigComboBox (string): Name of the rig grp that stores 
+                                                all .db files for each module 
+                                                of the rig.
+            mdl_tree_model (QTreeModel): Model of the tree view.
+        # Data structures (The data created in this function):
+             db_data (dict): keys = 'DB_*{module_name}.db' : 
+                             vals = [(unique_id, side, for each component), etc, ]
+                example: 
+                    {
+                    'DB_bipedArm.db': [(0, 'L'), (0, 'R')], 
+                    'DB_quadArm.db': [(0, 'L')]
+                    }
+
+        '''
         # get directory of current chosen rig folder!
-        rig_folder_name = val_availableRigComboBox
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
-            self.db_rig_location, rig_folder_name
+            self.db_rig_location, val_availableRigComboBox
             )
         # gather a list of database found in the folder: 
         db_names = []
         db_data = {}
-        db_new = {}
-        db_other = {}
         if os.path.exists(rig_db_directory):
             for db in os.listdir(rig_db_directory):
                 if db.startswith("DB_") and db.endswith(".db"):
@@ -284,50 +305,54 @@ class CharLayoutModel:
                     
                     # get the table data `modules` from each database
                     # query the unique_id & side from each row
-                    # store into a dictionary to pass to pop `populate_tree_views()`
-                    
-                    # schema_002
+                    # store into a dictionary to pass to pop `populate_char_db_QTreeView_model()`
                     data_retriever = database_schema_002.RetrieveModulesData(
                         rig_db_directory, db)
-                    db_data[db] = data_retriever.mdl_populate_tree_dict.get(db, [])
-                
-                    # # schema_003
-                    # data_retriever = database_schema_003.RetrieveModuleTable(
-                    #     rig_db_directory, db
-                    # )
-                    # db_new[db] = data_retriever.retrieve_mdl_data().get(db, [])
-                    # print(f"data = {data_retriever.retrieve_mdl_data()}")
-                    
-                    # db_other = data_retriever.return_mdl_data_dict()
-
-                
+                    db_data[db] = data_retriever.db_data_iteraion.get(db, [])    
                 else:
                     print(f"NO database file found in:{rig_db_directory}")
         else:
             print(f"directory does NOT exist: {rig_db_directory}")
-        print(f"rig_folder_name: {rig_folder_name} & in that, {db_names}")
         
-        print(f"db_data = {db_data}")
-        print(f"db_new = {db_new}")
-        print(f"db_new = {db_other}")
+        print(f" * 'visualise_active_db(): 'db_data = {db_data}")
+        '''
+        
+        '''
 
-        # clear the modules everytime the active db is switched
-        mdl_tree_model.clear()
+        
         
         # add all databases to the treeView
-        self.populate_tree_views(mdl_tree_model, rig_folder_name, db_data)
+        self.populate_char_db_QTreeView_model(mdl_tree_model, val_availableRigComboBox, db_data)
         
 
-    def populate_tree_views(self, mdl_tree_model, rig_folder_name, db_data_dict):
-        print(f"Populating Tree with `{rig_folder_name}'s` databases: {list(db_data_dict.keys())}")
+    def populate_char_db_QTreeView_model(self, mdl_tree_model, rig_folder_name, db_data):
+        '''
+        # Description:
+            Add items to the QTreeView model. Items being the module name & 
+            components within it.
+        # Attributes:
+            mdl_tree_model (QTreeModel): Model of the tree view.
+            rig_folder_name (string): Name of the rig folder for debugging & 
+            printing purposes only.
+            db_data (dict): keys = 'DB_*{module_name}.db' : 
+                            vals = [
+                                (unique_id, side, for each component), etc,
+                                ]
+        # Reuturn: N/A 
+        '''
+        # clear the treeView's model (ie, the items in it) everytime the active 
+        # db is switched.
+        mdl_tree_model.clear()
+        
         tree_parent_item = mdl_tree_model.invisibleRootItem()
         
-        if not db_data_dict:
+        if not db_data:
+            # NO module data in the dictionary 'db_data'
             print(f"NO databases in the folder `{rig_folder_name}`")
         else:
-            print(f"found databases '{list(db_data_dict.keys())}' in the folder `{rig_folder_name}`")
+            print(f"found databases '{list(db_data.keys())}' in the folder `{rig_folder_name}`")
             try:
-                for db_name, rows in db_data_dict.items():
+                for db_name, rows in db_data.items():
                     db_base_name = db_name.replace("DB_", "").replace(".db", "")
                     db_item = QtGui.QStandardItem(f"{db_base_name}")
                     db_item.setData(True, QtCore.Qt.UserRole)
@@ -342,6 +367,16 @@ class CharLayoutModel:
             except Exception as e:
                     print(f"If you just created a new db, ignore this error, if not: {e}")
     
+
+    def populate_ext_input_hook_QListView_model(self):
+        '''
+        # Description:
+            Add items to the QTreeView model. Items being the module name & 
+            components within it.
+        # Attributes:
+        # Reuturn: N/A 
+        '''
+
 
     # ---- json data functions ----  
     def cr_mdl_json_database(self, val_availableRigComboBox, mdl_name, checkBox, iterations, side): # handles a single module at a time
@@ -464,7 +499,6 @@ class CharLayoutModel:
 
     # ---- Control data recording ----
 
-
     def store_component_control_data(self, component_selection, val_availableRigComboBox):
         module, unique_id, side = utils.get_name_id_data_from_component(component_selection)
         #  func to return list of controls. Arg = component_selection is handled in tge database operation
@@ -573,7 +607,6 @@ class CharLayoutModel:
                         database_schema_002.CreateDatabase(
                             rig_db_directory, module, mirror_side, mdl_object_list, mirror_placement_dict, 
                             mirror_constant_dict, mirror_user_settings_dict, mirror_controls_dict)
-                        self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
                     
             # update the databse with the gathered data!
             if val_ctrl_crv_edit_checkbox:
@@ -654,6 +687,10 @@ class CharLayoutModel:
         utils.align_source_rotX_to_target(ori_rot_dict)
 
 
+    # ---- Input List functions ----
+
+
+
     # ---- Delete database functions ----
     def delete_database_module(self, module_name, val_availableRigComboBox, mdl_tree_model):
         '''
@@ -662,7 +699,7 @@ class CharLayoutModel:
         # Attributes:
             db_folder_path (string): Path of the folder the .db modules are in
             module_name (string): Name of the module to delete.
-                        val_availableRigComboBox (string): Name of the db rig grp. 
+            val_availableRigComboBox (string): Name of the db rig grp. 
             mdl_tree_model (QTreeModel): model of the tree view.
         # Returns: N/A 
         '''
@@ -683,7 +720,6 @@ class CharLayoutModel:
             print(f"{db_name} successfully deleted from {db_folder_path}")
         except Exception as e:
             print(f"{db_name} delete failed: {e}")
-        self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
 
 
     def delete_database_component(self, component_selection, val_availableRigComboBox, mdl_tree_model):
@@ -703,7 +739,6 @@ class CharLayoutModel:
             )
         
         database_schema_002.DeleteComponentRows(rig_db_directory, module, unique_id, side)
-        self.visualise_active_db(val_availableRigComboBox, mdl_tree_model)
 
 
     def delete_scene_component(self, component_selection):

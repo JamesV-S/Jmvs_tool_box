@@ -301,7 +301,6 @@ class CreateDatabase():
 #------------------------------------------------------------------------------
 class RetrieveModulesData():
     def __init__(self, directory, database_name):
-        self.mdl_populate_tree_dict = {}
         db_directory = os.path.expanduser(directory)
         os.makedirs(db_directory, exist_ok=1)
         # db_name must include the entire path too!
@@ -309,15 +308,16 @@ class RetrieveModulesData():
 
         try:
             with db_connection_tracker.DBConnectionTracker.get_connection(db_name) as conn:
-                print(f">> db_name = {db_name}")
-                self.mdl_populate_tree_dict = self.dict_from_table(
+                self.db_data_iteraion = self.dict_from_table(
                     conn, 'modules', database_name
                     )
-                #return self.mdl_populate_tree_dict
+                self.db_output_hook_mtx_ls = self.out_hk_mtx_from_table(
+                    conn, 'user_settings', database_name
+                    )
         except sqlite3.Error as e:
             print(e)
 
-
+        
     def dict_from_table(self, conn, table, database_name):
         # return a dict where each key is the database_name & each value is tuple of (unique_id & side)
         cursor = conn.cursor()
@@ -325,18 +325,47 @@ class RetrieveModulesData():
         try:
             cursor.execute(query_param_state)
             rows = cursor.fetchall()
+            db_data = {database_name: []}
+
             # rows == [int(unique_id), string(side)]
-            mdl_populate_tree_dict = {database_name: []}
             if rows:
                 for row in rows:
                     unique_id, side = row[0], row[1]
-                    mdl_populate_tree_dict[database_name].append((unique_id, side))
-            return mdl_populate_tree_dict
+                    db_data[database_name].append((unique_id, side))
+            return db_data
 
         except sqlite3.Error as e:
-            print(f"sqlite3.Error: {e}")
+            print(f"** DB_DATA sqlite3.Error: {e}")
             return {}
         
+
+    def out_hk_mtx_from_table(self, conn, table, database_name):
+        # return a dict where each key is the database_name & each value is tuple of (unique_id & side)
+        cursor = conn.cursor()
+        query = f"SELECT output_hook_mtx_list FROM {table}"
+        try:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            db_out_hk_mtx_data = []
+            
+            if rows:
+                for row in rows:
+                    out_hk_mtx_json = row[0]
+                    print(f">> db_schema_002: out_hk_mtx = {out_hk_mtx_json}")
+                    # if out_hk_mtx_json:
+                    out_hk_mtx_list = json.loads(out_hk_mtx_json)
+                    db_out_hk_mtx_data.append(out_hk_mtx_list)
+                    # else:
+                    #     out_hk_mtx_list = []
+                    #     # db_out_hk_mtx_data.append([])
+
+            return db_out_hk_mtx_data
+
+        except sqlite3.Error as e:
+            print(f"** 'out_hk_mtx_from_table' sqlite3.Error: {e}")
+            return {}
+
+
 # ---- Inheritance ----
 class DatabaseSchema():
     def __init__(self, directory, module_name, unique_id, side):

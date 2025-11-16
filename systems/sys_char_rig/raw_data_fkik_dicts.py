@@ -22,9 +22,9 @@ class RawDataFkIKDicts():
         '''
         # Description:
             Create 4 dicts, 2 for each fk & ik. Each of those 2 being Pos & Rot data.
-                Must ONLY be used when getting default data when creating database.
-                Must ONLY be used when updating datbase data when using char_layout.
-                Must NOT use when retrieving the data from the database for raw_data.
+            -   Must ONLY be used when getting default data when creating database.
+            -   Must ONLY be used when updating datbase data when using char_layout.
+            -   Must NOT use when retrieving the data from the database for raw_data.
         # Arguments:
             fk_control_dict (dict): key = fk_*module_*bone : value = ctrl type
             ik_control_dict (dict): key = ik_*module_*bone : value = ctrl type
@@ -44,6 +44,7 @@ class RawDataFkIKDicts():
         self.unique_id, self.side = unique_id, side
         
         self.run_raw_data_calculation()
+
     
     def run_raw_data_calculation(self):
         '''
@@ -91,7 +92,7 @@ class RawDataFkIKDicts():
             except:
                 pass
 
-        print(f"fk_pos = {fk_pos}")
+        # print(f"fk_pos = {fk_pos}")
         
         return fk_pos
 
@@ -115,7 +116,7 @@ class RawDataFkIKDicts():
             except:
                 pass
         
-        print(f"fk_rot = {fk_rot}")
+        # print(f"fk_rot = {fk_rot}")
 
 
         return fk_rot
@@ -147,7 +148,7 @@ class RawDataFkIKDicts():
             except:
                 pass
 
-        print(f"ik_pos = {ik_pos}")
+        # print(f"ik_pos = {ik_pos}")
 
         return ik_pos
 
@@ -202,7 +203,7 @@ class RawDataFkIKDicts():
                             # Uses component rotation value if no change required.
                             ik_rot[ik_name] = comp_rot
 
-        print(f"ik_rot = {ik_rot}")
+        # print(f"ik_rot = {ik_rot}")
 
         return ik_rot
     
@@ -235,13 +236,14 @@ class RawDataFkIKDicts():
                     if ik_type == "pv":
                         pv_comp_name.append(comp_name)
                     else:
-                        print(f"Module's ctrls have no pv type")
+                        # Module's ctrls have no pv type
                         return_pv_data = False
                 else:
-                    print(f"Module has no ik ctrls")
+                    # Module has no ik ctrls
                     return_pv_data = False
             except:
-                print("*** *** *** Module has no ik ctrls")
+                # 'raw_data_ikfk_ctrls.py' Module has no ik ctrls")
+                pass
 
             # get the before & after component names for pv.
         pv_before_after_comp_names = []
@@ -308,12 +310,12 @@ class RawDataFkIKDicts():
                 return rot_y
 
             else:
-                print(f"{tgt_xfm_guide} Not Exists")
+                # print(f"{tgt_xfm_guide} Not Exists")
                 return 0.0
 
             # xfm_guide_quadLeg_ankle_0_L
         else:
-            print(f"ik_wld_name = False ")
+            # print(f"ik_wld_name = False ")
             return 0.0
             
 
@@ -322,65 +324,65 @@ class RawDataFkIKDicts():
     
 
 # bipedArm Example:
-fk_control_dict = {
-    "fk_bipedArm_clavicle": "circle", 
-    "fk_bipedArm_shoulder": "circle", 
-    "fk_bipedArm_elbow": "circle", 
-    "fk_bipedArm_wrist": "circle"}
-ik_control_dict = {"ik_bipedArm_clavicle": "cube", "ik_bipedArm_shoulder": "cube", "ik_bipedArm_elbow": "pv", "ik_bipedArm_wrist": "cube"}
-component_pos = {
-    "clavicle": [3.9705319404602006, 230.650634765625, 2.762230157852166], 
-    "shoulder": [28.9705319404602, 230.650634765625, 2.762230157852166], 
-    "elbow": [53.69795846939088, 197.98831176757807, 6.61050152778626], 
-    "wrist": [76.10134363174441, 169.30845642089832, 30.106774568557817]
-    }
-component_rot = {
-    "clavicle": [10.0, 10.0, 10.0], 
-    "shoulder": [7.042431639335366, -5.366417614476933, -52.87199475566796], 
-    "elbow": [7.04243163933536, -32.847391136978864, -52.004681579832805], 
-    "wrist": [7.04243163933536, -32.847391136978864, -52.004681579832805]
-    }
-constant_attr_dict = {
-    "limbRoot_name": "shoulder",
-    "hock_name": 0,
-    "ik_wld_name": "wrist"}
+# fk_control_dict = {
+#     "fk_bipedArm_clavicle": "circle", 
+#     "fk_bipedArm_shoulder": "circle", 
+#     "fk_bipedArm_elbow": "circle", 
+#     "fk_bipedArm_wrist": "circle"}
+# ik_control_dict = {"ik_bipedArm_clavicle": "cube", "ik_bipedArm_shoulder": "cube", "ik_bipedArm_elbow": "pv", "ik_bipedArm_wrist": "cube"}
+# component_pos = {
+#     "clavicle": [3.9705319404602006, 230.650634765625, 2.762230157852166], 
+#     "shoulder": [28.9705319404602, 230.650634765625, 2.762230157852166], 
+#     "elbow": [53.69795846939088, 197.98831176757807, 6.61050152778626], 
+#     "wrist": [76.10134363174441, 169.30845642089832, 30.106774568557817]
+#     }
+# component_rot = {
+#     "clavicle": [10.0, 10.0, 10.0], 
+#     "shoulder": [7.042431639335366, -5.366417614476933, -52.87199475566796], 
+#     "elbow": [7.04243163933536, -32.847391136978864, -52.004681579832805], 
+#     "wrist": [7.04243163933536, -32.847391136978864, -52.004681579832805]
+#     }
+# constant_attr_dict = {
+#     "limbRoot_name": "shoulder",
+#     "hock_name": 0,
+#     "ik_wld_name": "wrist"}
 
-RawDataFkIKDicts(fk_control_dict, ik_control_dict, component_pos, component_rot, constant_attr_dict, "0", "L")
+# RawDataFkIKDicts(fk_control_dict, ik_control_dict, component_pos, component_rot, constant_attr_dict, "0", "L")
 
-print(f"_____________________________________________________________________")
+# print(f"_____________________________________________________________________")
 
 # quadLeg Example:
-q_fk_control_dict = {
-    "fk_quadLeg_hip": "circle", 
-    "fk_quadLeg_knee": "circle", 
-    "fk_quadLeg_calf": "circle", 
-    "fk_quadLeg_ankle": "circle", 
-    "fk_quadLeg_ball": "circle"
-    }
-q_ik_control_dict = {
-    "ik_quadLeg_hip": "prism", 
-    "ik_quadLeg_knee": "pv", 
-    "ik_quadLeg_calf": "cube", 
-    "ik_quadLeg_ankle": "cube"
-    }
-q_component_pos = {
-    "hip": [8.600740644769745, 73.17778605595966, -43.86647675361294], 
-    "knee": [8.60074064476974, 44.674795207918336, -32.37837552488726], 
-    "calf": [8.60074064476974, 20.335971998048286, -47.07023669736204], 
-    "ankle": [8.60074064476974, 5.737959787060513, -44.06889043484146], 
-    "ball": [8.60074064476974, 5.737959787060513, -36.88480178040549], 
-    "end": [8.60074064476974, 0.0982447548243588, -31.29348682927134]
-    }
-q_component_rot = {
-    "hip": [90.36876231144643, -22.272743030153656, -90.00000000000001], 
-    "knee": [-269.21385274254095, 31.115786848297205, -90.51623725561545], 
-    "calf": [86.65319955869097, -11.616952223402183, -90.81454127018628], 
-    "ankle": [2.1503500636142685, -90.0, 0.0], 
-    "ball": [91.43634844111682, -44.75308558410996, -90.00000000000009], 
-    "end": [91.43634844111682, -44.75308558410996, -90.00000000000009]
-    }
-q_constant_attr_dict = {
-    "limbRoot_name": "hip",
-    "hock_name": "calf",
-    "ik_wld_name": "ankle"}
-RawDataFkIKDicts(q_fk_control_dict, q_ik_control_dict, q_component_pos, q_component_rot, q_constant_attr_dict, "0", "L")
+# q_fk_control_dict = {
+#     "fk_quadLeg_hip": "circle", 
+#     "fk_quadLeg_knee": "circle", 
+#     "fk_quadLeg_calf": "circle", 
+#     "fk_quadLeg_ankle": "circle", 
+#     "fk_quadLeg_ball": "circle"
+#     }
+# q_ik_control_dict = {
+#     "ik_quadLeg_hip": "prism", 
+#     "ik_quadLeg_knee": "pv", 
+#     "ik_quadLeg_calf": "cube", 
+#     "ik_quadLeg_ankle": "cube"
+#     }
+# q_component_pos = {
+#     "hip": [8.600740644769745, 73.17778605595966, -43.86647675361294], 
+#     "knee": [8.60074064476974, 44.674795207918336, -32.37837552488726], 
+#     "calf": [8.60074064476974, 20.335971998048286, -47.07023669736204], 
+#     "ankle": [8.60074064476974, 5.737959787060513, -44.06889043484146], 
+#     "ball": [8.60074064476974, 5.737959787060513, -36.88480178040549], 
+#     "end": [8.60074064476974, 0.0982447548243588, -31.29348682927134]
+#     }
+# q_component_rot = {
+#     "hip": [90.36876231144643, -22.272743030153656, -90.00000000000001], 
+#     "knee": [-269.21385274254095, 31.115786848297205, -90.51623725561545], 
+#     "calf": [86.65319955869097, -11.616952223402183, -90.81454127018628], 
+#     "ankle": [2.1503500636142685, -90.0, 0.0], 
+#     "ball": [91.43634844111682, -44.75308558410996, -90.00000000000009], 
+#     "end": [91.43634844111682, -44.75308558410996, -90.00000000000009]
+#     }
+# q_constant_attr_dict = {
+#     "limbRoot_name": "hip",
+#     "hock_name": "calf",
+#     "ik_wld_name": "ankle"}
+# RawDataFkIKDicts(q_fk_control_dict, q_ik_control_dict, q_component_pos, q_component_rot, q_constant_attr_dict, "0", "L")

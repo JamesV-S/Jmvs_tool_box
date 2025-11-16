@@ -94,9 +94,10 @@ class CharLayoutView(QtWidgets.QWidget):
 
         self.set_style_property_funcUI()
         
-        # ---------------------------------------------------------------------
+        
+        # --------------------------------------------------------------------------------
         self.setLayout(self.main_Vlay)
-        # ---------------------------------------------------------------------
+        # --------------------------------------------------------------------------------
 
 
     def module_visualisation_ui(self, widgets_layout):
@@ -312,25 +313,37 @@ class CharLayoutView(QtWidgets.QWidget):
         parent_widget = QtWidgets.QWidget()
 
         layV_module_editing = QtWidgets.QVBoxLayout(parent_widget)
+        
+        # ---------------------------------------------------------------------
+        # Selection options
         layH_sel_options = QtWidgets.QHBoxLayout()
-
         self.entire_comp_radioBtn = QtWidgets.QRadioButton("Work on components within moduls")
         self.sel_comp_radioBtn =  QtWidgets.QRadioButton("Work on individual components")
         layH_sel_options.addWidget(self.entire_comp_radioBtn)
         layH_sel_options.addWidget(self.sel_comp_radioBtn)
 
-        # ----------------------------------------------------------
-        # update component options
-        # self.update_comp_data_checkBox = QtWidgets.QCheckBox()
-        '''
-        layGrid_upd_comp = self.update_component_data()
-        upd_comp_container, self.update_comp_data_checkBox = self.cr_container_funcUI(
-            label_name="Update comp data", widget_to_add=layGrid_upd_comp, 
-            layout=True, child=True, checkbox=True)
-        '''
-        # ----------------------------------------------------------
+        # ---------------------------------------------------------------------
+        # External Input Hook Matrix           
+            # function to build ui within the containr
+        layH_ext_inp_hk_mtx = self.build_external_input_hook_matrix_ui()
+            # make container for it.
+        ext_inp_hk_mtx_container, self.ext_inp_hk_mtx_checkBox = self.cr_container_funcUI(
+            label_name="External Input Hook", widget_to_add=layH_ext_inp_hk_mtx,
+            layout=True, child=True, checkbox=False)
+
+        # ---------------------------------------------------------------------
+        # Output Hook Matrix
+            # build func
+        layH_out_hk_mtx = self.build_output_hook_matrix_ui()
+            # make container for it.
+        out_hk_mtx_container, self.out_hk_mtx_checkBox = self.cr_container_funcUI(
+            label_name="Output Hook", widget_to_add=layH_out_hk_mtx,
+            layout=True, child=True, checkbox=False)
+
+        # ---------------------------------------------------------------------
         # Joint & control options!!
         layH_jnt_ctrl_editing = QtWidgets.QHBoxLayout()
+
         layV_joint_editing = QtWidgets.QVBoxLayout()
         layV_control_editing = QtWidgets.QVBoxLayout()
             # jnt editing
@@ -339,62 +352,47 @@ class CharLayoutView(QtWidgets.QWidget):
         self.jnt_num_spinBox = QtWidgets.QSpinBox()
         layH_jnt_num.addWidget(jnt_lbl)
         layH_jnt_num.addWidget(self.jnt_num_spinBox)
-        
-        layH_ik_op = QtWidgets.QHBoxLayout()
-        ik_operation_lbl = QtWidgets.QLabel("IK operations")
-        self.ik_operation_comboBox = QtWidgets.QComboBox() # Add items using config data!
-        layH_ik_op.addWidget(ik_operation_lbl)
-        layH_ik_op.addWidget(self.ik_operation_comboBox)
-
-        layH_constraint_type = QtWidgets.QHBoxLayout()
-        constraint_type_lbl = QtWidgets.QLabel("constraint type : ")
-        self.constraint_type_comboBox = QtWidgets.QComboBox() # Add items using config data!
-        layH_constraint_type.addWidget(constraint_type_lbl)
-        layH_constraint_type.addWidget(self.constraint_type_comboBox)
             
         layV_joint_editing.addLayout(layH_jnt_num)
-        layV_joint_editing.addLayout(layH_ik_op)
-        layV_joint_editing.addLayout(layH_constraint_type)
         
         joint_editing_container, self.joint_editing_checkBox = self.cr_container_funcUI(
-            label_name="Edit joint data", widget_to_add=layV_joint_editing, 
+            label_name="Edit Joint Data", widget_to_add=layV_joint_editing, 
             layout=True, child=True, checkbox=True)
-        
-        layH_jnt_ctrl_editing.addLayout(joint_editing_container)
 
-        # ----------------------------------------------------------
-            # control editing
+        # control editing
         layH_ctrl_num = QtWidgets.QHBoxLayout()
         ctrl_num_lbl = QtWidgets.QLabel("Control nom :")
         self.ctrl_num_spinBox = QtWidgets.QSpinBox()
-        layH_ctrl_num.addWidget(ctrl_num_lbl)
-        layH_ctrl_num.addWidget(self.ctrl_num_spinBox)
+        # layH_ctrl_num.addWidget(ctrl_num_lbl)
+        # layH_ctrl_num.addWidget(self.ctrl_num_spinBox)
 
-        layH_ctrl_type = QtWidgets.QHBoxLayout()
-        ctrl_type_lbl = QtWidgets.QLabel("Control type : ")
-        self.ctrl_type_comboBox = QtWidgets.QComboBox() # Add items using config data!
-        # layH_ctrl_type.addWidget(ctrl_type_lbl)
-        layH_ctrl_type.addWidget(self.ctrl_type_comboBox)
+        self.ctrl_type_btn = QtWidgets.QPushButton("Edit Curve") # Add items using config data!
         
         layV_control_editing.addLayout(layH_ctrl_num)
-        layV_control_editing.addWidget(ctrl_type_lbl)
-        layV_control_editing.addLayout(layH_ctrl_type)
+        layV_control_editing.addWidget(self.ctrl_type_btn)
 
         control_editing_container, self.ctrl_editing_checkBox = self.cr_container_funcUI(
-            label_name="Edit control data", widget_to_add=layV_control_editing, 
+            label_name="Edit Control Data", widget_to_add=layV_control_editing, 
             layout=True, child=True, checkbox=True)
+        
+        # Layout the joint & control containers
+        layH_jnt_ctrl_editing.addLayout(joint_editing_container)
         layH_jnt_ctrl_editing.addLayout(self.lay_spacer_funcUI("V"))
         layH_jnt_ctrl_editing.addLayout(control_editing_container)
-        # Commit changes button!
+
+        # ---------------------------------------------------------------------
+        # Commit changes button
         self.commit_module_edits_btn = QtWidgets.QPushButton("Commit Changes")
         
-        # ----------------------------------------------------------
-        # add these interfaces to the tab!
+        # ---------------------------------------------------------------------
+        # add these interfaces to the tab
         layV_module_editing.addLayout(layH_sel_options)
         '''layV_module_editing.addLayout(upd_comp_container)'''
-        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
+        # layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
+        layV_module_editing.addLayout(out_hk_mtx_container)
+        layV_module_editing.addLayout(ext_inp_hk_mtx_container)
         layV_module_editing.addLayout(layH_jnt_ctrl_editing)
-        layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
+        # layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_module_editing.addWidget(self.commit_module_edits_btn)
 
         tab.addTab(parent_widget, "Edit Data")
@@ -403,14 +401,15 @@ class CharLayoutView(QtWidgets.QWidget):
             spinBox.setMinimum(0)
 
         # Temporary:
-        self.ctrl_type_comboBox.addItem("all")
-        self.constraint_type_comboBox.addItem("matrix")
-        self.ik_operation_comboBox.addItem("rotate")
+        # self.ctrl_type_btn.addItem("all")
+        # self.constraint_type_comboBox.addItem("matrix")
+        # self.ik_operation_comboBox.addItem("rotate")
 
         utils_view.assign_style_ls(self.style_tab_1_ui, 
              [self.entire_comp_radioBtn, self.sel_comp_radioBtn,
-               self.jnt_num_spinBox, self.ik_operation_comboBox, self.constraint_type_comboBox, 
-               self.ctrl_type_comboBox, self.ctrl_num_spinBox, self.commit_module_edits_btn])
+               self.jnt_num_spinBox, self.ctrl_type_btn, self.ctrl_num_spinBox, 
+               self.commit_module_edits_btn]
+               )
 
 
     def recover_module_tab_ui(self, tab):
@@ -659,39 +658,95 @@ class CharLayoutView(QtWidgets.QWidget):
         layH_spacer.addWidget(spacerH)
         
         return layH_spacer
-    
-    
-    def update_component_data(self):
-        # -- current_mdl_operations --
-        #layV_current_MO_parent = QtWidgets.QVBoxLayout()
-        layGrid_update = QtWidgets.QGridLayout()
 
-        self.cmo_lbl = QtWidgets.QLabel("Current >")
-        self.cmo_lbl.setObjectName("update_left_lbl")
-        self.cmo_rigType_lbl = QtWidgets.QLabel("Rig Type: _ _")
-        self.cmo_mirrorMdl_lbl = QtWidgets.QLabel("Mirror: _ _")
-        self.cmo_stretch_lbl = QtWidgets.QLabel("Stretch: _ _")
-        self.cmo_twist_lbl = QtWidgets.QLabel("Twist: _ _")
-                
-        umo_lbl = QtWidgets.QLabel("Update >")
-        umo_lbl.setObjectName("update_left_lbl")
-        umo_rigType_lbl = QtWidgets.QLabel("Rig Type:")
-        self.style_update_mdl_ui.append(umo_rigType_lbl)
-        self.umo_rigType_comboBox = QtWidgets.QComboBox()
-        self.umo_rigType_comboBox.addItems(["FK", "IK", "IKFK"])
-        self.umo_mirror_checkBox = QtWidgets.QCheckBox("Mirror")
-        self.umo_stretch_checkBox = QtWidgets.QCheckBox("Stretch")
-        self.umo_twist_checkBox = QtWidgets.QCheckBox("Twist")
+
+    def build_external_input_hook_matrix_ui(self):
+        '''
+        # Description:
+            Build QList ui to represent and update the External_Input_hook_matrix
+            attr for each component for modules present in the rig project.
+        # Argument: N/A
+        # Return:
+            layH (Q*BoxLayout): Layout to add to a container.
+        '''
+        # UI layout
+        layH = QtWidgets.QHBoxLayout()
+
+        # Create List widgets
+        self.comp_inp_hk_mtx_Qlist = QtWidgets.QListView()
+        # self.comp_inp_hk_mtx_Qlist.setMinimumSize(10, 80)
+
+        # Create standard Model for the  
+        self.comp_inp_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
+        self.comp_inp_hk_mtx_Qlist.setModel(self.comp_inp_hk_mtx_Qlist_Model)
+
+        # Temporarily adding items to the lists
+        list_entries = ["one", "two", "three"]
+        for x in list_entries:
+            item = QtGui.QStandardItem(x)
+            self.comp_inp_hk_mtx_Qlist_Model.appendRow(item)
+
+        # dropdown's
+        layV_attr_inp_hk_mtx = QtWidgets.QVBoxLayout()
         
-        cmo_ls = [self.cmo_lbl, self.cmo_rigType_lbl, self.cmo_mirrorMdl_lbl, self.cmo_stretch_lbl, self.cmo_twist_lbl]
-        umd_ls = [umo_lbl, self.umo_rigType_comboBox, self.umo_mirror_checkBox, self.umo_stretch_checkBox, self.umo_twist_checkBox]
-        cmo_pos_ls = [[0,0], [0,1], [0,2], [0,3], [0,4]]
-        umd_pos_ls = [[1,0], [1,1], [1,2], [1,3], [1,4]]
-        for x in range(len(cmo_ls)):
-            layGrid_update.addWidget(cmo_ls[x], cmo_pos_ls[x][0], cmo_pos_ls[x][1])
-            layGrid_update.addWidget(umd_ls[x], umd_pos_ls[x][0], umd_pos_ls[x][1])
-            self.style_update_mdl_ui.append(cmo_ls[x])
-            self.style_update_mdl_ui.append(umd_ls[x])
+        self.attr_inp_hk_mtx_CB_1 = QtWidgets.QComboBox()
+        self.attr_inp_hk_mtx_CB_2 = QtWidgets.QComboBox()
+        for widget in [self.attr_inp_hk_mtx_CB_1, self.attr_inp_hk_mtx_CB_2]:
+            widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+            widget.setMinimumSize(200, 20)
+            # widget.setMinimumSize()
 
-        return layGrid_update   
+
+        layV_attr_inp_hk_mtx.addWidget(self.attr_inp_hk_mtx_CB_1)
+        layV_attr_inp_hk_mtx.addWidget(self.attr_inp_hk_mtx_CB_2)
+
+
+        # Add the QLists to the Layout 
+        layH.addWidget(self.comp_inp_hk_mtx_Qlist)
+        layH.addLayout(layV_attr_inp_hk_mtx)
+
+        return layH
+
+
+    def build_output_hook_matrix_ui(self):
+        '''
+        # Description:
+            Build QList ui to represent and update the Ouput_Hook_Matrix attr for 
+            each component for modules present in the rig project. 
+        # Argument: N/A
+        # Return:
+            layH (Q*BoxLayout): Layout to add to a container.
+        '''
+        # UI layout
+        layH = QtWidgets.QHBoxLayout()
+
+        # Create List widgets
+        self.comp_out_hk_mtx_Qlist = QtWidgets.QListView()
+        self.attr_out_hk_mtx_Qlist = QtWidgets.QListView()
+
+        # Create standard Model for the  
+        self.comp_out_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
+        self.comp_out_hk_mtx_Qlist.setModel(self.comp_out_hk_mtx_Qlist_Model)
+
+        self.attr_out_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
+        self.attr_out_hk_mtx_Qlist.setModel(self.attr_out_hk_mtx_Qlist_Model)
+        
+        # Temporarily adding items to the lists
+        list_entries = ["one", "two", "three"]
+        for x in list_entries:
+            item = QtGui.QStandardItem(x)
+            self.comp_out_hk_mtx_Qlist_Model.appendRow(item)
+
+        other_list_entries = ["A", "B", "C"]
+        for x in other_list_entries:
+            item = QtGui.QStandardItem(x)
+            self.attr_out_hk_mtx_Qlist_Model.appendRow(item)
+
+        # Add the QLists to the Layout 
+        layH.addWidget(self.comp_out_hk_mtx_Qlist)
+        layH.addWidget(self.attr_out_hk_mtx_Qlist)
+
+        return layH
+    
+
 
