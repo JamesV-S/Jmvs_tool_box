@@ -311,7 +311,10 @@ class RetrieveModulesData():
                 self.db_data_iteraion = self.dict_from_table(
                     conn, 'modules', database_name
                     )
-                self.db_output_hook_mtx_ls = self.out_hk_mtx_from_table(
+                self.db_output_hook_mtx_dict = self.out_hk_mtx_from_table(
+                    conn, 'user_settings', database_name
+                    )
+                self.db_input_hook_mtx_dict = self.inp_hk_mtx_from_table(
                     conn, 'user_settings', database_name
                     )
         except sqlite3.Error as e:
@@ -346,25 +349,45 @@ class RetrieveModulesData():
         try:
             cursor.execute(query)
             rows = cursor.fetchall()
-            db_out_hk_mtx_data = []
+            out_data_dict = {}
             
             if rows:
                 for row in rows:
-                    out_hk_mtx_json = row[0]
-                    print(f">> db_schema_002: out_hk_mtx = {out_hk_mtx_json}")
+                    out_data_json = row[0]
+                    print(f">> db_schema_002: out_hk_mtx = {out_data_json}")
                     # if out_hk_mtx_json:
-                    out_hk_mtx_list = json.loads(out_hk_mtx_json)
-                    db_out_hk_mtx_data.append(out_hk_mtx_list)
+                    out_attr = json.loads(out_data_json)
+                    out_data_dict[database_name] = out_attr
                     # else:
                     #     out_hk_mtx_list = []
                     #     # db_out_hk_mtx_data.append([])
 
-            return db_out_hk_mtx_data
+            return out_data_dict
 
         except sqlite3.Error as e:
             print(f"** 'out_hk_mtx_from_table' sqlite3.Error: {e}")
             return {}
+    
 
+    def inp_hk_mtx_from_table(self, conn, table, database_name):
+        cursor = conn.cursor()
+        query = f"SELECT input_hook_mtx_plug FROM {table}"
+        try:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            inp_data_dict = {}
+
+            if rows:
+                for row in rows:
+                    inp_attr_json = row[0]
+                    inp_attr = json.loads(inp_attr_json)
+                    inp_data_dict[database_name] = inp_attr
+            return inp_data_dict
+
+        except sqlite3.Error as e:
+            print(f"** inp_hk_mtx_from_table sqlite3.Error: {e}")
+            return {}
+        
 
 # ---- Inheritance ----
 class DatabaseSchema():

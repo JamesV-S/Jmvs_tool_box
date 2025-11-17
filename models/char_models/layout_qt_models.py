@@ -51,6 +51,8 @@ class DatabaseData:
 
         self.db_data = self.get_db_data()
         self.component_name_ls = self.get_component_name_ls()
+        self.attr_out_hk_mtx_dict = self.get_attr_out_hk_mtx_dict()
+
 
     def get_db_data(self):
         print(f"** running 'get_db_data()' func")
@@ -75,7 +77,7 @@ class DatabaseData:
                     # & side from each row.
                     data_retriever = database_schema_002.RetrieveModulesData(
                         self.db_rig_project_directory, db)
-                    db_data[db] = data_retriever.db_data_iteraion.get(db, [])
+                    db_data[db] = data_retriever.db_data_iteraion.get(db)
             print(f"** 'DatabaseData' db_data = {db_data}")
             
             return db_data
@@ -97,7 +99,21 @@ class DatabaseData:
                     component_name_ls.append(item_name)
 
         return component_name_ls
-        
+    
+
+    def get_attr_out_hk_mtx_dict(self):
+        # return with database_schema_002
+        attr_out_hk_mtx_dict = {}
+        for db in os.listdir(self.db_rig_project_directory):
+            if db.startswith("DB_") and db.endswith(".db"):
+                # Iterates over each module.db file & query's the unique_id 
+                # & side from each row.
+                data_retriever = database_schema_002.RetrieveModulesData(
+                    self.db_rig_project_directory, db)
+                attr_out_hk_mtx_dict[db] = data_retriever.db_output_hook_mtx_dict.get(db)
+        print(f"** attr_out_hk_mtx_dict = `{attr_out_hk_mtx_dict}`")
+        return attr_out_hk_mtx_dict    
+
 
 class UpdateQTreeModel(DatabaseData):
     def __init__(self, db_rig_project_directory, val_availableRigComboBox, char_layout_view):
@@ -149,6 +165,7 @@ class UpdateExtInputHookQListModel(DatabaseData):
         print(f"*- HEllo from UpdateExtInputHookQListModel()")
 
         self.populate_ext_input_hook_QListView_model()
+        self.populate_ext_input_hook__attr__comboBox_model()
 
     
     def populate_ext_input_hook_QListView_model(self):
@@ -165,6 +182,93 @@ class UpdateExtInputHookQListModel(DatabaseData):
         for item in self.component_name_ls:
             mdl_item = QtGui.QStandardItem(item)
             model.appendRow(mdl_item)
+
+
+    def populate_ext_input_hook__attr__comboBox_model(self):
+        '''
+        # Description: 
+            From 'self.db_data' get all the module's components names & add to 
+            QList
+        '''
+        # Return a dictionary of 'input_hook_mtx_plug' key=module: value=attr
+        # inp_dict = {}
+        # for db in os.listdir(self.db_rig_project_directory):
+        #     if db.startswith("DB_") and db.endswith(".db"):
+        #         # Iterates over each module.db file & query's the unique_id 
+        #         # & side from each row.
+        #         data_retriever = database_schema_002.RetrieveModulesData(
+        #             self.db_rig_project_directory, db)
+        #         inp_dict[db] = data_retriever.db_input_hook_mtx_dict.get(db, [])
+        # print(f" # # inp_dict = {inp_dict}")
+
+        # clear the comboBox's & add items to them again!
+        self.view.attr_inp_hk_mtx_CB_1.clear()
+        self.view.attr_inp_hk_mtx_CB_2.clear()
+
+        # add placeholder text when 'visualising the active db'
+        self.view.attr_inp_hk_mtx_CB_1.setPlaceholderText("Select Component in the List")
+        self.view.attr_inp_hk_mtx_CB_2.setPlaceholderText("Select Component in the List")
+
+        '''`
+        Problem: Current structure
+        /{'DB_bipedArm.db': ['jnt_skn_wrist', 'jnt_skn_lower5'], 'DB_bipedLeg.db': ['jnt_skn_ankle'], 'DB_spine.db': ['jnt_skn_top', 'jnt_skn_bottom']}`
+        /{'DB_bipedArm.db': [(0, 'L'), (0, 'R')], 'DB_bipedLeg.db': [(0, 'L')], 'DB_spine.db': [(0, 'M')]}
+        
+        -------------------
+        # Needed structure for : 'get_attr_out_hk_mtx_dict()'
+         = {
+        '*module_name' : [ 
+                        ([*output_hook_mtx_list], *unique_id, *'side') 
+                        ]
+        }
+
+        # Example: bipedArm_0_L, bipedArm_0_R & spine
+        Solution_dict_structure = {
+        'DB_bipedArm.db': [
+                        (['jnt_skn_wrist', 'jnt_skn_lower5'], 0, 'L'), 
+                        (['jnt_skn_wrist', 'jnt_skn_lower5'], 0, 'R')
+                        ],
+        'DB_spine.db': [
+                        (["jnt_skn_top", "jnt_skn_bottom"], 0, 'M')
+                        ]
+        }
+
+        This becomes useful because I can write the items to be added to 
+        ComboBox's sinse I will compare db.input_hook_mtx_plug with possible attr 
+        from 'Solution_dict_structure'.
+        # To give me (for ComboBox's) :
+            bipedArm_0_L -> spine.jnt_skn_top_0_M 
+            bipedArm_0_R -> spine.jnt_skn_top_0_M
+            spine_0_M -> None (cus 'root' module hasn't been published yet!)
+        
+        # It's Important to note that the addition of *unique_id, *'side' means I 
+            need to process this even if I didn't commit changes to 'Edit Data' Tab.
+        # + ModuleBlueprint() needs to adapt to this change! 
+        '''
+
+        for db_name, out_item in self.attr_out_hk_mtx_dict.items():
+            # for out_i in out_item:
+            print(f" # self.attr_out_hk_mtx_dict items = `{out_item}`")
+            self.view.attr_inp_hk_mtx_CB_1.addItems(out_item)
+            self.view.attr_inp_hk_mtx_CB_2.addItems(out_item)
+
+
+        # Maybe temp here -> add 'None' when wiring the external_imp relationship 
+        # between QList selection & QComboBox set, using a diictionary gathered 
+        # from the .db's. 
+        self.view.attr_inp_hk_mtx_CB_1.addItem("None")
+        self.view.attr_inp_hk_mtx_CB_2.addItem("None")
+
+        ''' Items to be added by output attrs!
+        # add null item
+        self.view.attr_inp_hk_mtx_CB_2.addItem("None")
+
+        # add items to the 
+        if inp_dict:
+            for value_inp_attr in inp_dict.values():
+                self.view.attr_inp_hk_mtx_CB_1.addItems(value_inp_attr)
+                self.view.attr_inp_hk_mtx_CB_2.addItems(value_inp_attr)
+        '''
 
 
 class UpdateOutputHookQListModel(DatabaseData):
@@ -186,7 +290,7 @@ class UpdateOutputHookQListModel(DatabaseData):
         model = self.view.comp_out_hk_mtx_Qlist_Model
         model.clear()
 
-        print(f"* component_name_ls = `{self.component_name_ls}`")
+        print(f" >* component_name_ls = `{self.component_name_ls}`")
         # Add the list of component names to QListModel!
         for item in self.component_name_ls:
             mdl_item = QtGui.QStandardItem(item)
@@ -199,20 +303,6 @@ class UpdateOutputHookQListModel(DatabaseData):
         model = self.view.attr_out_hk_mtx_Qlist_Model
         model.clear()
         
-        # return with database_schema_002
-        attr_out_hk_mtx_ls = []
-        for db in os.listdir(self.db_rig_project_directory):
-            if db.startswith("DB_") and db.endswith(".db"):
-                # Iterates over each module.db file & query's the unique_id 
-                # & side from each row.
-                data_retriever = database_schema_002.RetrieveModulesData(
-                    self.db_rig_project_directory, db)
-                data = data_retriever.db_output_hook_mtx_ls
-                print(f"*> data = `{data}`")
-                attr_out_hk_mtx_ls.append(data)
-        print(f"** attr_out_hk_mtx_ls = `{attr_out_hk_mtx_ls}`")
-            
-        
         # bipedArm, quadLeg, root, spine
         example_out_component_name_ls = [
             ["jnt_skn_wrist", "jnt_skn_lower5"], 
@@ -221,12 +311,11 @@ class UpdateOutputHookQListModel(DatabaseData):
             ["jnt_skn_top", "jnt_skn_bottom"]
             ]
         
-        for item in attr_out_hk_mtx_ls:
-            for i in item:
-                if len(i) > 1:
-                    add_item = f"{i[0]} | {i[1]}"
-                else:
-                    add_item = f"{i[0]}"
-                mdl_item = QtGui.QStandardItem(add_item)
-                model.appendRow(mdl_item)
+        for key, i in self.attr_out_hk_mtx_dict.items():
+            if len(i) > 1:
+                add_item = f"{i[0]} | {i[1]}"
+            else:
+                add_item = f"{i[0]}"
+            mdl_item = QtGui.QStandardItem(add_item)
+            model.appendRow(mdl_item)
         

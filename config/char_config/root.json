@@ -24,7 +24,7 @@
         "ik_wld_name": false
     },
     "user_settings": {
-        "input_hook_mtx_plug": null,
+        "input_hook_mtx_plug": ["None"],
         "output_hook_mtx_list":["ctrl_fk_centre", "ctrl_fk_COG"],
         "joint_num": null,
         "size": 1,

@@ -682,13 +682,11 @@ class CharLayoutController:
         layout_qt_models.UpdateQTreeModel(
             self.db_rig_directory, self.val_availableRigComboBox, self.view)
         
-        # External Input Hook Matrix QListView Update
-        layout_qt_models.UpdateExtInputHookQListModel(
-            self.db_rig_directory, self.val_availableRigComboBox, self.view)
-        
         # Output Hook Matrix QListView Update
         layout_qt_models.UpdateOutputHookQListModel(
             self.db_rig_directory, self.val_availableRigComboBox, self.view)
         
-
-
+        # External Input Hook Matrix QListView Update
+        layout_qt_models.UpdateExtInputHookQListModel(
+            self.db_rig_directory, self.val_availableRigComboBox, self.view)
+        
