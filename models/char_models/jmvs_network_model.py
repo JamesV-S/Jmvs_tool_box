@@ -9,6 +9,6 @@ from utils import utils_os
 
 # from usd_exports.systems import func_import_geometry_UUID_usd
 
-class CharMasterModel:
+class JmvsNetworkModel:
     def __init__(self):
         pass

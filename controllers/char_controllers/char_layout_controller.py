@@ -63,11 +63,6 @@ class CharLayoutController:
         name_of_rig_fld = self.model.get_available_DB_rig_folders(self.db_rig_location)
         self.populate_available_rig_comboBox(name_of_rig_fld)
         self.val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
-
-        self.db_rig_directory = utils_os.create_directory(
-            "Jmvs_tool_box", "databases", "char_databases", 
-            self.db_rig_location, self.val_availableRigComboBox
-            )
         
         self.user_module_data = {}
         
@@ -676,17 +671,24 @@ class CharLayoutController:
         '''
         # Description:
             call classes to update the gui with database iformation dynamically.
-        '''        
+        '''
+
+        self.db_rig_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, self.val_availableRigComboBox
+            )
+
         print(f"** trying to run new visualise_active_db_")
         # QTreeView Update
+        print(f" ~ visualise_active_db: ")
         layout_qt_models.UpdateQTreeModel(
-            self.db_rig_directory, self.val_availableRigComboBox, self.view)
+            self.db_rig_directory, self.view)
         
         # Output Hook Matrix QListView Update
         layout_qt_models.UpdateOutputHookQListModel(
-            self.db_rig_directory, self.val_availableRigComboBox, self.view)
+            self.db_rig_directory, self.view)
         
         # External Input Hook Matrix QListView Update
         layout_qt_models.UpdateExtInputHookQListModel(
-            self.db_rig_directory, self.val_availableRigComboBox, self.view)
+            self.db_rig_directory, self.view)
         

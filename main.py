@@ -66,11 +66,11 @@ def updating_paths():
 
 def register_services():
     import service_locator_pattern 
-    from main_entry_points.char_mep import char_master_main
+    from main_entry_points.char_mep import jmvs_network_main
     from main_entry_points.geoDB_mep import geoDB_master_main
 
     importlib.reload(service_locator_pattern)
-    importlib.reload(char_master_main)
+    importlib.reload(jmvs_network_main)
     importlib.reload(geoDB_master_main)
 
     from main_entry_points import tool_box_main
@@ -79,7 +79,7 @@ def register_services():
     tool_box_instance = tool_box_main.ToolBoxMain()
     service_locator_pattern.ServiceLocator.add_service('tool_box_main', tool_box_instance)
 
-    char_master_instance = char_master_main.CharMasterMain() 
+    char_master_instance = jmvs_network_main.JmvsNetworkMain() 
     service_locator_pattern.ServiceLocator.add_service('char_master_main', char_master_instance)
 
     geoDB_master_instance = geoDB_master_main.GeoDbMasterMain()

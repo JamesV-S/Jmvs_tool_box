@@ -40,14 +40,12 @@ importlib.reload(utils_QTree)
 importlib.reload(database_schema_002)
 
 class DatabaseData:
-    def __init__(self, db_rig_project_directory, val_availableRigComboBox, char_layout_view:CharLayoutViewType):
+    def __init__(self, db_rig_project_directory, char_layout_view:CharLayoutViewType):
         print(f"** Hello from DatabaseData()")
         self.view = char_layout_view
         self.db_rig_project_directory = db_rig_project_directory
-        self.val_availableRigComboBox = val_availableRigComboBox
 
         print(f"** db_rig_project_directory = `{self.db_rig_project_directory}`")
-        print(f"** val_availableRigComboBox = `{self.val_availableRigComboBox}`")
 
         self.db_data = self.get_db_data()
         self.component_name_ls = self.get_component_name_ls()
@@ -116,8 +114,8 @@ class DatabaseData:
 
 
 class UpdateQTreeModel(DatabaseData):
-    def __init__(self, db_rig_project_directory, val_availableRigComboBox, char_layout_view):
-        super().__init__(db_rig_project_directory, val_availableRigComboBox, char_layout_view)
+    def __init__(self, db_rig_project_directory, char_layout_view):
+        super().__init__(db_rig_project_directory, char_layout_view)
 
         print(f"* HEllo from TestInheritance()")
         print(f"* self.db_data = {self.db_data}")
@@ -159,8 +157,8 @@ class UpdateQTreeModel(DatabaseData):
     
 
 class UpdateExtInputHookQListModel(DatabaseData):
-    def __init__(self, db_rig_project_directory, val_availableRigComboBox, char_layout_view):
-        super().__init__(db_rig_project_directory, val_availableRigComboBox, char_layout_view)
+    def __init__(self, db_rig_project_directory, char_layout_view):
+        super().__init__(db_rig_project_directory, char_layout_view)
 
         print(f"*- HEllo from UpdateExtInputHookQListModel()")
 
@@ -272,8 +270,8 @@ class UpdateExtInputHookQListModel(DatabaseData):
 
 
 class UpdateOutputHookQListModel(DatabaseData):
-    def __init__(self, db_rig_project_directory, val_availableRigComboBox, char_layout_view):
-        super().__init__(db_rig_project_directory, val_availableRigComboBox, char_layout_view)
+    def __init__(self, db_rig_project_directory, char_layout_view):
+        super().__init__(db_rig_project_directory, char_layout_view)
 
         print(f"*- HEllo from UpdateExtInputHookQListModel()")
 

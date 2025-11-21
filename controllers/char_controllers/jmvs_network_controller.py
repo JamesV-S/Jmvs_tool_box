@@ -31,8 +31,8 @@ from systems.sys_char_rig import (
 
 from utils import utils_QTree
 
-from models.char_models import char_master_model
-from views.char_views import char_master_view
+from models.char_models import jmvs_network_model
+from views.char_views import jmvs_network_view
 
 from main_entry_points.char_mep import (
     char_layout_main,
@@ -50,21 +50,21 @@ importlib.reload(utils)
 importlib.reload(utils_QTree)
 importlib.reload(cr_guides)
 importlib.reload(cr_ctrl)
-importlib.reload(char_master_model)
-importlib.reload(char_master_view)
+importlib.reload(jmvs_network_model)
+importlib.reload(jmvs_network_view)
 importlib.reload(char_layout_main)
 importlib.reload(char_skeleton_main)
 importlib.reload(char_rig)
 
 import service_locator_pattern
 
-class CharMasterController:
+class JmvsNetworkController:
     def __init__(self):
-        self.model = char_master_model.CharMasterModel()
-        self.view = char_master_view.CharMasterView()
+        self.model = jmvs_network_model.JmvsNetworkModel()
+        self.view = jmvs_network_view.JmvsNetworkView()
 
-        self.view.char_layout_button.clicked.connect(self.sigfunc_char_layout_button)
-        self.view.char_skeleton_button.clicked.connect(self.sigfunc_char_skeleton_button)
+        self.view.char_layout_btn.clicked.connect(self.sigfunc_char_layout_button)
+        # self.view.char_skeleton_button.clicked.connect(self.sigfunc_char_skeleton_button)
         
         # Add service here
         char_layout_instance = char_layout_main.CharLayoutMain()

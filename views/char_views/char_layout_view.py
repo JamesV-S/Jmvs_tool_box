@@ -64,16 +64,17 @@ class CharLayoutView(QtWidgets.QWidget):
         self.main_Vlay.setObjectName("main_Layout")
 
         top_Hlay = QtWidgets.QHBoxLayout() # db_vis & mdl_choose
-        # db_actions_Hlay = QtWidgets.QHBoxLayout() # publish_mdl + replace_comp
         management_options_Vlay = QtWidgets.QVBoxLayout() # management_options tabs
         mdl_actions_Vlay = QtWidgets.QVBoxLayout() # module scene action buttons!
         debugging_Vlay = QtWidgets.QVBoxLayout()
-
-        self.main_Vlay.addLayout(top_Hlay)
-        # self.main_Vlay.addLayout(db_actions_Hlay)
-        self.main_Vlay.addLayout(management_options_Vlay)
-        self.main_Vlay.addLayout(mdl_actions_Vlay)
-        self.main_Vlay.addLayout(debugging_Vlay)
+        
+        utils_view.add_to_main_lay(self.main_Vlay, [
+            top_Hlay, management_options_Vlay, 
+            mdl_actions_Vlay, debugging_Vlay])
+        # self.main_Vlay.addLayout(top_Hlay)
+        # self.main_Vlay.addLayout(management_options_Vlay)
+        # self.main_Vlay.addLayout(mdl_actions_Vlay)
+        # self.main_Vlay.addLayout(debugging_Vlay)
         
         # style groups
         self.style_treeview_ui = [] 
@@ -93,7 +94,6 @@ class CharLayoutView(QtWidgets.QWidget):
         self.debugging_ui(debugging_Vlay)
 
         self.set_style_property_funcUI()
-        
         
         # --------------------------------------------------------------------------------
         self.setLayout(self.main_Vlay)
@@ -386,13 +386,10 @@ class CharLayoutView(QtWidgets.QWidget):
         
         # ---------------------------------------------------------------------
         # add these interfaces to the tab
-        layV_module_editing.addLayout(layH_sel_options)
-        '''layV_module_editing.addLayout(upd_comp_container)'''
-        # layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
+        '''layV_module_editing.addLayout(layH_sel_options)'''
         layV_module_editing.addLayout(out_hk_mtx_container)
         layV_module_editing.addLayout(ext_inp_hk_mtx_container)
         layV_module_editing.addLayout(layH_jnt_ctrl_editing)
-        # layV_module_editing.addLayout(self.lay_spacer_funcUI("H"))
         layV_module_editing.addWidget(self.commit_module_edits_btn)
 
         tab.addTab(parent_widget, "Edit Data")
@@ -660,6 +657,50 @@ class CharLayoutView(QtWidgets.QWidget):
         return layH_spacer
 
 
+    def build_output_hook_matrix_ui(self):
+        '''
+        # Description:
+            Build QList ui to represent and update the Ouput_Hook_Matrix attr for 
+            each component for modules present in the rig project. 
+        # Argument: N/A
+        # Return:
+            layH (Q*BoxLayout): Layout to add to a container.
+        '''
+        # UI layout
+        layH = QtWidgets.QHBoxLayout()
+
+        # Create List widgets
+        self.comp_out_hk_mtx_Qlist = QtWidgets.QListView()
+        self.attr_out_hk_mtx_Qlist = QtWidgets.QListView()
+        for widget in [self.comp_out_hk_mtx_Qlist, self.attr_out_hk_mtx_Qlist]:
+            widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+            widget.setMinimumSize(200, 60)
+
+        # Create standard Model for the  
+        self.comp_out_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
+        self.comp_out_hk_mtx_Qlist.setModel(self.comp_out_hk_mtx_Qlist_Model)
+
+        self.attr_out_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
+        self.attr_out_hk_mtx_Qlist.setModel(self.attr_out_hk_mtx_Qlist_Model)
+        
+        # Temporarily adding items to the lists
+        list_entries = ["one", "two", "three"]
+        for x in list_entries:
+            item = QtGui.QStandardItem(x)
+            self.comp_out_hk_mtx_Qlist_Model.appendRow(item)
+
+        other_list_entries = ["A", "B", "C"]
+        for x in other_list_entries:
+            item = QtGui.QStandardItem(x)
+            self.attr_out_hk_mtx_Qlist_Model.appendRow(item)
+
+        # Add the QLists to the Layout 
+        layH.addWidget(self.comp_out_hk_mtx_Qlist)
+        layH.addWidget(self.attr_out_hk_mtx_Qlist)
+
+        return layH
+    
+
     def build_external_input_hook_matrix_ui(self):
         '''
         # Description:
@@ -674,7 +715,8 @@ class CharLayoutView(QtWidgets.QWidget):
 
         # Create List widgets
         self.comp_inp_hk_mtx_Qlist = QtWidgets.QListView()
-        # self.comp_inp_hk_mtx_Qlist.setMinimumSize(10, 80)
+        self.comp_inp_hk_mtx_Qlist.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.comp_inp_hk_mtx_Qlist.setMinimumSize(200, 60)
 
         # Create standard Model for the  
         self.comp_inp_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
@@ -704,47 +746,6 @@ class CharLayoutView(QtWidgets.QWidget):
         # Add the QLists to the Layout 
         layH.addWidget(self.comp_inp_hk_mtx_Qlist)
         layH.addLayout(layV_attr_inp_hk_mtx)
-
-        return layH
-
-
-    def build_output_hook_matrix_ui(self):
-        '''
-        # Description:
-            Build QList ui to represent and update the Ouput_Hook_Matrix attr for 
-            each component for modules present in the rig project. 
-        # Argument: N/A
-        # Return:
-            layH (Q*BoxLayout): Layout to add to a container.
-        '''
-        # UI layout
-        layH = QtWidgets.QHBoxLayout()
-
-        # Create List widgets
-        self.comp_out_hk_mtx_Qlist = QtWidgets.QListView()
-        self.attr_out_hk_mtx_Qlist = QtWidgets.QListView()
-
-        # Create standard Model for the  
-        self.comp_out_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
-        self.comp_out_hk_mtx_Qlist.setModel(self.comp_out_hk_mtx_Qlist_Model)
-
-        self.attr_out_hk_mtx_Qlist_Model = QtGui.QStandardItemModel()
-        self.attr_out_hk_mtx_Qlist.setModel(self.attr_out_hk_mtx_Qlist_Model)
-        
-        # Temporarily adding items to the lists
-        list_entries = ["one", "two", "three"]
-        for x in list_entries:
-            item = QtGui.QStandardItem(x)
-            self.comp_out_hk_mtx_Qlist_Model.appendRow(item)
-
-        other_list_entries = ["A", "B", "C"]
-        for x in other_list_entries:
-            item = QtGui.QStandardItem(x)
-            self.attr_out_hk_mtx_Qlist_Model.appendRow(item)
-
-        # Add the QLists to the Layout 
-        layH.addWidget(self.comp_out_hk_mtx_Qlist)
-        layH.addWidget(self.attr_out_hk_mtx_Qlist)
 
         return layH
     

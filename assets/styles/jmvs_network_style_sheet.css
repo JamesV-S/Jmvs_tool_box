@@ -1,0 +1,88 @@
+
+/*-------------------------------- QWIDGET ----------------------------------*/
+
+QWidget {
+    background-color:#313131;
+}
+
+
+/*------------------------------- CONTAINER ---------------------------------*/
+QWidget[style_container="true"],
+QWidget[style_child_container="true"]{
+    background-color:#313131;
+    border: 1px solid #dbdbdb;
+    border-radius: 3px;
+
+}
+QLabel[style_container="true"], 
+QLabel[style_child_container="true"] {
+    color: black;
+    background-color: #e5e5e5;
+    font: 800 bold;
+    max-height: 15px;
+    /* min-height: 300px;
+    max-height: 300px; */
+}
+QWidget[style_child_container="true"]{
+    background-color:#727272;
+    border: 1px solid #adadad;
+}
+QLabel[style_child_container="true"] {
+    /* color:white; */
+    background-color: #d2d2d2; /* #2e2e3d | #9a9a9a */
+}
+QCheckBox[style_child_container="true"] {
+    color:white;
+    /* background-color: #9a9a9a; */
+}
+QWidget#Spacer {
+    background-color: #9a9a9a;
+    /* border-style: solid; */
+    border-radius: 5px;
+    /* padding: 10px; */
+
+}
+
+/*-------------------------------- Network UI ---------------------------------*/
+QPushButton[network_UI="true"],
+QLabel[network_UI="true"]{
+    background-color: #2e2e3d;
+    color: #fefefe; 
+    border: 1px solid #2d334f; 
+    padding: 5px;
+    font-size: 12px;
+}
+
+/* Hover State */
+QPushButton[network_UI="true"]:hover{
+    background-color: #2d334f; 
+}
+
+/* Pressed State */
+QPushButton[network_UI="true"]:pressed {
+    background-color: rgba(179, 80, 80, 0.39);
+    border-width: 3px;
+    border-radius: 4.5px;
+}
+
+/*-------------------------------- Tools UI ---------------------------------*/
+QPushButton[tool_UI="true"],
+QLabel[tool_UI="true"]{
+    background-color: #2e2e3d;
+    color: #fefefe; 
+    border: 1px solid #2d334f; 
+    padding: 5px;
+    font-size: 12px;
+}
+
+/* Hover State */
+QPushButton[tool_UI="true"]:hover{
+    background-color: #2d334f; 
+}
+
+/* Pressed State */
+QPushButton[tool_UI="true"]:pressed {
+    background-color: rgba(179, 80, 80, 0.39);
+    border-width: 3px;
+    border-radius: 4.5px;
+}
