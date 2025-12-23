@@ -730,18 +730,26 @@ class CharLayoutView(QtWidgets.QWidget):
 
         # dropdown's
         layV_attr_inp_hk_mtx = QtWidgets.QVBoxLayout()
+        layH_attrs = QtWidgets.QHBoxLayout()
         
-        self.attr_inp_hk_mtx_CB_1 = QtWidgets.QComboBox()
-        self.attr_inp_hk_mtx_CB_2 = QtWidgets.QComboBox()
-        for widget in [self.attr_inp_hk_mtx_CB_1, self.attr_inp_hk_mtx_CB_2]:
+        # Input hook of current module Component name
+        self.attr_inp_hk_mtx_CB_obj = QtWidgets.QComboBox()
+        self.attr_inp_hk_mtx_CB_obj.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.attr_inp_hk_mtx_CB_obj.setMinimumSize(200, 20)
+
+        # Two mtx attribute comboBox's
+        self.attr_inp_hk_mtx_CB_prim = QtWidgets.QComboBox()
+        self.attr_inp_hk_mtx_CB_scnd = QtWidgets.QComboBox()
+        layH_attrs.addWidget(self.attr_inp_hk_mtx_CB_prim)
+        layH_attrs.addWidget(self.attr_inp_hk_mtx_CB_scnd)
+        for widget in [self.attr_inp_hk_mtx_CB_prim, self.attr_inp_hk_mtx_CB_scnd]:
             widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-            widget.setMinimumSize(200, 20)
+            widget.setMinimumSize(100, 20)
             # widget.setMinimumSize()
 
+        layV_attr_inp_hk_mtx.addWidget(self.attr_inp_hk_mtx_CB_obj)
 
-        layV_attr_inp_hk_mtx.addWidget(self.attr_inp_hk_mtx_CB_1)
-        layV_attr_inp_hk_mtx.addWidget(self.attr_inp_hk_mtx_CB_2)
-
+        layV_attr_inp_hk_mtx.addLayout(layH_attrs)
 
         # Add the QLists to the Layout 
         layH.addWidget(self.comp_inp_hk_mtx_Qlist)

@@ -38,6 +38,11 @@ from models.char_models import (
 from models.char_models import char_layout_model
 from views.char_views import char_layout_view
 
+# Temporarily
+from databases.char_databases import (
+    database_schema_002
+    )
+
 # importlib.reload(utils_os)
 importlib.reload(utils)
 importlib.reload(utils_os)
@@ -50,6 +55,9 @@ importlib.reload(layout_qt_models)
 
 importlib.reload(char_layout_model)
 importlib.reload(char_layout_view)
+
+# Temporarily
+importlib.reload(database_schema_002)
 
 
 class CharLayoutController:
@@ -102,7 +110,9 @@ class CharLayoutController:
     
         self.sig_joint_editing_checkBox()
         self.sig_ctrl_editing_checkBox()
-
+        
+        for cb in [self.view.attr_inp_hk_mtx_CB_obj, self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd]:
+            cb.setEnabled(False)
 
     def setup_connections(self):
         # selection_model = self.view.mdl_tree_view.selectionModel()
@@ -160,11 +170,73 @@ class CharLayoutController:
 
             # External Inout Hook Matrix
             # Output Hook Matrix
+        self.view.comp_inp_hk_mtx_Qlist.clicked.connect(self.sig_comp_inp_hk_mtx_Qlist_clicked)
+        self.view.attr_inp_hk_mtx_CB_obj.currentIndexChanged.connect(self.sig_attr_inp_hk_mtx_CB_obj)
 
+            # joint & control wditing.
         self.view.joint_editing_checkBox.stateChanged.connect(self.sig_joint_editing_checkBox)
         self.view.ctrl_editing_checkBox.stateChanged.connect(self.sig_ctrl_editing_checkBox)
         self.view.jnt_num_spinBox.valueChanged.connect(self.sig_jnt_num_spinBox)
         self.view.commit_module_edits_btn.clicked.connect(self.sig_commit_module_edits_btn)
+
+
+    def sig_comp_inp_hk_mtx_Qlist_clicked(self, idx):
+        for cb in [self.view.attr_inp_hk_mtx_CB_obj, self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd]:
+            cb.setEnabled(True)
+        # get current database name
+        component_name = idx.data()
+        # self.update_ext_inp_hk_mtx_comboBoxs(component_name)
+        model = self.view.comp_inp_hk_mtx_Qlist_Model
+        Qlist_compnent_names = []
+        for row in range(model.rowCount()):
+            index = model.index(row, 0)
+            item = model.data(index)
+            if item is not None:
+                Qlist_compnent_names.append(item)
+    
+        db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(component_name, self.val_availableRigComboBox)
+        ext_obj_ls, ext_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
+        self.model.set_inp_hook_obj_comboBox(Qlist_compnent_names, ext_obj_ls, self.view.attr_inp_hk_mtx_CB_obj)
+        # self.model.set_inp_hook_atrs_comboBox(ext_atr_ls, self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd)
+
+
+    def sig_attr_inp_hk_mtx_CB_obj(self):
+        # get current database name
+        # component_name = idx.data()
+        # self.view.comp_inp_hk_mtx_Qlist
+        
+        ext_obj_component_name = self.view.attr_inp_hk_mtx_CB_obj.currentText()
+        print(f">>>ext_obj_component_name = {ext_obj_component_name}")
+
+        if ext_obj_component_name == 'None':
+            print(f"TURE 'NONE'")
+
+            # Reset the  the CB atr (prim & scnd)
+            # print(f"CON> combo fill for component_name_Qlist = {component_name_Qlist}")
+            utils_QTree.populate_ext_inp_hk_mtx_atrComboBox_model(
+                self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd
+                )
+        else:
+            print(f"ELSE NO 'NONE'")
+            component_name_Qlist = utils_QTree.get_current_selected_item_Qlist(self.view.comp_inp_hk_mtx_Qlist, self.view.comp_inp_hk_mtx_Qlist_Model)
+            print(f"& component_name_Qlist = {component_name_Qlist}")
+            db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(component_name_Qlist, self.val_availableRigComboBox)
+            ext_obj_ls, ext_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
+
+            db_out_hook_mtx_ls = self.model.get_db_out_hook_mtx_from_comboBox(ext_obj_component_name, self.val_availableRigComboBox)
+            print(f"*db_out_hook_mtx_ls = {db_out_hook_mtx_ls}")
+            ext_atr_dict = self.model.get_out_hook_mtx_atr_data(db_out_hook_mtx_ls)
+            self.model.set_inp_hook_atrs_comboBox_items(
+                ext_atr_dict, 
+                self.view.attr_inp_hk_mtx_CB_prim, 
+                self.view.attr_inp_hk_mtx_CB_scnd
+                )
+            self.model.set_inp_hook_atrs_comboBox_placeholder(
+                ext_atr_dict,
+                ext_atr_ls, 
+                self.view.attr_inp_hk_mtx_CB_prim, 
+                self.view.attr_inp_hk_mtx_CB_scnd
+            )
 
 
     def update_progress(self, value, operation_name=""):
@@ -692,3 +764,9 @@ class CharLayoutController:
         layout_qt_models.UpdateExtInputHookQListModel(
             self.db_rig_directory, self.view)
         
+
+        
+
+    def update_ext_inp_hk_mtx_comboBoxs(self, component_name):
+        # get all database item's names
+        pass

@@ -156,119 +156,6 @@ class UpdateQTreeModel(DatabaseData):
                 tree_parent_item.appendRow(db_item)
     
 
-class UpdateExtInputHookQListModel(DatabaseData):
-    def __init__(self, db_rig_project_directory, char_layout_view):
-        super().__init__(db_rig_project_directory, char_layout_view)
-
-        print(f"*- HEllo from UpdateExtInputHookQListModel()")
-
-        self.populate_ext_input_hook_QListView_model()
-        self.populate_ext_input_hook__attr__comboBox_model()
-
-    
-    def populate_ext_input_hook_QListView_model(self):
-        '''
-        #Description: 
-            From 'self.db_data' get all the module's components names & add to 
-            QList
-        '''
-        model = self.view.comp_inp_hk_mtx_Qlist_Model
-        model.clear()
-
-        print(f"* component_name_ls = `{self.component_name_ls}`")
-        # Add the list of component names to QListModel!
-        for item in self.component_name_ls:
-            mdl_item = QtGui.QStandardItem(item)
-            model.appendRow(mdl_item)
-
-
-    def populate_ext_input_hook__attr__comboBox_model(self):
-        '''
-        # Description: 
-            From 'self.db_data' get all the module's components names & add to 
-            QList
-        '''
-        # Return a dictionary of 'input_hook_mtx_plug' key=module: value=attr
-        # inp_dict = {}
-        # for db in os.listdir(self.db_rig_project_directory):
-        #     if db.startswith("DB_") and db.endswith(".db"):
-        #         # Iterates over each module.db file & query's the unique_id 
-        #         # & side from each row.
-        #         data_retriever = database_schema_002.RetrieveModulesData(
-        #             self.db_rig_project_directory, db)
-        #         inp_dict[db] = data_retriever.db_input_hook_mtx_dict.get(db, [])
-        # print(f" # # inp_dict = {inp_dict}")
-
-        # clear the comboBox's & add items to them again!
-        self.view.attr_inp_hk_mtx_CB_1.clear()
-        self.view.attr_inp_hk_mtx_CB_2.clear()
-
-        # add placeholder text when 'visualising the active db'
-        self.view.attr_inp_hk_mtx_CB_1.setPlaceholderText("Select Component in the List")
-        self.view.attr_inp_hk_mtx_CB_2.setPlaceholderText("Select Component in the List")
-
-        '''`
-        Problem: Current structure
-        /{'DB_bipedArm.db': ['jnt_skn_wrist', 'jnt_skn_lower5'], 'DB_bipedLeg.db': ['jnt_skn_ankle'], 'DB_spine.db': ['jnt_skn_top', 'jnt_skn_bottom']}`
-        /{'DB_bipedArm.db': [(0, 'L'), (0, 'R')], 'DB_bipedLeg.db': [(0, 'L')], 'DB_spine.db': [(0, 'M')]}
-        
-        -------------------
-        # Needed structure for : 'get_attr_out_hk_mtx_dict()'
-         = {
-        '*module_name' : [ 
-                        ([*output_hook_mtx_list], *unique_id, *'side') 
-                        ]
-        }
-
-        # Example: bipedArm_0_L, bipedArm_0_R & spine
-        Solution_dict_structure = {
-        'DB_bipedArm.db': [
-                        (['jnt_skn_wrist', 'jnt_skn_lower5'], 0, 'L'), 
-                        (['jnt_skn_wrist', 'jnt_skn_lower5'], 0, 'R')
-                        ],
-        'DB_spine.db': [
-                        (["jnt_skn_top", "jnt_skn_bottom"], 0, 'M')
-                        ]
-        }
-
-        This becomes useful because I can write the items to be added to 
-        ComboBox's sinse I will compare db.input_hook_mtx_plug with possible attr 
-        from 'Solution_dict_structure'.
-        # To give me (for ComboBox's) :
-            bipedArm_0_L -> spine.jnt_skn_top_0_M 
-            bipedArm_0_R -> spine.jnt_skn_top_0_M
-            spine_0_M -> None (cus 'root' module hasn't been published yet!)
-        
-        # It's Important to note that the addition of *unique_id, *'side' means I 
-            need to process this even if I didn't commit changes to 'Edit Data' Tab.
-        # + ModuleBlueprint() needs to adapt to this change! 
-        '''
-
-        for db_name, out_item in self.attr_out_hk_mtx_dict.items():
-            # for out_i in out_item:
-            print(f" # self.attr_out_hk_mtx_dict items = `{out_item}`")
-            self.view.attr_inp_hk_mtx_CB_1.addItems(out_item)
-            self.view.attr_inp_hk_mtx_CB_2.addItems(out_item)
-
-
-        # Maybe temp here -> add 'None' when wiring the external_imp relationship 
-        # between QList selection & QComboBox set, using a diictionary gathered 
-        # from the .db's. 
-        self.view.attr_inp_hk_mtx_CB_1.addItem("None")
-        self.view.attr_inp_hk_mtx_CB_2.addItem("None")
-
-        ''' Items to be added by output attrs!
-        # add null item
-        self.view.attr_inp_hk_mtx_CB_2.addItem("None")
-
-        # add items to the 
-        if inp_dict:
-            for value_inp_attr in inp_dict.values():
-                self.view.attr_inp_hk_mtx_CB_1.addItems(value_inp_attr)
-                self.view.attr_inp_hk_mtx_CB_2.addItems(value_inp_attr)
-        '''
-
-
 class UpdateOutputHookQListModel(DatabaseData):
     def __init__(self, db_rig_project_directory, char_layout_view):
         super().__init__(db_rig_project_directory, char_layout_view)
@@ -317,3 +204,95 @@ class UpdateOutputHookQListModel(DatabaseData):
             mdl_item = QtGui.QStandardItem(add_item)
             model.appendRow(mdl_item)
         
+
+class UpdateExtInputHookQListModel(DatabaseData):
+    def __init__(self, db_rig_project_directory, char_layout_view):
+        super().__init__(db_rig_project_directory, char_layout_view)
+
+        print(f"*- HEllo from UpdateExtInputHookQListModel()")
+
+        self.populate_ext_input_hook_QListView_model()
+        self.populate_ext_inp_hk_mtx_objComboBox_model()
+        utils_QTree.populate_ext_inp_hk_mtx_atrComboBox_model(
+            self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd
+            )
+
+        # self.view.comp_inp_hk_mtx_Qlist.clicked.connect(self.on_Qlist_item_clicked)
+
+    
+    def populate_ext_input_hook_QListView_model(self):
+        '''
+        #Description: 
+            From 'self.db_data' get all the module's components names & add to 
+            QList
+        '''
+        model = self.view.comp_inp_hk_mtx_Qlist_Model
+        model.clear()
+
+        print(f"* component_name_ls = `{self.component_name_ls}`")
+        # Add the list of component names to QListModel!
+        for item in self.component_name_ls:
+            mdl_item = QtGui.QStandardItem(item)
+            model.appendRow(mdl_item)
+
+    
+    def populate_ext_inp_hk_mtx_objComboBox_model(self):
+        model = self.view.comp_inp_hk_mtx_Qlist_Model
+        item_ls = []
+        for row in range(model.rowCount()):
+            index = model.index(row, 0)
+            item = model.data(index)
+            if item is not None:
+                item_ls.append(item)
+        print(f"*all items in list: {item_ls}")
+        item_ls.append('None')
+        self.view.attr_inp_hk_mtx_CB_obj.clear()
+        self.view.attr_inp_hk_mtx_CB_obj.setPlaceholderText("Select a Component in the List")
+        self.view.attr_inp_hk_mtx_CB_obj.addItems(item_ls)
+            
+
+    def on_Qlist_item_clicked(self, idx):
+        # model = self.view.comp_inp_hk_mtx_Qlist_Model
+        item_txt = idx.data()
+
+        self.update_comboBoxs(item_txt)
+
+
+    def update_comboBoxs(self, component_name):
+        self.view.attr_inp_hk_mtx_CB_prim.clear()
+        self.view.attr_inp_hk_mtx_CB_scnd.clear()
+
+        attributes = self.get_attributes_for_component(component_name)
+
+        if attributes:
+            # self.view.attr_inp_hk_mtx_CB_prim.setPlaceholderText("Select Component in the List")
+            self.view.attr_inp_hk_mtx_CB_prim.setPlaceholderText("Primary Atr")
+            self.view.attr_inp_hk_mtx_CB_scnd.setPlaceholderText("Secondary Atr")
+            self.view.attr_inp_hk_mtx_CB_prim.addItems(attributes)
+            self.view.attr_inp_hk_mtx_CB_scnd.addItems(attributes)
+
+
+    def get_attributes_for_component(self, component_name):
+        module, unique_id, side = utils.get_name_id_data_from_component(component_name)
+
+        val_availableRigComboBox = self.view.available_rig_comboBox.currentText()
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            "db_rig_storage", val_availableRigComboBox
+            )
+        get_user_settings_data = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
+        inp_hook_mtx_ls = get_user_settings_data.return_inp_hk_mtx()
+        
+        atr_ls = []
+        # a list of the comp's that match the input_hook_mtx obj & exist as a database. 
+        for inp_plg in inp_hook_mtx_ls:
+            # print(f"plg = {inp_plg}")
+            parts = inp_plg.split('.')
+            # print(f"Parts = {parts}")
+            atr = parts[-1]
+            atr_ls.append(atr)
+        atr_ls.append('None')
+
+        return atr_ls
+
+

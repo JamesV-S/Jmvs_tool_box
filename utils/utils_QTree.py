@@ -85,3 +85,72 @@ def get_module_name_TreeSel(tree_view, tree_model):
         return parent_selection_list
     
     return []  # Return empty list if no selection
+
+
+def get_qListView_comp_sel(list_view, list_model):
+    selection_model = list_view.selectionModel()
+    selected_indexes = selection_model.selectedIndexes()
+
+    # is there an item to be selected?
+    if selected_indexes:
+        multi_selection = selected_indexes
+        parent_selection_list = []
+
+        for index in multi_selection:
+            item = list_model.itemFromIndex(index)
+            parent_selection_list.addItem()
+    
+    print()
+
+def get_items_in_Qlist(Qlist_model):
+    '''
+    Docstring for on_QlistView_clicked
+    # Description: 
+        Put all the names of items currently in the Qlist. 
+    # Return: 
+        item_ls (list): Names of all items in the Qlist.
+    '''
+    model = Qlist_model
+    item_ls = []
+    for row in range(model.rowCount()):
+        index = model.index(row, 0)
+        item = model.data(index)
+        if item is not None:
+            item_ls.append(item)
+    return item_ls
+
+
+
+def get_current_selected_item_Qlist(view_Qlist, view_Qlist_model):
+    # Get the selection model from the QListView
+    # selection_model = self.view.comp_inp_hk_mtx_Qlist.selectionModel()
+    selection_model = view_Qlist.selectionModel()
+    
+    # Get the current selected indexes
+    selected_indexes = selection_model.selectedIndexes()
+    
+    if selected_indexes:
+        # Get the first selected item (assuming single selection mode)
+        selected_index = selected_indexes[0]
+        
+        # Get the model and data
+        # model = self.view.comp_inp_hk_mtx_Qlist_Model
+        model = view_Qlist_model
+        item_txt = model.data(selected_index)
+        
+        print(f"*Currently selected item: {item_txt}")
+        return item_txt
+    
+    return None
+
+
+def populate_ext_inp_hk_mtx_atrComboBox_model(view_prim, view_scnd):
+        # This method should either:
+        # 1. Set up state of the attribute combobox
+        # For now, just clear it or set default state
+        view_prim.clear()
+        view_scnd.clear()
+        view_prim.setPlaceholderText("Primary Atr")
+        view_scnd.setPlaceholderText("Secondary Atr")
+        view_prim.addItem('None')
+        view_scnd.addItem('None')

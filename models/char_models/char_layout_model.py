@@ -25,8 +25,6 @@ from databases import (
     db_connection_tracker
 )
 
-
-
 from systems.sys_char_rig import (
     raw_data_fkik_dicts
 )
@@ -687,8 +685,143 @@ class CharLayoutModel:
         utils.align_source_rotX_to_target(ori_rot_dict)
 
 
-    # ---- Input List functions ----
+    # ---- External Input Hook Matrix functions ----
+    '''
+    There is a hierarchy for the UI widgets:
+    - inp_hk_mtx_QList (clicked)
+        |- inp_hk_mtx_CB_obj (Current Index Change)
+            |- inp_hk_mtx_CB_prim (Current Index Change & Items Change)
+            |- inp_hk_mtx_CB_scnd (Current Index Change & Items Change)
+    '''
 
+    def get_db_inp_hook_mtx_from_Qlist(self, component_name, val_availableRigComboBox):
+        # 2. get input_hook attr from db. put into list. 
+        module, unique_id, side = utils.get_name_id_data_from_component(component_name)
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        # print(f"self.val_availableRigComboBox: {self.val_availableRigComboBox}")
+        get_user_settings_data = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
+        db_inp_hook_mtx_ls = get_user_settings_data.return_inp_hk_mtx()
+        print(f"comp_selected = '{component_name}' : inp_mtx_ls = {db_inp_hook_mtx_ls}")
+        return db_inp_hook_mtx_ls
+
+
+    def get_db_out_hook_mtx_from_comboBox(self, ext_obj_component_name, val_availableRigComboBox):
+        # obj_component_name = component name of the ext object. 
+        module, unique_id, side = utils.get_name_id_data_from_component(ext_obj_component_name)
+        print(f"ext_obj_component_name: {ext_obj_component_name} ")
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        print(f"rig_db_directory: {rig_db_directory}")
+        get_user_settings_data = database_schema_002.RetrieveSpecificData(
+            rig_db_directory, module, unique_id, side
+            )
+        # get the matrix's to add to dictionary!
+        db_out_hook_mtx_ls = get_user_settings_data.return_out_hk_mtx()
+        return db_out_hook_mtx_ls
+
+
+    def get_inp_hook_mtx_obj_data(self, db_inp_hook_mtx_ls):
+        ext_obj_ls = []
+        ext_atr_ls = []
+        for inp_plg in db_inp_hook_mtx_ls:
+            parts = inp_plg.split('.')
+            obj = parts[0]
+            atr = parts[-1]
+            ext_obj_ls.append(obj)
+            ext_atr_ls.append(atr)
+        
+        # ext_obj_ls should only ever hold 1 module name (cus more than 1 means a duplicate)
+        if len(ext_obj_ls) > 1:
+            print(f"ext_obj_ls greater than 1")
+            ext_obj_ls = ext_obj_ls[:1]
+
+        return ext_obj_ls, ext_atr_ls
+
+
+    def get_out_hook_mtx_atr_data(self, db_out_hook_mtx_ls):
+        ext_atr_dict = {
+            'ext_prim':"", 
+            'ext_scnd':"", 
+        }
+        if len(db_out_hook_mtx_ls) > 1: # two items in the list
+            prim_val = db_out_hook_mtx_ls[0]
+            scnd_val = db_out_hook_mtx_ls[1]
+        else:
+            prim_val = db_out_hook_mtx_ls[0]
+            scnd_val = 'None'
+        ext_atr_dict['ext_prim'] = prim_val
+        ext_atr_dict["ext_scnd"] = scnd_val
+        print(f"ext_atr_dict = {ext_atr_dict}")
+        return ext_atr_dict
+
+    
+    def set_inp_hook_obj_comboBox(self, Qlist_compnent_names, ext_obj_ls, view_cb_obj):
+        print(f"*set_inp_hook_obj_comboBox: ext_obj_ls = {ext_obj_ls}")
+        obj_match = None
+        ext_inp_hk_comp_ls = []
+        for obj in ext_obj_ls:
+            if not ext_obj_ls == ['None']:
+                for comp in Qlist_compnent_names:
+                    if obj in comp: # if spine is an existing database
+                        if obj == comp:
+                            print(f"EXACT MATCH")
+                            obj_match = True
+
+                            ext_inp_hk_comp_ls.append(comp)
+                        else:
+                            print(f"NO EXACT MATCH")
+                            obj_match = False
+                            ext_inp_hk_comp_ls.append(comp)
+
+                    # print(f"comp found in inp_hk_mtx obj {comp}")
+
+        print(f"*set_inp_hook_obj_comboBox = ext_inp_hk_comp_ls = {ext_inp_hk_comp_ls}")
+
+        # # if ext_inp_hk_comp_ls is more than one this means it did not find an exact match. 
+        if obj_match == True:
+            update_obj = ext_obj_ls[0]
+        if obj_match == False:
+            update_obj = ext_inp_hk_comp_ls[0]
+        if obj_match == None:
+            update_obj = 'None'
+
+            # update obj comboBox
+        print(f"Update obj = {update_obj}")
+        view_cb_obj.setCurrentText(update_obj)
+
+
+    def set_inp_hook_atrs_comboBox_items(self, ext_atr_dict, view_cb_prim, view_cb_scnd):
+        '''----------MODEL--------SET PRIM & SCND---------------------------'''
+        view_cb_prim.clear()
+        view_cb_scnd.clear()
+        view_cb_prim.addItem('None')
+        view_cb_scnd.addItem('None')
+
+        if ext_atr_dict:
+            view_cb_prim.addItem(ext_atr_dict['ext_prim'])
+            view_cb_prim.addItem(ext_atr_dict['ext_scnd'])
+            
+            view_cb_scnd.addItem(ext_atr_dict['ext_prim'])
+            view_cb_scnd.addItem(ext_atr_dict['ext_scnd'])
+
+    def set_inp_hook_atrs_comboBox_placeholder(self, ext_atr_dict, ext_atr_ls, view_cb_prim, view_cb_scnd):
+            # update prim & scnd comboBox's
+        # view_cb_prim.setCurrentText(ext_atr_dict['ext_prim'])
+        # view_cb_scnd.setCurrentText(ext_atr_dict['ext_scnd'])
+
+        print(f"&set_inp_hook_atrs_comboBox_placeholder: ext_atr_dict = {ext_atr_dict}")
+        print(f"&set_inp_hook_atrs_comboBox_placeholder: ext_atr_ls[0] = {ext_atr_ls[0]}")
+
+        view_cb_prim.setCurrentText(ext_atr_ls[0])
+        if len(ext_atr_ls) > 1:
+            view_cb_scnd.setCurrentText(ext_atr_dict['ext_scnd'])
+        else:
+            view_cb_scnd.setCurrentText('None')
 
 
     # ---- Delete database functions ----

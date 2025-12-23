@@ -558,10 +558,51 @@ class RetrieveSpecificData(DatabaseSchema):
         try:
             with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
                 self.jnt_num = self.get_jnt_num(conn, "user_settings")
+                self.inp_hk_mtx = self.inp_hk_mtx_from_table(conn, "user_settings")
+                self.out_hk_mtx = self.out_hk_mtx_from_table(conn, "user_settings")
                 self.guides_connection, self.guides_follow = self.get_guide_data(conn, "constant")
                 self.ori_plane_dict = self.get_ori_plane_data(conn, "controls")
         except sqlite3.Error as e:
             print(f"DB* module umo update Error: {e}")
+    
+    
+    def inp_hk_mtx_from_table(self, conn, table):
+        cursor = conn.cursor()
+        query = f"SELECT input_hook_mtx_plug FROM {table} WHERE unique_id = ? AND side = ?"
+        try:
+            cursor.execute(query, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            print(f"**inp_hk_mtx row={row}")
+            if row:
+                inp_plg_json = row[0]
+                inp_plg = json.loads(inp_plg_json)
+                return inp_plg #inp_attr
+            else:
+                print(f"Not row: {self.module_name}")
+            # return inp_data_list
+
+        except sqlite3.Error as e:
+            print(f"** inp_hk_mtx_from_table sqlite3.Error: {e}")
+            return []
+        
+    
+    def out_hk_mtx_from_table(self, conn, table):
+        cursor = conn.cursor()
+        query = f"SELECT output_hook_mtx_list FROM {table} WHERE unique_id = ? AND side = ?"
+        try:
+            cursor.execute(query, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                out_hk_mtx_ls_json = row[0]
+                out_hk_mtx_ls = json.loads(out_hk_mtx_ls_json)
+                return out_hk_mtx_ls #inp_attr
+            else:
+                print(f"No out_hk_mtx row: {self.module_name}")
+            # return inp_data_list
+
+        except sqlite3.Error as e:
+            print(f"** inp_hk_mtx_from_table sqlite3.Error: {e}")
+            return []
 
 
     def get_jnt_num(self, conn, table):
@@ -619,15 +660,18 @@ class RetrieveSpecificData(DatabaseSchema):
             print(f"controls table sqlite3.Error: {e}")
             return None
 
+    def return_inp_hk_mtx(self):
+        return self.inp_hk_mtx
+    
+    def return_out_hk_mtx(self):
+        return self.out_hk_mtx
 
     def return_get_jnt_num(self):
         return self.jnt_num
     
-
     def return_guides_connection(self):
         return self.guides_connection
     
-
     def return_guides_follow(self):
         return self.guides_follow
     

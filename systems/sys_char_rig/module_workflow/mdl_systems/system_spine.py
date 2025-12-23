@@ -1,6 +1,4 @@
 
-
-
 import importlib
 import maya.cmds as cmds
 import re

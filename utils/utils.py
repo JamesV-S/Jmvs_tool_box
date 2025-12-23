@@ -431,10 +431,14 @@ def get_first_child(group_name):
 
 
 def get_name_id_data_from_component(component_sel):
-    split_names = component_sel.split('_')[1:]
+    if 'mdl_' in component_sel:
+        split_names = component_sel.split('_')[1:]
+    else:
+        split_names = component_sel.split('_')
     module_name = split_names[0]
     unique_id = split_names[1]
     side = split_names[2]
+
     return module_name, unique_id, side
 
 

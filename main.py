@@ -55,7 +55,7 @@ def updating_paths():
     print(f"Main -> data_managers")
     gather_folders_to_add_to_list(['data_managers', 'blueprints', 'mdl_systems', 'builders',], 
                                   custom_dir_list, 
-                                  "Jmvs_tool_box", "systems", "sys_char_rig", "module_system_solution_003")
+                                  "Jmvs_tool_box", "systems", "sys_char_rig", "module_workflow")
     
 
     # check if the custom dir exist:
