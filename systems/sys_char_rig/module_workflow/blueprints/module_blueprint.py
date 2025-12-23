@@ -482,7 +482,6 @@ class ModuleBP:
             utils.connect_attr(f"{MM_output_top}{utils.Plg.mtx_sum_plg}", output_hook_mtx_plg)
 
 
-
     def group_module(self, module_name, unique_id, side, input_grp, output_grp, ctrl_grp=None, joint_grp=None, logic_grp=None):
             '''
             # Description: 
