@@ -678,6 +678,59 @@ class RetrieveSpecificData(DatabaseSchema):
     def return_ori_plane_dict(self):
         return self.ori_plane_dict
     
+class RetrieveMtxModuleData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.inp_hk_mtx = self.inp_hk_mtx_from_table(conn, "user_settings")
+                self.out_hk_mtx = self.out_hk_mtx_from_table(conn, "user_settings")
+        except sqlite3.Error as e:
+            print(f"DB* module umo update Error: {e}")
+    
+    
+    def inp_hk_mtx_from_table(self, conn, table):
+        cursor = conn.cursor()
+        query = f"SELECT input_hook_mtx_plug FROM {table} WHERE unique_id = ? AND side = ?"
+        try:
+            cursor.execute(query, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                inp_plg_json = row[0]
+                inp_plg = json.loads(inp_plg_json)
+                return inp_plg #inp_attr
+            else:
+                print(f"Not row: {self.module_name}")
+
+        except sqlite3.Error as e:
+            print(f"** inp_hk_mtx_from_table sqlite3.Error: {e}")
+            return []
+        
+    
+    def out_hk_mtx_from_table(self, conn, table):
+        cursor = conn.cursor()
+        query = f"SELECT output_hook_mtx_list FROM {table} WHERE unique_id = ? AND side = ?"
+        try:
+            cursor.execute(query, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                out_hk_mtx_ls_json = row[0]
+                out_hk_mtx_ls = json.loads(out_hk_mtx_ls_json)
+                return out_hk_mtx_ls #inp_attr
+            else:
+                print(f"No out_hk_mtx row: {self.module_name}")
+
+        except sqlite3.Error as e:
+            print(f"** inp_hk_mtx_from_table sqlite3.Error: {e}")
+            return []
+        
+
+    def return_inp_hk_mtx(self):
+        return self.inp_hk_mtx
+    
+    def return_out_hk_mtx(self):
+        return self.out_hk_mtx    
+
 #------------------------------------------------------------------------------
 class UpdateSpecificPlacementPOSData(DatabaseSchema):
     def __init__(self, directory, module_name, unique_id, side, updated_pos_dict):
