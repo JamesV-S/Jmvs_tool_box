@@ -15,13 +15,15 @@ from systems.sys_char_rig.module_workflow.data_managers import (module_data_mana
 from systems.sys_char_rig.module_workflow.builders import (
     build_root,
     build_spine,
-    build_bipedArm
+    build_bipedArm,
+    build_bipedLeg
     )
 
 importlib.reload(module_data_manager)
 importlib.reload(build_root)
 importlib.reload(build_spine)
 importlib.reload(build_bipedArm)
+importlib.reload(build_bipedLeg)
 
 # raw module-specific data
 root_data = {
@@ -194,6 +196,99 @@ bipedArm_data = {
         }
 }
 
+bipedLeg_data = {
+    "module_name":"bipedLeg",
+    "external_plg_dict": {
+        "global_scale_grp":"grp_Outputs_root_0_M",
+        "global_scale_atr":"globalScale",
+        "base_plg_grp":"grp_Outputs_root_0_M",
+        "base_plg_atr":"mtx_root_ctrl_fk_centre",
+        "hook_plg_grp":"grp_Outputs_spine_0_M", 
+        "hook_plg_atr":"mtx_spine_jnt_skn_bottom"
+        },
+    "output_hook_mtx_list": ["jnt_skn_ankle"],
+    "skeleton_dict":{
+        "skel_pos":{
+            "hip": [
+            10.713485142256905,
+            101.21560858499767,
+            3.5213586333990774
+            ],
+            "knee": [
+            10.832467059853887,
+            52.32378724476911,
+            -0.8462710566683249
+            ],
+            "ankle": [
+            12.465309992342632,
+            10.014450505398498,
+            -2.946292193716769
+            ],
+            "ball": [
+            15.084234639437367,
+            -1.0658141036401503e-14,
+            10.499007138903732
+            ],
+            "toe": [
+            16.447420532988694,
+            -9.603429163007607e-15,
+            17.475698893578098
+            ]
+            },
+        "skel_rot":{
+            "hip": [
+            -88.4333325154343,
+            5.104810860947571,
+            -89.86056669454882
+            ],
+            "knee": [
+            -22.303520958384812,
+            2.839429969829923,
+            -87.78988256901722
+            ],
+            "ankle": [
+            71.73512958736823,
+            -52.4081416341695,
+            -75.3445305140444
+            ],
+            "ball": [
+            0,
+            -78.9441859480629,
+            0
+            ],
+            "toe": [
+            0,
+            -78.9441859480629,
+            0]
+            }
+        },
+    "fk_dict":{
+        "fk_pos":{'ctrl_fk_bipedLeg_hip_0_L': [8.210568013295946, 103.58956847654837, 3.5213586333990783], 
+                  'ctrl_fk_bipedLeg_knee_0_L': [10.832467059853828, 52.32378724476914, -0.8462710566682234], 
+                  'ctrl_fk_bipedLeg_ankle_0_L': [12.465309992342632, 10.014450505398498, -2.946292193716769]
+                  },
+        "fk_rot":{'ctrl_fk_bipedLeg_hip_0_L': [84.46403541670776, 4.863275696808014, -87.07225805364843], 
+                  'ctrl_fk_bipedLeg_knee_0_L': [84.46403541670776, 2.8394299698300487, -87.78988256901712], 
+                  'ctrl_fk_bipedLeg_ankle_0_L': [71.73512958736823, -52.4081416341695, -75.3445305140444]
+                  }
+        },
+    "ik_dict":{
+        "ik_pos":{
+            'ctrl_ik_bipedLeg_hip_0_L': [8.210568013295946, 103.58956847654837, 3.5213586333990783], 
+            'ctrl_ik_bipedLeg_knee_0_L': [11.120205767718994, 52.39351122867606, -1.66573399079291], 
+            'ctrl_ik_bipedLeg_ankle_0_L': [12.465309992342632, 10.014450505398498, -2.946292193716769]
+            },
+        "ik_rot":{
+            'ctrl_ik_bipedLeg_hip': [0.0, 0.0, 0.0], 
+            'ctrl_ik_bipedLeg_knee': [101.69616021957262, 70.13558881565899, 13.621191891992826], 
+            'ctrl_ik_bipedLeg_ankle': [0.0, 0.0, 0.0]
+            }
+        },
+    "axis_dict":{
+        "prim":"X", "scnd":"Y", "wld":"Z"
+        }
+}
+
 # Isolated module-specific data flow
 ''' 
 1 time data processing. 
@@ -213,10 +308,15 @@ spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
 spine_build = build_spine.BuildSpine(spine_data_manager)
 spine_build.build()
 
-# # spine mdl
+# bipedArm mdl
 bipedArm_data_manager = module_data_manager.ModuleDataManager(bipedArm_data)
 bipedArm_build = build_bipedArm.BuildBipedArm(bipedArm_data_manager)
 bipedArm_build.build()
+
+# bipedLeg mdl
+bipedLeg_data_manager = module_data_manager.ModuleDataManager(bipedLeg_data)
+bipedLeg_build = build_bipedLeg.BuildBipedLeg(bipedLeg_data_manager)
+bipedLeg_build.build()
 
 
 

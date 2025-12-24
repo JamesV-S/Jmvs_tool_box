@@ -24,6 +24,32 @@ def progress_value(step, total_steps):
     pv = (step + 1) * 100 / total_steps
     return pv
 
+#------------------------------- ANIM -----------------------------------------
+
+def keyframeSelectedControls(startFrame=0, endFrame=400, interval=10):
+    """
+    Set keyframes on selected controls every N frames in a range.
+    
+    Args:
+        startFrame (int): Start frame of range
+        endFrame (int): End frame of range
+        interval (int): Frame interval between keys
+    """
+    selection = cmds.ls(selection=True, type="transform")
+    
+    if not selection:
+        cmds.warning("No controls selected.")
+        return
+    
+    for frame in range(startFrame, endFrame + 1, interval):
+        cmds.currentTime(frame)
+        for control in selection:
+            cmds.setKeyframe(control, attribute=["tx", "ty", "tz"])
+            cmds.setKeyframe(control, attribute=["rx", "ry", "rz"])
+            cmds.setKeyframe(control, attribute=["sx", "sy", "sz"])
+    
+    print(f"Keyframed {len(selection)} controls from frame {startFrame} to {endFrame} every {interval} frames.")
+
 #---------------------------- CONNECTIONS -------------------------------------
 def cr_node_if_not_exists(util_type, node_type, node_name, set_attrs=None):
     if not cmds.objExists(node_name):
@@ -743,27 +769,33 @@ def reverse_values_dict(dict):
     rev_val_dict = {key: val for key, val in zip(key_list, val_list)}
     return rev_val_dict
 
+def reorder_dict_by_key_template(dict_1, dict_2):
+        """
+        # Description: Reorder 'dict_2' based on the key order of 'dict_1'
+        # Arguments:
+            dict_1 (dict): Template dictionary defining the desired order.
+            dict_2 (dict): Dictionary to be reordered.
+        # Returns:
+            result_dict (dict) Ordered dict_2 following dict_1's key order
+        """
+        base_to_full = {}
+        dict_1_keys = list(dict_1.keys())
+        
+        for full_key in dict_2:
+            # Find which base key is in this full key.
+            for base_key in dict_1_keys:
+                if base_key in full_key:
+                    base_to_full[base_key] = full_key
+                    break
+        
+        # Build the result_dict in dict_1's order.
+        result_dict = {}
+        for base_key in dict_1_keys:
+            if base_key in base_to_full:
+                full_key = base_to_full[base_key]
+                result_dict[full_key] = dict_2[full_key]
 
-# def reverse_pos_values_dict(dictionary):
-#     # get a list of the current keys, then reverse it.
-#     value_list = [value for value in dictionary.values()]
-#     value_list.reverse()
-#     # cr new dictionary now
-#     rev_dict = {key: values for key, values in zip(dictionary.keys(), value_list)}
-#     return rev_dict
-
-
-# def reverse_rot_values_dict(dictionary):
-#     #reverse the joint order.
-#     # joint_names = list(dictionary.keys())[::-1]
-#     # print(joint_names)
-#     rev_skel_rot = {}
-#     for joint in dictionary.keys():
-#         rot = dictionary[joint]
-#         # negate Y-axis for reverse twist direction.
-#         reversed_rot = [rot[0], -rot[1], rot[2]]
-#         rev_skel_rot[joint] =reversed_rot
-#     print(f"rev_skel_rot = {rev_skel_rot}")
+        return result_dict
 
 
 #--------------------------------- COLOUR -------------------------------------

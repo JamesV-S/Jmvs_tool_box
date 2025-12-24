@@ -43,6 +43,7 @@ class RawDataFkIKDicts():
         self.ik_wld_name = constant_attr_dict['ik_wld_name']
         self.unique_id, self.side = unique_id, side
         
+        print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>> run_raw_data_calculation")
         self.run_raw_data_calculation()
 
     
@@ -92,7 +93,7 @@ class RawDataFkIKDicts():
             except:
                 pass
 
-        # print(f"fk_pos = {fk_pos}")
+        print(f"fk_pos = {fk_pos}")
         
         return fk_pos
 
@@ -116,7 +117,7 @@ class RawDataFkIKDicts():
             except:
                 pass
         
-        # print(f"fk_rot = {fk_rot}")
+        print(f"fk_rot = {fk_rot}")
 
 
         return fk_rot
@@ -133,22 +134,21 @@ class RawDataFkIKDicts():
         # Arguments: N/A
         # Return:
             ik_pos(dict): keys = ik_*module_*bone : values = rot data. 
-        '''
-        pv_pos, pv_rot = self.return_pv_pos_rot()
-        
+        '''        
         ik_pos = {}      
         for (ik_name, ik_type), (comp_name, comp_pos) in zip(self.ik_control_dict.items(), 
                                                     self.component_pos.items()):
             try:
                 if comp_name in ik_name:
                     if ik_type == "pv":
+                        pv_pos, pv_rot = self.return_pv_pos_rot(ik_name)
                         ik_pos[ik_name] = pv_pos
                     else:
                         ik_pos[ik_name] = comp_pos
             except:
                 pass
 
-        # print(f"ik_pos = {ik_pos}")
+        print(f"ik_pos = {ik_pos}")
 
         return ik_pos
 
@@ -169,100 +169,100 @@ class RawDataFkIKDicts():
         ik_rot = {}
 
         # Iterate through comp_name keys in the ik_name keys.
-        # IF 'self.*_name' attr and IF the attr in ik_name then give unique rot 
-        self.temp_ik_name_ls = []
-        hock_rot_y = self.get_ik_wld_y_rot(self.hock_name)
-        ik_wld_rot_y = self.get_ik_wld_y_rot(self.ik_wld_name)
-        for (ik_name, ik_type), (comp_name, comp_rot) in zip(self.ik_control_dict.items(), 
-                                                    self.component_rot.items()):
-            try:
-                if comp_name in ik_name:
-                    # limbRoot name
-                    self.if_constant_attr(self.limbRoot_name, ik_rot, ik_name, [0.0, 0.0, 0.0])
-                    
-                    # hock name
-                    self.if_constant_attr(self.hock_name, ik_rot, ik_name, [0.0, hock_rot_y, 0.0])
-
-                    # ik wld name
-                    self.if_constant_attr(self.ik_wld_name, ik_rot, ik_name, [0.0, ik_wld_rot_y, 0.0])         
-            except:
-                pass
-            
-            # Iterate through the two dicts again to IF an ik_name hasen't been 
-            # assigned to the 'ik_rot = {}' dict yet. And IF 'pv' type exists,
-            # assign the 'ik_rot = {}' with the pv unique rotation.
-            pv_pos, pv_rot = self.return_pv_pos_rot()
-            for (ik_name, ik_type), (comp_name, comp_rot) in zip(self.ik_control_dict.items(), 
-                                                                self.component_rot.items()):
-                if ik_name not in self.temp_ik_name_ls:
-                    # Check for 'pv' type
+        self.temp_ik_name_ls = [] # KEEP THIS! 
+        if not self.limbRoot_name == '0':
+            for (ik_name, ik_type), (comp_name, comp_rot) in zip(self.ik_control_dict.items(), self.component_rot.items()):
+                try:
                     if comp_name in ik_name:
-                        if ik_type == "pv":
-                            ik_rot[ik_name] = pv_pos
-                        else:
-                            # Uses component rotation value if no change required.
-                            ik_rot[ik_name] = comp_rot
+                        # limbRoot name
+                        self.if_constant_attr(self.limbRoot_name, ik_rot, ik_name, [0.0, 0.0, 0.0])
+                except: pass
+        if not self.hock_name == '0':
+            hock_rot_y = self.get_ik_wld_y_rot(self.hock_name)
+            for (ik_name, ik_type), (comp_name, comp_rot) in zip(self.ik_control_dict.items(), self.component_rot.items()):
+                try:
+                    if comp_name in ik_name:    
+                        self.if_constant_attr(self.hock_name, ik_rot, ik_name, [0.0, hock_rot_y, 0.0])       
+                except: pass
+        if not self.ik_wld_name == '0':
+            ik_wld_rot_y = self.get_ik_wld_y_rot(self.ik_wld_name)
+            for (ik_name, ik_type), (comp_name, comp_rot) in zip(self.ik_control_dict.items(), self.component_rot.items()):
+                try:
+                    if comp_name in ik_name:    
+                        # ik wld name
+                        self.if_constant_attr(self.ik_wld_name, ik_rot, ik_name, [0.0, ik_wld_rot_y, 0.0])       
+                except:pass
+                         
+        # Iterate through the two dicts again to IF an ik_name hasen't been 
+        # assigned to the 'ik_rot = {}' dict yet. And IF 'pv' type exists,
+        # assign the 'ik_rot = {}' with the pv unique rotation.
+        for (ik_name, ik_type), (comp_name, comp_rot) in zip(self.ik_control_dict.items(), 
+                                                            self.component_rot.items()):
+            # check for ik_name's that haven't been worked on. 
+            if ik_name not in self.temp_ik_name_ls:
+                # Check for 'pv' type
+                if comp_name in ik_name:
+                    if ik_type == "pv":
+                        pv_pos, pv_rot = self.return_pv_pos_rot(ik_name)
+                        ik_rot[ik_name] = pv_rot
+                    else:
+                        # Uses component rotation value if no change required.
+                        ik_rot[ik_name] = comp_rot
 
-        # print(f"ik_rot = {ik_rot}")
+        # reorder the dict correctly
+        ik_rot_dict = utils.reorder_dict_by_key_template(self.component_rot, ik_rot)         
 
-        return ik_rot
+        print(f"ik_rot = {ik_rot_dict}")
+        '''ik_rot_dict = {
+            'ik_bipedArm_clavicle': [-3.4416595749247123, 28.11809861520441, -7.27212163164323], 
+            'ik_bipedArm_shoulder': [0.0, 0.0, 0.0], 
+            'ik_bipedArm_elbow': [-72.84121454033767, 80.7152961363829, -73.89587586207331], 
+            'ik_bipedArm_wrist': [-27.889373436936157, -12.55776667846754, 0.7228865771539278]}'''
+
+        return ik_rot_dict
     
 
-    def return_pv_pos_rot(self):
+    def return_pv_pos_rot(self, pv_ik_name=None):
         '''
         # Description:
             Retrieve the pos & rot data for the location of a pv control based 
             off the bones positon before & after the pv bone itself. This is 
             calculated with a utils function.
-        # Arguments: N/A
+        # Arguments: 
+            pv_ik_name (string): Name of ik pv key. 
         # Return: N/A
         '''
-        # IF True, calculate & return pv pos & rot data. IF False, return two empty lists.
-        # False means the module has no pv control to calculate in the first place.  
-        
-        return_pv_data = True
-        
-        # get component.key name for pv .value()
-        pv_comp_name = []
-
-        # get pv before & after component key names.
-            # get corresponding component key names to the ik_pos names.
-        comp_key_list = []
-        for (ik_name, ik_type ), (comp_name, comp_pos) in zip(self.ik_control_dict.items(), 
-                                                    self.component_pos.items()):
-            try:
+        # If pv_ik_name is provided, we can skip the search for which one is PV
+        if pv_ik_name:
+            # get component name of the pv control
+            pv_comp_name = pv_ik_name.split('_')[-1]
+            
+            # # Get component names for all ik controls
+            comp_key_list = []
+            for (ik_name, ik_type), (comp_name, comp_pos) in zip(self.ik_control_dict.items(), 
+                                                        self.component_pos.items()):
                 if comp_name in ik_name:
                     comp_key_list.append(comp_name)
-                    if ik_type == "pv":
-                        pv_comp_name.append(comp_name)
-                    else:
-                        # Module's ctrls have no pv type
-                        return_pv_data = False
-                else:
-                    # Module has no ik ctrls
-                    return_pv_data = False
-            except:
-                # 'raw_data_ikfk_ctrls.py' Module has no ik ctrls")
-                pass
 
-            # get the before & after component names for pv.
-        pv_before_after_comp_names = []
-        for i, (key, value) in enumerate(self.ik_control_dict.items()):
-            if value == 'pv':
-                before_pv = comp_key_list[i-1] if i > 0 else None
-                after_pv = comp_key_list[i+1] if i < len(comp_key_list)-1 else None
-                pv_before_after_comp_names.append(before_pv)
-                pv_before_after_comp_names.append(after_pv)
+            # 
+            pv_before_after_comp_names = []
+            for i, (key, value) in enumerate(self.ik_control_dict.items()):
+                if value == 'pv':
+                    before_pv = comp_key_list[i-1] if i > 0 else None
+                    after_pv = comp_key_list[i+1] if i < len(comp_key_list)-1 else None
+                    pv_before_after_comp_names.append(before_pv)
+                    pv_before_after_comp_names.append(after_pv)
 
-            # get the pv rot & pos
-        if return_pv_data:
+                # get the pv rot & pos
             pv_pos, pv_rot = utils.get_pv_pos_rot(self.component_pos[pv_before_after_comp_names[0]], 
-                                                self.component_pos[pv_comp_name[0]],
+                                                self.component_pos[pv_comp_name],
                                                 self.component_pos[pv_before_after_comp_names[1]])
+            
+            return pv_pos, pv_rot
+
         else:
             pv_pos, pv_rot = [], []
-
-        return pv_pos, pv_rot
+            return pv_pos, pv_rot
 
 
     def if_constant_attr(self, const_attr, new_dict, control_name, value_data):
@@ -278,10 +278,10 @@ class RawDataFkIKDicts():
             value_data(list): pos or rot data = [#.#, #.#, #.#].
         # Return: N/A
         '''
-        if const_attr:
-            if const_attr in control_name:
-                new_dict[control_name] = value_data
-                self.temp_ik_name_ls.append(control_name)
+        # if const_attr:
+        if const_attr in control_name:
+            new_dict[control_name] = value_data
+            self.temp_ik_name_ls.append(control_name)
 
 
     def get_ik_wld_y_rot(self, attr_name):
