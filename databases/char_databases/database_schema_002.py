@@ -678,6 +678,7 @@ class RetrieveSpecificData(DatabaseSchema):
     def return_ori_plane_dict(self):
         return self.ori_plane_dict
     
+# NEW 24/12/2025 -> less other operations being retrieved from db!
 class RetrieveMtxModuleData(DatabaseSchema):
     def __init__(self, directory, module_name, unique_id, side):
         super().__init__(directory, module_name, unique_id, side)
@@ -730,6 +731,51 @@ class RetrieveMtxModuleData(DatabaseSchema):
     
     def return_out_hk_mtx(self):
         return self.out_hk_mtx    
+
+
+class RetrieveControlsData(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                self.fk_pos_dict = self.fkik_posrot_from_table(conn, "fk", "pos")
+                self.fk_rot_dict = self.fkik_posrot_from_table(conn, "fk", "rot")
+                self.ik_pos_dict = self.fkik_posrot_from_table(conn, "ik", "pos")
+                self.ik_rot_dict = self.fkik_posrot_from_table(conn, "ik", "rot")
+        except sqlite3.Error as e:
+            print(f"DB* module umo update Error: {e}")
+    
+    
+    def fkik_posrot_from_table(self, conn, type, value):
+        cursor = conn.cursor()
+        query = f"SELECT {type}_{value} FROM controls WHERE unique_id = ? AND side = ?"
+        try:
+            cursor.execute(query, (self.unique_id, self.side,))
+            row = cursor.fetchone()
+            if row:
+                ctrl_dict_json = row[0]
+                ctrl_dict = json.loads(ctrl_dict_json)
+                return ctrl_dict #inp_attr
+            else:
+                print(f"Not row: {self.module_name}")
+
+        except sqlite3.Error as e:
+            print(f"** fkik_pos_from_table() sqlite3.Error: {e}")
+            return []
+
+
+    def return_fk_pos_dict(self):
+        return self.fk_pos_dict
+    
+    def return_fk_rot_dict(self):
+        return self.fk_rot_dict    
+    
+    def return_ik_pos_dict(self):
+        return self.ik_pos_dict
+    
+    def return_ik_rot_dict(self):
+        return self.ik_rot_dict    
+
 
 #------------------------------------------------------------------------------
 class UpdateSpecificPlacementPOSData(DatabaseSchema):

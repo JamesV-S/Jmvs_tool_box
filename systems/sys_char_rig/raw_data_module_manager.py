@@ -189,6 +189,83 @@ class GetOutputPlgList(RawDataDict):
         return self.output_hook_mtx_list
 
 
+class GetSkelDicts(RawDataDict):
+    def __init__(self, mdl_component_name, rig_folder):
+        super().__init__(mdl_component_name, rig_folder)
+        
+        self.skel_dict = self.raw_data['skeleton_dict']
+        self.set_skel_pos_rot()
+
+
+    def set_skel_pos_rot(self):
+        rig_db_directory = utils_os.create_directory(
+                "Jmvs_tool_box", "databases", "char_databases", 
+                "db_rig_storage", self.rig_folder
+                )
+        get_comp_pos_data = database_schema_002.RetrievePlacementData(
+            rig_db_directory, self.mdl_name, self.unique_id, self.side
+            )
+        self.skel_dict['skel_pos'] = get_comp_pos_data.return_existing_pos_dict()
+        self.skel_dict['skel_rot'] = get_comp_pos_data.return_existing_rot_dict()
+        print(f"skel_pos = {self.skel_dict['skel_pos']}")
+        print(f"skel_rot = {self.skel_dict['skel_rot']}")
+
+    def return_skel_dict(self):
+        return self.skel_dict
+
+
+class GetFkIkDicts(RawDataDict):
+    def __init__(self, mdl_component_name, rig_folder):
+        super().__init__(mdl_component_name, rig_folder)
+        
+        self.fk_dict = self.raw_data['fk_dict']
+        self.ik_dict = self.raw_data['ik_dict']
+
+        rig_db_directory = utils_os.create_directory(
+                        "Jmvs_tool_box", "databases", "char_databases", 
+                        "db_rig_storage", self.rig_folder
+                        )
+        self.get_control_data = database_schema_002.RetrieveControlsData(
+            rig_db_directory, self.mdl_name, self.unique_id, self.side
+            )
+        
+        self.set_fk_pos_rot()
+        self.set_ik_pos_rot()
+
+    def set_fk_pos_rot(self):
+        # get the base dicts.
+        fk_pos = self.get_control_data.return_fk_pos_dict()
+        fk_rot = self.get_control_data.return_fk_rot_dict()
+        # Add correct namespace.
+        fk_pos = {f"ctrl_{k}_{self.unique_id}_{self.side}": v for k, v in fk_pos.items()}
+        fk_rot = {f"ctrl_{k}_{self.unique_id}_{self.side}": v for k, v in fk_rot.items()}
+        # add to raw_data dict.
+        self.fk_dict['fk_pos'] = fk_pos
+        self.fk_dict['fk_rot'] = fk_rot
+    
+        print(f"& fk_pos :: {self.fk_dict['fk_pos']} ")
+        print(f"& fk_pos :: {self.fk_dict['fk_rot']} ")
+
+
+    def set_ik_pos_rot(self):
+        # get the base dicts.
+        ik_pos = self.get_control_data.return_ik_pos_dict()
+        ik_rot = self.get_control_data.return_ik_rot_dict()
+        # Add correct namespace.
+        ik_pos = {f"ctrl_{k}_{self.unique_id}_{self.side}": v for k, v in ik_pos.items()}
+        ik_rot = {f"ctrl_{k}_{self.unique_id}_{self.side}": v for k, v in ik_rot.items()}
+        # add to raw_data dict.
+        self.ik_dict['ik_pos'] = ik_pos
+        self.ik_dict['ik_rot'] = ik_rot
+    
+        print(f"& ik_pos :: {self.ik_dict['ik_pos']} ")
+        print(f"& ik_pos :: {self.ik_dict['ik_rot']} ")
+
+
+    def return_fk_ik_pos_rot(self):
+        return self.fk_dict, self.ik_dict
+
+
 class RawDataManager(RawDataDict):
     def __init__(self, mdl_component_name, rig_folder):
         super().__init__(mdl_component_name, rig_folder)
@@ -197,8 +274,6 @@ class RawDataManager(RawDataDict):
         '''
         print("--------------------------------------------------------------")
         
-        print("is 'RawDataManager' working")
-        
         # go down the dicrionary & update it. 
         self.raw_data['module_name'] = self.mdl_name
         print(f"*RD raw data module_name = {self.raw_data['module_name']}")
@@ -206,40 +281,21 @@ class RawDataManager(RawDataDict):
         get_ext_plg_dict = GetExternalPlgDict(mdl_component_name, rig_folder)
         self.raw_data['external_plg_dict'] = get_ext_plg_dict.return_ext_plg_dict()
         print(f"*RD ext_plg_dict = {self.raw_data['external_plg_dict']}")
-        '''ext_plg_dict = {
-            'global_scale_grp': 'grp_Outputs_root_0_M', 
-            'global_scale_atr': 'globalScale', 
-            'base_plg_grp': 'grp_Outputs_root_0_M', 
-            'base_plg_atr': 'mtx_root_ctrl_fk_centre', 
-            'hook_plg_grp': 'grp_Outputs_spine_0_M', 
-            'hook_plg_atr': 'mtx_spine_jnt_skn_bottom'
-            }'''
         
         get_out_mtx_list = GetOutputPlgList(mdl_component_name, rig_folder)
         self.raw_data['output_hook_mtx_list'] = get_out_mtx_list.return_output_hook_mtx_list()
         print(f"*RD output_hook_mtx_list = {self.raw_data['output_hook_mtx_list']}")
 
-        print(f"*RD self.raw_data = {self.raw_data}")
-'''        
-{
-'module_name': 'bipedLeg', 
-'external_plg_dict': {
-        'global_scale_grp': 'grp_Outputs_root_0_M', 
-        'global_scale_atr': 'globalScale', 
-        'base_plg_grp': 'grp_Outputs_root_0_M', 
-        'base_plg_atr': 'mtx_root_ctrl_fk_centre', 
-        'hook_plg_grp': 'grp_Outputs_spine_0_M', 
-        'hook_plg_atr': 'mtx_spine_jnt_skn_bottom'
-        }, 
-'output_hook_mtx_list': ['jnt_skn_ankle'], 
+        get_skel_dicts = GetSkelDicts(mdl_component_name, rig_folder)
+        skeleton_dict = get_skel_dicts.return_skel_dict()
+        self.raw_data['skeleton_dict'] = skeleton_dict
 
-# NEXT: 
-'skeleton_dict': {'skel_pos': {}, 'skel_rot': {}}, 
-'fk_dict': {'fk_pos': {}, 'fk_rot': {}}, 
-'ik_dict': {'ik_pos': {}, 'ik_rot': {}}, 
-'axis_dict': {'prim': 'X', 'scnd': 'Y', 'wld': 'Z'}
-}
-'''
+        fkik_posrot = GetFkIkDicts(mdl_component_name, rig_folder)
+        fk_dict, ik_dict = fkik_posrot.return_fk_ik_pos_rot()
+        self.raw_data['fk_dict'] = fk_dict
+        self.raw_data['ik_dict'] = ik_dict
+        
+        print(f"*RD self.raw_data = {self.raw_data}")
 
 
 RawDataManager("bipedLeg_0_L", "DB_jmvs_modules_rig")
