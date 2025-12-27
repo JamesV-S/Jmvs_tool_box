@@ -84,7 +84,7 @@ class BuildBipedLeg(module_blueprint.ModuleBP, system_bipedLeg.SystemBipedLeg):
         bc_ikfk_stretch, logic_ik_hdl = self.wire_ik_logic_elements(input_grp, logic_jnt_list, self.dm.ik_ctrl_list, db_hip_ankle, db_hip_kne, db_kne_akl)
         self.group_logic_elements(logic_jnt_list, logic_ik_hdl, [cv_upper, cv_lower])
 
-        skn_jnt_ankle_ik_plg, skn_jnt_ankle_fk_plg = self.wire_jnt_skn_wrist(skn_jnt_ankle, logic_jnt_list, self.dm.fk_ctrl_list, self.dm.ik_ctrl_list)
+        skn_jnt_ankle_ik_plg, skn_jnt_ankle_fk_plg = self.wire_jnt_skn_wrist(skn_jnt_ankle, logic_jnt_list, self.dm.fk_ctrl_list[:-1], self.dm.ik_ctrl_list)
 
         mdl_settings_ctrl, ikfk_plug, stretch_state_plug, stretch_vol_plug, shaper_plug  = self.wire_mdl_setting_ctrl(skn_jnt_ankle)
         
@@ -103,14 +103,16 @@ class BuildBipedLeg(module_blueprint.ModuleBP, system_bipedLeg.SystemBipedLeg):
         self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
 
         hdl_upper, hdl_lower = self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
-        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[0], logic_jnt_list)
+        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[0], logic_jnt_list, self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         fm_upp_global, fm_low_global = self.wire_skn_twist_joints_stretch(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
         self.wire_skn_twist_joints_volume(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global, db_hip_kne, db_kne_akl)
-        self.wire_rotations_on_twist_joints(logic_jnt_list, skn_jnt_ankle, self.dm.ik_ctrl_list[0], hdl_upper, hdl_lower)
+        self.wire_rotations_on_twist_joints(skn_jnt_ankle, self.dm.ik_ctrl_list[0], logic_jnt_list[0], logic_jnt_list[1], hdl_upper, hdl_lower)
 
         self.parent_ik_ctrls_out(self.dm.ik_ctrl_list, self.dm.fk_ctrl_list)
-        self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], logic_jnt_list[1], ik_ctrl_grp)
-        self.lock_ctrl_attributes(self.dm.fk_ctrl_list)
+        # self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], logic_jnt_list[1], ik_ctrl_grp)
+        # self.lock_ctrl_attributes(self.dm.fk_ctrl_list)
+        
+        
 
         self.output_group_setup(self.dm.output_hook_mtx_list)
 
@@ -119,3 +121,5 @@ class BuildBipedLeg(module_blueprint.ModuleBP, system_bipedLeg.SystemBipedLeg):
                     f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
                     f"grp_joints_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
                     f"grp_logic_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+        
+        cmds.setAttr("ctrl_bipedLeg_settings_0_L.Vis_Shapers", 0)

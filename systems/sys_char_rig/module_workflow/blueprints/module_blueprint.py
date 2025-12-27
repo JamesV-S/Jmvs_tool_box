@@ -204,7 +204,7 @@ class ModuleBP:
                 - base & limbRt to multMatrix each > blendMatrix.
                 - setup the fk controls with MM method. 
                 - connect ctrl rotates to fk joints rotates (direct or constraint -> depends on the module setup)
-                Temporary loactors are used to position the fk control's with 
+                Temporary locators are used to position the fk control's with 
                 rotation data, using the locators local space matrix as an offset.
                 After the data is passed to the control correctly, temp locs r deleted.  
         # Attributes:
@@ -424,6 +424,145 @@ class ModuleBP:
         utils.connect_attr(f"{pv_jnt}{utils.Plg.wld_mtx_plg}", f"{pmm_jnt}{utils.Plg.inMtx_plg}")
         utils.connect_attr(f"{pmm_ctrl}{utils.Plg.output_plg}", f"{ref_curve_shape}.controlPoints[0]")
         utils.connect_attr(f"{pmm_jnt}{utils.Plg.output_plg}", f"{ref_curve_shape}.controlPoints[1]")
+
+
+    def wire_parent_skn_twist_joint_matrix(self, upp_jnt_chain, low_jnt_chain, limbRt_ctrl, logic_jnt_list, skel_pos_dict, skel_rot_dict):
+        '''
+        # Description:
+            The parent of each joint chain (Upper/Lower) has driven OPM.
+            - Upper prnt driven by 'arm root control' 
+            - lower prnt driven by 'jnt logic elbow' 
+        # Arguments:
+            
+        # Returns: N/A
+        '''
+        jnt_skn_upp_parent = upp_jnt_chain[0]
+        jnt_skn_low_parent = low_jnt_chain[0]
+        mm_skn_upp_parent = f"mm_{jnt_skn_upp_parent}"
+        mm_skn_low_parent = f"mm_{jnt_skn_low_parent}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_upp_parent)
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_low_parent)
+        
+        utils.clean_opm(jnt_skn_upp_parent)
+        utils.clean_opm(jnt_skn_low_parent)
+
+        # wire upper
+            # > mm_skn_upp_parent
+        utils.set_transformation_matrix(list(skel_pos_dict.values())[0], list(skel_rot_dict.values())[0], f"{mm_skn_upp_parent}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{limbRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{mm_skn_upp_parent}{utils.Plg.mtx_ins[1]}")
+            # > jnt_skn_upp_parent
+        utils.connect_attr(f"{mm_skn_upp_parent}{utils.Plg.mtx_sum_plg}", f"{jnt_skn_upp_parent}{utils.Plg.opm_plg}")
+        
+        # wire lower
+            # > mm_skn_low_parent
+        utils.set_transformation_matrix(list(skel_pos_dict.values())[1], [0.0, 0.0, 0.0], f"{mm_skn_low_parent}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{logic_jnt_list[1]}{utils.Plg.wld_mtx_plg}", f"{mm_skn_low_parent}{utils.Plg.mtx_ins[1]}")
+            # > jnt_skn_low_parent
+        utils.connect_attr(f"{mm_skn_low_parent}{utils.Plg.mtx_sum_plg}", f"{jnt_skn_low_parent}{utils.Plg.opm_plg}")
+
+
+    def wire_rotations_on_twist_joints(self, skn_jnt_end, ctrl_limb_root, jnt_logic_upper, jnt_logic_lower, hdl_upper, hdl_lower):
+        '''
+        # Description:
+            Twisting of the upper & lower skn joint chains are driven by their 
+            ik handle's .twist attribute.
+            - Upper handle twisting is driven by jnt_logic_upper & jnt_logic_lower  
+            - lower handle twisting is driven by jnt_logic_lower & jnt_skn_end
+        # Arguments:
+            
+        # Returns:
+            hdl_upper_name (string): name of upper spring solver ik handle 
+            hdl_lower_name (string): name of lower spring solver ik handle
+        '''
+        # jnt_logic_upper = logic_jnt_list[0]
+        # jnt_logic_lower = logic_jnt_list[1]
+
+        # upper 7 utility nodes
+        im_upp_fk_twist = f"IM_twist_fkNonRoll_{hdl_upper}"
+        mm_upp_fk_twist = f"MM_twist_fkNonRoll_{hdl_upper}"
+        dm_upp_fk_twist = f"DM_twist_fkNonRoll_{hdl_upper}"
+        quatToEuler_upp_fk_twist = f"QTE_twist_fkNonRoll_{hdl_upper}"
+        mm_upp_twist = f"MM_twist_NonRoll_{hdl_upper}"
+        dm_upp_twist = f"DM_twist_NonRoll_{hdl_upper}"
+        quatToEuler_upp_twist = f"QTE_twist_NonRoll_{hdl_upper}"
+        fm_upp_twist = f"FM_jntTwistValue_add_{hdl_upper}"
+
+        utils.cr_node_if_not_exists(1, 'inverseMatrix', im_upp_fk_twist)
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_upp_fk_twist)
+        utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_upp_fk_twist)
+        utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_upp_fk_twist)
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_upp_twist)
+        utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_upp_twist)
+        utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_upp_twist)
+        utils.cr_node_if_not_exists(1, 'floatMath', fm_upp_twist, {"operation":0})
+
+        # temp locator ( to compare 'jnt_logic_upper' with its own initial rotation state inverted. )
+        temp_loc_upper = f"loc_temp_upper_{ctrl_limb_root.replace('ctrl_', 'loc_')}"
+        cmds.spaceLocator(n=temp_loc_upper)
+        cmds.matchTransform(temp_loc_upper, jnt_logic_upper, pos=1, scl=0, rot=1)
+        cmds.parent(temp_loc_upper, ctrl_limb_root)
+        get_matrix = cmds.getAttr(f"{temp_loc_upper}.matrix")
+        cmds.setAttr(f"{im_upp_fk_twist}{utils.Plg.inp_mtx_plg}", *get_matrix, type="matrix")
+
+        # wire Upper 
+            # fk_nonRoll
+            # > mm_upp_fk_twist
+        utils.connect_attr(f"{jnt_logic_upper}{utils.Plg.wld_mtx_plg}", f"{mm_upp_fk_twist}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{im_upp_fk_twist}{utils.Plg.out_mtx_plg}", f"{mm_upp_fk_twist}{utils.Plg.mtx_ins[1]}")
+            # > dm_upp_fk_twist
+        utils.connect_attr(f"{mm_upp_fk_twist}{utils.Plg.mtx_sum_plg}", f"{dm_upp_fk_twist}{utils.Plg.inp_mtx_plg}")
+            # > quatToEuler_upp_fk_twist
+        utils.connect_attr(f"{dm_upp_fk_twist}.outputQuatX", f"{quatToEuler_upp_fk_twist}.inputQuatX")
+        utils.connect_attr(f"{dm_upp_fk_twist}.outputQuatW", f"{quatToEuler_upp_fk_twist}.inputQuatW")
+            # nonRoll
+            # > mm_upp_twist
+        utils.connect_attr(f"{jnt_logic_lower}{utils.Plg.wld_mtx_plg}", f"{mm_upp_twist}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{jnt_logic_upper}{utils.Plg.wld_inv_mtx_plg}", f"{mm_upp_twist}{utils.Plg.mtx_ins[1]}")
+            # > dm_upp_twist
+        utils.connect_attr(f"{mm_upp_twist}{utils.Plg.mtx_sum_plg}", f"{dm_upp_twist}{utils.Plg.inp_mtx_plg}")
+            # > quatToEuler_upp_twist
+        utils.connect_attr(f"{dm_upp_twist}.outputQuatX", f"{quatToEuler_upp_twist}.inputQuatX")
+        utils.connect_attr(f"{dm_upp_twist}.outputQuatW", f"{quatToEuler_upp_twist}.inputQuatW")
+            # > fm_upp_twist
+        utils.connect_attr(f"{quatToEuler_upp_fk_twist}.outputRotateX", f"{fm_upp_twist}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{quatToEuler_upp_twist}.outputRotateX", f"{fm_upp_twist}{utils.Plg.flt_B}")
+            # > hdl_upper.twist
+        utils.connect_attr(f"{fm_upp_twist}{utils.Plg.out_flt}", f"{hdl_upper}.twist")
+        cmds.delete(temp_loc_upper)
+
+        # lower 3 utility nodes
+        im_low_twis = f"IM_twist_NonRoll_{hdl_lower}"
+        mm_low_twist = f"MM_twist_NonRoll_{hdl_lower}"
+        # pm_low_twist = f"PMtx_twist_NonRoll_{hdl_lower}"
+        dm_low_twist = f"DM_twist_NonRoll_{hdl_lower}"
+        quatToEuler_low_twist = f"QTE_twist_NonRoll_{hdl_lower}"
+
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_low_twist)
+        utils.cr_node_if_not_exists(1, 'inverseMatrix', im_low_twis)
+        utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_low_twist)
+        utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_low_twist)
+
+        # temp locator ( to compare 'jnt_logic_upper' with its own initial rotation state inverted. )
+        temp_loc_lower = f"loc_temp_lower_{ctrl_limb_root.replace('ctrl_', 'loc_')}"
+        cmds.spaceLocator(n=temp_loc_lower)
+        cmds.matchTransform(temp_loc_lower, skn_jnt_end, pos=1, scl=0, rot=1)
+        cmds.parent(temp_loc_lower, ctrl_limb_root)
+        get_matrix = cmds.getAttr(f"{temp_loc_lower}.matrix")
+        cmds.setAttr(f"{im_low_twis}{utils.Plg.inp_mtx_plg}", *get_matrix, type="matrix")
+
+        # wire lower 
+            # > mm_low_twist
+        utils.connect_attr(f"{skn_jnt_end}{utils.Plg.wld_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{im_low_twis}{utils.Plg.out_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[1]}")
+
+            # > dm_low_twist
+        utils.connect_attr(f"{mm_low_twist}{utils.Plg.mtx_sum_plg}", f"{dm_low_twist}{utils.Plg.inp_mtx_plg}")
+            # > quatToEuler_upp_twist
+        utils.connect_attr(f"{dm_low_twist}.outputQuatX", f"{quatToEuler_low_twist}.inputQuatX")
+        utils.connect_attr(f"{dm_low_twist}.outputQuatW", f"{quatToEuler_low_twist}.inputQuatW")
+            # > hdl_lower.twist
+        utils.connect_attr(f"{quatToEuler_low_twist}.outputRotateX", f"{hdl_lower}.twist")
+        cmds.delete(temp_loc_lower)
 
 
     # Phase 3 - Finalising ( Phase 2 - Module-specific class functions in 'System[ModuleName]' )

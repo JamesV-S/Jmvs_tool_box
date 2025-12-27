@@ -103,10 +103,10 @@ class BuildBipedArm(module_blueprint.ModuleBP, system_bipedArm.SystemBipedArm):
         self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
 
         hdl_upper, hdl_lower = self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
-        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[1], logic_jnt_list)
+        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[1], logic_jnt_list, self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         fm_upp_global, fm_low_global = self.wire_skn_twist_joints_stretch(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
         self.wire_skn_twist_joints_volume(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global, d_shld_elb, d_elb_wrist)
-        self.wire_rotations_on_twist_joints(logic_jnt_list, skn_jnt_wrist, self.dm.ik_ctrl_list[1], hdl_upper, hdl_lower)
+        self.wire_rotations_on_twist_joints(skn_jnt_wrist, self.dm.ik_ctrl_list[1], logic_jnt_list[0], logic_jnt_list[1], hdl_upper, hdl_lower)
 
         self.parent_ik_ctrls_out(self.dm.ik_ctrl_list)
         self.wire_pv_reference_curve(self.dm.ik_ctrl_list[2], logic_jnt_list[1], ik_ctrl_grp)
