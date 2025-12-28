@@ -531,29 +531,29 @@ class ModuleBP:
         cmds.delete(temp_loc_upper)
 
         # lower 3 utility nodes
-        im_low_twis = f"IM_twist_NonRoll_{hdl_lower}"
+        # im_low_twis = f"IM_twist_NonRoll_{hdl_lower}"
         mm_low_twist = f"MM_twist_NonRoll_{hdl_lower}"
         # pm_low_twist = f"PMtx_twist_NonRoll_{hdl_lower}"
         dm_low_twist = f"DM_twist_NonRoll_{hdl_lower}"
         quatToEuler_low_twist = f"QTE_twist_NonRoll_{hdl_lower}"
 
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_low_twist)
-        utils.cr_node_if_not_exists(1, 'inverseMatrix', im_low_twis)
+        # utils.cr_node_if_not_exists(1, 'inverseMatrix', im_low_twis)
         utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_low_twist)
         utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_low_twist)
 
         # temp locator ( to compare 'jnt_logic_upper' with its own initial rotation state inverted. )
-        temp_loc_lower = f"loc_temp_lower_{ctrl_limb_root.replace('ctrl_', 'loc_')}"
-        cmds.spaceLocator(n=temp_loc_lower)
-        cmds.matchTransform(temp_loc_lower, skn_jnt_end, pos=1, scl=0, rot=1)
-        cmds.parent(temp_loc_lower, ctrl_limb_root)
-        get_matrix = cmds.getAttr(f"{temp_loc_lower}.matrix")
-        cmds.setAttr(f"{im_low_twis}{utils.Plg.inp_mtx_plg}", *get_matrix, type="matrix")
+        # temp_loc_lower = f"loc_temp_lower_{ctrl_limb_root.replace('ctrl_', 'loc_')}"
+        # cmds.spaceLocator(n=temp_loc_lower)
+        # cmds.matchTransform(temp_loc_lower, skn_jnt_end, pos=1, scl=0, rot=1)
+        # cmds.parent(temp_loc_lower, ctrl_limb_root)
+        # get_matrix = cmds.getAttr(f"{temp_loc_lower}.matrix")
+        # cmds.setAttr(f"{im_low_twis}{utils.Plg.inp_mtx_plg}", *get_matrix, type="matrix")
 
         # wire lower 
             # > mm_low_twist
         utils.connect_attr(f"{skn_jnt_end}{utils.Plg.wld_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[0]}")
-        utils.connect_attr(f"{im_low_twis}{utils.Plg.out_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{jnt_logic_lower}{utils.Plg.wld_inv_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[1]}")
 
             # > dm_low_twist
         utils.connect_attr(f"{mm_low_twist}{utils.Plg.mtx_sum_plg}", f"{dm_low_twist}{utils.Plg.inp_mtx_plg}")
@@ -562,7 +562,7 @@ class ModuleBP:
         utils.connect_attr(f"{dm_low_twist}.outputQuatW", f"{quatToEuler_low_twist}.inputQuatW")
             # > hdl_lower.twist
         utils.connect_attr(f"{quatToEuler_low_twist}.outputRotateX", f"{hdl_lower}.twist")
-        cmds.delete(temp_loc_lower)
+        # cmds.delete(temp_loc_lower)
 
 
     # Phase 3 - Finalising ( Phase 2 - Module-specific class functions in 'System[ModuleName]' )

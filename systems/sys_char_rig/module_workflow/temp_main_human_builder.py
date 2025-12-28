@@ -214,25 +214,25 @@ bipedLeg_data = {'module_name': 'bipedLeg',
 ''' 
 # 1 time data processing. 
 # # '''
-# root_data_manager = module_data_manager.ModuleDataManager(root_data)
-# root_build = build_root.BuildRoot(root_data_manager)
-# # Manual build order
-# '''
-# `.build()` is a class function from the Build[ModuleName] class. 
-# # Root first
-# # Spine Second
-# '''
-# root_build.build()
+root_data_manager = module_data_manager.ModuleDataManager(root_data)
+root_build = build_root.BuildRoot(root_data_manager)
+# Manual build order
+'''
+`.build()` is a class function from the Build[ModuleName] class. 
+# Root first
+# Spine Second
+'''
+root_build.build()
 
-# # spine mdl
-# spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
-# spine_build = build_spine.BuildSpine(spine_data_manager)
-# spine_build.build()
+# spine mdl
+spine_data_manager = module_data_manager.ModuleDataManager(spine_data)
+spine_build = build_spine.BuildSpine(spine_data_manager)
+spine_build.build()
 
-# # bipedArm mdl
-# bipedArm_data_manager = module_data_manager.ModuleDataManager(bipedArm_data)
-# bipedArm_build = build_bipedArm.BuildBipedArm(bipedArm_data_manager)
-# bipedArm_build.build()
+# bipedArm mdl
+bipedArm_data_manager = module_data_manager.ModuleDataManager(bipedArm_data)
+bipedArm_build = build_bipedArm.BuildBipedArm(bipedArm_data_manager)
+bipedArm_build.build()
 
 # bipedLeg mdl
 bipedLeg_data_manager = module_data_manager.ModuleDataManager(bipedLeg_data)

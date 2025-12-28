@@ -295,7 +295,11 @@ class RawDataManager(RawDataDict):
         self.raw_data['fk_dict'] = fk_dict
         self.raw_data['ik_dict'] = ik_dict
         
-        print(f"*RD self.raw_data = {self.raw_data}")
+        print(f"*RD raw_data_{self.mdl_name}_{self.unique_id}_{self.side} = {self.raw_data}")
 
 
-RawDataManager("bipedLeg_0_L", "DB_jmvs_modules_rig")
+RawDataManager("bipedArm_0_L", "DB_jmvs_testing_rig")
+
+# Fixes to raw_data_ikfk_posrot script:
+    # - [0.0, 0.0, 0.0] on ik_clav & ik_rot (all limb modules).
+    # - remove fk clavicle from fk pos (biped/QuadArm) .
