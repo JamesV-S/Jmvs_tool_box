@@ -20,12 +20,15 @@ importlib.reload(raw_data_module_manager)
 '''
 
 '''
-To Pass to the class:
-- Component module name like bipedArm_0_L. 
-- Rig folder directory. 
-
-> Searches rig folder directory for appropriate database to retrieve raw data 
+# Description:
+    Searches rig folder directory for appropriate database to retrieve raw data 
     from.
+    
+    To Pass to the class:
+    - Component module name like bipedArm_0_L. 
+    - Rig folder directory. 
+
+    > 
 '''
 
 class RawDataDict:

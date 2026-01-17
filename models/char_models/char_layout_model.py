@@ -216,7 +216,7 @@ class CharLayoutModel:
         # Description:
             Update the component's database with by cl;acualting NEW fk/ik_pos/rot 
             raw data! 
-        # Attributes:
+        # Arguments:
             component_selection (string): Name of the selected component on GUI.
             val_availableRigComboBox (string): Name of the folder the .db file 
             of this component resides in.
@@ -273,7 +273,7 @@ class CharLayoutModel:
             -> 'Character Database' (QTreeView)
             -> 'External Input Hook' (QListView)
             -> 'Output Hook' (QListView)
-        # Attributes:
+        # Arguments:
             val_availableRigComboBox (string): Name of the rig grp that stores 
                                                 all .db files for each module 
                                                 of the rig.
@@ -328,7 +328,7 @@ class CharLayoutModel:
         # Description:
             Add items to the QTreeView model. Items being the module name & 
             components within it.
-        # Attributes:
+        # Arguments:
             mdl_tree_model (QTreeModel): Model of the tree view.
             rig_folder_name (string): Name of the rig folder for debugging & 
             printing purposes only.
@@ -371,7 +371,7 @@ class CharLayoutModel:
         # Description:
             Add items to the QTreeView model. Items being the module name & 
             components within it.
-        # Attributes:
+        # Arguments:
         # Reuturn: N/A 
         '''
 
@@ -677,7 +677,7 @@ class CharLayoutModel:
         # Description:
         Call util functions to set the X (first item of a rotation list) of 
         selected ori_guides to the same as the last orig_guide in the list
-        # Attributes:
+        # Arguments:
             guide_selection (list): Selected ori_guides in the scene. 
         # Returns: N/A 
         '''
@@ -687,7 +687,7 @@ class CharLayoutModel:
 
     # ---- External Input Hook Matrix functions ----
     '''
-    There is a hierarchy for the UI widgets:
+    There is a hierarchy for the UI widget's change:
     - inp_hk_mtx_QList (clicked)
         |- inp_hk_mtx_CB_obj (Current Index Change)
             |- inp_hk_mtx_CB_prim (Current Index Change & Items Change)
@@ -695,37 +695,60 @@ class CharLayoutModel:
     '''
 
     def get_db_inp_hook_mtx_from_Qlist(self, component_name, val_availableRigComboBox):
-        # 2. get input_hook attr from db. put into list. 
+        '''
+        # Description: 
+            Get the `external input_hook_mtx_plg list` from selected component db: `[*object.*attr]`
+        # Arguments:
+            component_name (string): Name of the component in .db file to retirve data from. 
+            val_availableRigComboBox (string): Name of the current rig database folder.
+        # Return: 
+            db_inp_hook_mtx_ls (list): [*object.*attr]
+        '''
         module, unique_id, side = utils.get_name_id_data_from_component(component_name)
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, val_availableRigComboBox
             )
-        # print(f"self.val_availableRigComboBox: {self.val_availableRigComboBox}")
         get_user_settings_data = database_schema_002.RetrieveSpecificData(rig_db_directory, module, unique_id, side)
         db_inp_hook_mtx_ls = get_user_settings_data.return_inp_hk_mtx()
-        print(f"comp_selected = '{component_name}' : inp_mtx_ls = {db_inp_hook_mtx_ls}")
+
         return db_inp_hook_mtx_ls
 
 
     def get_db_out_hook_mtx_from_comboBox(self, ext_obj_component_name, val_availableRigComboBox):
-        # obj_component_name = component name of the ext object. 
+        '''
+        # Description: 
+            Get the `output_hook_mtx_list` from .db file using `object QComboBox` 
+            as the component name.
+        # Arguments:
+            ext_obj_component_name (string): Name of the component in .db file to retirve data from. 
+            val_availableRigComboBox (string): Name of the current rig database folder.
+        # Return: 
+            db_out_hook_mtx_ls (list): [*attr, *attr]
+        '''
         module, unique_id, side = utils.get_name_id_data_from_component(ext_obj_component_name)
-        print(f"ext_obj_component_name: {ext_obj_component_name} ")
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, val_availableRigComboBox
             )
-        print(f"rig_db_directory: {rig_db_directory}")
         get_user_settings_data = database_schema_002.RetrieveSpecificData(
             rig_db_directory, module, unique_id, side
             )
-        # get the matrix's to add to dictionary!
         db_out_hook_mtx_ls = get_user_settings_data.return_out_hk_mtx()
+
         return db_out_hook_mtx_ls
 
 
     def get_inp_hook_mtx_obj_data(self, db_inp_hook_mtx_ls):
+        '''
+        # Description: 
+            Seperate the object & attr from the `external input_hook_mtx_plg list`.
+        # Arguments:
+            db_inp_hook_mtx_ls (list): [*object.*attr] is `external input_hook_mtx_plg list`.
+        # Return: 
+            ext_obj_ls (list): Object of the `external input_hook_mtx_plg list`
+            ext_atr_ls (list): Attr's of the `external input_hook_mtx_plg list`
+        '''
         ext_obj_ls = []
         ext_atr_ls = []
         for inp_plg in db_inp_hook_mtx_ls:
@@ -737,13 +760,12 @@ class CharLayoutModel:
         
         # ext_obj_ls should only ever hold 1 module name (cus more than 1 means a duplicate)
         if len(ext_obj_ls) > 1:
-            print(f"ext_obj_ls greater than 1")
             ext_obj_ls = ext_obj_ls[:1]
 
         return ext_obj_ls, ext_atr_ls
 
 
-    def get_out_hook_mtx_atr_data(self, db_out_hook_mtx_ls):
+    def cr_out_hook_mtx_atr_dict(self, db_out_hook_mtx_ls):
         ext_atr_dict = {
             'ext_prim':"", 
             'ext_scnd':"", 
@@ -762,6 +784,7 @@ class CharLayoutModel:
     
     def set_inp_hook_obj_comboBox(self, Qlist_compnent_names, ext_obj_ls, view_cb_obj):
         print(f"*set_inp_hook_obj_comboBox: ext_obj_ls = {ext_obj_ls}")
+
         obj_match = None
         ext_inp_hk_comp_ls = []
         for obj in ext_obj_ls:
@@ -792,36 +815,98 @@ class CharLayoutModel:
 
             # update obj comboBox
         print(f"Update obj = {update_obj}")
+        # Set the cb to 'None' before setting again. 
+        view_cb_obj.setCurrentText('None')
         view_cb_obj.setCurrentText(update_obj)
 
 
-    def set_inp_hook_atrs_comboBox_items(self, ext_atr_dict, view_cb_prim, view_cb_scnd):
-        '''----------MODEL--------SET PRIM & SCND---------------------------'''
+    def set_inp_hook_atrs_comboBox_items(self, external_atr_dict, view_cb_prim, view_cb_scnd):
+        '''
+        # Description:
+            Add the possible external input hook attribute as items to the `prim` 
+            & `scnd` QComboBox's using the dict `external_atr_dict`.
+        # Arguments:
+            external_atr_dict (dict): {keys: 'prim'/'scnd', values:*atr}
+            view_cb_prim (QComboBox): primary external hook comboBox
+            view_cb_prim (QComboBox): secondary external hook comboBox
+        # Return: N/A
+        '''
         view_cb_prim.clear()
         view_cb_scnd.clear()
         view_cb_prim.addItem('None')
         view_cb_scnd.addItem('None')
+        if external_atr_dict:
+            view_cb_prim.addItem(external_atr_dict['ext_prim'])
+            view_cb_prim.addItem(external_atr_dict['ext_scnd'])
+            view_cb_scnd.addItem(external_atr_dict['ext_prim'])
+            view_cb_scnd.addItem(external_atr_dict['ext_scnd'])
 
-        if ext_atr_dict:
-            view_cb_prim.addItem(ext_atr_dict['ext_prim'])
-            view_cb_prim.addItem(ext_atr_dict['ext_scnd'])
-            
-            view_cb_scnd.addItem(ext_atr_dict['ext_prim'])
-            view_cb_scnd.addItem(ext_atr_dict['ext_scnd'])
 
-    def set_inp_hook_atrs_comboBox_placeholder(self, ext_atr_dict, ext_atr_ls, view_cb_prim, view_cb_scnd):
-            # update prim & scnd comboBox's
-        # view_cb_prim.setCurrentText(ext_atr_dict['ext_prim'])
-        # view_cb_scnd.setCurrentText(ext_atr_dict['ext_scnd'])
-
-        print(f"&set_inp_hook_atrs_comboBox_placeholder: ext_atr_dict = {ext_atr_dict}")
-        print(f"&set_inp_hook_atrs_comboBox_placeholder: ext_atr_ls[0] = {ext_atr_ls[0]}")
-
-        view_cb_prim.setCurrentText(ext_atr_ls[0])
-        if len(ext_atr_ls) > 1:
-            view_cb_scnd.setCurrentText(ext_atr_dict['ext_scnd'])
+    def set_inp_hook_atrs_comboBox_placeholder(self, external_atr_dict, current_inp_atr_ls, view_cb_prim, view_cb_scnd):
+        '''
+        # Description:
+            Set the current text of the prim & scnd QComboBox's using the dict 
+            `current_inp_atr_ls` compared to the `external_atr_dict`.
+        # Arguments:
+            external_atr_dict (dict): {keys: 'prim'/'scnd', values:*atr}
+            current_inp_atr_ls (list): Current component input hook attribute list.  
+            view_cb_prim (QComboBox): primary external hook comboBox
+            view_cb_prim (QComboBox): secondary external hook comboBox
+        # Return: N/A
+        '''
+        # If the number of attributes in `current_inp_atr_ls` is greater than 1,
+        # `prim` & `scnd` QComboBox's must both be filled.
+        if len(current_inp_atr_ls) > 1:
+            print(f" - {current_inp_atr_ls} > 1, so(prim & scnd must both be filled) ")
+            view_cb_prim.setCurrentText(external_atr_dict['ext_prim'])
+            view_cb_scnd.setCurrentText(external_atr_dict['ext_scnd'])
         else:
-            view_cb_scnd.setCurrentText('None')
+            # Otherwise, Need to add the `current_inp_atr_ls` if it ecists in 
+            # `external_atr_list` (a list of the values from `external_atr_dict`).
+            external_atr_list = [val for val in external_atr_dict.values()]
+            print(f" - external_atr_list = {external_atr_list}")
+            
+            # check if the `current_inp_atr_ls` item exusts in `external_atr_list`
+            current_prim_atr_check = False
+            for ext_atr in external_atr_list:
+                if current_inp_atr_ls[0] == ext_atr:
+                    current_prim_atr_check = True
+            
+            # if `current_prim_atr_check` is True, set as follows...
+            if current_prim_atr_check:
+                view_cb_prim.setCurrentText(current_inp_atr_ls[0])
+                view_cb_scnd.setCurrentText('None')
+
+
+    def update_db_inp_hook_mtx(self, component_name, ext_obj_name, prim_atr, scnd_atr, val_availableRigComboBox):
+        module, unique_id, side = utils.get_name_id_data_from_component(component_name)
+        rig_db_directory = utils_os.create_directory(
+            "Jmvs_tool_box", "databases", "char_databases", 
+            self.db_rig_location, val_availableRigComboBox
+            )
+        
+        upd_inp_hk_plg_ls = []
+
+        if not prim_atr == 'None':
+            scnd_plg = f"{ext_obj_name}.{prim_atr}"
+            upd_inp_hk_plg_ls.append(scnd_plg)
+
+        # if scnd_atr == 'None' -> don't add. 
+        if not scnd_atr == 'None':
+            # add this to the list. 
+            scnd_plg = f"{ext_obj_name}.{scnd_atr}"
+            upd_inp_hk_plg_ls.append(scnd_plg)
+
+        print(f" -- Update component_name: {component_name}, ext_obj_name: {ext_obj_name}, prim: {upd_inp_hk_plg_ls}")
+
+        # update the database!
+        # database_schema_002.TEST_(
+        #     rig_db_directory, module, unique_id, side
+        # )
+        # if not prim_atr == 'None':
+        #     database_schema_002.UpdateMtxModuleData(
+        #         rig_db_directory, module, unique_id, side, upd_inp_hk_plg_ls, None
+        #     )
 
 
     # ---- Delete database functions ----
@@ -829,7 +914,7 @@ class CharLayoutModel:
         '''
         # Description:
             Delete the .db file of the given module. 
-        # Attributes:
+        # Arguments:
             db_folder_path (string): Path of the folder the .db modules are in
             module_name (string): Name of the module to delete.
             val_availableRigComboBox (string): Name of the db rig grp. 
@@ -859,7 +944,7 @@ class CharLayoutModel:
         '''
         # Description:
             Delete the specific component from the .db file of the given module. 
-        # Attributes:
+        # Arguments:
             component_selection (string): Name of the selected component (1 only, not multiple). 
             val_availableRigComboBox (string): Name of the db rig grp. 
             mdl_tree_model (QTreeModel): model of the tree view.
@@ -879,7 +964,7 @@ class CharLayoutModel:
         # Description:
             Delete all traces of the given component in the module from the 
             current maya scene if they exist. 
-        # Attributes:
+        # Arguments:
             module_name (string): Name of the module to delete.
         # Returns: N/A 
         '''
@@ -905,7 +990,7 @@ class CharLayoutModel:
         '''
         # Description:
             Delete all traces of the given module from the current maya scene if they exist. 
-        # Attributes:
+        # Arguments:
             component_list (list): Name components in the module.
         # Returns: N/A 
         '''

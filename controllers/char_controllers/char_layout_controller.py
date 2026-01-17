@@ -114,6 +114,7 @@ class CharLayoutController:
         for cb in [self.view.attr_inp_hk_mtx_CB_obj, self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd]:
             cb.setEnabled(False)
 
+
     def setup_connections(self):
         # selection_model = self.view.mdl_tree_view.selectionModel()
         # selection_model.selectionChanged.connect(self.set_selected_module_label)
@@ -169,11 +170,13 @@ class CharLayoutController:
         self.view.sel_comp_radioBtn.clicked.connect(self.sig_sel_comp_radioBtn)
 
             # External Inout Hook Matrix
-            # Output Hook Matrix
         self.view.comp_inp_hk_mtx_Qlist.clicked.connect(self.sig_comp_inp_hk_mtx_Qlist_clicked)
         self.view.attr_inp_hk_mtx_CB_obj.currentIndexChanged.connect(self.sig_attr_inp_hk_mtx_CB_obj)
+        self.view.attr_inp_hk_mtx_CB_prim.currentIndexChanged.connect(self.sig_attr_inp_hk_mtx_CB_prim)
 
-            # joint & control wditing.
+            # Output Hook Matrix
+
+            # joint & control editing.
         self.view.joint_editing_checkBox.stateChanged.connect(self.sig_joint_editing_checkBox)
         self.view.ctrl_editing_checkBox.stateChanged.connect(self.sig_ctrl_editing_checkBox)
         self.view.jnt_num_spinBox.valueChanged.connect(self.sig_jnt_num_spinBox)
@@ -181,11 +184,32 @@ class CharLayoutController:
 
 
     def sig_comp_inp_hk_mtx_Qlist_clicked(self, idx):
-        for cb in [self.view.attr_inp_hk_mtx_CB_obj, self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd]:
+        '''
+        # Description: 
+            When user selects the `component/object name in QList` it visualises 
+            the `external hook matrix data` on the 3 QComboBox's with data 
+            queried from the comp's database by updatying the 'Object QComboBox'.
+            (Update to `Object` QComboBox causes `Prim` & `Scnd` QComboBox's to 
+            update their visualisation.)
+        # Arguments:
+            idx (int): index of the current selected item in the QList. 
+        # Return: N/A
+        '''   
+        print(f"----- new list sel -----")
+        # setEnabled the 3 QComboBox widgets. 
+        for cb in [self.view.attr_inp_hk_mtx_CB_obj, 
+                   self.view.attr_inp_hk_mtx_CB_prim, 
+                   self.view.attr_inp_hk_mtx_CB_scnd]:
             cb.setEnabled(True)
+
         # get current database name
-        component_name = idx.data()
-        # self.update_ext_inp_hk_mtx_comboBoxs(component_name)
+        component_name = idx.data()        
+        ''' 
+        Not sure what I wanted to do with this function below 
+            # self.update_ext_inp_hk_mtx_comboBoxs(component_name)
+        '''
+        
+        # get a list of all component names present in the QList. 
         model = self.view.comp_inp_hk_mtx_Qlist_Model
         Qlist_compnent_names = []
         for row in range(model.rowCount()):
@@ -193,39 +217,58 @@ class CharLayoutController:
             item = model.data(index)
             if item is not None:
                 Qlist_compnent_names.append(item)
-    
+        
+        # get the `external input_hook_mtx_plg list` from selected component db: `[*object.*attr]`
         db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(component_name, self.val_availableRigComboBox)
+        
+        # get the object & attr seperated into lists from the `external input_hook_mtx_plg list`
         ext_obj_ls, ext_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
-        self.model.set_inp_hook_obj_comboBox(Qlist_compnent_names, ext_obj_ls, self.view.attr_inp_hk_mtx_CB_obj)
-        # self.model.set_inp_hook_atrs_comboBox(ext_atr_ls, self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd)
 
+        # sets the inp hook obj QComboBox
+        self.model.set_inp_hook_obj_comboBox(Qlist_compnent_names, ext_obj_ls, self.view.attr_inp_hk_mtx_CB_obj)
+        
 
     def sig_attr_inp_hk_mtx_CB_obj(self):
-        # get current database name
-        # component_name = idx.data()
-        # self.view.comp_inp_hk_mtx_Qlist
-        
+        '''
+        # Description: 
+            When user selects the `component/object name comboBox(top right)` 
+            it updates the `prim & scnd comboBox's` with their hook attributes.  
+        # Arguments: N/A
+        # Return: N/A
+        '''       
         ext_obj_component_name = self.view.attr_inp_hk_mtx_CB_obj.currentText()
         print(f">>>ext_obj_component_name = {ext_obj_component_name}")
 
         if ext_obj_component_name == 'None':
-            print(f"TURE 'NONE'")
+            print(f"ext_obj_component_name = 'NONE'")
 
             # Reset the  the CB atr (prim & scnd)
-            # print(f"CON> combo fill for component_name_Qlist = {component_name_Qlist}")
             utils_QTree.populate_ext_inp_hk_mtx_atrComboBox_model(
                 self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd
                 )
         else:
-            print(f"ELSE NO 'NONE'")
+            print(f"ext_obj_component_name EXISTS in the blueprint")
+            
+            # get current database name.
             component_name_Qlist = utils_QTree.get_current_selected_item_Qlist(self.view.comp_inp_hk_mtx_Qlist, self.view.comp_inp_hk_mtx_Qlist_Model)
             print(f"& component_name_Qlist = {component_name_Qlist}")
-            db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(component_name_Qlist, self.val_availableRigComboBox)
-            ext_obj_ls, ext_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
 
+            # get the `current input_hook_mtx_plg list` from selected component db: `[*object.*attr]`
+            db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(component_name_Qlist, self.val_availableRigComboBox)
+            print(f" sig_attr_inp_hk_mtx_CB_obj() - current db_inp_hook_mtx_ls = {db_inp_hook_mtx_ls}")
+
+            # get the object & attr seperated into lists from the `external input_hook_mtx_plg list`
+            inp_obj_ls, inp_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
+            print(f" sig_attr_inp_hk_mtx_CB_obj() - current inp_atr_ls = {inp_atr_ls}")
+
+            # get the `output_hook_mtx_atr list` from .db using `external inp_hk_mtx component name`: `[*attr, *attr]`
             db_out_hook_mtx_ls = self.model.get_db_out_hook_mtx_from_comboBox(ext_obj_component_name, self.val_availableRigComboBox)
             print(f"*db_out_hook_mtx_ls = {db_out_hook_mtx_ls}")
-            ext_atr_dict = self.model.get_out_hook_mtx_atr_data(db_out_hook_mtx_ls)
+
+            # Create an dictionary using the output_hook_atr data from the external 
+            # component's data: external component output list = {'ext_prim': *atr, 'ext_scnd': *atr}
+            ext_atr_dict = self.model.cr_out_hook_mtx_atr_dict(db_out_hook_mtx_ls)
+            
             self.model.set_inp_hook_atrs_comboBox_items(
                 ext_atr_dict, 
                 self.view.attr_inp_hk_mtx_CB_prim, 
@@ -233,10 +276,32 @@ class CharLayoutController:
                 )
             self.model.set_inp_hook_atrs_comboBox_placeholder(
                 ext_atr_dict,
-                ext_atr_ls, 
+                inp_atr_ls, 
                 self.view.attr_inp_hk_mtx_CB_prim, 
                 self.view.attr_inp_hk_mtx_CB_scnd
             )
+
+
+    def sig_attr_inp_hk_mtx_CB_prim(self):
+        '''
+        # Description: 
+            Changes to the `Prim` QComboBox to update the `external 
+            input_hook_mtx_plg list` first index attribute in the .db file using 
+            the currently selected component name in the Qlist.  
+        # Arguments: N/A
+        # Return: N/A
+        '''
+        # get current database name.
+        component_name_Qlist = utils_QTree.get_current_selected_item_Qlist(
+            self.view.comp_inp_hk_mtx_Qlist, self.view.comp_inp_hk_mtx_Qlist_Model)
+        print(f" - CB_Prim component_name: {component_name_Qlist} ")
+        
+        obj_text = self.view.attr_inp_hk_mtx_CB_obj.currentText()
+        prim_text = self.view.attr_inp_hk_mtx_CB_prim.currentText()
+
+        if not prim_text == 'None':
+            self.model.update_db_inp_hook_mtx(
+                component_name_Qlist, obj_text, prim_text, 'None', self.val_availableRigComboBox)
 
 
     def update_progress(self, value, operation_name=""):
@@ -763,8 +828,6 @@ class CharLayoutController:
         # External Input Hook Matrix QListView Update
         layout_qt_models.UpdateExtInputHookQListModel(
             self.db_rig_directory, self.view)
-        
-
         
 
     def update_ext_inp_hk_mtx_comboBoxs(self, component_name):
