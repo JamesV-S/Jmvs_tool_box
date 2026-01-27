@@ -194,8 +194,9 @@ class CharLayoutController:
         # Arguments:
             idx (int): index of the current selected item in the QList. 
         # Return: N/A
-        '''   
-        print(f"----- new list sel -----")
+        '''
+        print(f"----------------------------------------------")
+        print(f"running 'sig_comp_inp_hk_mtx_Qlist_clicked()' ")
         # setEnabled the 3 QComboBox widgets. 
         for cb in [self.view.attr_inp_hk_mtx_CB_obj, 
                    self.view.attr_inp_hk_mtx_CB_prim, 
@@ -213,19 +214,31 @@ class CharLayoutController:
         model = self.view.comp_inp_hk_mtx_Qlist_Model
         Qlist_compnent_names = []
         for row in range(model.rowCount()):
-            index = model.index(row, 0)
-            item = model.data(index)
+            item = model.data(model.index(row, 0))
             if item is not None:
                 Qlist_compnent_names.append(item)
         
-        # get the `external input_hook_mtx_plg list` from selected component db: `[*object.*attr]`
+        # get the `external input_hook_mtx_plg list` from selected component db: `[*object.*attr]` (ONCE)
         db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(component_name, self.val_availableRigComboBox)
         
         # get the object & attr seperated into lists from the `external input_hook_mtx_plg list`
         ext_obj_ls, ext_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
 
-        # sets the inp hook obj QComboBox
-        self.model.set_inp_hook_obj_comboBox(Qlist_compnent_names, ext_obj_ls, self.view.attr_inp_hk_mtx_CB_obj)
+        # Store comp name for later use
+        self._current_component = component_name
+
+        # block signals while updating combo boxes (sets the inp hook obj QComboBox).
+        with utils.block_widget_signals(self.view.attr_inp_hk_mtx_CB_obj):
+            self.model.set_inp_hook_obj_comboBox(
+                Qlist_compnent_names, 
+                ext_obj_ls, 
+                self.view.attr_inp_hk_mtx_CB_obj
+                )
+            
+        # trigger the obj comboBox update mannually (only ONCE).
+        if self.view.attr_inp_hk_mtx_CB_obj.currentIndex() >= 0:
+            self.sig_attr_inp_hk_mtx_CB_obj()
+        
         
 
     def sig_attr_inp_hk_mtx_CB_obj(self):
@@ -235,51 +248,134 @@ class CharLayoutController:
             it updates the `prim & scnd comboBox's` with their hook attributes.  
         # Arguments: N/A
         # Return: N/A
-        '''       
+        '''
+        print(f"----------------------------------------------")
+        print(f"running 'sig_attr_inp_hk_mtx_CB_obj()' ")
+
         ext_obj_component_name = self.view.attr_inp_hk_mtx_CB_obj.currentText()
-        print(f">>>ext_obj_component_name = {ext_obj_component_name}")
 
-        if ext_obj_component_name == 'None':
-            print(f"ext_obj_component_name = 'NONE'")
-
-            # Reset the  the CB atr (prim & scnd)
-            utils_QTree.populate_ext_inp_hk_mtx_atrComboBox_model(
-                self.view.attr_inp_hk_mtx_CB_prim, self.view.attr_inp_hk_mtx_CB_scnd
+        # Use stored comp name instead of queryinmg the Qlist again.
+        component_name_Qlist = getattr(self, '_current_component', None)
+        if not component_name_Qlist:
+            component_name_Qlist = utils_QTree.get_current_selected_item_Qlist(
+                self.view.comp_inp_hk_mtx_Qlist, 
+                self.view.comp_inp_hk_mtx_Qlist_Model
                 )
-        else:
-            print(f"ext_obj_component_name EXISTS in the blueprint")
+
+        if ext_obj_component_name == 'None' or ext_obj_component_name == '':
+            print(f" *- ext_obj_component_name = 'None': '{ext_obj_component_name}'")
+            print(f" *- None, component_name_Qlist = {component_name_Qlist}")
+
             
+            # update the .db file with ["_None_"]!
             # get current database name.
-            component_name_Qlist = utils_QTree.get_current_selected_item_Qlist(self.view.comp_inp_hk_mtx_Qlist, self.view.comp_inp_hk_mtx_Qlist_Model)
-            print(f"& component_name_Qlist = {component_name_Qlist}")
+            # component_name_Qlist = utils_QTree.get_current_selected_item_Qlist(self.view.comp_inp_hk_mtx_Qlist, self.view.comp_inp_hk_mtx_Qlist_Model)
 
+            # OPTIMISATION: Only update database if needed, check if I need to
+            # update the database (cache this check)
+            cache_key_node = f"none_check_{component_name_Qlist}"
+
+            # check current database state 
             # get the `current input_hook_mtx_plg list` from selected component db: `[*object.*attr]`
-            db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(component_name_Qlist, self.val_availableRigComboBox)
-            print(f" sig_attr_inp_hk_mtx_CB_obj() - current db_inp_hook_mtx_ls = {db_inp_hook_mtx_ls}")
-
-            # get the object & attr seperated into lists from the `external input_hook_mtx_plg list`
-            inp_obj_ls, inp_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
-            print(f" sig_attr_inp_hk_mtx_CB_obj() - current inp_atr_ls = {inp_atr_ls}")
-
-            # get the `output_hook_mtx_atr list` from .db using `external inp_hk_mtx component name`: `[*attr, *attr]`
-            db_out_hook_mtx_ls = self.model.get_db_out_hook_mtx_from_comboBox(ext_obj_component_name, self.val_availableRigComboBox)
-            print(f"*db_out_hook_mtx_ls = {db_out_hook_mtx_ls}")
-
-            # Create an dictionary using the output_hook_atr data from the external 
-            # component's data: external component output list = {'ext_prim': *atr, 'ext_scnd': *atr}
-            ext_atr_dict = self.model.cr_out_hook_mtx_atr_dict(db_out_hook_mtx_ls)
-            
-            self.model.set_inp_hook_atrs_comboBox_items(
-                ext_atr_dict, 
-                self.view.attr_inp_hk_mtx_CB_prim, 
-                self.view.attr_inp_hk_mtx_CB_scnd
+            db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(
+                component_name_Qlist, 
+                self.val_availableRigComboBox
                 )
-            self.model.set_inp_hook_atrs_comboBox_placeholder(
-                ext_atr_dict,
-                inp_atr_ls, 
-                self.view.attr_inp_hk_mtx_CB_prim, 
-                self.view.attr_inp_hk_mtx_CB_scnd
-            )
+            print(f" *- current db_inp_hook_mtx_ls = {db_inp_hook_mtx_ls}")
+
+            # only update if not already ['_None_']
+            if not db_inp_hook_mtx_ls == ['_None_']:
+                # update the .db file with ["_None_"]!
+                self.model.update_db_inp_hook_mtx_empty(
+                    component_name=component_name_Qlist,
+                    val_availableRigComboBox=self.val_availableRigComboBox
+                    )
+                print( f"- NO - db_inp_hook_mtx_ls = {db_inp_hook_mtx_ls}")
+                
+            else:
+                print( f" *- YES - db_inp_hook_mtx_ls = ['_None_']")
+
+            # block signals while resetting combo boxes atr's (prim & scnd).
+            with utils.block_widget_signals(self.view.attr_inp_hk_mtx_CB_prim), \
+                utils.block_widget_signals(self.view.attr_inp_hk_mtx_CB_scnd):
+
+                utils_QTree.populate_ext_inp_hk_mtx_atrComboBox_model(
+                    self.view.attr_inp_hk_mtx_CB_prim, 
+                    self.view.attr_inp_hk_mtx_CB_scnd
+                    )
+                
+        else:
+            print(f" - ext_obj_component_name = '{ext_obj_component_name}', (ext_obj_component_name EXISTS in the blueprint)")
+            
+            # cache database queries -> check if I already have this data.
+            cache_key = (component_name_Qlist, ext_obj_component_name)
+            if not hasattr(self, '_hk_mtx_cache'):
+                self._hk_mtx_cache = {}
+
+            # clear "None" cache when selecting an existing component. 
+            none_cache_key = f"none_check_{component_name_Qlist}"
+            if not hasattr(self, '_hk_mtx_cache'):
+                # remove the 'none_check' cache for this component
+                keys_to_remove = [k for k in self._hk_mtx_cache.keys() 
+                             if isinstance(k, str) and k.startswith(f"none_check_{component_name_Qlist}")]
+                for k in keys_to_remove:
+                    del self._hk_mtx_cache[k]
+            
+            if cache_key not in self._hk_mtx_cache:
+                # get the `current input_hook_mtx_plg list` from selected component 
+                # db: `[*object.*attr]` data with caching 
+                db_inp_hook_mtx_ls = self.model.get_db_inp_hook_mtx_from_Qlist(
+                    component_name_Qlist, 
+                    self.val_availableRigComboBox
+                    )
+                # get the object & attr seperated into lists from the `external input_hook_mtx_plg list`
+                inp_obj_ls, inp_atr_ls = self.model.get_inp_hook_mtx_obj_data(db_inp_hook_mtx_ls)
+                print(f" - current inp_atr_ls = {inp_atr_ls}")
+
+                # get the `output_hook_mtx_atr list` from .db using `external inp_hk_mtx component name`: `[*attr, *attr]`
+                db_out_hook_mtx_ls = self.model.get_db_out_hook_mtx_from_comboBox(
+                    ext_obj_component_name,
+                    self.val_availableRigComboBox
+                    )
+                print(f" - db_out_hook_mtx_ls = {db_out_hook_mtx_ls}")
+
+                # Create an dictionary using the output_hook_atr data from the external 
+                # component's data: external component output list = {'ext_prim': *atr, 'ext_scnd': *atr}
+                ext_atr_dict = self.model.cr_out_hook_mtx_atr_dict(db_out_hook_mtx_ls)
+            
+                self._hk_mtx_cache[cache_key] = {
+                    'inp_atr_ls': inp_atr_ls,
+                    'ext_atr_dict': ext_atr_dict
+                }
+
+                print(f" *- Cached new data for: {ext_obj_component_name}")
+            else:
+                # use cached data 
+                cached = self._hk_mtx_cache[cache_key]
+                inp_atr_ls = cached['inp_atr_ls']
+                ext_atr_dict = cached['ext_atr_dict']
+                print(f" *- Using cached data for: {ext_obj_component_name}")
+
+            # block signals while updating both comboBoxes (prim & scnd)
+            with utils.block_widget_signals(self.view.attr_inp_hk_mtx_CB_prim), \
+                utils.block_widget_signals(self.view.attr_inp_hk_mtx_CB_scnd):
+
+                self.model.set_inp_hook_atrs_comboBox_items(
+                    ext_atr_dict, 
+                    self.view.attr_inp_hk_mtx_CB_prim, 
+                    self.view.attr_inp_hk_mtx_CB_scnd
+                    )
+                self.model.set_inp_hook_atrs_comboBox_placeholder(
+                    ext_atr_dict,
+                    inp_atr_ls, 
+                    self.view.attr_inp_hk_mtx_CB_prim, 
+                    self.view.attr_inp_hk_mtx_CB_scnd
+                )
+
+            # OPTIMASATION: Clear the cahe if it gets too large
+            if len(self._hk_mtx_cache) > 20: # Test this limit.
+                print(" *- Clearing cache (size limit reached)")
+                self._hk_mtx_cache.clear()
 
 
     def sig_attr_inp_hk_mtx_CB_prim(self):
@@ -291,17 +387,34 @@ class CharLayoutController:
         # Arguments: N/A
         # Return: N/A
         '''
+        print(f"----------------------------------------")
+        print(f"running 'sig_attr_inp_hk_mtx_CB_prim()' ")
+
         # get current database name.
         component_name_Qlist = utils_QTree.get_current_selected_item_Qlist(
             self.view.comp_inp_hk_mtx_Qlist, self.view.comp_inp_hk_mtx_Qlist_Model)
-        print(f" - CB_Prim component_name: {component_name_Qlist} ")
         
         obj_text = self.view.attr_inp_hk_mtx_CB_obj.currentText()
-        prim_text = self.view.attr_inp_hk_mtx_CB_prim.currentText()
-
-        if not prim_text == 'None':
-            self.model.update_db_inp_hook_mtx(
-                component_name_Qlist, obj_text, prim_text, 'None', self.val_availableRigComboBox)
+  
+        if obj_text == 'None' or obj_text == '':
+            print(f" -- 'None' is True, obj_text = {obj_text}")
+            prim_text = None
+        else:
+            prim_text = self.view.attr_inp_hk_mtx_CB_prim.currentText()
+            if prim_text == None:
+                print(f" -- 'None' is Else, obj_text = {obj_text}")
+                print(f" -- None is True, prim_text = {prim_text}")
+                pass
+            else:
+                print(f" -- 'None' is Else, obj_text = {obj_text}")
+                print(f" -- None is Else, prim_text = {prim_text}")
+                self.model.update_db_inp_hook_mtx(
+                    component_name_Qlist, 
+                    obj_text, 
+                    prim_text, 
+                    None, 
+                    self.val_availableRigComboBox
+                    )
 
 
     def update_progress(self, value, operation_name=""):
@@ -821,9 +934,9 @@ class CharLayoutController:
         layout_qt_models.UpdateQTreeModel(
             self.db_rig_directory, self.view)
         
-        # Output Hook Matrix QListView Update
-        layout_qt_models.UpdateOutputHookQListModel(
-            self.db_rig_directory, self.view)
+        # # Output Hook Matrix QListView Update
+        # layout_qt_models.UpdateOutputHookQListModel(
+        #     self.db_rig_directory, self.view)
         
         # External Input Hook Matrix QListView Update
         layout_qt_models.UpdateExtInputHookQListModel(

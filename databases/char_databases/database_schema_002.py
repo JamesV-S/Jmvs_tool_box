@@ -909,14 +909,14 @@ class UpdateCurveInfo(DatabaseSchema):
 
 
 class UpdateMtxModuleData(DatabaseSchema):
-    def __init__(self, directory, module_name, unique_id, side, inp_hk_mtx_ls, out_hk_mtx_ls):
+    def __init__(self, directory, module_name, unique_id, side, inp_hk_mtx_ls, out_hk_mtx_ls, prim=False, scnd=False):
         super().__init__(directory, module_name, unique_id, side)
         try:
             with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
-                if not inp_hk_mtx_ls == None:
+                if not prim == False:
                     print(f" ------ running update inp_hk_mtx_ls")
                     self.inp_hk_mtx = self.upd_inp_hk_mtx(conn, "user_settings", inp_hk_mtx_ls)
-                if not out_hk_mtx_ls == None:
+                if not scnd == False:
                     print(f" ------ running update out_hk_mtx_ls")
                     self.out_hk_mtx = self.upd_out_hk_mtx(conn, "user_settings", out_hk_mtx_ls)
         except sqlite3.Error as e:
@@ -925,7 +925,6 @@ class UpdateMtxModuleData(DatabaseSchema):
 
     def upd_inp_hk_mtx(self, conn, table, upd_ls):
         cursor = conn.cursor()
-        # get values!
         if table == 'user_settings':
             sql = f'UPDATE {table} SET input_hook_mtx_plug = ? WHERE unique_id = ? AND side = ?'
             print(f" - - values == {upd_ls}, {self.unique_id}, {self.side}")
@@ -936,22 +935,41 @@ class UpdateMtxModuleData(DatabaseSchema):
 
     def upd_out_hk_mtx(self, conn, table, upd_ls):
         cursor = conn.cursor()
-        # get values!
         if table == 'user_settings':
             sql = f'UPDATE {table} SET output_hook_mtx_list = ? WHERE unique_id = ? AND side = ?'
-            values = (f"{upd_ls}", self.unique_id, self.side)
+            values = (json.dumps(upd_ls), self.unique_id, self.side)
             cursor.execute(sql, values)
         conn.commit()
 
-# class TEST_(DatabaseSchema):
-#     def __init__(self, directory, module_name, unique_id, side):
-#         super().__init__(directory, module_name, unique_id, side)
-#         try:
-#             with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
-#                 # if not inp_hk_mtx_ls == None:
-#                 print(f" ------ running TEST_")
-#                 self.inp_hk_mtx = self.upd_inp_hk_mtx(conn, "user_settings")
-#         except sqlite3.Error as e:
+
+class UpdateMtxModuleDataEMPTY(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side, inp_hk_mtx_ls):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                    print(f" ------ running update upd_inp_hk_mtx_empty()")
+                    self.inp_hk_mtx = self.upd_inp_hk_mtx_empty(conn, "user_settings", inp_hk_mtx_ls)
+        except sqlite3.Error as e:
+            print(f"DB* `UpdateMtxModuleDataEMPTY()` update Error: {e}")
+
+    def upd_inp_hk_mtx_empty(self, conn, table, upd_ls):
+        cursor = conn.cursor()
+        if table == 'user_settings':
+            sql = f'UPDATE {table} SET input_hook_mtx_plug = ? WHERE unique_id = ? AND side = ?'
+            print(f" - - values == {upd_ls}, {self.unique_id}, {self.side}")
+            values = (json.dumps(upd_ls), self.unique_id, self.side)
+            cursor.execute(sql, values)
+        conn.commit()
+
+
+class TEST_(DatabaseSchema):
+    def __init__(self, directory, module_name, unique_id, side):
+        super().__init__(directory, module_name, unique_id, side)
+        try:
+            with db_connection_tracker.DBConnectionTracker.get_connection(self.db_path) as conn:
+                pass
+        except sqlite3.Error as e:
+            pass
 #             print(f"DB* `UpdateMtxModuleData()` update Error: {e}")
 
 #     def upd_inp_hk_mtx(self, conn, table):

@@ -833,7 +833,7 @@ class CharLayoutModel:
         '''
         view_cb_prim.clear()
         view_cb_scnd.clear()
-        view_cb_prim.addItem('None')
+        # view_cb_prim.addItem('None')
         view_cb_scnd.addItem('None')
         if external_atr_dict:
             view_cb_prim.addItem(external_atr_dict['ext_prim'])
@@ -876,37 +876,71 @@ class CharLayoutModel:
             if current_prim_atr_check:
                 view_cb_prim.setCurrentText(current_inp_atr_ls[0])
                 view_cb_scnd.setCurrentText('None')
+    
 
-
-    def update_db_inp_hook_mtx(self, component_name, ext_obj_name, prim_atr, scnd_atr, val_availableRigComboBox):
+    def update_db_inp_hook_mtx_empty(self, component_name, val_availableRigComboBox):
         module, unique_id, side = utils.get_name_id_data_from_component(component_name)
         rig_db_directory = utils_os.create_directory(
             "Jmvs_tool_box", "databases", "char_databases", 
             self.db_rig_location, val_availableRigComboBox
             )
         
-        upd_inp_hk_plg_ls = []
+        print(f" *- running update_db_inp_hook_mtx_empty()")
+        print(f" *- Update component_name: {component_name}, inp_hk_mtx_ls: {['_None_']}")
 
-        if not prim_atr == 'None':
-            scnd_plg = f"{ext_obj_name}.{prim_atr}"
-            upd_inp_hk_plg_ls.append(scnd_plg)
+        # # Problem > the prim atr resets to 1st item in it's list. WHEN THIS class IS RUN!
+        # database_schema_002.UpdateMtxModuleDataEMPTY(
+        #             directory=rig_db_directory,
+        #             module_name=module,
+        #             unique_id=unique_id,
+        #             side=side,
+        #             inp_hk_mtx_ls=['_None_'],
+        #             )
 
-        # if scnd_atr == 'None' -> don't add. 
-        if not scnd_atr == 'None':
-            # add this to the list. 
-            scnd_plg = f"{ext_obj_name}.{scnd_atr}"
-            upd_inp_hk_plg_ls.append(scnd_plg)
+        # when this class is run, there is no problem. 
+        database_schema_002.TEST_(
+            directory=rig_db_directory,
+            module_name=module,
+            unique_id=unique_id,
+            side=side
+        )
 
-        print(f" -- Update component_name: {component_name}, ext_obj_name: {ext_obj_name}, prim: {upd_inp_hk_plg_ls}")
 
-        # update the database!
-        # database_schema_002.TEST_(
-        #     rig_db_directory, module, unique_id, side
-        # )
-        # if not prim_atr == 'None':
-        #     database_schema_002.UpdateMtxModuleData(
-        #         rig_db_directory, module, unique_id, side, upd_inp_hk_plg_ls, None
-        #     )
+    def update_db_inp_hook_mtx(self, component_name, ext_obj_name, prim_atr, scnd_atr, val_availableRigComboBox):
+        print(f" -- component_name = `{component_name}`")
+        if not component_name == 'None':
+
+            module, unique_id, side = utils.get_name_id_data_from_component(component_name)
+            rig_db_directory = utils_os.create_directory(
+                "Jmvs_tool_box", "databases", "char_databases", 
+                self.db_rig_location, val_availableRigComboBox
+                )
+            
+            upd_inp_hk_plg_ls = []
+
+            if not prim_atr == None:
+                scnd_plg = f"{ext_obj_name}.{prim_atr}"
+                upd_inp_hk_plg_ls.append(scnd_plg)
+
+            # if scnd_atr == 'None' -> don't add. 
+            if not scnd_atr == None:
+                # add this to the list. 
+                scnd_plg = f"{ext_obj_name}.{scnd_atr}"
+                upd_inp_hk_plg_ls.append(scnd_plg)
+
+            print(f" -- Update component_name: {component_name}, ext_obj_name: {ext_obj_name}, prim: {upd_inp_hk_plg_ls}")
+
+            # update the database!
+            if not prim_atr == None:
+                database_schema_002.UpdateMtxModuleData(
+                    directory=rig_db_directory,
+                    module_name=module,
+                    unique_id=unique_id,
+                    side=side,
+                    inp_hk_mtx_ls=upd_inp_hk_plg_ls,
+                    out_hk_mtx_ls=[],
+                    prim=True,
+                    scnd=False)
 
 
     # ---- Delete database functions ----

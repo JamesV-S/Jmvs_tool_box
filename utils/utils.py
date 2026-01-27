@@ -8,6 +8,11 @@ import importlib
 import os
 import re
 import numpy as np
+from contextlib import contextmanager
+try:
+    from PySide6.QtCore import QSignalBlocker
+except ModuleNotFoundError:
+    from PySide2.QtCore import QSignalBlocker
 
 from systems import (
     OPM
@@ -49,6 +54,7 @@ def keyframeSelectedControls(startFrame=0, endFrame=400, interval=10):
             cmds.setKeyframe(control, attribute=["sx", "sy", "sz"])
     
     print(f"Keyframed {len(selection)} controls from frame {startFrame} to {endFrame} every {interval} frames.")
+# keyframeSelectedControls(startFrame=0, endFrame=400, interval=10)
 
 #---------------------------- CONNECTIONS -------------------------------------
 def cr_node_if_not_exists(util_type, node_type, node_name, set_attrs=None):
@@ -1431,3 +1437,21 @@ def return_output_hook_object(output_hook_attr, search_type="transform", case_se
     else:
         cmds.warning(f"Multiple Hook Output Matrix objects found: {matching_objects}")
         return matching_objects[0]  # Return first match
+    
+
+#--------------------------------- WIDGET -------------------------------------
+@contextmanager
+def block_widget_signals(widget):
+    '''
+    # Description: 
+        Temporarily block signals from a widget.
+    # Arguments:
+        widget (qt): QT widget.
+    # Returns: N/A
+    '''
+    blocker = QSignalBlocker(widget)
+    try:
+        yield
+    finally:
+        blocker.unblock()
+

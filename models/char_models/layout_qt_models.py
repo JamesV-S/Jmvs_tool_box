@@ -265,7 +265,7 @@ class UpdateExtInputHookQListModel(DatabaseData):
         attributes = self.get_attributes_for_component(component_name)
 
         if attributes:
-            # self.view.attr_inp_hk_mtx_CB_prim.setPlaceholderText("Select Component in the List")
+            self.view.attr_inp_hk_mtx_CB_prim.setPlaceholderText("Select Component in the List")
             self.view.attr_inp_hk_mtx_CB_prim.setPlaceholderText("Primary Atr")
             self.view.attr_inp_hk_mtx_CB_scnd.setPlaceholderText("Secondary Atr")
             self.view.attr_inp_hk_mtx_CB_prim.addItems(attributes)

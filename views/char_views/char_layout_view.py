@@ -323,6 +323,15 @@ class CharLayoutView(QtWidgets.QWidget):
         layH_sel_options.addWidget(self.sel_comp_radioBtn)
 
         # ---------------------------------------------------------------------
+        # Output Hook Matrix
+            # build func
+        layH_out_hk_mtx = self.build_output_hook_matrix_ui()
+            # make container for it.
+        out_hk_mtx_container, self.out_hk_mtx_checkBox = self.cr_container_funcUI(
+            label_name="Output Hook", widget_to_add=layH_out_hk_mtx,
+            layout=True, child=True, checkbox=False)
+
+        # ---------------------------------------------------------------------
         # External Input Hook Matrix           
             # function to build ui within the containr
         layH_ext_inp_hk_mtx = self.build_external_input_hook_matrix_ui()
@@ -331,14 +340,6 @@ class CharLayoutView(QtWidgets.QWidget):
             label_name="External Input Hook", widget_to_add=layH_ext_inp_hk_mtx,
             layout=True, child=True, checkbox=False)
 
-        # ---------------------------------------------------------------------
-        # Output Hook Matrix
-            # build func
-        layH_out_hk_mtx = self.build_output_hook_matrix_ui()
-            # make container for it.
-        out_hk_mtx_container, self.out_hk_mtx_checkBox = self.cr_container_funcUI(
-            label_name="Output Hook", widget_to_add=layH_out_hk_mtx,
-            layout=True, child=True, checkbox=False)
 
         # ---------------------------------------------------------------------
         # Joint & control options!!

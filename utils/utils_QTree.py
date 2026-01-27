@@ -130,15 +130,13 @@ def get_current_selected_item_Qlist(view_Qlist, view_Qlist_model):
     selected_indexes = selection_model.selectedIndexes()
     
     if selected_indexes:
-        # Get the first selected item (assuming single selection mode)
+        # Get the first selected item (only for single selection mode)
         selected_index = selected_indexes[0]
         
         # Get the model and data
-        # model = self.view.comp_inp_hk_mtx_Qlist_Model
         model = view_Qlist_model
         item_txt = model.data(selected_index)
         
-        print(f"*Currently selected item: {item_txt}")
         return item_txt
     
     return None
@@ -150,7 +148,5 @@ def populate_ext_inp_hk_mtx_atrComboBox_model(view_prim, view_scnd):
         # For now, just clear it or set default state
         view_prim.clear()
         view_scnd.clear()
-        view_prim.setPlaceholderText("Primary Atr")
-        view_scnd.setPlaceholderText("Secondary Atr")
-        view_prim.addItem('None')
-        view_scnd.addItem('None')
+        # view_prim.addItem('None')
+        # view_scnd.addItem('None')
