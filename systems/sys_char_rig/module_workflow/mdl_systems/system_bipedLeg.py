@@ -373,73 +373,9 @@ class SystemBipedLeg:
         utils.connect_attr(f"{ik_ctrl_target}.Follow_Arm", f"{BM_ankleIk}.target[0].rotateWeight")
         utils.connect_attr(f"{BM_ankleIk}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
         
-    
-    def wire_ctrl_ik_pv(self, inputs_grp, ik_ctrl_list, ik_spine_top_ctrl):
-        '''
-        # Description:
-            Positions & wires the follow swapping of the pv ctrl.
-        # Arguments:
-            inputs_grp (string): Group for input data for this module.
-            ik_ctrl_list (list): Contains 4 ik control names.
-            ik_spine_top_ctrl (string): Name of SPINE modules top ik control.
-        # Returns: N/A 
-        '''
-        #establish the target control:
-        ik_ctrl_target = ik_ctrl_list[1]
 
-        # Add follow attr to fk shoulder ctrl
-        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
-        utils.add_float_attrib(ik_ctrl_target, ["Follow_Spine_bottom"], [0.0, 1.0], True)
-        utils.add_float_attrib(ik_ctrl_target, ["Follow_Wrist_ik"], [0.0, 1.0], True)
-        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
-        MM_pvBase = f"MM_ikPv_{self.dm.mdl_nm}_base_{self.dm.unique_id}_{self.dm.side}"
-        MM_pvSpineTop = f"MM_ikPv_{self.dm.mdl_nm}_spineTopHook_{self.dm.unique_id}_{self.dm.side}"
-        MM_pvWristIk = f"MM_ikPv_{self.dm.mdl_nm}_wristIkCtrl_{self.dm.unique_id}_{self.dm.side}"
-        BM_pv = f"BM_ikPv_{self.dm.mdl_nm}_blend_{self.dm.unique_id}_{self.dm.side}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvBase)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvSpineTop)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvWristIk)
-        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_pv, {
-            "target[0].scaleWeight":0, 
-            "target[0].shearWeight":0})
-        # MM_pvBase
-        utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[1], list(self.dm.ik_rot_dict.values())[1], f"{MM_pvBase}{utils.Plg.mtx_ins[0]}")         
-        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_pvBase}{utils.Plg.mtx_ins[1]}")
-        
-        # MM_pvSpineTop
-        pvSpine_local_object = f"temp_loc_Spine{ik_ctrl_target}"
-        cmds.spaceLocator(n=pvSpine_local_object)
-        cmds.xform(pvSpine_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
-        cmds.xform(pvSpine_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
-        cmds.parent(pvSpine_local_object, ik_spine_top_ctrl)
-        get_spine_localM = cmds.getAttr(f"{pvSpine_local_object}{utils.Plg.wld_mtx_plg}")
-        cmds.setAttr(f"{MM_pvSpineTop}{utils.Plg.mtx_ins[0]}", *get_spine_localM, type="matrix") 
-        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{MM_pvSpineTop}{utils.Plg.mtx_ins[1]}")
-        cmds.delete(pvSpine_local_object)
-        
-        # MM_pvWristIk
-        pvWrist_local_object = f"temp_loc_pvWrist{ik_ctrl_target}"
-        cmds.spaceLocator(n=pvWrist_local_object)
-        cmds.xform(pvWrist_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
-        cmds.xform(pvWrist_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
-        cmds.parent(pvWrist_local_object, ik_ctrl_list[-1])
-        get_wrist_localM = cmds.getAttr(f"{pvWrist_local_object}.matrix")
-        cmds.setAttr(f"{MM_pvWristIk}{utils.Plg.mtx_ins[0]}", *get_wrist_localM, type="matrix")    
-        utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_pvWristIk}{utils.Plg.mtx_ins[1]}")
-        cmds.delete(pvWrist_local_object)
-
-        # BM_pv
-        utils.connect_attr(f"{MM_pvBase}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{MM_pvSpineTop}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{MM_pvWristIk}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[1]}")
-            # space swap atribs
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Spine_bottom", f"{BM_pv}.target[0].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Spine_bottom", f"{BM_pv}.target[0].rotateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Wrist_ik", f"{BM_pv}.target[1].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Wrist_ik", f"{BM_pv}.target[1].rotateWeight")
-            # output plug
-        utils.connect_attr(f"{BM_pv}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
-    
+    # wire_ik_ctrl_pv() is called.
+  
   
     def wire_ik_logic_elements(self, input_grp, logic_jnt_list, ik_ctrl_list, d_shld_wrist, d_shld_elb, d_elb_wrist):
         '''
@@ -1028,42 +964,8 @@ class SystemBipedLeg:
         return hdl_upper_name, hdl_lower_name
 
 
-    # def wire_parent_skn_twist_joint_matrix(self, upp_jnt_chain, low_jnt_chain, armRt_ctrl, logic_jnt_list, skel_pos_dict, skel_rot_dict):
-    #     '''
-    #     # Description:
-    #         The parent of each joint chain (Upper/Lower) has driven OPM.
-    #         - Upper prnt driven by 'arm root control' 
-    #         - lower prnt driven by 'jnt logic elbow' 
-    #     # Arguments:
-            
-    #     # Returns: N/A
-    #     '''
-    #     jnt_skn_upp_parent = upp_jnt_chain[0]
-    #     jnt_skn_low_parent = low_jnt_chain[0]
-    #     mm_skn_upp_parent = f"mm_{jnt_skn_upp_parent}"
-    #     mm_skn_low_parent = f"mm_{jnt_skn_low_parent}"
-    #     utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_upp_parent)
-    #     utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_low_parent)
-        
-    #     utils.clean_opm(jnt_skn_upp_parent)
-    #     utils.clean_opm(jnt_skn_low_parent)
-
-    #     # wire upper
-    #         # > mm_skn_upp_parent
-    #     # utils.set_transformation_matrix([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], f"{mm_skn_upp_parent}{utils.Plg.mtx_ins[0]}") 
-    #     utils.set_transformation_matrix(list(skel_pos_dict.values())[0], list(skel_rot_dict.values())[0], f"{mm_skn_upp_parent}{utils.Plg.mtx_ins[0]}")
-    #     utils.connect_attr(f"{armRt_ctrl}{utils.Plg.wld_mtx_plg}", f"{mm_skn_upp_parent}{utils.Plg.mtx_ins[1]}")
-    #         # > jnt_skn_upp_parent
-    #     utils.connect_attr(f"{mm_skn_upp_parent}{utils.Plg.mtx_sum_plg}", f"{jnt_skn_upp_parent}{utils.Plg.opm_plg}")
-        
-    #     # wire lower
-    #         # > mm_skn_low_parent
-    #     # utils.set_transformation_matrix([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], f"{mm_skn_low_parent}{utils.Plg.mtx_ins[0]}") 
-    #     utils.set_transformation_matrix(list(skel_pos_dict.values())[1], [0.0, 0.0, 0.0], f"{mm_skn_low_parent}{utils.Plg.mtx_ins[0]}")
-    #     utils.connect_attr(f"{logic_jnt_list[1]}{utils.Plg.wld_mtx_plg}", f"{mm_skn_low_parent}{utils.Plg.mtx_ins[1]}")
-    #         # > jnt_skn_low_parent
-    #     utils.connect_attr(f"{mm_skn_low_parent}{utils.Plg.mtx_sum_plg}", f"{jnt_skn_low_parent}{utils.Plg.opm_plg}")
-        
+    # module_blueprint.py > wire_parent_skn_twist_joint_matrix()
+  
 
     def wire_skn_twist_joints_stretch(self, input_grp, upp_jnt_chain, low_jnt_chain, upper_curve, lower_curve):
         '''
@@ -1158,109 +1060,8 @@ class SystemBipedLeg:
             utils.connect_attr(f"{fm_low_pow}{utils.Plg.out_flt}", f"{jnt}.scaleY")
             utils.connect_attr(f"{fm_low_pow}{utils.Plg.out_flt}", f"{jnt}.scaleZ")
         
-    
-    # def wire_rotations_on_twist_joints(self, skn_jnt_end, ctrl_limb_root, jnt_logic_upper, jnt_logic_lower, hdl_upper, hdl_lower):
-    #     '''
-    #     # Description:
-    #         Twisting of the upper & lower skn joint chains are driven by their 
-    #         ik handle's .twist attribute.
-    #         - Upper handle twisting is driven by jnt_logic_upper & jnt_logic_lower  
-    #         - lower handle twisting is driven by jnt_logic_lower & jnt_skn_end
-    #     # Arguments:
-            
-    #     # Returns:
-    #         hdl_upper_name (string): name of upper spring solver ik handle 
-    #         hdl_lower_name (string): name of lower spring solver ik handle
-    #     '''
-    #     # jnt_logic_upper = logic_jnt_list[0]
-    #     # jnt_logic_lower = logic_jnt_list[1]
 
-    #     # upper 7 utility nodes
-    #     im_upp_fk_twist = f"IM_twist_fkNonRoll_{hdl_upper}"
-    #     mm_upp_fk_twist = f"MM_twist_fkNonRoll_{hdl_upper}"
-    #     dm_upp_fk_twist = f"DM_twist_fkNonRoll_{hdl_upper}"
-    #     quatToEuler_upp_fk_twist = f"QTE_twist_fkNonRoll_{hdl_upper}"
-    #     mm_upp_twist = f"MM_twist_NonRoll_{hdl_upper}"
-    #     dm_upp_twist = f"DM_twist_NonRoll_{hdl_upper}"
-    #     quatToEuler_upp_twist = f"QTE_twist_NonRoll_{hdl_upper}"
-    #     fm_upp_twist = f"FM_jntTwistValue_add_{hdl_upper}"
-
-    #     utils.cr_node_if_not_exists(1, 'inverseMatrix', im_upp_fk_twist)
-    #     utils.cr_node_if_not_exists(1, 'multMatrix', mm_upp_fk_twist)
-    #     utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_upp_fk_twist)
-    #     utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_upp_fk_twist)
-    #     utils.cr_node_if_not_exists(1, 'multMatrix', mm_upp_twist)
-    #     utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_upp_twist)
-    #     utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_upp_twist)
-    #     utils.cr_node_if_not_exists(1, 'floatMath', fm_upp_twist, {"operation":0})
-
-    #     # temp locator ( to compare 'jnt_logic_upper' with its own initial rotation state inverted. )
-    #     temp_loc_upper = f"loc_temp_upper_{ctrl_limb_root.replace('ctrl_', 'loc_')}"
-    #     cmds.spaceLocator(n=temp_loc_upper)
-    #     cmds.matchTransform(temp_loc_upper, jnt_logic_upper, pos=1, scl=0, rot=1)
-    #     cmds.parent(temp_loc_upper, ctrl_limb_root)
-    #     get_matrix = cmds.getAttr(f"{temp_loc_upper}.matrix")
-    #     cmds.setAttr(f"{im_upp_fk_twist}{utils.Plg.inp_mtx_plg}", *get_matrix, type="matrix")
-
-    #     # wire Upper 
-    #         # fk_nonRoll
-    #         # > mm_upp_fk_twist
-    #     utils.connect_attr(f"{jnt_logic_upper}{utils.Plg.wld_mtx_plg}", f"{mm_upp_fk_twist}{utils.Plg.mtx_ins[0]}")
-    #     utils.connect_attr(f"{im_upp_fk_twist}{utils.Plg.out_mtx_plg}", f"{mm_upp_fk_twist}{utils.Plg.mtx_ins[1]}")
-    #         # > dm_upp_fk_twist
-    #     utils.connect_attr(f"{mm_upp_fk_twist}{utils.Plg.mtx_sum_plg}", f"{dm_upp_fk_twist}{utils.Plg.inp_mtx_plg}")
-    #         # > quatToEuler_upp_fk_twist
-    #     utils.connect_attr(f"{dm_upp_fk_twist}.outputQuatX", f"{quatToEuler_upp_fk_twist}.inputQuatX")
-    #     utils.connect_attr(f"{dm_upp_fk_twist}.outputQuatW", f"{quatToEuler_upp_fk_twist}.inputQuatW")
-    #         # nonRoll
-    #         # > mm_upp_twist
-    #     utils.connect_attr(f"{jnt_logic_lower}{utils.Plg.wld_mtx_plg}", f"{mm_upp_twist}{utils.Plg.mtx_ins[0]}")
-    #     utils.connect_attr(f"{jnt_logic_upper}{utils.Plg.wld_inv_mtx_plg}", f"{mm_upp_twist}{utils.Plg.mtx_ins[1]}")
-    #         # > dm_upp_twist
-    #     utils.connect_attr(f"{mm_upp_twist}{utils.Plg.mtx_sum_plg}", f"{dm_upp_twist}{utils.Plg.inp_mtx_plg}")
-    #         # > quatToEuler_upp_twist
-    #     utils.connect_attr(f"{dm_upp_twist}.outputQuatX", f"{quatToEuler_upp_twist}.inputQuatX")
-    #     utils.connect_attr(f"{dm_upp_twist}.outputQuatW", f"{quatToEuler_upp_twist}.inputQuatW")
-    #         # > fm_upp_twist
-    #     utils.connect_attr(f"{quatToEuler_upp_fk_twist}.outputRotateX", f"{fm_upp_twist}{utils.Plg.flt_A}")
-    #     utils.connect_attr(f"{quatToEuler_upp_twist}.outputRotateX", f"{fm_upp_twist}{utils.Plg.flt_B}")
-    #         # > hdl_upper.twist
-    #     utils.connect_attr(f"{fm_upp_twist}{utils.Plg.out_flt}", f"{hdl_upper}.twist")
-    #     cmds.delete(temp_loc_upper)
-
-    #     # lower 3 utility nodes
-    #     im_low_twis = f"IM_twist_NonRoll_{hdl_lower}"
-    #     mm_low_twist = f"MM_twist_NonRoll_{hdl_lower}"
-    #     # pm_low_twist = f"PMtx_twist_NonRoll_{hdl_lower}"
-    #     dm_low_twist = f"DM_twist_NonRoll_{hdl_lower}"
-    #     quatToEuler_low_twist = f"QTE_twist_NonRoll_{hdl_lower}"
-
-    #     utils.cr_node_if_not_exists(1, 'multMatrix', mm_low_twist)
-    #     utils.cr_node_if_not_exists(1, 'inverseMatrix', im_low_twis)
-    #     utils.cr_node_if_not_exists(1, 'decomposeMatrix', dm_low_twist)
-    #     utils.cr_node_if_not_exists(1, 'quatToEuler', quatToEuler_low_twist)
-
-    #     # temp locator ( to compare 'jnt_logic_upper' with its own initial rotation state inverted. )
-    #     temp_loc_lower = f"loc_temp_lower_{ctrl_limb_root.replace('ctrl_', 'loc_')}"
-    #     cmds.spaceLocator(n=temp_loc_lower)
-    #     cmds.matchTransform(temp_loc_lower, skn_jnt_end, pos=1, scl=0, rot=1)
-    #     cmds.parent(temp_loc_lower, ctrl_limb_root)
-    #     get_matrix = cmds.getAttr(f"{temp_loc_lower}.matrix")
-    #     cmds.setAttr(f"{im_low_twis}{utils.Plg.inp_mtx_plg}", *get_matrix, type="matrix")
-
-    #     # wire lower 
-    #         # > mm_low_twist
-    #     utils.connect_attr(f"{skn_jnt_end}{utils.Plg.wld_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[0]}")
-    #     utils.connect_attr(f"{im_low_twis}{utils.Plg.out_mtx_plg}", f"{mm_low_twist}{utils.Plg.mtx_ins[1]}")
-
-    #         # > dm_low_twist
-    #     utils.connect_attr(f"{mm_low_twist}{utils.Plg.mtx_sum_plg}", f"{dm_low_twist}{utils.Plg.inp_mtx_plg}")
-    #         # > quatToEuler_upp_twist
-    #     utils.connect_attr(f"{dm_low_twist}.outputQuatX", f"{quatToEuler_low_twist}.inputQuatX")
-    #     utils.connect_attr(f"{dm_low_twist}.outputQuatW", f"{quatToEuler_low_twist}.inputQuatW")
-    #         # > hdl_lower.twist
-    #     utils.connect_attr(f"{quatToEuler_low_twist}.outputRotateX", f"{hdl_lower}.twist")
-    #     cmds.delete(temp_loc_lower)
+    # module_blueprint.py > wire_rotations_on_twist_joints()
 
 
     def parent_ik_ctrls_out(self, ik_ctrl_list, fk_ctrl_list):

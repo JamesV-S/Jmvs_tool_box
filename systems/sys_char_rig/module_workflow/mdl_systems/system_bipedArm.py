@@ -404,72 +404,8 @@ class SystemBipedArm:
         utils.connect_attr(f"{ik_ctrl_target}.Follow_Arm", f"{BM_wristIk}.target[0].rotateWeight")
         utils.connect_attr(f"{BM_wristIk}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
         
-    
-    def wire_ctrl_ik_elbow(self, inputs_grp, ik_ctrl_list, ik_spine_top_ctrl):
-        '''
-        # Description:
-            Positions & wires the follow swapping of the pv ctrl too
-        # Arguments:
-            inputs_grp (string): Group for input data for this module.
-            ik_ctrl_list (list): Contains 4 ik control names.
-            ik_spine_top_ctrl (string): Name of SPINE modules top ik control.
-        # Returns: N/A 
-        '''
-        #establish the target control:
-        ik_ctrl_target = ik_ctrl_list[2]
 
-        # Add follow attr to fk shoulder ctrl
-        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
-        utils.add_float_attrib(ik_ctrl_target, ["Follow_Spine_top"], [0.0, 1.0], True)
-        utils.add_float_attrib(ik_ctrl_target, ["Follow_Wrist_ik"], [0.0, 1.0], True)
-        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
-        MM_pvBase = f"MM_ikPv_{self.dm.mdl_nm}_base_{self.dm.unique_id}_{self.dm.side}"
-        MM_pvSpineTop = f"MM_ikPv_{self.dm.mdl_nm}_spineTopHook_{self.dm.unique_id}_{self.dm.side}"
-        MM_pvWristIk = f"MM_ikPv_{self.dm.mdl_nm}_wristIkCtrl_{self.dm.unique_id}_{self.dm.side}"
-        BM_pv = f"BM_ikPv_{self.dm.mdl_nm}_blend_{self.dm.unique_id}_{self.dm.side}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvBase)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvSpineTop)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvWristIk)
-        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_pv, {
-            "target[0].scaleWeight":0, 
-            "target[0].shearWeight":0})
-        # MM_pvBase
-        utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[2], list(self.dm.ik_rot_dict.values())[2], f"{MM_pvBase}{utils.Plg.mtx_ins[0]}")         
-        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_pvBase}{utils.Plg.mtx_ins[1]}")
-        
-        # MM_pvSpineTop
-        pvSpine_local_object = f"temp_loc_Spine{ik_ctrl_target}"
-        cmds.spaceLocator(n=pvSpine_local_object)
-        cmds.xform(pvSpine_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
-        cmds.xform(pvSpine_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
-        cmds.parent(pvSpine_local_object, ik_spine_top_ctrl)
-        get_spine_localM = cmds.getAttr(f"{pvSpine_local_object}{utils.Plg.wld_mtx_plg}")
-        cmds.setAttr(f"{MM_pvSpineTop}{utils.Plg.mtx_ins[0]}", *get_spine_localM, type="matrix") 
-        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{MM_pvSpineTop}{utils.Plg.mtx_ins[1]}")
-        cmds.delete(pvSpine_local_object)
-        
-        # MM_pvWristIk
-        pvWrist_local_object = f"temp_loc_pvWrist{ik_ctrl_target}"
-        cmds.spaceLocator(n=pvWrist_local_object)
-        cmds.xform(pvWrist_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
-        cmds.xform(pvWrist_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
-        cmds.parent(pvWrist_local_object, ik_ctrl_list[-1])
-        get_wrist_localM = cmds.getAttr(f"{pvWrist_local_object}.matrix")
-        cmds.setAttr(f"{MM_pvWristIk}{utils.Plg.mtx_ins[0]}", *get_wrist_localM, type="matrix")    
-        utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_pvWristIk}{utils.Plg.mtx_ins[1]}")
-        cmds.delete(pvWrist_local_object)
-
-        # BM_pv
-        utils.connect_attr(f"{MM_pvBase}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{MM_pvSpineTop}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{MM_pvWristIk}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[1]}")
-            # space swap atribs
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Spine_top", f"{BM_pv}.target[0].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Spine_top", f"{BM_pv}.target[0].rotateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Wrist_ik", f"{BM_pv}.target[1].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Wrist_ik", f"{BM_pv}.target[1].rotateWeight")
-            # output plug
-        utils.connect_attr(f"{BM_pv}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
+    # wire_ik_ctrl_pv is called.
     
   
     def wire_ik_logic_elements(self, input_grp, logic_jnt_list, ik_ctrl_list, d_shld_wrist, d_shld_elb, d_elb_wrist):

@@ -29,6 +29,19 @@ def progress_value(step, total_steps):
     pv = (step + 1) * 100 / total_steps
     return pv
 
+#----------------------------- HIERARCHY --------------------------------------
+
+def parent_object_list(ls):
+    ls.reverse()
+
+    for i in range(len(ls)):
+        if ls[i] == ls[-1]:
+            continue
+        cmds.parent(ls[i], ls[i+1])
+    # return the given list back top its original order.
+    ls.reverse()
+
+
 #------------------------------- ANIM -----------------------------------------
 
 def keyframeSelectedControls(startFrame=0, endFrame=400, interval=10):

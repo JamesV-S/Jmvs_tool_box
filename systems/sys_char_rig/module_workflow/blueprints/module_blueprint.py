@@ -48,8 +48,13 @@ class ModuleBP:
         
         if output_global:
             utils.add_float_attrib(outputs_grp, [self.dm.global_scale_attr], [0.01, 999], True)
-            cmds.setAttr(f"{outputs_grp}.{self.dm.global_scale_attr}", 1, keyable=0, channelBox=0)
-        
+            try:
+                print(f"True `output_global`")
+
+                cmds.setAttr(f"{outputs_grp}.{self.dm.global_scale_attr}", 1, keyable=0, channelBox=0)
+            except RuntimeError as e: 
+                print(e)
+
         return input_grp, outputs_grp
     
 
@@ -216,7 +221,7 @@ class ModuleBP:
             BM_limb (utility): Limb root ctrl's matrix follow. 
         '''
         # Add follow attr to fk 'first parent' ctrl.
-        follow_attr = f"Follow_{self.dm.mdl_nm}_Rot"
+        follow_attr = f"Follow_{self.dm.mdl_nm}"
         utils.add_locked_attrib(fk_ctrl_list[0], ["Follows"])
         utils.add_float_attrib(fk_ctrl_list[0], [follow_attr], [0.0, 1.0], True)
         cmds.setAttr(f"{fk_ctrl_list[0]}.{follow_attr}", 1)
@@ -270,23 +275,26 @@ class ModuleBP:
     def wire_ik_ctrl_end(self, inputs_grp, limbRt_ctrl, ik_ctrl_list):
         '''
         # Description:
-            driving the logic joints:
-                - parent logic joint is driven by arnRoot ctrl w/ 'blend_armRoot_node'
-                - child logic joints are driven by fk ctrl's direct rotations.
+            Drive the end ik control of the module, bledning between the 'limbRt_ctrl' 
+            and the 'inputs_grp.base_mtx'.
         # Attributes:
             inputs_grp (string): Group for input data for this module.
-            ik_ctrl_list (list): Contains 4 ik control names.
+            limbRt_ctrl (string): Limb Root control. 
+            ik_ctrl_list (list): Contains ik control names.
         # Returns: N/A 
         '''
         ik_ctrl_target = ik_ctrl_list[-1]
         ik_tgt_nm = ik_ctrl_target.split('_')[-3]
+        print(f"ik_ctrl_target = `{ik_ctrl_target}`")
+        print(f"limbRt_ctrl = `{limbRt_ctrl}`")
+        print(f"ik_tgt_nm = `{ik_tgt_nm}`")        
 
-        # Add follow attr to fk shoulder ctrl
+        # Add follow attr to ik shoulder ctrl
         follow_attr = f"Follow_{self.dm.mdl_nm}"
         utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
         utils.add_float_attrib(ik_ctrl_target, [follow_attr], [0.0, 1.0], True)
         cmds.setAttr(f"{ik_ctrl_target}.{follow_attr}", 1)
-        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
+        # cr blendMatrix setup to feed to ik ctrl/rigJnt shoulder. 
         MM_ikBase = f"MM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtBase_{self.dm.unique_id}_{self.dm.side}"
         MM_iklimbRt = f"MM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtCtrl_{self.dm.unique_id}_{self.dm.side}"
         BM_ik = f"BM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtBlend_{self.dm.unique_id}_{self.dm.side}"
@@ -320,6 +328,26 @@ class ModuleBP:
         utils.connect_attr(f"{BM_ik}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
 
 
+    def return_external_ik_control(self, hook_mtx_plg):
+        ''' grp_Outputs_spine_0_M.mtx_spine_jnt_skn_bottom '''
+        # return `ctrl_ik_ mdl _ name _id_side`
+        # return `ctrl_ik_ spine _ bottom _0_M`
+        grp_name = hook_mtx_plg.split('.')[0]
+        mdl_name = grp_name.split('_')[2]
+        unique_id = grp_name.split('_')[3]
+        side = grp_name.split('_')[4]
+
+        atr_name = hook_mtx_plg.split('.')[-1]
+        name = atr_name.split('_')[-1]
+
+        control_name = f"ctrl_ik_{mdl_name}_{name}_{unique_id}_{side}"
+        print(f" ** ext_control_name = `{control_name}`")
+        if cmds.objExists(control_name):
+            return control_name
+        else:
+            return None
+
+
     def wire_ik_ctrl_pv(self, inputs_grp, target_index, ik_ctrl_list, ctrl_external_fol):
         '''
         # Description:
@@ -334,66 +362,112 @@ class ModuleBP:
         ik_ctrl_target = ik_ctrl_list[target_index]
         ik_tgt_nm = ik_ctrl_target.split('_')[-3]
         print(f"pv ik_tgt_nm = `{ik_tgt_nm}`")
-
-        ext_fol_split = ctrl_external_fol.split('_')[3:-2]
-        ext_fol_nm = "".join(ext_fol_split)
-        print(f"pv ik_tgt_nm = `{ext_fol_nm}`")
         
-        # Add follow attr to fk shoulder ctrl
-        ext_fol_atr = f"Follow_{ext_fol_nm}"
-        end_fol_atr = "Follow_End_ik"
+        # end ik control name
+        end_ik_ctrl_name = ik_ctrl_list[-1]
+        end_fol_atr = f"Follow_ik_{end_ik_ctrl_name.split('_')[-3]}"
+        print(f"pv end_fol_atr = `{end_fol_atr}`")
 
-        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
-        utils.add_float_attrib(ik_ctrl_target, [ext_fol_atr], [0.0, 1.0], True)
-        utils.add_float_attrib(ik_ctrl_target, [end_fol_atr], [0.0, 1.0], True)
-        # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
+        # base node setup
         MM_pvBase = f"MM_ikPv_{self.dm.mdl_nm}_base_{self.dm.unique_id}_{self.dm.side}"
-        MM_pvExterernal = f"MM_ikPv_{self.dm.mdl_nm}_{ext_fol_nm}Hook_{self.dm.unique_id}_{self.dm.side}"
-        MM_pvEndIk = f"MM_ikPv_{self.dm.mdl_nm}_EndIkCtrl_{self.dm.unique_id}_{self.dm.side}"
         BM_pv = f"BM_ikPv_{self.dm.mdl_nm}_blend_{self.dm.unique_id}_{self.dm.side}"
         utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvBase)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvExterernal)
-        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvEndIk)
         utils.cr_node_if_not_exists(1, 'blendMatrix', BM_pv, {
             "target[0].scaleWeight":0, 
-            "target[0].shearWeight":0})
-        # MM_pvBase
+            "target[0].shearWeight":0
+        })
+        
+        # setup base amtrix, MM_pvBase
         utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[target_index], list(self.dm.ik_rot_dict.values())[target_index], f"{MM_pvBase}{utils.Plg.mtx_ins[0]}")         
         utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_pvBase}{utils.Plg.mtx_ins[1]}")
+
+        # setup end ik matrix
+        MM_pvEndIk = f"MM_ikPv_{self.dm.mdl_nm}_EndIkCtrl_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvEndIk)
         
-        # MM_pvExterernal
-        pvExt_local_object = f"temp_loc_Ext{ik_ctrl_target}"
-        cmds.spaceLocator(n=pvExt_local_object)
-        cmds.xform(pvExt_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
-        cmds.xform(pvExt_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
-        cmds.parent(pvExt_local_object, ctrl_external_fol)
-        get_Ext_local_matrix = cmds.getAttr(f"{pvExt_local_object}{utils.Plg.wld_mtx_plg}")
-        cmds.setAttr(f"{MM_pvExterernal}{utils.Plg.mtx_ins[0]}", *get_Ext_local_matrix, type="matrix") 
-        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{MM_pvExterernal}{utils.Plg.mtx_ins[1]}")
-        cmds.delete(pvExt_local_object)
-        
-        # MM_pvEndIk
         pvEnd_local_object = f"temp_loc_pvEnd{ik_ctrl_target}"
         cmds.spaceLocator(n=pvEnd_local_object)
         cmds.xform(pvEnd_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
         cmds.xform(pvEnd_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
-        cmds.parent(pvEnd_local_object, ik_ctrl_list[-1])
+        cmds.parent(pvEnd_local_object, end_ik_ctrl_name)
         get_End_local_matrix = cmds.getAttr(f"{pvEnd_local_object}.matrix")
         cmds.setAttr(f"{MM_pvEndIk}{utils.Plg.mtx_ins[0]}", *get_End_local_matrix, type="matrix")    
-        utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{MM_pvEndIk}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{end_ik_ctrl_name}{utils.Plg.wld_mtx_plg}", f"{MM_pvEndIk}{utils.Plg.mtx_ins[1]}")
         cmds.delete(pvEnd_local_object)
 
-        # BM_pv
+        # initialise lists to track blend matrix connections
+        blend_targets = []
+        attr_connections = []
+
+        # handle external follow matrix node
+        if ctrl_external_fol is not None:
+            ext_fol_split = ctrl_external_fol.split('_')[2:-2]
+            ext_fol_nm = "_".join(ext_fol_split)
+            print(f"ext ctrl name = {ctrl_external_fol}")
+            print(f"pv ext_fol_nm = `{ext_fol_nm}`")
+
+            # cr external follow matrix node
+            MM_pvExterernal = f"MM_ikPv_{self.dm.mdl_nm}_{ext_fol_nm}Hook_{self.dm.unique_id}_{self.dm.side}"
+            utils.cr_node_if_not_exists(1, 'multMatrix', MM_pvExterernal)
+
+            # setup external matrix
+            pvExt_local_object = f"temp_loc_Ext{ik_ctrl_target}"
+            cmds.spaceLocator(n=pvExt_local_object)
+            cmds.xform(pvExt_local_object, t=self.dm.ik_pos_dict[ik_ctrl_target], ws=1)
+            cmds.xform(pvExt_local_object, rotation=self.dm.ik_rot_dict[ik_ctrl_target], ws=1)
+            cmds.parent(pvExt_local_object, ctrl_external_fol)
+            get_Ext_local_matrix = cmds.getAttr(f"{pvExt_local_object}{utils.Plg.wld_mtx_plg}")
+            cmds.setAttr(f"{MM_pvExterernal}{utils.Plg.mtx_ins[0]}", *get_Ext_local_matrix, type="matrix") 
+            utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{MM_pvExterernal}{utils.Plg.mtx_ins[1]}")
+            cmds.delete(pvExt_local_object)
+
+            # Add external follow to blend targets
+            blend_targets.append((MM_pvExterernal, 0))
+
+            # cr and add external follow attribute
+            ext_fol_atr = f"Follow_{ext_fol_nm}"
+            utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
+            utils.add_float_attrib(ik_ctrl_target, [ext_fol_atr], [0.0, 1.0], True)
+            attr_connections.append((ext_fol_atr, 0))
+
+            print(f"pv ext_fol_atr = `{ext_fol_atr}`")
+        else:
+            print(f"No external follow control provided (aka None), skipping externa follow setup")
+
+        # always add end IK follow attributes and blend target
+        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
+        utils.add_float_attrib(ik_ctrl_target, [end_fol_atr], [0.0, 1.0], True)
+        blend_targets.append((MM_pvEndIk, 1))
+        attr_connections.append((end_fol_atr, 1))
+
+        # setup blend matrix connections
         utils.connect_attr(f"{MM_pvBase}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.inp_mtx_plg}")
-        utils.connect_attr(f"{MM_pvExterernal}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{MM_pvEndIk}{utils.Plg.mtx_sum_plg}", f"{BM_pv}{utils.Plg.target_mtx[1]}")
-            # space swap atribs
-        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_pv}.target[0].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_pv}.target[0].rotateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.{end_fol_atr}", f"{BM_pv}.target[1].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.{end_fol_atr}", f"{BM_pv}.target[1].rotateWeight")
-            # output plug
-        utils.connect_attr(f"{BM_pv}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
+        
+        # connect all blend targets
+        for mm_node, target_index in blend_targets:
+            utils.connect_attr(
+                f"{mm_node}{utils.Plg.mtx_sum_plg}", 
+                f"{BM_pv}{utils.Plg.target_mtx[target_index]}"
+            )
+
+        # connect all attrib weights
+        for attr_name, target_index in attr_connections:
+            utils.connect_attr(
+                f"{ik_ctrl_target}.{attr_name}", 
+                f"{BM_pv}.target[{target_index}].translateWeight"
+            )
+            utils.connect_attr(
+                f"{ik_ctrl_target}.{attr_name}", 
+                f"{BM_pv}.target[{target_index}].rotateWeight"
+            )
+        
+        # alter the weights of the blend node's target[0] to handle external follow's exclusion.
+        if ctrl_external_fol is None:
+            cmds.setAttr(f"{BM_pv}.target[0].translateWeight", 0)
+            cmds.setAttr(f"{BM_pv}.target[0].rotateWeight", 0)
+
+        # output plug
+        utils.connect_attr(f"{BM_pv}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")        
 
 
     def wire_pv_reference_curve(self, pv_ctrl, pv_jnt, ik_ctrl_grp):

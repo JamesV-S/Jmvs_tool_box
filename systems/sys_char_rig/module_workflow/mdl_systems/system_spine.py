@@ -145,8 +145,8 @@ class SystemSpine:
             loc_name = key.replace('ctrl_fk_', 'loc_tempFk_')# "ctrl_fk_bipedArm_'first parent'_0_L"
             fk_temp_loc_ls.append(loc_name)
             cmds.spaceLocator(n=loc_name)
-            cmds.xform(loc_name, t=pos_val, ws=1)
-            cmds.xform(loc_name, rotation=rot_val, ws=1)
+            cmds.xform(loc_name, t=pos_val, ro=rot_val, ws=1)
+            # cmds.xform(loc_name, rotation=rot_val, ws=1)
         try:
             for i in range(len(fk_temp_loc_ls)):
                 cmds.parent(fk_temp_loc_ls[i+1],fk_temp_loc_ls[i])
@@ -158,8 +158,8 @@ class SystemSpine:
             loc_name = key.replace('ctrl_fk_', 'loc_tempInv_')# "ctrl_fk_bipedArm_'first parent'_0_L"
             inv_temp_loc_ls.append(loc_name)
             cmds.spaceLocator(n=loc_name)
-            cmds.xform(loc_name, t=pos_val, ws=1)
-            cmds.xform(loc_name, rotation=rot_val, ws=1)
+            cmds.xform(loc_name, t=pos_val, ro=rot_val, ws=1)
+            # cmds.xform(loc_name, rotation=rot_val, ws=1)
         try:
             for i in range(len(inv_temp_loc_ls)):
                 cmds.parent(inv_temp_loc_ls[i+1],inv_temp_loc_ls[i])

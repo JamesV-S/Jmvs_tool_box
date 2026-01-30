@@ -160,8 +160,8 @@ class SystemQuadLeg:
         '''
         # temp 
         cmds.hide("jnt_fk_quadLeg_hip_0_L")
+
         # cr Ik_handle on the logic joints
-        
             # hip > calf
         logic_hdl = f"hdl_RP_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}" # hdl_bipedArm_0_L
         cmds.ikHandle( n=logic_hdl, sol="ikRPsolver", sj=ik_logic_jnt_list[0], ee=ik_logic_jnt_list[2], ccv=False, pcv=False)
@@ -194,13 +194,13 @@ class SystemQuadLeg:
         cmds.xform(grp_ball_logic_hdl, rotation=list(ik_rot_dict.values())[-1], worldSpace=True)
         cmds.parent(ball_logic_hdl, grp_ball_logic_hdl)
             # ball > end
-        end_logic_hdl = f"hdl_SC_{self.dm.mdl_nm}_end_{self.dm.unique_id}_{self.dm.side}" # hdl_bipedArm_0_L
+        end_logic_hdl = f"hdl_SC_{self.dm.mdl_nm}_toe_{self.dm.unique_id}_{self.dm.side}" # hdl_bipedArm_0_L
         cmds.ikHandle( n=end_logic_hdl, sol="ikSCsolver", sj=ik_logic_jnt_list[4], ee=ik_logic_jnt_list[5], ccv=False, pcv=False)
             # group @ ik calf pos
         grp_end_logic_hdl = f"grp_{end_logic_hdl}"
         utils.cr_empty_grp(grp_end_logic_hdl)
-        cmds.matchTransform(grp_end_logic_hdl, ik_logic_jnt_list[5], pos=1, rot=0, scl=0)
-        cmds.xform(grp_end_logic_hdl, rotation=list(ik_rot_dict.values())[-1], worldSpace=True)
+        cmds.matchTransform(grp_end_logic_hdl, ik_logic_jnt_list[4], pos=1, rot=0, scl=0)
+        cmds.xform(grp_end_logic_hdl, rotation=list(ik_rot_dict.values())[-2], worldSpace=True)
         cmds.parent(end_logic_hdl, grp_end_logic_hdl)
 
 
@@ -219,23 +219,171 @@ class SystemQuadLeg:
         utils.connect_attr(f"{mm_ik}{utils.Plg.mtx_sum_plg}", f"{jnt_target}{utils.Plg.opm_plg}")
 
 
-    def wire_logic_foot_roll(self ):
+    def wire_ik_logic_hierarchy(self, foot_piv_dict, ankle_trans_data):
         '''
-        Setup the foot roll hierarchy & ctrl_ik_ankle drives the ori_grp.opm (see file 008)
+        # Description:
+            Setup the foot roll & group hierarchy for the ik handles. Foot pivot 
+            data is used to create the groups. 
+            
+            foot_piv_dict = {
+                "piv_out": [[],[]],
+                "piv_in": [[],[]],
+                "piv_toe": [[],[]],
+                "piv_heel": [[],[]],
+                }
+            
+            (ctrl_ik_ankle drives the ori_grp.opm (see file 008))
+        # Arguments:
+            foot_piv_dict (dict): {Keys= pivot name: values= [[pos], [rot]]}
+            ankle_trans_data (nested list): [[pos], [rot]]
+        # Return:
         '''
-        pass
+        #----------------------        
+        # cr list from keys
+        # piv_names = [n for n in foot_piv_dict.keys()]
+        key_names = [n for n in foot_piv_dict.keys()]
+        print(f"key_names = `{key_names}`")
+        
+        # itarate through keys to create groups.
+        piv_names = []
+        for name in key_names:
+            pv_name = f"{name}_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+            utils.cr_node_if_not_exists(0, "transform", pv_name)
+            piv_names.append(pv_name)
+        print(f"piv_names = `{piv_names}`")
+
+        # positon the groups using the dict!
+        for key, piv in zip(key_names, piv_names):
+            data = foot_piv_dict[key]
+            # data[0] = pos, data[1] = rot.
+            cmds.xform(piv, t=data[0], ro=data[1], ws=1)
+
+        # cr origin grp
+        grp_ori = f"grp_ik_{self.dm.mdl_nm}_ori_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(0, "transform", grp_ori)
+        cmds.xform(grp_ori, t=ankle_trans_data[0], ro=ankle_trans_data[1], ws=1)
+
+        # add the ori grp to the piv list.
+        piv_names.insert(0, grp_ori)
+        # parent the foot pivot grps in the right order to the ori group. 
+        utils.parent_object_list(piv_names)
+        # remove the ori grp from the piv list.
+        piv_names.pop(0)
+
+        #----------------------
+        # ankle ball ik handle grp hierarchy 
+        # (exists)
+        grp_hdl_ball = f"grp_hdl_SC_{self.dm.mdl_nm}_ball_{self.dm.unique_id}_{self.dm.side}"
+        # (new)
+        grp_hdl_rollAim = f"grp_hdl_RP_{self.dm.mdl_nm}_rollAim_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(0, "transform", grp_hdl_rollAim)
+        cmds.xform(grp_hdl_rollAim, t=ankle_trans_data[0], ro=ankle_trans_data[1], ws=1)
+        # (exists)
+        grp_hdl_rp_leg = f"grp_hdl_RP_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}" # grp_hdl_RP_quadLeg_0_L
+        # (exists)
+        grp_hdl_calf = f"grp_hdl_SC_{self.dm.mdl_nm}_calf_{self.dm.unique_id}_{self.dm.side}" # grp_hdl_SC_quadLeg_calf_0_L
+        
+        grp_hdl_list = [grp_hdl_ball, grp_hdl_rollAim, grp_hdl_rp_leg, grp_hdl_calf]
+        utils.parent_object_list(grp_hdl_list)
+
+        #----------------------
+        # ankle toe ik handle grp hierarchy
+        # (new)
+        grp_hdl_toeBend = f"grp_hdl_SC_{self.dm.mdl_nm}_toeBend_{self.dm.unique_id}_{self.dm.side}" #grp_hdl_SC_quadLeg_toe_0_L
+        utils.cr_node_if_not_exists(0, "transform", grp_hdl_toeBend)
+        # (exists)
+        grp_hdl_toe = f"grp_hdl_SC_{self.dm.mdl_nm}_toe_{self.dm.unique_id}_{self.dm.side}" #grp_hdl_SC_quadLeg_toe_0_L
+        
+        cmds.matchTransform(grp_hdl_toeBend, grp_hdl_toe, pos=1, rot=1, scl=0)
+
+        grp_hdl_toe_list = [grp_hdl_toeBend, grp_hdl_toe]
+        utils.parent_object_list(grp_hdl_toe_list)
+
+        #----------------------
+        # parent the two ik handle hiraerchy's to the end of the pivot's.
+        cmds.parent(grp_hdl_list[0], grp_hdl_toe_list[0], piv_names[-1])
+
+        cmds.select(cl=1)
+
+
+    def pv_ik_hdl_leg_setup(self, ik_pv_ctrl): # ik_pv_ctrl, ik_handle
+        ''' add the polevector constraint to the leg RP ik handle. '''
+        # knee ctrl | leg ik handle
+        cmds.poleVectorConstraint(
+            ik_pv_ctrl, 
+            f"hdl_RP_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        )
+
+
+    def position_ik_ctrl_calf(self, ik_calf_ctrl, ik_pos_list, ik_rot_list):
+        '''
+        position the calf control. (same as the ankle control)
+        '''
+        cmds.xform(ik_calf_ctrl, t=ik_pos_list[-1], ro=ik_rot_list[-1], ws=1)
+
     
+    def wire_calf_aim_setup(self, ik_ctrl_list, jnt_aim_ls):
+        # offset grp the ik calf ctrl. (ctrl must be zero)
+        calf_ctrl = ik_ctrl_list[2]
+        ofs_grp_calf = f"ofs_grp_{calf_ctrl}"
+        utils.cr_node_if_not_exists(0, "transform", ofs_grp_calf)
+        cmds.matchTransform(ofs_grp_calf, calf_ctrl, pos=1, rot=1, scl=0)
+        cmds.parent(ofs_grp_calf, f"grp_ctrl_ik_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+        cmds.parent(calf_ctrl, ofs_grp_calf)
+        cmds.select(cl=1)
 
-    def wire_ik_ctrl_calf(self):
-        '''
-        positoned same as the ankle control. drives the rotationd of the 'grp_hdl_RP_quadLeg_0_L'.
-        need to the ankle control to drive the calf with matrix fk setup!
-        '''
+        # calf drives ik handle (grp_hdl_RP_quadLeg_0_L) orientation w/ direct connection.
+        grp_hdl_rp_leg = f"grp_hdl_RP_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        utils.connect_attr(f"{calf_ctrl}.rotate", f"{grp_hdl_rp_leg}.rotate")
 
+        # cr ik handle on aim joints. (RP) + (group it)
+        hdl_aim = f"hdl_SC_{self.dm.mdl_nm}_aim_{self.dm.unique_id}_{self.dm.side}" # hdl_bipedArm_0_L
+        cmds.ikHandle( n=hdl_aim, sol="ikRPsolver", sj=jnt_aim_ls[0], ee=jnt_aim_ls[-1], ccv=False, pcv=False)
+        grp_logic_hdl = f"grp_{hdl_aim}"
+        utils.cr_empty_grp(grp_logic_hdl)
+        cmds.matchTransform(grp_logic_hdl, hdl_aim, pos=1, rot=1, scl=0)
+        cmds.parent(hdl_aim, grp_logic_hdl)
+        cmds.select(cl=1)
+
+        # point constrain (ik ankle ctrl > jnt_ik_quadLeg_aimBase_0_L)
+        ankle_ctrl = ik_ctrl_list[-1]
+        cmds.pointConstraint(ankle_ctrl, jnt_aim_ls[0], mo=1)
+
+        # point constrain (ik hip ctrl > hdl_RP_quadLeg_aim_0_L)
+        hip_ctrl = ik_ctrl_list[0]
+        cmds.pointConstraint(hip_ctrl, hdl_aim, mo=1)
+
+        # polevector contrain (ctrl_ik_quadLeg_knee_0_L > hdl_RP_quadLeg_aim_0_L)
+        ik_pv_ctrl = ik_ctrl_list[1]
+        cmds.poleVectorConstraint(ik_pv_ctrl, hdl_aim)
+
+        # parent constrain (jnt_ik_quadLeg_aimBase_0_L > ofs_grp_ctrl_ik_calf)
+        cmds.parentConstraint(jnt_aim_ls[0], ofs_grp_calf, mo=1)
+        # orient constrain (jnt_ik_quadLeg_aimBase_0_L > ofs_grp_ctrl_ik_calf)
+        cmds.orientConstraint(
+            jnt_aim_ls[0], 
+            f"grp_hdl_RP_{self.dm.mdl_nm}_rollAim_{self.dm.unique_id}_{self.dm.side}", 
+            mo=1
+        )
+
+        # parent constrain (ankle_ctrl > grp_ori)
+        cmds.parentConstraint(
+            ankle_ctrl, 
+            f"grp_ik_{self.dm.mdl_nm}_ori_{self.dm.unique_id}_{self.dm.side}", 
+            mo=1
+        )
+
+
+
+
+    
+    
+    # (drives the rotationd of the 'grp_hdl_RP_quadLeg_0_L'.
+    # need to the ankle control to drive the calf with matrix fk setup!)
 
     def wire_ik_logic_elements(self, input_grp, ik_logic_jnt_list, ik_ctrl_list):
         '''
-        arm pinn & polevector
+        arm pinn
         '''
         pass
         # # add opm from ik wrist ctrl to the mm_pv_ik_hdl

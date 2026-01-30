@@ -76,10 +76,8 @@ class BuildBipedArm(module_blueprint.ModuleBP, system_bipedArm.SystemBipedArm):
 
         self.wire_ctrl_ik_wrist(input_grp, self.dm.ik_ctrl_list)
 
-        spine_top_name = f"ctrl_ik_spine_spine_top_{self.dm.external_plg_dict['hook_plg_grp'].split('_')[-2]}_{self.dm.external_plg_dict['hook_plg_grp'].split('_')[-1]}"
-        # # temp_spine_name = f"ctrl_ik_spine_top"
-        
-        self.wire_ctrl_ik_elbow(input_grp, self.dm.ik_ctrl_list, spine_top_name)
+        ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG)
+        self.wire_ik_ctrl_pv(input_grp, 2, self.dm.ik_ctrl_list, ctrl_extrenal)
         
         bc_ikfk_stretch, logic_ik_hdl = self.wire_ik_logic_elements(input_grp, logic_jnt_list, self.dm.ik_ctrl_list, d_shld_wrist, d_shld_elb, d_elb_wrist)
         self.group_logic_elements(logic_jnt_list, logic_ik_hdl, [cv_upper, cv_lower])

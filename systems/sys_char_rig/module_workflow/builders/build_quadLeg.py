@@ -47,8 +47,8 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
 
         # Phase 1 - Foundation
         input_grp, output_grp = self.cr_input_output_groups()
-        self.add_outputs_matrix_attr(output_grp, ["sknAnkle", "twistAnkle"])
-        if cmds.objExists(self.dm.external_plg_dict['base_plg_grp']) and cmds.objExists(self.dm.external_plg_dict['hook_plg_grp']):
+        self.add_outputs_matrix_attr(output_grp, self.dm.output_hook_mtx_list)
+        if cmds.objExists(self.dm.external_plg_dict['global_scale_grp']):# cmds.objExists(self.dm.external_plg_dict['base_plg_grp']) and cmds.objExists(self.dm.external_plg_dict['hook_plg_grp']):
             print(F"running 'wire_input_grp()'")
             self.wire_input_grp(input_grp, self.dm.GLOBAL_SCALE_PLG, self.dm.BASE_MTX_PLG, self.dm.HOOK_MTX_PLG)
 
@@ -66,23 +66,37 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         self.wire_fk_logic_joints(self.dm.fk_ctrl_list, fk_logic_jnt_ls, BM_limbRt_node)
 
         self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[0], self.dm.ik_ctrl_list)
-        
-        # temp: 
-        ctrl_extrenal = f"ctrl_ik_spine_bottom_0_M"
-        
+
+        ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG) # f"ctrl_ik_spine_bottom_0_M"
+        print(f"ctrl_extrenal = `{ctrl_extrenal}`")
         self.wire_ik_ctrl_pv(input_grp, 1, self.dm.ik_ctrl_list, ctrl_extrenal)
+        
+        ''' call function to position calf control here! '''
+
         self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], ik_logic_jnt_ls[1], ik_ctrl_grp)
         
-        self.cr_ik_aim_logic_joints(self.dm.ik_pos_dict, self.dm.ik_rot_dict, self.dm.ik_ctrl_list, ik_logic_jnt_ls)
+        jnt_aim_ls = self.cr_ik_aim_logic_joints(self.dm.ik_pos_dict, self.dm.ik_rot_dict, self.dm.ik_ctrl_list, ik_logic_jnt_ls)
         
         # ik setup
         self.wire_logic_ik_handles(input_grp, ik_logic_jnt_ls, self.dm.ik_ctrl_list, 
                                    self.dm.ik_pos_dict, self.dm.ik_rot_dict)
 
-        print("wire limbRt to ik chain root")
+        # limbRoot control drive ik hip joint. 
         self.wire_limbRt_ik_chain_root(self.dm.ik_ctrl_list, ik_logic_jnt_ls, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
 
-        # Phase 3 - Finalising
+        ''' Work '''
+        temp_lion_foot_piv_dict = {
+            "piv_out": [[14.085709571838375, 0.1273138374090239, -39.837726593017564],[0.0, 11.1360043694971, 0.0]],
+            "piv_in": [[4.575018405914303, 0.72316294908524, -37.60049057006834],[0.0, 11.136004369497094, 0.0]],
+            "piv_toe": [[10.154307365417475, -0.0607974529266313, -34.73563385009764],[0.0, 11.136004369497106, 0.0]],
+            "piv_heel": [[7.941305160522457, -0.008862497514643838, -44.297607421874986],[0.0, 11.136004369497092, 0.0]],
+        }
+        ik_ankle_trans_data = [list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1]]
+        self.wire_ik_logic_hierarchy(temp_lion_foot_piv_dict, ik_ankle_trans_data)
+        self.pv_ik_hdl_leg_setup(self.dm.ik_ctrl_list[1])
+        self.position_ik_ctrl_calf(self.dm.ik_ctrl_list[2], list(self.dm.ik_pos_dict.values()), list(self.dm.ik_rot_dict.values()))
+        self.wire_calf_aim_setup(self.dm.ik_ctrl_list, jnt_aim_ls)
+        # # Phase 3 - Finalising
         # self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
         #                    input_grp, output_grp, 
         #                    f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 

@@ -75,11 +75,8 @@ class BuildBipedLeg(module_blueprint.ModuleBP, system_bipedLeg.SystemBipedLeg):
 
         self.wire_ctrl_ik_ankle(input_grp, self.dm.ik_ctrl_list)
 
-        ''' *Needs uopdating to read the hook matrix! '''
-        spine_bottom_name = f"ctrl_ik_spine_spine_bottom_{self.dm.external_plg_dict['hook_plg_grp'].split('_')[-2]}_{self.dm.external_plg_dict['hook_plg_grp'].split('_')[-1]}"
-        # # temp_spine_name = f"ctrl_ik_spine_top"
-        
-        self.wire_ctrl_ik_pv(input_grp, self.dm.ik_ctrl_list, spine_bottom_name)
+        ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG)
+        self.wire_ik_ctrl_pv(input_grp, 1, self.dm.ik_ctrl_list, ctrl_extrenal)
         
         bc_ikfk_stretch, logic_ik_hdl = self.wire_ik_logic_elements(input_grp, logic_jnt_list, self.dm.ik_ctrl_list, db_hip_ankle, db_hip_kne, db_kne_akl)
         self.group_logic_elements(logic_jnt_list, logic_ik_hdl, [cv_upper, cv_lower])
@@ -112,8 +109,6 @@ class BuildBipedLeg(module_blueprint.ModuleBP, system_bipedLeg.SystemBipedLeg):
         # self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], logic_jnt_list[1], ik_ctrl_grp)
         # self.lock_ctrl_attributes(self.dm.fk_ctrl_list)
         
-        
-
         self.output_group_setup(self.dm.output_hook_mtx_list)
 
         self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,

@@ -113,25 +113,25 @@ spine_data = {
         },
     "fk_dict":{
         "fk_pos":{
-            'ctrl_fk_spine_spine0_0_M': [0.0, 108.51357426399493, 3.0], 
-            'ctrl_fk_spine_spine1_0_M': [0.0, 119.80152392711072, 3.0], 
+            'ctrl_fk_spine_spine0_0_M': [0.0, 108.51357426399493, 3.0],
+            'ctrl_fk_spine_spine1_0_M': [0.0, 119.80152392711072, 3.0],
             'ctrl_fk_spine_spine2_0_M': [0.0, 129.42469282205994, 3.0]
             },
         "fk_rot":{
-            'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0], 
-            'ctrl_fk_spine_spine1_0_M': [0.0, 0.0, 0.0], 
+            'ctrl_fk_spine_spine0_0_M': [0.0, 0.0, 0.0],
+            'ctrl_fk_spine_spine1_0_M': [0.0, 0.0, 0.0],
             'ctrl_fk_spine_spine2_0_M': [0.0, 0.0, 0.0]
             }
         },
     "ik_dict":{
         "ik_pos":{
-            'ctrl_ik_spine_spine_bottom_0_M': [0.0, 108.51357426399493, 3.0], 
-            'ctrl_ik_spine_spine_middle_0_M': [0.0, 128.5, 3.0], 
-            'ctrl_ik_spine_spine_top_0_M': [0.0, 143.59873962402344, 3.0]
+            'ctrl_ik_spine_bottom_0_M': [0.0, 108.51357426399493, 3.0],
+            'ctrl_ik_spine_middle_0_M': [0.0, 128.5, 3.0],
+            'ctrl_ik_spine_top_0_M': [0.0, 143.59873962402344, 3.0]
             },
         "ik_rot":{
-            'ctrl_ik_spine_bottom_0_M': [0.0, 0.0, 0.0], 
-            'ctrl_ik_spine_middle_0_M': [0.0, 0.0, 0.0], 
+            'ctrl_ik_spine_bottom_0_M': [0.0, 0.0, 0.0],
+            'ctrl_ik_spine_middle_0_M': [0.0, 0.0, 0.0],
             'ctrl_ik_spine_top_0_M': [0.0, 0.0, 0.0]
             }
         },
@@ -197,7 +197,14 @@ bipedArm_data = {
 }
 
 bipedLeg_data = {'module_name': 'bipedLeg', 
-                 'external_plg_dict': {'global_scale_grp': 'grp_Outputs_root_0_M', 'global_scale_atr': 'globalScale', 'base_plg_grp': 'grp_Outputs_root_0_M', 'base_plg_atr': 'mtx_root_ctrl_fk_centre', 'hook_plg_grp': 'grp_Outputs_spine_0_M', 'hook_plg_atr': 'mtx_spine_jnt_skn_bottom'}, 
+                 'external_plg_dict': {
+                    'global_scale_grp': 'grp_Outputs_root_0_M', 
+                    'global_scale_atr': 'globalScale', 
+                    'base_plg_grp': 'grp_Outputs_root_0_M', 
+                    'base_plg_atr': 'mtx_root_ctrl_fk_centre', 
+                    'hook_plg_grp': 'grp_Outputs_spine_0_M', 
+                    'hook_plg_atr': 'mtx_spine_jnt_skn_bottom'
+                    }, 
                  'output_hook_mtx_list': ['jnt_skn_ankle'], 
                  'skeleton_dict': {'skel_pos': {'hip': [8.210568013295946, 103.58956847654837, 2.1476670526664368], 'knee': [10.875130103963928, 52.32378724476916, 0.013905443573857479], 'ankle': [12.465309992342632, 10.014450505398498, -2.946292193716769], 'ball': [15.084234639437367, -1.0658141036401503e-14, 10.499007138903732], 'toe': [16.447420532988694, -9.603429163007607e-15, 17.475698893578098]}, 'skel_rot': {'hip': [84.09036654730028, 2.3801548207861436, -87.0247033055345], 'knee': [84.09036654730025, 3.9993962978355366, -87.84757364250524], 'ankle': [71.73512958736823, -52.4081416341695, -75.3445305140444], 'ball': [0.0, -78.9441859480629, 0.0], 'toe': [0.0, -78.9441859480629, 0.0]}}, 'fk_dict': {'fk_pos': {'ctrl_fk_bipedLeg_hip_0_L': [8.210568013295946, 103.58956847654837, 2.1476670526664368], 'ctrl_fk_bipedLeg_knee_0_L': [10.875130103963928, 52.32378724476916, 0.013905443573857479], 'ctrl_fk_bipedLeg_ankle_0_L': [12.465309992342632, 10.014450505398498, -2.946292193716769], 'ctrl_fk_bipedLeg_ball_0_L': [15.084234639437367, -1.0658141036401503e-14, 10.499007138903732]}, 'fk_rot': {'ctrl_fk_bipedLeg_hip_0_L': [84.09036654730028, 2.3801548207861436, -87.0247033055345], 'ctrl_fk_bipedLeg_knee_0_L': [84.09036654730025, 3.9993962978355366, -87.84757364250524], 'ctrl_fk_bipedLeg_ankle_0_L': [71.73512958736823, -52.4081416341695, -75.3445305140444], 'ctrl_fk_bipedLeg_ball_0_L': [0.0, -78.9441859480629, 0.0]}}, 
                  'ik_dict': {
