@@ -57,6 +57,7 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
 
         fk_logic_jnt_ls = self.cr_typ_jnt_chain("fk", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         ik_logic_jnt_ls = self.cr_typ_jnt_chain("ik", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        skin_jnt_ls = self.cr_typ_jnt_chain("skn", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
 
         # Phase 2 - Module-specific class functions in 'System[ModuleName]'
         self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
@@ -95,7 +96,15 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         self.wire_ik_logic_hierarchy(temp_lion_foot_piv_dict, ik_ankle_trans_data)
         self.pv_ik_hdl_leg_setup(self.dm.ik_ctrl_list[1])
         self.position_ik_ctrl_calf(self.dm.ik_ctrl_list[2], list(self.dm.ik_pos_dict.values()), list(self.dm.ik_rot_dict.values()))
-        self.wire_calf_aim_setup(self.dm.ik_ctrl_list, jnt_aim_ls)
+        self.wire_calf_aim_setup(jnt_aim_ls, self.dm.ik_ctrl_list, ik_logic_jnt_ls )
+
+        mdl_settings_ctrl, ikfk_plug = self.wire_mdl_setting_ctrl(skin_jnt_ls[3])
+        self.blend_ik_fk_states_to_skin_chain(ik_logic_jnt_ls, fk_logic_jnt_ls, skin_jnt_ls, mdl_settings_ctrl, ikfk_plug)
+        
+        # foot
+        foot_piv_atr_list = self.cr_foot_atr(self.dm.ik_ctrl_list)
+        self.wire_foot_atr(foot_piv_atr_list, self.dm.ik_ctrl_list)
+
         # # Phase 3 - Finalising
         # self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
         #                    input_grp, output_grp, 

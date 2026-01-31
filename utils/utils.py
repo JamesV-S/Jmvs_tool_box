@@ -93,9 +93,11 @@ def connect_attr(source_attr, target_attr):
 class Plg():
     axis = ['X', 'Y', 'Z']
     mtx_ins = []
+    inp_axis = []
     out_axis = []
     for x in range(3):
         mtx_ins.append(f".matrixIn[{x}]")
+        inp_axis.append(f".input{axis[x]}")
         out_axis.append(f".output{axis[x]}")
     
     inMatrixs = []
