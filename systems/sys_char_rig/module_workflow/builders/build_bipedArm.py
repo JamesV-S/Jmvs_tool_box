@@ -29,43 +29,34 @@ class BuildBipedArm(module_blueprint.ModuleBP, system_bipedArm.SystemBipedArm):
 
     def build(self):
         print(f"running Build BipedArm")
-
-        # Input & Output grp setup
+        # - - - - - - -
+        # phase 1 - foundation
+            # Input & Output grp setup
         input_grp, output_grp = self.cr_input_output_groups()
         self.add_outputs_matrix_attr(output_grp, self.dm.output_hook_mtx_list)
         if cmds.objExists(self.dm.external_plg_dict['global_scale_grp']):
             self.wire_input_grp(input_grp, self.dm.GLOBAL_SCALE_PLG, self.dm.BASE_MTX_PLG, self.dm.HOOK_MTX_PLG)
 
-        # # Group the controls!
+            # # Group the controls!
         fk_ctrl_grp = self.group_ctrls(self.dm.fk_ctrl_list, "fk")
         ik_ctrl_grp = self.group_ctrls(self.dm.ik_ctrl_list, "ik")
+
+        logic_grp = self.cr_logic_group()
+        joint_grp = self.cr_joint_group()
         
+        # - - - - - - -
         # Phase 2 - Module-specific
-
-        # cr skn joints
+            # cr skn joints
         skn_jnt_clav, skn_jnt_wrist = self.cr_jnt_skn_start_end(self.dm.ik_pos_dict)
-        
-        # cr twist curves & skn joints
-        cv_upper, upper_cv_intermediate_pos_ls = self.cr_logic_curves("upper", self.dm.skel_pos_dict['shoulder'], self.dm.skel_pos_dict['elbow'])
-        cv_lower, lower_cv_intermediate_pos_ls = self.cr_logic_curves("lower", self.dm.skel_pos_dict['elbow'], self.dm.skel_pos_dict['wrist'])
-        
-        sknUpper_jnt_chain = self.cr_skn_twist_joint_chain("upper", cv_upper,
-                                                           self.dm.skel_pos_dict['shoulder'], 
-                                                           self.dm.skel_pos_dict['elbow'])
-        sknLower_jnt_chain = self.cr_skn_twist_joint_chain("lower", cv_lower,
-                                                           self.dm.skel_pos_dict['elbow'], 
-                                                           self.dm.skel_pos_dict['wrist'])
-        
-        self.group_jnts_skn([skn_jnt_clav, skn_jnt_wrist], [sknUpper_jnt_chain, sknLower_jnt_chain])
-        
         self.add_custom_input_attr(input_grp)
-
-        # wire connections
+            # wire connections
         self.wire_hook_clav_armRt_setup(input_grp, [self.dm.ik_ctrl_list[0], self.dm.ik_ctrl_list[1]], skn_jnt_clav, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
-        
+
+        #------
+        # fk setup
         blend_armRoot_node = self.wire_fk_ctrl_setup(input_grp, self.dm.ik_ctrl_list[1], self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
         logic_jnt_list = self.cr_logic_rig_joints(self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
-        
+
         # d_shld_wrist, d_shld_elb, d_elb_wrist = self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
         d_skel_dict = self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
         print(f"d_skel_dict = {d_skel_dict}")
@@ -73,14 +64,16 @@ class BuildBipedArm(module_blueprint.ModuleBP, system_bipedArm.SystemBipedArm):
         d_shld_elb, d_elb_wrist = d_skel_dict['shoulder_elbow'], d_skel_dict['elbow_wrist']
         self.wire_fk_ctrl_stretch_setup(self.dm.fk_ctrl_list, d_shld_elb, d_elb_wrist)
         self.wire_fk_ctrl_to_logic_joint(blend_armRoot_node, self.dm.fk_ctrl_list, logic_jnt_list)
-
+        
+        #------
+        # ik setup
         self.wire_ctrl_ik_wrist(input_grp, self.dm.ik_ctrl_list)
 
         ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG)
         self.wire_ik_ctrl_pv(input_grp, 2, self.dm.ik_ctrl_list, ctrl_extrenal)
+        self.wire_pv_reference_curve(self.dm.ik_ctrl_list[2], logic_jnt_list[1], ik_ctrl_grp)
         
         bc_ikfk_stretch, logic_ik_hdl = self.wire_ik_logic_elements(input_grp, logic_jnt_list, self.dm.ik_ctrl_list, d_shld_wrist, d_shld_elb, d_elb_wrist)
-        self.group_logic_elements(logic_jnt_list, logic_ik_hdl, [cv_upper, cv_lower])
 
         skn_jnt_wrist_ik_plg, skn_jnt_wrist_fk_plg = self.wire_jnt_skn_wrist(skn_jnt_wrist, logic_jnt_list, self.dm.fk_ctrl_list, self.dm.ik_ctrl_list)
 
@@ -91,23 +84,36 @@ class BuildBipedArm(module_blueprint.ModuleBP, system_bipedArm.SystemBipedArm):
                             bc_ikfk_stretch, logic_ik_hdl,
                             fk_ctrl_grp, ik_ctrl_grp)
         
-        '''TEMP shaper_ctrl_list'''
+        #------
+        # twist limb setup
+            # cr twist curves & skn joints
+        cv_upper, upper_cv_intermediate_pos_ls = self.cr_logic_curves("upper", self.dm.skel_pos_dict['shoulder'], self.dm.skel_pos_dict['elbow'])
+        cv_lower, lower_cv_intermediate_pos_ls = self.cr_logic_curves("lower", self.dm.skel_pos_dict['elbow'], self.dm.skel_pos_dict['wrist'])
+        
+        sknUpper_jnt_chain = self.cr_skn_twist_joint_chain("upper", cv_upper, logic_jnt_list[0], 'zdown')
+        sknLower_jnt_chain = self.cr_skn_twist_joint_chain("lower", cv_lower, logic_jnt_list[1], 'zdown')
+
+            # shaper controls: (drives the twist joints to follow the rig)
         unorganised_shaper_ctrl_list = ["ctrl_shp_bipedArm_main_0_L", "ctrl_shp_bipedArm_middle_0_L", 
                             "ctrl_shp_bipedArm_upper_0_L", "ctrl_shp_bipedArm_lower_0_L"]
         shaper_ctrl_list = self.organise_ctrl_shaper_list(unorganised_shaper_ctrl_list)
         shaper_ctrl_grp = self.group_ctrls(shaper_ctrl_list, "shaper")
         self.wire_shaper_ctrls(shaper_ctrl_list, logic_jnt_list, self.dm.ik_ctrl_list, shaper_plug, shaper_ctrl_grp)
-
         self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
-
-        hdl_upper, hdl_lower = self.cr_twist_ik_spline(sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
-        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[1], logic_jnt_list, self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+    
+            # twist operations
+        hdl_upper, hdl_lower = self.cr_twist_ik_spline(logic_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
+        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[1], logic_jnt_list[1], self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         fm_upp_global, fm_low_global = self.wire_skn_twist_joints_stretch(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
         self.wire_skn_twist_joints_volume(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global, d_shld_elb, d_elb_wrist)
-        self.wire_rotations_on_twist_joints(skn_jnt_wrist, self.dm.ik_ctrl_list[1], logic_jnt_list[0], logic_jnt_list[1], hdl_upper, hdl_lower)
+        self.wire_rotations_on_twist_joints(self.dm.ik_ctrl_list[1], logic_jnt_list[0], logic_jnt_list[1], skn_jnt_wrist, hdl_upper, hdl_lower)
+
+        # - - - - - - -
+        # Phase 3 - finalising
+        self.group_jnts_skn(joint_grp, [skn_jnt_clav, skn_jnt_wrist], [sknUpper_jnt_chain, sknLower_jnt_chain])
+        self.group_logic_elements(logic_grp, logic_jnt_list, logic_ik_hdl, [cv_upper, cv_lower])
 
         self.parent_ik_ctrls_out(self.dm.ik_ctrl_list)
-        self.wire_pv_reference_curve(self.dm.ik_ctrl_list[2], logic_jnt_list[1], ik_ctrl_grp)
         self.lock_ctrl_attributes(self.dm.fk_ctrl_list)
 
         self.output_group_setup(self.dm.output_hook_mtx_list)

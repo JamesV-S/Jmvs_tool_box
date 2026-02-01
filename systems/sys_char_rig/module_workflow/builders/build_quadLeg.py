@@ -43,9 +43,8 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         # Returns:N/A
         '''
         print(f"Running Build{self.dm.mdl_nm}.build()")
-
-
-        # Phase 1 - Foundation
+        # - - - - - - -
+        # phase 1 - foundation
         input_grp, output_grp = self.cr_input_output_groups()
         self.add_outputs_matrix_attr(output_grp, self.dm.output_hook_mtx_list)
         if cmds.objExists(self.dm.external_plg_dict['global_scale_grp']):# cmds.objExists(self.dm.external_plg_dict['base_plg_grp']) and cmds.objExists(self.dm.external_plg_dict['hook_plg_grp']):
@@ -59,33 +58,45 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         ik_logic_jnt_ls = self.cr_typ_jnt_chain("ik", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         skin_jnt_ls = self.cr_typ_jnt_chain("skn", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
 
-        # Phase 2 - Module-specific class functions in 'System[ModuleName]'
-        self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
+        logic_grp = self.cr_logic_group()
+        joint_grp = self.cr_joint_group()
+
+        d_skel_dict = self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
+        print(f" -* d_skel_dict = {d_skel_dict}")
+        
+        db_hip_calf = utils.get_distance("hip_calf", list(self.dm.fk_pos_dict.values())[0], list(self.dm.fk_pos_dict.values())[2])
+        print(f" -* db_hip_ankle = {db_hip_calf}")
+
+        db_hip_kne, db_kne_clf = d_skel_dict['hip_knee'], d_skel_dict['knee_calf']
+        print(f" -* db_hip_kne = `{db_hip_kne}`")
+        print(f" -* db_kne_clf = `{db_kne_clf}`")
+
+        # - - - - - - -
+        # Phase 2 - Module-specific
+        self.add_custom_input_attr(input_grp)
         self.wire_hook_limbRoot_setup(input_grp, self.dm.ik_ctrl_list, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
         
+        #------
+        # fk setup
         BM_limbRt_node = self.wire_fk_ctrl_setup(input_grp, self.dm.ik_ctrl_list[0], self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
         self.wire_fk_logic_joints(self.dm.fk_ctrl_list, fk_logic_jnt_ls, BM_limbRt_node)
-
+        
+        #------
+        # ik setup
         self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[0], self.dm.ik_ctrl_list)
 
         ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG) # f"ctrl_ik_spine_bottom_0_M"
         print(f"ctrl_extrenal = `{ctrl_extrenal}`")
         self.wire_ik_ctrl_pv(input_grp, 1, self.dm.ik_ctrl_list, ctrl_extrenal)
-        
-        ''' call function to position calf control here! '''
-
         self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], ik_logic_jnt_ls[1], ik_ctrl_grp)
-        
+
         jnt_aim_ls = self.cr_ik_aim_logic_joints(self.dm.ik_pos_dict, self.dm.ik_rot_dict, self.dm.ik_ctrl_list, ik_logic_jnt_ls)
         
-        # ik setup
+        
         self.wire_logic_ik_handles(input_grp, ik_logic_jnt_ls, self.dm.ik_ctrl_list, 
                                    self.dm.ik_pos_dict, self.dm.ik_rot_dict)
-
-        # limbRoot control drive ik hip joint. 
+            # limbRoot control drive ik hip joint. 
         self.wire_limbRt_ik_chain_root(self.dm.ik_ctrl_list, ik_logic_jnt_ls, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
-
-        ''' Work '''
         temp_lion_foot_piv_dict = {
             "piv_out": [[14.085709571838375, 0.1273138374090239, -39.837726593017564],[0.0, 11.1360043694971, 0.0]],
             "piv_in": [[4.575018405914303, 0.72316294908524, -37.60049057006834],[0.0, 11.136004369497094, 0.0]],
@@ -93,21 +104,62 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
             "piv_heel": [[7.941305160522457, -0.008862497514643838, -44.297607421874986],[0.0, 11.136004369497092, 0.0]],
         }
         ik_ankle_trans_data = [list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1]]
-        self.wire_ik_logic_hierarchy(temp_lion_foot_piv_dict, ik_ankle_trans_data)
+        grp_ori = self.wire_ik_logic_hierarchy(temp_lion_foot_piv_dict, ik_ankle_trans_data)
         self.pv_ik_hdl_leg_setup(self.dm.ik_ctrl_list[1])
         self.position_ik_ctrl_calf(self.dm.ik_ctrl_list[2], list(self.dm.ik_pos_dict.values()), list(self.dm.ik_rot_dict.values()))
-        self.wire_calf_aim_setup(jnt_aim_ls, self.dm.ik_ctrl_list, ik_logic_jnt_ls )
-
-        mdl_settings_ctrl, ikfk_plug = self.wire_mdl_setting_ctrl(skin_jnt_ls[3])
+        grp_logic_aim_hdl = self.wire_calf_aim_setup(jnt_aim_ls, self.dm.ik_ctrl_list, ik_logic_jnt_ls )
+        
+        #------
+        # ikfk switch
+        mdl_settings_ctrl, ikfk_plug, stretch_state_plug, stretch_vol_plug, shaper_plug = self.wire_mdl_setting_ctrl(skin_jnt_ls[3])
         self.blend_ik_fk_states_to_skin_chain(ik_logic_jnt_ls, fk_logic_jnt_ls, skin_jnt_ls, mdl_settings_ctrl, ikfk_plug)
         
-        # foot
+        #------
+        # foot setup
         foot_piv_atr_list = self.cr_foot_atr(self.dm.ik_ctrl_list)
         self.wire_foot_atr(foot_piv_atr_list, self.dm.ik_ctrl_list)
+        
+        #------
+        # twist limb setup
+            # cr twist curves & skn joints
+        cv_upper, upper_cv_intermediate_pos_ls = self.cr_logic_curves("upper", self.dm.skel_pos_dict['hip'], self.dm.skel_pos_dict['knee'])
+        cv_lower, lower_cv_intermediate_pos_ls = self.cr_logic_curves("lower", self.dm.skel_pos_dict['knee'], self.dm.skel_pos_dict['calf'])
+        
+        sknUpper_jnt_chain = self.cr_skn_twist_joint_chain("upper", cv_upper, skin_jnt_ls[0], 'zup')
+        sknLower_jnt_chain = self.cr_skn_twist_joint_chain("lower", cv_lower, skin_jnt_ls[1], 'zup')
+        
+        # shaper controls: (drives the twist joints to follow the rig)
+        unorganised_shaper_ctrl_list = ["ctrl_shp_quadLeg_main_0_L", "ctrl_shp_quadLeg_middle_0_L", 
+                                    "ctrl_shp_quadLeg_upper_0_L", "ctrl_shp_quadLeg_lower_0_L"]
+        shaper_ctrl_list = self.organise_ctrl_shaper_list(unorganised_shaper_ctrl_list)
+        shaper_ctrl_grp = self.group_ctrls(shaper_ctrl_list, "shaper")
+        self.wire_shaper_ctrls(shaper_ctrl_list, skin_jnt_ls, shaper_plug, shaper_ctrl_grp)
+        self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, skin_jnt_ls)
+    
+            # twist operations
+        hdl_upper, hdl_lower = self.cr_twist_ik_spline(logic_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
+        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[0], skin_jnt_ls[1], self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        fm_upp_global, fm_low_global = self.wire_skn_twist_joints_stretch(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
+        self.wire_skn_twist_joints_volume(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global, db_hip_kne, db_kne_clf)
+        self.wire_rotations_on_twist_joints(self.dm.ik_ctrl_list[0], skin_jnt_ls[0], skin_jnt_ls[1], skin_jnt_ls[2], hdl_upper, hdl_lower)
 
-        # # Phase 3 - Finalising
-        # self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
-        #                    input_grp, output_grp, 
-        #                    f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
-        #                    f"grp_joints_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
-        #                    f"grp_logic_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+
+        # temp hide data
+        self.hide_data_in_scene(fk_ctrl_grp, ik_ctrl_grp, fk_logic_jnt_ls, ik_logic_jnt_ls, skin_jnt_ls, jnt_aim_ls)
+        
+        # - - - - - - -
+        # Phase 3 - finalising
+
+        self.group_jnts_skn(joint_grp, [], [skin_jnt_ls, sknUpper_jnt_chain, sknLower_jnt_chain])
+        self.group_quad_logic_elements(logic_grp, [fk_logic_jnt_ls, ik_logic_jnt_ls, jnt_aim_ls], [cv_upper, cv_lower], [grp_ori, grp_logic_aim_hdl])
+        self.wire_IKFK_switch(mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp)
+        self.parent_ik_ctrls_out(self.dm.ik_ctrl_list)
+        self.lock_ctrl_attributes(self.dm.fk_ctrl_list, self.dm.ik_ctrl_list, mdl_settings_ctrl)
+
+        self.output_group_setup(self.dm.output_hook_mtx_list)
+
+        self.group_module(self.dm.mdl_nm, self.dm.unique_id, self.dm.side,
+                    input_grp, output_grp, 
+                    f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
+                    joint_grp, 
+                    logic_grp)

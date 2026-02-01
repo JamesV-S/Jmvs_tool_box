@@ -58,6 +58,8 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
         self.group_ctrls(self.dm.ik_ctrl_list, "ik")
         self.group_ctrls(inv_ctrl_ls, "inv")
 
+        joint_grp = self.cr_joint_group()
+
         # # cr StrFw_jnt / nonStrFw / StrBw_jnt / nonStrBw in this script.
         strFw_jnt_chain = self.cr_typ_jnt_chain("StrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
         nonstrFw_jnt_chain = self.cr_typ_jnt_chain("nonStrFw", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
@@ -71,7 +73,7 @@ class BuildSpine(module_blueprint.ModuleBP, system_spine.SystemSpine):
         skn_bott_name, skn_top_name = self.cr_jnt_skn_start_end(self.dm.ik_pos_dict)
         
         # Temporarily cr skin_jnt chain!
-        self.group_jnts_skn([skn_bott_name, skn_top_name], [skn_jnt_chain])
+        self.group_jnts_skn(joint_grp, [skn_bott_name, skn_top_name], [skn_jnt_chain])
         
         # custom attr on Outputs or inputs grp
         self.add_custom_input_attr(input_grp, self.dm.skel_pos_num)

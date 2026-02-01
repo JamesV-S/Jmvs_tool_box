@@ -35,6 +35,19 @@ class SystemQuadLeg:
     
 
     # Phase 2 - Module-specific class functions in 'System[ModuleName]'
+    def add_custom_input_attr(self, inputs_grp):
+        '''
+        # Description:
+            Add module unique attributes to the input group.
+        # Arguments:
+            inputs_grp (string): Outputgrpup for this module.
+        # Returns: N/A
+        '''
+        utils.add_float_attrib(inputs_grp, [f"Squash_Value"], [1.0, 1.0], False)
+        cmds.setAttr(f"{inputs_grp}.Squash_Value", keyable=1, channelBox=1)
+        cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
+
+
     def wire_hook_limbRoot_setup(self, inputs_grp, ik_ctrl_list, ik_pos_dict, ik_rot_dict):
         '''
         # Description:
@@ -49,9 +62,6 @@ class SystemQuadLeg:
         '''
         # ctrl_clav = ik_ctrl_list[0]
         ctrl_limbRoot = ik_ctrl_list[0]
-        # Lock the limbRt rotate attr
-        for axis in (['x', 'y', 'z']):
-                cmds.setAttr(f"{ctrl_limbRoot}.r{axis}", lock=1, keyable=0, cb=1)
 
         # ctrl_clavicle setup
         # module_hook_mtx into ctrl_limb_root (ctrl_ik_quadLeg_hip_#_#)     
@@ -305,6 +315,8 @@ class SystemQuadLeg:
 
         cmds.select(cl=1)
 
+        return grp_ori
+
 
     def pv_ik_hdl_leg_setup(self, ik_pv_ctrl): # ik_pv_ctrl, ik_handle
         ''' add the polevector constraint to the leg RP ik handle. '''
@@ -339,10 +351,10 @@ class SystemQuadLeg:
         # cr ik handle on aim joints. (RP) + (group it)
         hdl_aim = f"hdl_SC_{self.dm.mdl_nm}_aim_{self.dm.unique_id}_{self.dm.side}" # hdl_bipedArm_0_L
         cmds.ikHandle( n=hdl_aim, sol="ikRPsolver", sj=jnt_aim_ls[0], ee=jnt_aim_ls[-1], ccv=False, pcv=False)
-        grp_logic_hdl = f"grp_{hdl_aim}"
-        utils.cr_empty_grp(grp_logic_hdl)
-        cmds.matchTransform(grp_logic_hdl, hdl_aim, pos=1, rot=1, scl=0)
-        cmds.parent(hdl_aim, grp_logic_hdl)
+        grp_logic_aim_hdl = f"grp_{hdl_aim}"
+        utils.cr_empty_grp(grp_logic_aim_hdl)
+        cmds.matchTransform(grp_logic_aim_hdl, hdl_aim, pos=1, rot=1, scl=0)
+        cmds.parent(hdl_aim, grp_logic_aim_hdl)
         cmds.select(cl=1)
 
         # point constrain (ik ankle ctrl > jnt_ik_quadLeg_aimBase_0_L)
@@ -358,16 +370,6 @@ class SystemQuadLeg:
         cmds.poleVectorConstraint(ik_pv_ctrl, hdl_aim)
 
         #----------------------------------------------------------------------
-        # # parent constrain (jnt_ik_quadLeg_aimBase_0_L > ofs_grp_ctrl_ik_calf)
-        # cmds.parentConstraint(jnt_aim_ls[0], ofs_grp_calf, mo=1)
-
-        # orient constrain (jnt_ik_quadLeg_aimBase_0_L > grp_hdl_aimRoll)
-        # cmds.orientConstraint(
-        #     jnt_aim_ls[0], 
-        #     f"grp_hdl_RP_{self.dm.mdl_nm}_rollAim_{self.dm.unique_id}_{self.dm.side}", 
-        #     mo=1
-        # )
-
         # add attrib to ctrl_ik_calf & wire to rev node
         orient_switch_attr = "aim_active"
         utils.add_locked_attrib(calf_ctrl, ["Attributes"])
@@ -381,31 +383,35 @@ class SystemQuadLeg:
         grp_rollAim = f"grp_hdl_RP_{self.dm.mdl_nm}_rollAim_{self.dm.unique_id}_{self.dm.side}"
         # jnt_aim > ctrl_ik_ankle > grp_rollAim (parent no translate)
         pcon_rollAim_name = f"Pcon_jntAim_ctrlIkAnkle_grp_hdl_{self.dm.mdl_nm}_rollAim_{self.dm.unique_id}_{self.dm.side}"
+        pcon_grpOfsCalf_name = f"Pcon_jntAim_ctrlIkAnkle_grp_hdl_{self.dm.mdl_nm}_grpOfsCalf_{self.dm.unique_id}_{self.dm.side}"
         cmds.parentConstraint(jnt_aim_ls[0], ankle_ctrl, grp_rollAim, n=pcon_rollAim_name, st=["x","z","y"], mo=1)
+        cmds.parentConstraint(jnt_aim_ls[0], ankle_ctrl, ofs_grp_calf, n=pcon_grpOfsCalf_name, mo=1)
         print(f" - Pcon: {jnt_aim_ls[0]} + {ankle_ctrl} > {grp_rollAim}")
         
         parts_ls = [jnt.split('_')[-3] for jnt in ik_jnt_list]
 
-        # blend between these
+        # blend the constraints on the grp_rollAim & ofs_grp_calf
         utils.connect_attr(
             f"{calf_ctrl}.{orient_switch_attr}", # jnt_ik_quadLeg_aimBase_0_LW0
-            f"Pcon_jntAim_ctrlIkAnkle_grp_hdl_{self.dm.mdl_nm}_rollAim_{self.dm.unique_id}_{self.dm.side}.jnt_ik_{self.dm.mdl_nm}_aimBase_{self.dm.unique_id}_{self.dm.side}W0")
+            f"{pcon_rollAim_name}.jnt_ik_{self.dm.mdl_nm}_aimBase_{self.dm.unique_id}_{self.dm.side}W0")
         utils.connect_attr(
             f"{rev_rollAim}{utils.Plg.out_axis[0]}", # ctrl_ik_quadLeg_ankle_0_LW1
-            f"Pcon_jntAim_ctrlIkAnkle_grp_hdl_{self.dm.mdl_nm}_rollAim_{self.dm.unique_id}_{self.dm.side}.ctrl_ik_{self.dm.mdl_nm}_{parts_ls[-3]}_{self.dm.unique_id}_{self.dm.side}W1")
-            
-
-        # jnt_ik_calf > ofs_grp_ctrl_ik_calf (parent all)
-        calf_ik_jnt = ik_jnt_list[2]
-        cmds.parentConstraint(calf_ik_jnt, ofs_grp_calf, n=f"Pcon_{calf_ik_jnt}", mo=1)
-
-
+            f"{pcon_rollAim_name}.ctrl_ik_{self.dm.mdl_nm}_{parts_ls[-3]}_{self.dm.unique_id}_{self.dm.side}W1")
+        utils.connect_attr(
+            f"{calf_ctrl}.{orient_switch_attr}", # jnt_ik_quadLeg_aimBase_0_LW0
+            f"{pcon_grpOfsCalf_name}.jnt_ik_{self.dm.mdl_nm}_aimBase_{self.dm.unique_id}_{self.dm.side}W0")
+        utils.connect_attr(
+            f"{rev_rollAim}{utils.Plg.out_axis[0]}", # ctrl_ik_quadLeg_ankle_0_LW1
+            f"{pcon_grpOfsCalf_name}.ctrl_ik_{self.dm.mdl_nm}_{parts_ls[-3]}_{self.dm.unique_id}_{self.dm.side}W1")
+                
         # parent constrain (ankle_ctrl > grp_ori)
         cmds.parentConstraint(
             ankle_ctrl, 
             f"grp_ik_{self.dm.mdl_nm}_ori_{self.dm.unique_id}_{self.dm.side}", 
             mo=1, n=f"Pcon_{ankle_ctrl}"
         )
+
+        return grp_logic_aim_hdl
         
 
     def wire_mdl_setting_ctrl(self, skn_jnt_wrist):
@@ -432,15 +438,14 @@ class SystemQuadLeg:
         # cmds.parent(mdl_settings_ctrl, f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
         
         ikfk_switch_attr = "IK_FK_Switch"
-        # stretch_state_attr = "Stretch_State"
-        # stretch_vol_attr = "Stretch_Volume"
-        # shaper_attr = "Vis_Shapers"
+        stretch_state_attr = "Stretch_State"
+        stretch_vol_attr = "Stretch_Volume"
+        shaper_attr = "Vis_Shapers"
         utils.add_locked_attrib(mdl_settings_ctrl, ["Attributes"])
-        utils.add_float_attrib(mdl_settings_ctrl, [f"{ikfk_switch_attr}"], [0.0, 1.0], True)
-        # utils.add_float_attrib(root_ctrl, [f"Auto_Stretch"], [0.0, 1.0], True)
+        utils.add_float_attrib(mdl_settings_ctrl, [f"{ikfk_switch_attr}", f"{stretch_state_attr}", f"{stretch_vol_attr}"], [0.0, 1.0], True)
 
-        # utils.add_locked_attrib(mdl_settings_ctrl, ["Visibility"])
-        # utils.add_float_attrib(mdl_settings_ctrl, [f"{shaper_attr}"], [0.0, 1.0], True)
+        utils.add_locked_attrib(mdl_settings_ctrl, ["Visibility"])
+        utils.add_float_attrib(mdl_settings_ctrl, [f"{shaper_attr}"], [0.0, 1.0], True)
 
         # wire 'skn_jnt_wrist' to  'mdl_settings_ctrl.OPM'
         mm_settings = f"MM_{mdl_settings_ctrl}"
@@ -449,11 +454,13 @@ class SystemQuadLeg:
         utils.connect_attr(f"{mm_settings}{utils.Plg.mtx_sum_plg}", f"{mdl_settings_ctrl}{utils.Plg.opm_plg}")
         
         ikfk_plug = f"{mdl_settings_ctrl}.{ikfk_switch_attr}"
-        # stretch_state_plug = f"{mdl_settings_ctrl}.{stretch_state_attr}"
-        # stretch_volume_plug = f"{mdl_settings_ctrl}.{stretch_vol_attr}"
-        # shaper_plug = f"{mdl_settings_ctrl}.{shaper_attr}"
+        stretch_state_plug = f"{mdl_settings_ctrl}.{stretch_state_attr}"
+        stretch_volume_plug = f"{mdl_settings_ctrl}.{stretch_vol_attr}"
+        shaper_plug = f"{mdl_settings_ctrl}.{shaper_attr}"
 
-        return mdl_settings_ctrl, ikfk_plug #, stretch_state_plug, stretch_volume_plug, shaper_plug
+        cmds.setAttr(ikfk_plug, 1)
+
+        return mdl_settings_ctrl, ikfk_plug ,stretch_state_plug, stretch_volume_plug, shaper_plug
 
 
     def blend_ik_fk_states_to_skin_chain(self, ik_chain, fk_chain, skn_chain, 
@@ -614,11 +621,8 @@ class SystemQuadLeg:
             else:
                 break
 
-
-    def wire_ik_logic_elements(self, input_grp, ik_logic_jnt_list, ik_ctrl_list):
-        '''
-        arm pinn
-        '''
+    
+    '''def wire_ik_logic_elements(self, input_grp, ik_logic_jnt_list, ik_ctrl_list):
         pass
         # # add opm from ik wrist ctrl to the mm_pv_ik_hdl
         # mm_pv_ik_hdl = f"MM_hdlPv_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
@@ -678,11 +682,11 @@ class SystemQuadLeg:
         # utils.connect_attr(f"{fm_global}{utils.Plg.out_flt}", f"{fm_max}{utils.Plg.flt_B}")
 
         #     # fm_upPercent_div > fm_upPercentTotal_mult.flt_A
-        # cmds.setAttr(f"{fm_upPercent_div}{utils.Plg.flt_A}", self.dm.d_shld_elb)
+        # cmds.setAttr(f"{fm_upPercent_div}{utils.Plg.flt_A}", self.dm.d_hip_kne)
         # cmds.setAttr(f"{fm_upPercent_div}{utils.Plg.flt_B}", self.dm.d_shld_wrist)
         # utils.connect_attr(f"{fm_upPercent_div}{utils.Plg.out_flt}", f"{fm_upPercentTotal_mult}{utils.Plg.flt_A}")
         #     # fm_lowPercent_div > fm_lowPercentTotal_mult.flt_A
-        # cmds.setAttr(f"{fm_lowPercent_div}{utils.Plg.flt_A}", self.dm.d_elb_wrist)
+        # cmds.setAttr(f"{fm_lowPercent_div}{utils.Plg.flt_A}", self.dm.db_kne_calf)
         # cmds.setAttr(f"{fm_lowPercent_div}{utils.Plg.flt_B}", self.dm.d_shld_wrist)
         # utils.connect_attr(f"{fm_lowPercent_div}{utils.Plg.out_flt}", f"{fm_lowPercentTotal_mult}{utils.Plg.flt_A}")
         
@@ -761,17 +765,221 @@ class SystemQuadLeg:
         #     # > hdl.poleVector
         # utils.connect_attr(f"{dm_pv}{utils.Plg.outT_plug}", f"{logic_hdl}.poleVector")
         
-        # return bc_ikfk_stretch, logic_hdl
+        # return bc_ikfk_stretch, logic_hdl'''
 
+    def hide_data_in_scene(self, fk_ctrl_grp, ik_ctrl_grp, fk_jnt_list, ik_jnt_list, skn_jnt_list, aim_jnt_list):
+        
+        cmds.hide(fk_ctrl_grp, fk_jnt_list[0], ik_jnt_list[0], aim_jnt_list[0])
 
     '''
     setup the shaper controls & twist joints same as biped arm. 
+
+    Joints that replace the ones in biped arm:
+        jnt_logic_shoulder == jnt_skn_hip
+        jnt_logic_elbow == jnt_skn_knee
+        jnt_logic_elbow == jnt_skn_calf
     '''
+
+    def wire_shaper_ctrls_to_curves(self, shaper_ctrl_list, upper_curve, lower_curve, 
+                                    upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, 
+                                    logic_jnt_list):
+        '''
+        # Description:
+            Wire ctrl_shaper's to the upper & lower curve's (that are going to 
+            drive the ik spline afterwards to position the joints)
+            - ONLY 'upper', 'middle' & 'lower' shaper controls drive the curves.
+            - The intermediate control points of the curves, have an offset in 
+              the MM.matrixIn[0]. [#.#, 0.0, 0.0] means Y & Z values should be 
+              0.0 to keep the curve straight!
+        # Arguments:
+            shaper_ctrl_list (list): Contains 4 shaper contol names. (organied)
+            upper_curve (string): 
+        # Returns: N/A
+        '''
+        shaper_main, shaper_upper, shaper_mid, shaper_lower = shaper_ctrl_list
+        # cr the utility nodes -> each 'set' = multMatrix & pointMatrixMult for each control points (3 'set' for each curve.)
+            # upper curve
+            # ctrl_upper_shaper drives the CENTRE of crv_upper.controlPoints ([1] & [2])
+            # ctrl_middle_shaper drives the END of crv_upper.controlPoints ([3])
+        mm_shld_upp_0 = f"MM_Crv0_{logic_jnt_list[0]}"
+        mm_shp_upp_1 = f"MM_Crv1_{shaper_upper}"
+        mm_shp_upp_2 = f"MM_Crv2_{shaper_upper}"
+        mm_shp_upp_3 = f"MM_Crv3_{shaper_mid}"
+        pmm_shld_upp_0 = f"PMM_Crv0_{logic_jnt_list[0]}"
+        pmm_shp_upp_1 = f"PMM_Crv1_{shaper_upper}"
+        pmm_shp_upp_2 = f"PMM_Crv2_{shaper_upper}"
+        pmm_shp_upp_3 = f"PMM_Crv3_{shaper_mid}"
+        
+            # lower curve
+            # ctrl_lower_shaper drives the CENTRE of crv_lower.controlPoints ([1] & [2])
+            # ctrl_middle_shaper drives the START of crv_lower.controlPoints ([0])
+        mm_shp_low_0 = f"MM_Crv0_{shaper_mid}"
+        mm_shp_low_1 = f"MM_Crv1_{shaper_lower}"
+        mm_shp_low_2 = f"MM_Crv2_{shaper_lower}"
+        mm_calf_low_3 = f"MM_Crv0_{logic_jnt_list[2]}"
+        pmm_shp_low_0 = f"PMM_Crv0_{shaper_mid}"
+        pmm_shp_low_1 = f"PMM_Crv1_{shaper_lower}"
+        pmm_shp_low_2 = f"PMM_Crv2_{shaper_lower}"
+        pmm_calf_low_3 = f"PMM_Crv0_{logic_jnt_list[2]}"
+        for mm_name, pmm_name in zip([mm_shld_upp_0, mm_shp_upp_1, mm_shp_upp_2, mm_shp_upp_3, mm_shp_low_0, mm_shp_low_1, mm_shp_low_2, mm_calf_low_3],
+                                     [pmm_shld_upp_0, pmm_shp_upp_1, pmm_shp_upp_2, pmm_shp_upp_3, pmm_shp_low_1, pmm_shp_low_2, pmm_shp_low_0, pmm_calf_low_3]):
+            utils.cr_node_if_not_exists(1, 'multMatrix', mm_name)
+            utils.cr_node_if_not_exists(1, 'pointMatrixMult', pmm_name)
+        # wire connections Upper
+            # offset > mm.[1]
+        shp_upp_pos = cmds.xform(shaper_upper, q=1, translation=1, ws=1)
+        upp_cv_1_offset = [x - y for x, y in zip(upper_cv_intermediate_pos_ls[0], shp_upp_pos)]
+        upp_cv_2_offset = [x - y for x, y in zip(upper_cv_intermediate_pos_ls[1], shp_upp_pos)]
+        
+        # Use Pyhtonic Slicing & Assignment method to set the items after the first index to 0.0 ([#.#, 0.0, 0.0])
+        upp_cv_1_offset[1:] = [0.0] * len(upp_cv_1_offset[1:])
+        upp_cv_2_offset[1:] = [0.0] * len(upp_cv_2_offset[1:])
+
+        utils.set_pos_mtx(upp_cv_1_offset, f"{mm_shp_upp_1}{utils.Plg.mtx_ins[0]}")
+        utils.set_pos_mtx(upp_cv_2_offset, f"{mm_shp_upp_2}{utils.Plg.mtx_ins[0]}")
+            # ctrl_shaper > mm.[1]
+        utils.connect_attr(f"{logic_jnt_list[0]}{utils.Plg.wld_mtx_plg}", f"{mm_shld_upp_0}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{shaper_upper}{utils.Plg.wld_mtx_plg}", f"{mm_shp_upp_1}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{shaper_upper}{utils.Plg.wld_mtx_plg}", f"{mm_shp_upp_2}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{shaper_mid}{utils.Plg.wld_mtx_plg}", f"{mm_shp_upp_3}{utils.Plg.mtx_ins[1]}")
+            # mm > pmm
+        utils.connect_attr(f"{mm_shld_upp_0}{utils.Plg.mtx_sum_plg}", f"{pmm_shld_upp_0}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_shp_upp_1}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_upp_1}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_shp_upp_2}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_upp_2}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_shp_upp_3}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_upp_3}{utils.Plg.inMtx_plg}")
+            # pmm > contrPoint[#]
+        utils.connect_attr(f"{pmm_shld_upp_0}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[0]")
+        utils.connect_attr(f"{pmm_shp_upp_1}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[1]")
+        utils.connect_attr(f"{pmm_shp_upp_2}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[2]")
+        utils.connect_attr(f"{pmm_shp_upp_3}{utils.Plg.output_plg}", f"{upper_curve}.controlPoints[3]")
+
+        # wire connections Upper
+            # offset > mm.[1]
+        shp_low_pos = cmds.xform(shaper_lower, q=1, translation=1, ws=1)
+        low_cv_1_offset = [x - y for x, y in zip(shp_low_pos, lower_cv_intermediate_pos_ls[0])]
+        low_cv_2_offset = [x - y for x, y in zip(shp_low_pos, lower_cv_intermediate_pos_ls[1])]
+
+        low_cv_1_offset[1:] = [0.0] * len(low_cv_1_offset[1:])
+        low_cv_2_offset[1:] = [0.0] * len(low_cv_2_offset[1:])
+
+        utils.set_pos_mtx(low_cv_1_offset, f"{mm_shp_low_1}{utils.Plg.mtx_ins[0]}")
+        utils.set_pos_mtx(low_cv_2_offset, f"{mm_shp_low_2}{utils.Plg.mtx_ins[0]}")
+            # ctrl_shaper > mm.[1]
+        utils.connect_attr(f"{shaper_lower}{utils.Plg.wld_mtx_plg}", f"{mm_shp_low_1}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{shaper_lower}{utils.Plg.wld_mtx_plg}", f"{mm_shp_low_2}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{shaper_mid}{utils.Plg.wld_mtx_plg}", f"{mm_shp_low_0}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{logic_jnt_list[2]}{utils.Plg.wld_mtx_plg}", f"{mm_calf_low_3}{utils.Plg.mtx_ins[1]}")
+            # mm > pmm
+        utils.connect_attr(f"{mm_shp_low_1}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_low_1}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_shp_low_2}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_low_2}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_shp_low_0}{utils.Plg.mtx_sum_plg}", f"{pmm_shp_low_0}{utils.Plg.inMtx_plg}")
+        utils.connect_attr(f"{mm_calf_low_3}{utils.Plg.mtx_sum_plg}", f"{pmm_calf_low_3}{utils.Plg.inMtx_plg}")
+            # pmm > contrPoint[#]
+        utils.connect_attr(f"{pmm_shp_low_1}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[1]")
+        utils.connect_attr(f"{pmm_shp_low_2}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[2]")
+        utils.connect_attr(f"{pmm_shp_low_0}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[0]")
+        utils.connect_attr(f"{pmm_calf_low_3}{utils.Plg.output_plg}", f"{lower_curve}.controlPoints[3]")
+
+    
+    def wire_skn_twist_joints_stretch(self, input_grp, upp_jnt_chain, low_jnt_chain, 
+                                      upper_curve, lower_curve):
+        '''
+        TO DO:
+            - Wire curves to the twist skin joints.
+            - Arm pinning.
+            - This function is the Stretch connection. 
+        '''
+        upp_jnt_num = len(upp_jnt_chain)-1
+        low_jnt_num = len(low_jnt_chain)-1
+        upp_curve_shape = cmds.listRelatives(upper_curve, s=1)[0]
+        low_curve_shape = cmds.listRelatives(lower_curve, s=1)[0]
+
+        upp_crv_info = f"INFO_{upper_curve}"
+        fm_upp_global = f"FM_global_{upper_curve}"
+        fm_upp_div = f"FM_div_{upper_curve}"
+        low_crv_info = f"INFO_{lower_curve}"
+        fm_low_global = f"FM_global_{lower_curve}"
+        fm_low_div = f"FM_div_{lower_curve}"
+        utils.cr_node_if_not_exists(1, 'curveInfo', upp_crv_info)
+        utils.cr_node_if_not_exists(1, "floatMath", fm_upp_global, {"operation":3})
+        utils.cr_node_if_not_exists(1, "floatMath", fm_upp_div, {"operation":3, "floatB":upp_jnt_num})
+        utils.cr_node_if_not_exists(1, 'curveInfo', low_crv_info)
+        utils.cr_node_if_not_exists(1, "floatMath", fm_low_global, {"operation":3})
+        utils.cr_node_if_not_exists(1, "floatMath", fm_low_div, {"operation":3, "floatB":low_jnt_num})
+
+        # wire upper
+            # curve > crv_info
+        utils.connect_attr(f"{upp_curve_shape}{utils.Plg.wld_space_plg}", f"{upp_crv_info}{utils.Plg.inp_curve_plg}")
+            # crv_info > fm_global
+        utils.connect_attr(f"{upp_crv_info}{utils.Plg.arc_len_plg}", f"{fm_upp_global}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{fm_upp_global}{utils.Plg.flt_B}")
+            # fm_global > fm_div
+        utils.connect_attr(f"{fm_upp_global}{utils.Plg.out_flt}", f"{fm_upp_div}{utils.Plg.flt_A}")
+            # fm_div > twist_jnt.translate
+        for jnt in (upp_jnt_chain[1:]):
+            utils.connect_attr(f"{fm_upp_div}{utils.Plg.out_flt}", f"{jnt}.translate{self.dm.prim_axis}")
+        
+        # wire lower the same way
+        utils.connect_attr(f"{low_curve_shape}{utils.Plg.wld_space_plg}", f"{low_crv_info}{utils.Plg.inp_curve_plg}")
+        utils.connect_attr(f"{low_crv_info}{utils.Plg.arc_len_plg}", f"{fm_low_global}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{fm_low_global}{utils.Plg.flt_B}")
+        utils.connect_attr(f"{fm_low_global}{utils.Plg.out_flt}", f"{fm_low_div}{utils.Plg.flt_A}")
+        for jnt in (low_jnt_chain[1:]):
+            utils.connect_attr(f"{fm_low_div}{utils.Plg.out_flt}", f"{jnt}.translate{self.dm.prim_axis}")
+
+        return fm_upp_global, fm_low_global
+
+    
+    def wire_skn_twist_joints_volume(self, input_grp, upp_jnt_chain, low_jnt_chain, upper_curve, lower_curve, 
+                                     stretch_vol_plug, fm_upp_global, fm_low_global,
+                                     d_hip_kne, db_kne_calf):
+        '''
+        TO DO:
+            - Wire curves to the twist skin joints.
+            - This function is the Volume preservation connection.
+        '''
+        fm_upp_norm = f"FM_norm_{upper_curve}"
+        fm_upp_pow = f"FM_pow_{upper_curve}"
+        fm_low_norm = f"FM_norm_{lower_curve}"
+        fm_low_pow = f"FM_pow_{lower_curve}"
+        bc_stretch_volume = f"BC_stretchVolume_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+
+        utils.cr_node_if_not_exists(1, "floatMath", fm_upp_norm, {"operation":3, "floatB":d_hip_kne})
+        utils.cr_node_if_not_exists(1, "floatMath", fm_upp_pow, {"operation":6})
+        utils.cr_node_if_not_exists(1, "floatMath", fm_low_norm, {"operation":3, "floatB":db_kne_calf})
+        utils.cr_node_if_not_exists(1, "floatMath", fm_low_pow, {"operation":6})
+        utils.cr_node_if_not_exists(1, "blendColors", bc_stretch_volume, {"color2R":d_hip_kne, "color2G":db_kne_calf})
+        
+        # wire bc_stretch_volume.blender
+        utils.connect_attr(stretch_vol_plug, f"{bc_stretch_volume}{utils.Plg.blndr_plg}")
+        
+        # wire upper
+            # > bc_stretch_volume
+        utils.connect_attr(f"{fm_upp_global}{utils.Plg.out_flt}", f"{bc_stretch_volume}{utils.Plg.color1_plg[0]}")
+            # > fm_upp/low_norm
+        utils.connect_attr(f"{bc_stretch_volume}{utils.Plg.out_letter[0]}", f"{fm_upp_norm}{utils.Plg.flt_A}")
+            # > fm_upp/low_pow
+        utils.connect_attr(f"{fm_upp_norm}{utils.Plg.out_flt}", f"{fm_upp_pow}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{input_grp}.Squash_Value", f"{fm_upp_pow}{utils.Plg.flt_B}")
+        # > upp/low_jnt_chain
+        for jnt in (upp_jnt_chain):
+            utils.connect_attr(f"{fm_upp_pow}{utils.Plg.out_flt}", f"{jnt}.scaleY")
+            utils.connect_attr(f"{fm_upp_pow}{utils.Plg.out_flt}", f"{jnt}.scaleZ")
+
+        # wire lower
+        utils.connect_attr(f"{fm_low_global}{utils.Plg.out_flt}", f"{bc_stretch_volume}{utils.Plg.color1_plg[1]}")
+        utils.connect_attr(f"{bc_stretch_volume}{utils.Plg.out_letter[1]}", f"{fm_low_norm}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{fm_low_norm}{utils.Plg.out_flt}", f"{fm_low_pow}{utils.Plg.flt_A}")
+        utils.connect_attr(f"{input_grp}.Squash_Value", f"{fm_low_pow}{utils.Plg.flt_B}")
+        for jnt in (low_jnt_chain):
+            utils.connect_attr(f"{fm_low_pow}{utils.Plg.out_flt}", f"{jnt}.scaleY")
+            utils.connect_attr(f"{fm_low_pow}{utils.Plg.out_flt}", f"{jnt}.scaleZ")
 
 
     # Do this after all other functions are complete.
+    '''
     def wire_fk_ctrl_stretch_setup(self, fk_ctrl_list, fk_pos_dict):
-        '''
+        
         # Description:
             - stretches the fk ctrl's by translating the control in front. So to 
             "stretch" fk_0, the fk_1 is translated away.
@@ -780,14 +988,14 @@ class SystemQuadLeg:
             fk_ctrl_list (list): Contains 3 fk control names.
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
         # Returns: N/A
-        '''
+        
         for ctrl in fk_ctrl_list[:-1]:
             utils.add_locked_attrib(ctrl, ["Attributes"])
             utils.add_float_attrib(ctrl, ["Stretch"], [0.01, 999.0], True)
             cmds.setAttr(f"{ctrl}.Stretch", 1)
             
-        # fk_shld_stretch_distance = self.d_shld_elb
-        # fk_elbow_stretch_distance = self.d_elb_wrist
+        # fk_shld_stretch_distance = self.d_hip_kne
+        # fk_elbow_stretch_distance = self.db_kne_calf
         # print(f"--------")
         # print(f"fk_shld_elb_stretch_distance = `{fk_shld_stretch_distance}`")
         # print(f"--------")
@@ -813,4 +1021,135 @@ class SystemQuadLeg:
         # utils.connect_attr(f"{fk_ctrl_list[1]}.Stretch", f"{fm_elb_stretch_mult}{utils.Plg.flt_B}")
         # utils.connect_attr(f"{fm_elb_stretch_mult}{utils.Plg.out_flt}", f"{fm_elb_stretch_sub}{utils.Plg.flt_A}")
         # utils.connect_attr(f"{fm_elb_stretch_sub}{utils.Plg.out_flt}", f"{fk_ctrl_list[2]}.translate{self.dm.prim_axis}")
+        '''
+    
+    def wire_IKFK_switch(self, mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp):
+        '''
+        # Description:
+            Wire the connections for all ikfk switch attributes:
+            > reverse.inputX > .outputX -> skn_jnt_wrist.{f"Follow_FK_Wrist_{self.dm.mdl_nm}_{self.dm.unique_id}_Rot"}
+            > skn_jnt_wrist.{f"Follow_IK_Wrist_{self.dm.mdl_nm}_{self.dm.unique_id}"}
+            > bc_ikfkStretch.blender
+            > hdl.ik_blend
+        # Arguments:
+            skn_jnt_wrist_ik_plg (plug): ik follow plug SO the 
+                                        ctrl_settings.IKFK_Switch drives the blending.
+            skn_jnt_wrist_fk_plg (plug): fk follow plug SO the 
+                                        ctrl_settings.IKFK_Switch drives the blending 
+            mdl_settings_ctrl (string): Name of the settings control.
+            ikfk_plug (plug): 'ikfk_switch' control attribute plug for consitancy.
+            bc_ikfk_stretch (utility): blendColors node returned so IKFK_Switch drives it.
+            logic_hdl (string): logic Ik_handle name.
+            fk_ctrl_grp (string): Name of fk ctrl grp.
+            ik_ctrl_grp (string): Name of ik ctrl grp.
+        # Returns: N/A
+        '''
+        # cr rev node
+        rev_ikfk = f"REV_{mdl_settings_ctrl}"
+        utils.cr_node_if_not_exists(1, 'reverse', rev_ikfk)
+        # > skn_jnt_wrist.inputX
+        utils.connect_attr(ikfk_plug, f"{rev_ikfk}.inputX")
+        # utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", skn_jnt_wrist_fk_plg)
+        # utils.connect_attr(ikfk_plug, skn_jnt_wrist_ik_plg)
+
+        # # 'ikfk_plug' & 'stretch_state_plug' > bc_ikfkStretch.blender
+        # cond_stretch_state = f"COND_stretchState_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        # cond_ikfk = f"COND_ikfk_switch_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        # utils.cr_node_if_not_exists(1, 'condition', cond_stretch_state, {"secondTerm":1, "colorIfTrueR":0.9525})
+        # utils.cr_node_if_not_exists(1, 'condition', cond_ikfk, {"secondTerm":0})
+        #     # > cond_stretch_state
+        # utils.connect_attr(stretch_state_plug, f"{cond_stretch_state}.firstTerm")
+        # utils.connect_attr(stretch_state_plug, f"{cond_stretch_state}.colorIfFalseR")
+        #     # > cond_stretch_state
+        # utils.connect_attr(ikfk_plug, f"{cond_ikfk}.firstTerm")
+        # utils.connect_attr(f"{cond_stretch_state}.outColorR", f"{cond_ikfk}.colorIfFalseR")
+        #     # > bc_ikfkStretch.blender
+        # utils.connect_attr(f"{cond_ikfk}.outColorR", f"{bc_ikfkStretch}{utils.Plg.blndr_plg}")
         
+        # > hdl.ik_blend
+        # utils.connect_attr(ikfk_plug, f"{logic_hdl}.ikBlend")
+
+        # > ctrl ik/fk groups.visibility
+        utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", f"{fk_ctrl_grp}{utils.Plg.vis_plg}")
+        utils.connect_attr(ikfk_plug, f"{ik_ctrl_grp}{utils.Plg.vis_plg}")
+
+
+    def parent_ik_ctrls_out(self, ik_ctrl_list):
+        '''
+        # Description:
+            parent the 'ik clavicle & ik shoulder' controls to the parent ctrl grp 
+            so 'they' don't get hidden with ikfk switch
+        # Arguments:
+            ik_ctrl_list (list): Contains 4 ik control names.
+        # Returns: N/A
+        '''
+        cmds.parent(ik_ctrl_list[0], f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+        cmds.select(cl=1)
+
+    
+    def group_quad_logic_elements(self, logic_grp, joint_chains_list, logic_curves_list, other_item_list):
+        '''
+        # Description:
+            Creates logic group for this module.
+        # Arguments:
+            logic_jnt_list (list): logic joints.
+            logic_hdl (string): Logic ik handle.
+            logic_curve_list (list): twist logic curves list.
+        # Returns:
+            logic_grp (string): logic group.
+        '''
+        # logic_grp = f"grp_logic_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        if cmds.objExists(logic_grp):
+            utils.cr_node_if_not_exists(0, "transform", logic_grp)
+            # cmds.parent(, logic_grp)
+            for crv in logic_curves_list:
+                cmds.parent(crv, logic_grp)
+            for jnt_chain in joint_chains_list:
+                cmds.parent(jnt_chain[0], logic_grp)
+            for item in other_item_list:
+                cmds.parent(item, logic_grp)
+            
+    
+    def lock_ctrl_attributes(self, fk_ctrl_list, ik_ctrl_list, mdl_settings_ctrl):
+        '''
+        # Description:
+            Lock an assortment of ctrls of the module to make it animator friendly.
+            (For testing of controls toggle this function).
+        # Arguments:
+            fk_ctrl_list (list): Contains fk control names. (5)
+            fk_ctrl_list (list): Contains ik control names.
+        # Returns: N/A
+        '''
+        for ctrl in fk_ctrl_list:
+            cmds.setAttr(f"{ctrl}.tx", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ctrl}.ty", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ctrl}.tz", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ctrl}.sx", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ctrl}.sy", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ctrl}.sz", lock=1, ch=0, k=0)
+
+        for axis in ['x', 'y', 'z']:
+            # hip ik = lock_hide(rotate, scale)
+            cmds.setAttr(f"{ik_ctrl_list[0]}.r{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ik_ctrl_list[0]}.s{axis}", lock=1, ch=0, k=0)
+            # knee ik = lock_hide(rotate, scale)
+            cmds.setAttr(f"{ik_ctrl_list[1]}.r{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ik_ctrl_list[1]}.s{axis}", lock=1, ch=0, k=0)      
+            # calf ik = lock_hide(translate, scale)
+            cmds.setAttr(f"{ik_ctrl_list[2]}.t{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ik_ctrl_list[2]}.s{axis}", lock=1, ch=0, k=0) 
+            # ankle ik = lock() | hide(scale)
+            cmds.setAttr(f"{ik_ctrl_list[3]}.s{axis}", lock=1, ch=0, k=0)
+            # mdl_settings_ctrl = lock_hide(trnaslate, rotate, scale)
+            cmds.setAttr(f"{mdl_settings_ctrl}.t{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{mdl_settings_ctrl}.r{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{mdl_settings_ctrl}.s{axis}", lock=1, ch=0, k=0)  
+
+        for fk, ik in zip(fk_ctrl_list, ik_ctrl_list):
+            cmds.setAttr(f"{fk}.visibility", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ik}.visibility", lock=1, ch=0, k=0)
+        cmds.setAttr(f"{mdl_settings_ctrl}.visibility", lock=1, ch=0, k=0)
+
+        
+
+
