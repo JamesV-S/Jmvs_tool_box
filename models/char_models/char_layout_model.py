@@ -393,7 +393,7 @@ class CharLayoutModel:
             print(f"mdl_object_list >> {mdl_object_list}")
             print(f"placement_dict >> {placement_dict}")
             print(f"user_settings_dict >> {user_settings_dict}")
-            print(f"controls_dict >> {controls_dict}")
+            print(f" *-> controls_dict >> {controls_dict}")
             mdl_directory = os.path.join(self.rig_db_storage_dir, val_availableRigComboBox)
             # create the database!
             if checkBox:
@@ -401,7 +401,6 @@ class CharLayoutModel:
                     database_schema = database_schema_002.CreateDatabase(
                         mdl_directory, mdl_name, side, mdl_object_list,
                         placement_dict, constant_dict, user_settings_dict, controls_dict)
-            
             
                 # unique_id = database_schema.get_unique_id()
                 # print(f"unique_id == {unique_id} for {mdl_name}_{side}")

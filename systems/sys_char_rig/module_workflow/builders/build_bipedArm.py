@@ -98,7 +98,7 @@ class BuildBipedArm(module_blueprint.ModuleBP, system_bipedArm.SystemBipedArm):
                             "ctrl_shp_bipedArm_upper_0_L", "ctrl_shp_bipedArm_lower_0_L"]
         shaper_ctrl_list = self.organise_ctrl_shaper_list(unorganised_shaper_ctrl_list)
         shaper_ctrl_grp = self.group_ctrls(shaper_ctrl_list, "shaper")
-        self.wire_shaper_ctrls(shaper_ctrl_list, logic_jnt_list, self.dm.ik_ctrl_list, shaper_plug, shaper_ctrl_grp)
+        self.wire_shaper_ctrls(shaper_ctrl_list, logic_jnt_list, shaper_plug, shaper_ctrl_grp)
         self.wire_shaper_ctrls_to_curves(shaper_ctrl_list, cv_upper, cv_lower, upper_cv_intermediate_pos_ls, lower_cv_intermediate_pos_ls, logic_jnt_list)
     
             # twist operations

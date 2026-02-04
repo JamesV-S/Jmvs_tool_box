@@ -301,7 +301,7 @@ class RawDataManager(RawDataDict):
         print(f"*RD raw_data_{self.mdl_name}_{self.unique_id}_{self.side} = {self.raw_data}")
 
 
-RawDataManager("bipedArm_0_L", "DB_jmvs_testing_rig")
+RawDataManager("quadLeg_0_L", "DB_jmvs_testing_rig")
 
 # Fixes to raw_data_ikfk_posrot script:
     # - [0.0, 0.0, 0.0] on ik_clav & ik_rot (all limb modules).

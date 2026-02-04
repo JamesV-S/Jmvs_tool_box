@@ -43,7 +43,7 @@ class RawDataFkIKDicts():
         self.ik_wld_name = constant_attr_dict['ik_wld_name']
         self.unique_id, self.side = unique_id, side
         
-        print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>> run_raw_data_calculation")
+        print(f" ->>>>>>>>>>>>>>>>>>>>>>>>>>>>> run_raw_data_calculation")
         self.run_raw_data_calculation()
 
     
@@ -84,14 +84,19 @@ class RawDataFkIKDicts():
         # Return:
             fk_pos(dict): keys = fk_*module_*bone : values = pos data. 
         '''
-        fk_pos = {}      
-        for (fk_name), (comp_name, comp_pos) in zip(self.fk_control_dict.keys(), 
-                                                    self.component_pos.items()):
-            try:
-                if comp_name in fk_name:
-                    fk_pos[fk_name] = comp_pos
-            except:
-                pass
+        # # Working for loop.
+        # fk_pos = {}
+        # for  fk_key in self.fk_control_dict:
+        #     for comp_key, comp_value in self.component_pos.items():
+        #         if comp_key in fk_key:
+        #             fk_pos[fk_key] = comp_value
+        #             break
+
+        # Faster dict comprehension
+        fk_pos = {fk_key: comp_value 
+                for fk_key in self.fk_control_dict 
+                for comp_key, comp_value in self.component_pos.items() 
+                if comp_key in fk_key}
 
         print(f"fk_pos = {fk_pos}")
         
@@ -108,15 +113,20 @@ class RawDataFkIKDicts():
         # Return:
             fk_rot(dict): keys = fk_*module_*bone : values = rot data. 
         '''
-        fk_rot = {}      
-        for (fk_name), (comp_name, comp_rot) in zip(self.fk_control_dict.keys(), 
-                                                    self.component_rot.items()):
-            try:
-                if comp_name in fk_name:
-                    fk_rot[fk_name] = comp_rot
-            except:
-                pass
-        
+        # # Working for loop.
+        # fk_rot = {}
+        # for fk_key in self.fk_control_dict:
+        #     for comp_key, comp_value in self.component_rot.items():
+        #         if comp_key in fk_key:
+        #             fk_rot[fk_key] = comp_value
+        #             break
+
+        # Faster dict comprehension
+        fk_rot = {fk_key: comp_value 
+                for fk_key in self.fk_control_dict 
+                for comp_key, comp_value in self.component_rot.items() 
+                if comp_key in fk_key}
+
         print(f"fk_rot = {fk_rot}")
 
 
@@ -386,3 +396,15 @@ class RawDataFkIKDicts():
 #     "hock_name": "calf",
 #     "ik_wld_name": "ankle"}
 # RawDataFkIKDicts(q_fk_control_dict, q_ik_control_dict, q_component_pos, q_component_rot, q_constant_attr_dict, "0", "L")
+
+
+
+fruit_dict = {'apple':1, 'banana':2, 'orange':3, 'grape':4} # comp_pos
+juice_dict = {'juice_banana':'carton', 'juice_orange':'carton', 'juice_grape':'carton', 'juice_pear':'carton'} # fk_control
+
+# need to itirate through the list, 'fruit_dict' is the base. 'juice_dict' can 
+# be any number of items in if it's less than or equal to the number of items 
+# in 'juice_dict'.  
+# if 'fruit_dict' key is in the key's of 'juice_dict' like 'banana' in 'juice_banana'
+# the output dict needs to be:
+output = {'juice_banana':2, 'juice_orange':3, 'juice_grape':4}

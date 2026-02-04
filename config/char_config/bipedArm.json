@@ -38,7 +38,6 @@
     },
     "controls":{
         "FK_ctrls": {
-            "fk_bipedArm_clavicle":"circle",
             "fk_bipedArm_shoulder": "circle",
             "fk_bipedArm_elbow": "circle",
             "fk_bipedArm_wrist": "circle"

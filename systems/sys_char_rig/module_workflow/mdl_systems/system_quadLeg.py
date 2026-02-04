@@ -48,33 +48,83 @@ class SystemQuadLeg:
         cmds.setAttr(f"{inputs_grp}.Squash_Value", -0.5)
 
 
-    def wire_hook_limbRoot_setup(self, inputs_grp, ik_ctrl_list, ik_pos_dict, ik_rot_dict):
+    def wire_hook_rump_limbRoot_setup(self, inputs_grp, ik_ctrl_list, ik_pos_dict, ik_rot_dict):
         '''
         # Description:
-            The 'input_grp.hook_matrix' drives the 'limb root control' which will 
-            then be the root of the rest of the module: Both FK & IK follow it.  
-        # Attributes:
+            Input group node's Hook matrix drives> rump control.   
+            rump control opm drives> hip control translate (NO ROTATE).  
+        # Arguments:
             input_grp (string): Group for input data for this module.
-            ctrl_list (list): Contains limbRt control names.
+            ctrl_list (list): Contains ik_clavicle & ik_shoulder(limbRt) control names.
+            skn_jnt_clav (string): Clavicle skin joint name.
             ik_pos_dict (dict): key=Name of ik controls, value=Positional data.
             ik_rot_dict (dict): key=Name of ik controls, value=Rotational data.
         # Returns: N/A
         '''
-        # ctrl_clav = ik_ctrl_list[0]
-        ctrl_limbRoot = ik_ctrl_list[0]
-
-        # ctrl_clavicle setup
-        # module_hook_mtx into ctrl_limb_root (ctrl_ik_quadLeg_hip_#_#)     
-        mm_ctrl_limbRt = f"MM_{ctrl_limbRoot}"
-        utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_limbRt)
+        ctrl_rump = ik_ctrl_list[0]
+        ctrl_limbRt = ik_ctrl_list[1]
+        
+        # ctrl_rumpicle setup
+        # module_hook_mtx into ctrl_rumpicle     
+        mm_ctrl_rump = f"MM_{ctrl_rump}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_rump)
             # set matrix offset value to MM[0]
-        limbRt_pos = list(ik_pos_dict.values())[0]
-        limbRt_rot = list(ik_rot_dict.values())[0]
-        utils.set_transformation_matrix(limbRt_pos, limbRt_rot, f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[0]}")
+        rump_pos = list(ik_pos_dict.values())[0]
+        rump_rot = list(ik_rot_dict.values())[0]
+        utils.set_transformation_matrix(rump_pos, rump_rot, f"{mm_ctrl_rump}{utils.Plg.mtx_ins[0]}")
             # plug incoming plug (the one to follow) to MM[1]
-        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{mm_ctrl_rump}{utils.Plg.mtx_ins[1]}")
             # plug MM sum to obj to follow!
-        utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{ctrl_limbRoot}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{mm_ctrl_rump}{utils.Plg.mtx_sum_plg}", f"{ctrl_rump}{utils.Plg.opm_plg}")
+        # # clavicle skin joint
+        # mm_skn_clav = f"MM_{skn_jnt_clav}"
+        # utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_clav)
+        # utils.connect_attr(f"{ctrl_rump}{utils.Plg.wld_mtx_plg}", f"{mm_skn_clav}{utils.Plg.mtx_ins[1]}")
+        # utils.connect_attr(f"{mm_skn_clav}{utils.Plg.mtx_sum_plg}", f"{skn_jnt_clav}{utils.Plg.opm_plg}")
+
+        # ctrl arm root (shoulder)
+        mm_ctrl_limbRt = f"MM_{ctrl_limbRt}"
+        pm_ctrl_limbRt = f"PMtx_{ctrl_limbRt}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_limbRt)
+        utils.cr_node_if_not_exists(1, 'pickMatrix', pm_ctrl_limbRt, {"useRotate":0})
+        limbRt_pos = list(ik_pos_dict.values())[1]
+        limbRt_rot = list(ik_rot_dict.values())[1]
+        limbRt_offset_pos = [x - y for x, y in zip(limbRt_pos, rump_pos)]
+        limbRt_offset_rot = [x - y for x, y in zip(limbRt_rot, rump_rot)]
+        print(f"limbRt_offset == {limbRt_offset_pos}")
+        # utils.set_transformation_matrix(limbRt_offset_pos, limbRt_offset_rot, f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[0]}")
+        utils.set_matrix(limbRt_offset_pos, f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[0]}")
+        utils.connect_attr(f"{ctrl_rump}{utils.Plg.wld_mtx_plg}", f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[1]}")
+
+        utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{pm_ctrl_limbRt}{utils.Plg.inp_mtx_plg}")
+
+        utils.connect_attr(f"{pm_ctrl_limbRt}{utils.Plg.out_mtx_plg}", f"{ctrl_limbRt}{utils.Plg.opm_plg}")
+
+
+    # def wire_hook_limbRoot_setup(self, inputs_grp, ctrl_limbRoot, ik_pos_dict, ik_rot_dict):
+    #     '''
+    #     # Description:
+    #         The 'input_grp.hook_matrix' drives the 'limb root control' which will 
+    #         then be the root of the rest of the module: Both FK & IK follow it.  
+    #     # Attributes:
+    #         input_grp (string): Group for input data for this module.
+    #         ctrl_list (list): Contains limbRt control names.
+    #         ik_pos_dict (dict): key=Name of ik controls, value=Positional data.
+    #         ik_rot_dict (dict): key=Name of ik controls, value=Rotational data.
+    #     # Returns: N/A
+    #     '''
+    #     # ctrl_clavicle setup
+    #     # module_hook_mtx into ctrl_limb_root (ctrl_ik_quadLeg_hip_#_#)     
+    #     mm_ctrl_limbRt = f"MM_{ctrl_limbRoot}"
+    #     utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_limbRt)
+    #         # set matrix offset value to MM[0]
+    #     limbRt_pos = list(ik_pos_dict.values())[0]
+    #     limbRt_rot = list(ik_rot_dict.values())[0]
+    #     utils.set_transformation_matrix(limbRt_pos, limbRt_rot, f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[0]}")
+    #         # plug incoming plug (the one to follow) to MM[1]
+    #     utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[1]}")
+    #         # plug MM sum to obj to follow!
+    #     utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{ctrl_limbRoot}{utils.Plg.opm_plg}")
 
 
     def wire_fk_logic_joints(self, fk_ctrl_list, fk_jnt_chain, bm_limbRt):
@@ -112,7 +162,7 @@ class SystemQuadLeg:
 
         # position jnts
         cmds.xform(jnt_aim_base, translation=ik_pos_dict[ik_ctrl_list[-1]], worldSpace=True)
-        cmds.xform(jnt_aim_tip, translation=ik_pos_dict[ik_ctrl_list[0]], worldSpace=True)
+        cmds.xform(jnt_aim_tip, translation=ik_pos_dict[ik_ctrl_list[1]], worldSpace=True)
 
         # Update the orientation of the two joints to be parallel with the hip.
             # cr temp locator and match to ankle jnt, and move on the Z axis a bit
@@ -225,7 +275,7 @@ class SystemQuadLeg:
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_ik)
 
         utils.set_transformation_matrix([0.0, 0.0, 0.0], list(ik_rot_dict.values())[-1], f"{mm_ik}{utils.Plg.mtx_ins[0]}")         
-        utils.connect_attr(f"{ik_ctrl_list[0]}{utils.Plg.wld_mtx_plg}", f"{mm_ik}{utils.Plg.mtx_ins[1]}")
+        utils.connect_attr(f"{ik_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{mm_ik}{utils.Plg.mtx_ins[1]}")
         utils.connect_attr(f"{mm_ik}{utils.Plg.mtx_sum_plg}", f"{jnt_target}{utils.Plg.opm_plg}")
 
 
@@ -336,7 +386,7 @@ class SystemQuadLeg:
     
     def wire_calf_aim_setup(self, jnt_aim_ls, ik_ctrl_list, ik_jnt_list):
         # offset grp the ik calf ctrl. (ctrl must be zero)
-        calf_ctrl = ik_ctrl_list[2]
+        calf_ctrl = ik_ctrl_list[3]
         ofs_grp_calf = f"ofs_grp_{calf_ctrl}"
         utils.cr_node_if_not_exists(0, "transform", ofs_grp_calf)
         cmds.matchTransform(ofs_grp_calf, calf_ctrl, pos=1, rot=1, scl=0)
@@ -362,11 +412,11 @@ class SystemQuadLeg:
         cmds.pointConstraint(ankle_ctrl, jnt_aim_ls[0], mo=1)
 
         # point constrain (ik hip ctrl > hdl_RP_quadLeg_aim_0_L)
-        hip_ctrl = ik_ctrl_list[0]
+        hip_ctrl = ik_ctrl_list[1]
         cmds.pointConstraint(hip_ctrl, hdl_aim, mo=1)
 
         # polevector contrain (ctrl_ik_quadLeg_knee_0_L > hdl_RP_quadLeg_aim_0_L)
-        ik_pv_ctrl = ik_ctrl_list[1]
+        ik_pv_ctrl = ik_ctrl_list[2]
         cmds.poleVectorConstraint(ik_pv_ctrl, hdl_aim)
 
         #----------------------------------------------------------------------
@@ -549,6 +599,7 @@ class SystemQuadLeg:
         # Returns: N/A
         '''
         ankle_ctrl = ik_ctrl_list[-1]
+        print(f" -> ankle_ctrl = `{ankle_ctrl}`")
 
         for atr in foot_piv_atr_list:
             print(f"atr = {atr}")
@@ -640,8 +691,8 @@ class SystemQuadLeg:
 
         # # Pin arm >drives> ik logic joints stretch. 
         # # ik logic joints stretch >drives> Ik_handle.poleVector plug
-        # utils.add_locked_attrib(ik_ctrl_list[2], ["Attributes"])
-        # utils.add_float_attrib(ik_ctrl_list[2], ["Pin_Arm"], [0.0, 1.0], True)
+        # utils.add_locked_attrib(ik_ctrl_list[3], ["Attributes"])
+        # utils.add_float_attrib(ik_ctrl_list[3], ["Pin_Arm"], [0.0, 1.0], True)
 
         # db_shld_wrist = f"DB_ik_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
         # db_shld_elb = f"DB_ikUpper_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
@@ -669,10 +720,10 @@ class SystemQuadLeg:
         
         #     # db_shld_elb > bc.color1R
         # utils.connect_attr(f"{ik_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{db_shld_elb}{utils.Plg.inMatrixs[1]}")
-        # utils.connect_attr(f"{ik_ctrl_list[2]}{utils.Plg.wld_mtx_plg}", f"{db_shld_elb}{utils.Plg.inMatrixs[2]}")
+        # utils.connect_attr(f"{ik_ctrl_list[3]}{utils.Plg.wld_mtx_plg}", f"{db_shld_elb}{utils.Plg.inMatrixs[2]}")
         # utils.connect_attr(f"{db_shld_elb}{utils.Plg.distance_plg}", f"{bc_pin_limb}{utils.Plg.color1_plg[0]}")
         #     # db_elb_wrist > bc.color1G
-        # utils.connect_attr(f"{ik_ctrl_list[2]}{utils.Plg.wld_mtx_plg}", f"{db_elb_wrist}{utils.Plg.inMatrixs[1]}")
+        # utils.connect_attr(f"{ik_ctrl_list[3]}{utils.Plg.wld_mtx_plg}", f"{db_elb_wrist}{utils.Plg.inMatrixs[1]}")
         # utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{db_elb_wrist}{utils.Plg.inMatrixs[2]}")
         # utils.connect_attr(f"{db_elb_wrist}{utils.Plg.distance_plg}", f"{bc_pin_limb}{utils.Plg.color1_plg[1]}")
 
@@ -698,7 +749,7 @@ class SystemQuadLeg:
         # utils.connect_attr(f"{fm_lowPercentTotal_mult}{utils.Plg.out_flt}", f"{bc_pin_limb}{utils.Plg.color2_plg[1]}")
         
         #     # pv.Pin_Arm > bc.blender
-        # utils.connect_attr(f"{ik_ctrl_list[2]}.Pin_Arm", f"{bc_pin_limb}{utils.Plg.blndr_plg}")
+        # utils.connect_attr(f"{ik_ctrl_list[3]}.Pin_Arm", f"{bc_pin_limb}{utils.Plg.blndr_plg}")
 
         # # Initalise ik stretch logic
         # fm_up_fkStretch = f"FM_upFkStretchMult_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
@@ -758,7 +809,7 @@ class SystemQuadLeg:
         #     # > iM_shld
         # utils.connect_attr(f"{cM_shld}{utils.Plg.out_mtx_plg}", f"{iM_shld}{utils.Plg.inp_mtx_plg}")
         #     # > mm_pv
-        # utils.connect_attr(f"{ik_ctrl_list[2]}{utils.Plg.wld_mtx_plg}", f"{mm_pv}{utils.Plg.mtx_ins[0]}")
+        # utils.connect_attr(f"{ik_ctrl_list[3]}{utils.Plg.wld_mtx_plg}", f"{mm_pv}{utils.Plg.mtx_ins[0]}")
         # utils.connect_attr(f"{iM_shld}{utils.Plg.out_mtx_plg}", f"{mm_pv}{utils.Plg.mtx_ins[1]}")
         #     # > mm_pv
         # utils.connect_attr(f"{mm_pv}{utils.Plg.mtx_sum_plg}", f"{dm_pv}{utils.Plg.inp_mtx_plg}")
@@ -1023,7 +1074,7 @@ class SystemQuadLeg:
         # utils.connect_attr(f"{fm_elb_stretch_sub}{utils.Plg.out_flt}", f"{fk_ctrl_list[2]}.translate{self.dm.prim_axis}")
         '''
     
-    def wire_IKFK_switch(self, mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp):
+    def wire_IKFK_switch(self, mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp, ctrl_limbRt):
         '''
         # Description:
             Wire the connections for all ikfk switch attributes:
@@ -1073,6 +1124,16 @@ class SystemQuadLeg:
         utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", f"{fk_ctrl_grp}{utils.Plg.vis_plg}")
         utils.connect_attr(ikfk_plug, f"{ik_ctrl_grp}{utils.Plg.vis_plg}")
 
+        # wire pickmatrix for `rump drive> limbRt` setup.
+        cond_limbRt = f"COND_rotate_switch_{ctrl_limbRt}"
+        utils.cr_node_if_not_exists(1, 'condition', cond_limbRt, {"secondTerm":1})
+        utils.connect_attr(ikfk_plug, f"{cond_limbRt}.firstTerm")
+        utils.connect_attr(f"{cond_limbRt}{utils.Plg.out_color_plg[0]}", f"PMtx_{ctrl_limbRt}.useRotate")
+
+
+
+        
+
 
     def parent_ik_ctrls_out(self, ik_ctrl_list):
         '''
@@ -1083,7 +1144,7 @@ class SystemQuadLeg:
             ik_ctrl_list (list): Contains 4 ik control names.
         # Returns: N/A
         '''
-        cmds.parent(ik_ctrl_list[0], f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+        cmds.parent(ik_ctrl_list[0], ik_ctrl_list[1], f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
         cmds.select(cl=1)
 
     
@@ -1129,15 +1190,18 @@ class SystemQuadLeg:
             cmds.setAttr(f"{ctrl}.sz", lock=1, ch=0, k=0)
 
         for axis in ['x', 'y', 'z']:
-            # hip ik = lock_hide(rotate, scale)
-            cmds.setAttr(f"{ik_ctrl_list[0]}.r{axis}", lock=1, ch=0, k=0)
+            # hip ik = lock_hide(translate, scale)
+            cmds.setAttr(f"{ik_ctrl_list[0]}.t{axis}", lock=1, ch=0, k=0)
             cmds.setAttr(f"{ik_ctrl_list[0]}.s{axis}", lock=1, ch=0, k=0)
-            # knee ik = lock_hide(rotate, scale)
+            # hip ik = lock_hide(rotate, scale)
             cmds.setAttr(f"{ik_ctrl_list[1]}.r{axis}", lock=1, ch=0, k=0)
-            cmds.setAttr(f"{ik_ctrl_list[1]}.s{axis}", lock=1, ch=0, k=0)      
+            cmds.setAttr(f"{ik_ctrl_list[1]}.s{axis}", lock=1, ch=0, k=0)
+            # knee ik = lock_hide(rotate, scale)
+            cmds.setAttr(f"{ik_ctrl_list[2]}.r{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ik_ctrl_list[2]}.s{axis}", lock=1, ch=0, k=0)      
             # calf ik = lock_hide(translate, scale)
-            cmds.setAttr(f"{ik_ctrl_list[2]}.t{axis}", lock=1, ch=0, k=0)
-            cmds.setAttr(f"{ik_ctrl_list[2]}.s{axis}", lock=1, ch=0, k=0) 
+            cmds.setAttr(f"{ik_ctrl_list[3]}.t{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ik_ctrl_list[3]}.s{axis}", lock=1, ch=0, k=0) 
             # ankle ik = lock() | hide(scale)
             cmds.setAttr(f"{ik_ctrl_list[3]}.s{axis}", lock=1, ch=0, k=0)
             # mdl_settings_ctrl = lock_hide(trnaslate, rotate, scale)

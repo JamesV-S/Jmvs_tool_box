@@ -122,11 +122,13 @@ class Plg():
     color1_plg = []
     color2_plg = []
     color3_plg = []
+    out_color_plg = []
     out_letter = []
     for x in ["R", "G", "B"]:
         color1_plg.append(f".color1{x}")
         color2_plg.append(f".color2{x}")
         color3_plg.append(f".color3{x}")
+        out_color_plg.append(f".outColor{x}")
         out_letter.append(f".output{x}")
 
     output_plg = ".output"
@@ -818,7 +820,15 @@ def reorder_dict_by_key_template(dict_1, dict_2):
 
         return result_dict
 
+def pop_first_item_in_dict(dict):
+    new_dict = dict.copy()
+    
+    # Remove first item from the copy
+    if new_dict:
+        first_key = next(iter(dict))
+        first_value = new_dict.pop(first_key)
 
+    return new_dict
 #--------------------------------- COLOUR -------------------------------------
 def colour_object(obj, colour):
     cmds.setAttr(f"{obj}.overrideEnabled", 1)

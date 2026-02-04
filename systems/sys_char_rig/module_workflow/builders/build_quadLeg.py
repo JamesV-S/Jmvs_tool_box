@@ -54,14 +54,18 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         fk_ctrl_grp = self.group_ctrls(self.dm.fk_ctrl_list, "fk")
         ik_ctrl_grp = self.group_ctrls(self.dm.ik_ctrl_list, "ik")
 
-        fk_logic_jnt_ls = self.cr_typ_jnt_chain("fk", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        ik_logic_jnt_ls = self.cr_typ_jnt_chain("ik", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
-        skin_jnt_ls = self.cr_typ_jnt_chain("skn", self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        # remove 'rump' (first item) item from `skel pos & rot dicts` (does NOT affect orginal dict)
+        temp_skel_pos_dict = utils.pop_first_item_in_dict(self.dm.skel_pos_dict)
+        temp_skel_rot_dict = utils.pop_first_item_in_dict(self.dm.skel_rot_dict)
+
+        fk_logic_jnt_ls = self.cr_typ_jnt_chain("fk", temp_skel_pos_dict, temp_skel_rot_dict)
+        ik_logic_jnt_ls = self.cr_typ_jnt_chain("ik", temp_skel_pos_dict, temp_skel_rot_dict)
+        skin_jnt_ls = self.cr_typ_jnt_chain("skn", temp_skel_pos_dict, temp_skel_rot_dict)
 
         logic_grp = self.cr_logic_group()
         joint_grp = self.cr_joint_group()
 
-        d_skel_dict = self.logic_jnt_distances(self.dm.skel_pos_num, self.dm.skel_pos_dict)
+        d_skel_dict = self.logic_jnt_distances(self.dm.skel_pos_num, temp_skel_pos_dict)
         print(f" -* d_skel_dict = {d_skel_dict}")
         
         db_hip_calf = utils.get_distance("hip_calf", list(self.dm.fk_pos_dict.values())[0], list(self.dm.fk_pos_dict.values())[2])
@@ -74,21 +78,21 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         # - - - - - - -
         # Phase 2 - Module-specific
         self.add_custom_input_attr(input_grp)
-        self.wire_hook_limbRoot_setup(input_grp, self.dm.ik_ctrl_list, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
-        
+        # self.wire_hook_limbRoot_setup(input_grp, self.dm.ik_ctrl_list[1], self.dm.ik_pos_dict, self.dm.ik_rot_dict)
+        self.wire_hook_rump_limbRoot_setup(input_grp, self.dm.ik_ctrl_list, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
         #------
         # fk setup
-        BM_limbRt_node = self.wire_fk_ctrl_setup(input_grp, self.dm.ik_ctrl_list[0], self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
+        BM_limbRt_node = self.wire_fk_ctrl_setup(input_grp, self.dm.ik_ctrl_list[1], self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
         self.wire_fk_logic_joints(self.dm.fk_ctrl_list, fk_logic_jnt_ls, BM_limbRt_node)
         
-        #------
-        # ik setup
-        self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[0], self.dm.ik_ctrl_list)
+        # #------
+        # # ik setup
+        self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[1], self.dm.ik_ctrl_list)
 
         ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG) # f"ctrl_ik_spine_bottom_0_M"
         print(f"ctrl_extrenal = `{ctrl_extrenal}`")
-        self.wire_ik_ctrl_pv(input_grp, 1, self.dm.ik_ctrl_list, ctrl_extrenal)
-        self.wire_pv_reference_curve(self.dm.ik_ctrl_list[1], ik_logic_jnt_ls[1], ik_ctrl_grp)
+        self.wire_ik_ctrl_pv(input_grp, 2, self.dm.ik_ctrl_list, ctrl_extrenal)
+        self.wire_pv_reference_curve(self.dm.ik_ctrl_list[2], ik_logic_jnt_ls[1], ik_ctrl_grp)
 
         jnt_aim_ls = self.cr_ik_aim_logic_joints(self.dm.ik_pos_dict, self.dm.ik_rot_dict, self.dm.ik_ctrl_list, ik_logic_jnt_ls)
         
@@ -105,8 +109,8 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         }
         ik_ankle_trans_data = [list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1]]
         grp_ori = self.wire_ik_logic_hierarchy(temp_lion_foot_piv_dict, ik_ankle_trans_data)
-        self.pv_ik_hdl_leg_setup(self.dm.ik_ctrl_list[1])
-        self.position_ik_ctrl_calf(self.dm.ik_ctrl_list[2], list(self.dm.ik_pos_dict.values()), list(self.dm.ik_rot_dict.values()))
+        self.pv_ik_hdl_leg_setup(self.dm.ik_ctrl_list[2])
+        self.position_ik_ctrl_calf(self.dm.ik_ctrl_list[3], list(self.dm.ik_pos_dict.values()), list(self.dm.ik_rot_dict.values()))
         grp_logic_aim_hdl = self.wire_calf_aim_setup(jnt_aim_ls, self.dm.ik_ctrl_list, ik_logic_jnt_ls )
         
         #------
@@ -116,14 +120,14 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         
         #------
         # foot setup
-        foot_piv_atr_list = self.cr_foot_atr(self.dm.ik_ctrl_list)
-        self.wire_foot_atr(foot_piv_atr_list, self.dm.ik_ctrl_list)
+        # foot_piv_atr_list = self.cr_foot_atr(self.dm.ik_ctrl_list)
+        # self.wire_foot_atr(foot_piv_atr_list, self.dm.ik_ctrl_list)
         
         #------
         # twist limb setup
             # cr twist curves & skn joints
-        cv_upper, upper_cv_intermediate_pos_ls = self.cr_logic_curves("upper", self.dm.skel_pos_dict['hip'], self.dm.skel_pos_dict['knee'])
-        cv_lower, lower_cv_intermediate_pos_ls = self.cr_logic_curves("lower", self.dm.skel_pos_dict['knee'], self.dm.skel_pos_dict['calf'])
+        cv_upper, upper_cv_intermediate_pos_ls = self.cr_logic_curves("upper", temp_skel_pos_dict['hip'], temp_skel_pos_dict['knee'])
+        cv_lower, lower_cv_intermediate_pos_ls = self.cr_logic_curves("lower", temp_skel_pos_dict['knee'], temp_skel_pos_dict['calf'])
         
         sknUpper_jnt_chain = self.cr_skn_twist_joint_chain("upper", cv_upper, skin_jnt_ls[0], 'zup')
         sknLower_jnt_chain = self.cr_skn_twist_joint_chain("lower", cv_lower, skin_jnt_ls[1], 'zup')
@@ -138,10 +142,10 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
     
             # twist operations
         hdl_upper, hdl_lower = self.cr_twist_ik_spline(logic_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
-        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[0], skin_jnt_ls[1], self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        self.wire_parent_skn_twist_joint_matrix(sknUpper_jnt_chain, sknLower_jnt_chain, self.dm.ik_ctrl_list[1], skin_jnt_ls[1], temp_skel_pos_dict, temp_skel_rot_dict)
         fm_upp_global, fm_low_global = self.wire_skn_twist_joints_stretch(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower)
         self.wire_skn_twist_joints_volume(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global, db_hip_kne, db_kne_clf)
-        self.wire_rotations_on_twist_joints(self.dm.ik_ctrl_list[0], skin_jnt_ls[0], skin_jnt_ls[1], skin_jnt_ls[2], hdl_upper, hdl_lower)
+        self.wire_rotations_on_twist_joints(self.dm.ik_ctrl_list[1], skin_jnt_ls[0], skin_jnt_ls[1], skin_jnt_ls[2], hdl_upper, hdl_lower)
 
 
         # temp hide data
@@ -152,7 +156,7 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
 
         self.group_jnts_skn(joint_grp, [], [skin_jnt_ls, sknUpper_jnt_chain, sknLower_jnt_chain])
         self.group_quad_logic_elements(logic_grp, [fk_logic_jnt_ls, ik_logic_jnt_ls, jnt_aim_ls], [cv_upper, cv_lower], [grp_ori, grp_logic_aim_hdl])
-        self.wire_IKFK_switch(mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp)
+        self.wire_IKFK_switch(mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp, self.dm.ik_ctrl_list[1])
         self.parent_ik_ctrls_out(self.dm.ik_ctrl_list)
         self.lock_ctrl_attributes(self.dm.fk_ctrl_list, self.dm.ik_ctrl_list, mdl_settings_ctrl)
 

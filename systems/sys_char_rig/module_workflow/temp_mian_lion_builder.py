@@ -150,6 +150,7 @@ quadLeg_data = {
     "output_hook_mtx_list": ["jnt_skn_ankle"],
     "skeleton_dict":{
         "skel_pos":{
+            'rump': [5.353, 73.17778605595966, -41.283461318628305],
             'hip': [9.427100479531633, 73.17778605595966, -41.283461318628305], 
             'knee': [10.34594475222716, 45.31456132216192, -30.942341550811438], 
             'calf': [8.381440943844233, 20.335971998048286, -47.07023669736204], 
@@ -158,6 +159,7 @@ quadLeg_data = {
             'end': [10.15430720015248, -0.06079745326662156, -34.735633685929784]
             },
         "skel_rot":{
+            'rump': [0.0, 0.0, 0.0],
             'hip': [84.952120068356, -20.35168168884181, -88.11124419294283], 
             'knee': [83.51738586220513, 32.768618974963445, -94.49691374978813], 
             'calf': [81.68986907996045, -11.616952223402174, -90.81454127018631], 
@@ -184,12 +186,14 @@ quadLeg_data = {
         },
     "ik_dict":{
         "ik_pos":{
+            'ctrl_ik_quadLeg_rump_0_L': [5.353, 73.17778605595966, -41.283461318628305], 
             'ctrl_ik_quadLeg_hip_0_L': [9.427100479531633, 73.17778605595966, -41.283461318628305],
             'ctrl_ik_quadLeg_knee_0_L': [12.659764496445849, 42.94222489523101, -9.697506258361376],
             'ctrl_ik_quadLeg_calf_0_L': [8.381440943844233, 20.335971998048286, -47.07023669736204],
             'ctrl_ik_quadLeg_ankle_0_L': [8.17389538574193, 5.737959787060513, -44.06889043484146]
             },
         "ik_rot":{
+            'ctrl_ik_quadLeg_rump_0_L': [0.0, 0.0, 0.0], 
             'ctrl_ik_quadLeg_hip_0_L':[0.0, 0.0, 0.0],
             'ctrl_ik_quadLeg_knee_0_L': [134.9261066953834, -81.13417480632245, -45.715423170008286],
             'ctrl_ik_quadLeg_calf_0_L': [0.0, 11.136004369497108, 0.0],
@@ -206,7 +210,6 @@ quadLeg_data = {
 1 time data processing. 
 '''
 
-
 # build root
 root_data_manager = module_data_manager.ModuleDataManager(root_data)
 root_build = build_root.BuildRoot(root_data_manager)
@@ -221,4 +224,3 @@ spine_build.build()
 quadLeg_data_manager = module_data_manager.ModuleDataManager(quadLeg_data)
 quadLeg_build = build_quadLeg.BuildQuadLeg(quadLeg_data_manager)
 quadLeg_build.build()
-
