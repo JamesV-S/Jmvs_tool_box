@@ -341,17 +341,23 @@ class ModuleBP:
 
     def return_external_ik_control(self, hook_mtx_plg):
         ''' grp_Outputs_spine_0_M.mtx_spine_jnt_skn_bottom '''
-        # return `ctrl_ik_ mdl _ name _id_side`
-        # return `ctrl_ik_ spine _ bottom _0_M`
+        print(f"hook_mtx_plg = `{hook_mtx_plg}`")
+        # `grp_Outputs_root_0_M.mtx_root_ctrl_fk_COG`
+
         grp_name = hook_mtx_plg.split('.')[0]
+        
+        # mtx_root_ctrl_fk_COG
+        # mtx_spine_jnt_skn_bottom
         mdl_name = grp_name.split('_')[2]
         unique_id = grp_name.split('_')[3]
         side = grp_name.split('_')[4]
 
         atr_name = hook_mtx_plg.split('.')[-1]
-        name = atr_name.split('_')[-1]
+        obj = atr_name.split('_')[-3] # ctrl/jnt
+        typ = atr_name.split('_')[-2] # fk/ik/skn
+        name = atr_name.split('_')[-1] # COG/top
 
-        control_name = f"ctrl_ik_{mdl_name}_{name}_{unique_id}_{side}"
+        control_name = f"{obj}_{typ}_{mdl_name}_{name}_{unique_id}_{side}"
         print(f" ** ext_control_name = `{control_name}`")
         if cmds.objExists(control_name):
             return control_name

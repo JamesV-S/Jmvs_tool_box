@@ -64,7 +64,12 @@ class SystemQuadLeg:
         ctrl_rump = ik_ctrl_list[0]
         ctrl_limbRt = ik_ctrl_list[1]
         
-        # ctrl_rumpicle setup
+        # grp ofs node for rump_ctrl
+        grp_rump = f"ofs_grp_{ctrl_rump}"
+        utils.cr_node_if_not_exists(0, "transform", grp_rump)
+        cmds.parent(grp_rump, f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+
+        # ctrl_rump setup
         # module_hook_mtx into ctrl_rumpicle     
         mm_ctrl_rump = f"MM_{ctrl_rump}"
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_rump)
@@ -75,7 +80,9 @@ class SystemQuadLeg:
             # plug incoming plug (the one to follow) to MM[1]
         utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{mm_ctrl_rump}{utils.Plg.mtx_ins[1]}")
             # plug MM sum to obj to follow!
-        utils.connect_attr(f"{mm_ctrl_rump}{utils.Plg.mtx_sum_plg}", f"{ctrl_rump}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{mm_ctrl_rump}{utils.Plg.mtx_sum_plg}", f"{grp_rump}{utils.Plg.opm_plg}")
+        cmds.matchTransform(ctrl_rump, grp_rump, pos=1, rot=1, scl=0)
+        cmds.parent(ctrl_rump, grp_rump)
         # # clavicle skin joint
         # mm_skn_clav = f"MM_{skn_jnt_clav}"
         # utils.cr_node_if_not_exists(1, 'multMatrix', mm_skn_clav)
@@ -84,9 +91,9 @@ class SystemQuadLeg:
 
         # ctrl arm root (shoulder)
         mm_ctrl_limbRt = f"MM_{ctrl_limbRt}"
-        pm_ctrl_limbRt = f"PMtx_{ctrl_limbRt}"
+        # pm_ctrl_limbRt = f"PMtx_{ctrl_limbRt}"
         utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_limbRt)
-        utils.cr_node_if_not_exists(1, 'pickMatrix', pm_ctrl_limbRt, {"useRotate":0})
+        # utils.cr_node_if_not_exists(1, 'pickMatrix', pm_ctrl_limbRt, {"useRotate":0})
         limbRt_pos = list(ik_pos_dict.values())[1]
         limbRt_rot = list(ik_rot_dict.values())[1]
         limbRt_offset_pos = [x - y for x, y in zip(limbRt_pos, rump_pos)]
@@ -96,35 +103,36 @@ class SystemQuadLeg:
         utils.set_matrix(limbRt_offset_pos, f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[0]}")
         utils.connect_attr(f"{ctrl_rump}{utils.Plg.wld_mtx_plg}", f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[1]}")
 
-        utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{pm_ctrl_limbRt}{utils.Plg.inp_mtx_plg}")
+        # utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{pm_ctrl_limbRt}{utils.Plg.inp_mtx_plg}")
 
-        utils.connect_attr(f"{pm_ctrl_limbRt}{utils.Plg.out_mtx_plg}", f"{ctrl_limbRt}{utils.Plg.opm_plg}")
+        # utils.connect_attr(f"{pm_ctrl_limbRt}{utils.Plg.out_mtx_plg}", f"{ctrl_limbRt}{utils.Plg.opm_plg}")
+
+        utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{ctrl_limbRt}{utils.Plg.opm_plg}")
 
 
-    # def wire_hook_limbRoot_setup(self, inputs_grp, ctrl_limbRoot, ik_pos_dict, ik_rot_dict):
-    #     '''
-    #     # Description:
-    #         The 'input_grp.hook_matrix' drives the 'limb root control' which will 
-    #         then be the root of the rest of the module: Both FK & IK follow it.  
-    #     # Attributes:
-    #         input_grp (string): Group for input data for this module.
-    #         ctrl_list (list): Contains limbRt control names.
-    #         ik_pos_dict (dict): key=Name of ik controls, value=Positional data.
-    #         ik_rot_dict (dict): key=Name of ik controls, value=Rotational data.
-    #     # Returns: N/A
-    #     '''
-    #     # ctrl_clavicle setup
-    #     # module_hook_mtx into ctrl_limb_root (ctrl_ik_quadLeg_hip_#_#)     
-    #     mm_ctrl_limbRt = f"MM_{ctrl_limbRoot}"
-    #     utils.cr_node_if_not_exists(1, 'multMatrix', mm_ctrl_limbRt)
-    #         # set matrix offset value to MM[0]
-    #     limbRt_pos = list(ik_pos_dict.values())[0]
-    #     limbRt_rot = list(ik_rot_dict.values())[0]
-    #     utils.set_transformation_matrix(limbRt_pos, limbRt_rot, f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[0]}")
-    #         # plug incoming plug (the one to follow) to MM[1]
-    #     utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{mm_ctrl_limbRt}{utils.Plg.mtx_ins[1]}")
-    #         # plug MM sum to obj to follow!
-    #     utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{ctrl_limbRoot}{utils.Plg.opm_plg}")
+    def wire_ik_ctrl_end_no_blend(self, inputs_grp, limbRt_ctrl, ik_ctrl_list):
+        '''
+        # Description:
+            Drive the end ik control of the module with the 'inputs_grp.base_mtx' (no blending).
+        # Attributes:
+            inputs_grp (string): Group for input data for this module.
+            limbRt_ctrl (string): Limb Root control. 
+            ik_ctrl_list (list): Contains ik control names.
+        # Returns: N/A 
+        '''
+        ik_ctrl_target = ik_ctrl_list[-1]
+        ik_tgt_nm = ik_ctrl_target.split('_')[-3]
+        # print(f"ik_ctrl_target = `{ik_ctrl_target}`")
+        # print(f"limbRt_ctrl = `{limbRt_ctrl}`")
+        # print(f"ik_tgt_nm = `{ik_tgt_nm}`")        
+
+        MM_ikBase = f"MM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtBase_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_ikBase)
+        # MM_Base
+        utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1], f"{MM_ikBase}{utils.Plg.mtx_ins[0]}")         
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_ikBase}{utils.Plg.mtx_ins[1]}")        
+
+        utils.connect_attr(f"{MM_ikBase}{utils.Plg.mtx_sum_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
 
 
     def wire_fk_logic_joints(self, fk_ctrl_list, fk_jnt_chain, bm_limbRt):
@@ -218,6 +226,11 @@ class SystemQuadLeg:
             bc_ikfk_stretch (utility): blendColors node returned so IKFK_Switch drives it.
             logic_hdl (string): logic Ik_handle name.
         '''
+        print(f" -0- ik_logic_jnt_list = {ik_logic_jnt_list}")
+        print(f" -0- ik_pos_dict = {ik_pos_dict}")
+        # ik_logic_jnt_list = [hip -> toe/end]
+        # ik_pos_dict = {rump -> ankle}
+
         # temp 
         cmds.hide("jnt_fk_quadLeg_hip_0_L")
 
@@ -238,8 +251,8 @@ class SystemQuadLeg:
             # group @ ik calf pos
         grp_calf_logic_hdl = f"grp_{calf_logic_hdl}"
         utils.cr_empty_grp(grp_calf_logic_hdl)
-        cmds.xform(grp_calf_logic_hdl, translation=list(ik_pos_dict.values())[2], worldSpace=True)
-        cmds.xform(grp_calf_logic_hdl, rotation=list(ik_rot_dict.values())[2], worldSpace=True)
+        cmds.xform(grp_calf_logic_hdl, translation=list(ik_pos_dict.values())[3], worldSpace=True)
+        cmds.xform(grp_calf_logic_hdl, rotation=list(ik_rot_dict.values())[3], worldSpace=True)
         cmds.parent(calf_logic_hdl, grp_calf_logic_hdl)
 
             # ankle > ball
@@ -365,7 +378,7 @@ class SystemQuadLeg:
 
         cmds.select(cl=1)
 
-        return grp_ori
+        return grp_ori, grp_hdl_rp_leg
 
 
     def pv_ik_hdl_leg_setup(self, ik_pv_ctrl): # ik_pv_ctrl, ik_handle
@@ -553,6 +566,49 @@ class SystemQuadLeg:
                 f"Pcon_ikfk_jnts_{skn_chain[x]}.jnt_fk_{self.dm.mdl_nm}_{parts_ls[x]}_{self.dm.unique_id}_{self.dm.side}W1")
             
 
+    def cr_rump_aim_locators(self, ik_ctrl_list):
+        ''' position & aim 2 rump locators  '''
+        loc_aim_on = f"loc_rump_{self.dm.mdl_nm}_aimOn_{self.dm.unique_id}_{self.dm.side}"
+        loc_aim_off = f"loc_rump_{self.dm.mdl_nm}_aimOff_{self.dm.unique_id}_{self.dm.side}"
+        cmds.spaceLocator(n=loc_aim_on)
+        cmds.spaceLocator(n=loc_aim_off)
+        for axis in ['X', 'Y', 'Z']:
+            cmds.setAttr(f"{loc_aim_on}.localScale{axis}", 10)
+            cmds.setAttr(f"{loc_aim_off}.localScale{axis}", 10)
+        
+        rump_ctl = ik_ctrl_list[0]
+        ankle_ctl = ik_ctrl_list[-1]
+        MM_rump_ctl = f"MM_{rump_ctl}"
+        utils.connect_attr(f"{MM_rump_ctl}{utils.Plg.mtx_sum_plg}", f"{loc_aim_on}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{MM_rump_ctl}{utils.Plg.mtx_sum_plg}", f"{loc_aim_off}{utils.Plg.opm_plg}")
+
+        cmds.parent(loc_aim_on, loc_aim_off, f"grp_logic_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+
+        return loc_aim_on, loc_aim_off
+
+
+    def wire_rump_aim_setup(self, ik_ctrl_list, loc_aim_on, loc_aim_off, ikfk_plug, ikfk_rev):
+        grp_rump = f"ofs_grp_{ik_ctrl_list[0]}"
+        ankle_ctl = ik_ctrl_list[-1]
+
+        # aim both locatiors to the ankle control so they have the same orientation!
+        aim_con = f"Acon_{ankle_ctl}"
+        cmds.aimConstraint(ankle_ctl, loc_aim_on,  
+                           weight=1, aimVector=[1,0,0],
+                           upVector = [0,0,1],
+                           worldUpType="objectrotation", 
+                           worldUpVector=[0,0,1], worldUpObject=loc_aim_off, n=aim_con)
+        cmds.matchTransform(loc_aim_off, loc_aim_on, pos=0, rot=1, scl=0)
+
+        # orient constrain the
+        ori_con = f"Ocon_rumpAim_{grp_rump}"
+        cmds.orientConstraint(loc_aim_on, loc_aim_off, grp_rump, w=1, mo=1, n=ori_con)
+        
+        # blend the weights of the orient constraint.
+        utils.connect_attr(ikfk_plug, f"{ori_con}.{loc_aim_on}W0")
+        utils.connect_attr(f"{ikfk_rev}{utils.Plg.out_axis[0]}", f"{ori_con}.{loc_aim_off}W1")
+
+
     def cr_foot_atr(self, ik_ctrl_list):
         '''
         # Description:            
@@ -563,32 +619,36 @@ class SystemQuadLeg:
         '''
         ankle_ctrl = ik_ctrl_list[-1]
 
-        atr_ball_roll = "Ball_Roll"
+        atr_roll = "Roll"
+        atr_roll_start_angle = "Roll_Start_Angle"
+        atr_roll_end_angle = "Roll_End_Angle"
         atr_toe_roll = "Toe_Roll"
         atr_heel_roll = "Heel_Roll"
-        atr_ankle_roll = "Ankle_Roll"
         atr_heel_twist = "Heel_Twist"
         atr_toe_twist = "Toe_Twist"
         atr_toe_bend = "Toe_Bend"
         atr_foot_rock = "Foot_Rock"
 
-        foot_piv_atr_list = [atr_ball_roll, atr_toe_roll, atr_heel_roll,
-             atr_ankle_roll, atr_heel_twist, atr_toe_twist,
-             atr_toe_bend, atr_foot_rock
+        foot_piv_atr_list = [
+            atr_roll, atr_roll_start_angle, atr_roll_end_angle, 
+            atr_toe_roll, atr_heel_roll,
+            atr_heel_twist, atr_toe_twist,
+            atr_toe_bend, atr_foot_rock
             ]
         print(f"- foot_piv_atr_list = {foot_piv_atr_list}")
         utils.add_locked_attrib(ankle_ctrl, ["Foot"])
         utils.add_float_attrib(
             ankle_ctrl, 
-            [f"{atr_ball_roll}", f"{atr_toe_roll}", f"{atr_heel_roll}",
-             f"{atr_ankle_roll}", f"{atr_heel_twist}", f"{atr_toe_twist}",
+            [f"{atr_roll}", f"{atr_roll_start_angle}", f"{atr_roll_end_angle}", 
+             f"{atr_toe_roll}", f"{atr_heel_roll}",
+             f"{atr_heel_twist}", f"{atr_toe_twist}",
              f"{atr_toe_bend}", f"{atr_foot_rock}"
             ], 
             [0.0, 1.0], False)
         
         return foot_piv_atr_list
-      
 
+        
     def wire_foot_atr(self, foot_piv_atr_list, ik_ctrl_list):
         '''
         # Description:            
@@ -603,13 +663,7 @@ class SystemQuadLeg:
 
         for atr in foot_piv_atr_list:
             print(f"atr = {atr}")
-            if "Ball_Roll" in atr:
-                # Ball_Roll > grp_hdl_SC_quadLeg_ball_0_L.rx
-                utils.connect_attr(
-                    f"{ankle_ctrl}.{atr}",
-                    f"grp_hdl_SC_{self.dm.mdl_nm}_ball_{self.dm.unique_id}_{self.dm.side}.rx"
-                )
-            elif "Toe_Roll" in atr:
+            if "Toe_Roll" in atr:
                 # Toe_Roll > piv_toe_quadLeg_0_L.rx
                 utils.connect_attr(
                     f"{ankle_ctrl}.{atr}",
@@ -620,17 +674,6 @@ class SystemQuadLeg:
                 utils.connect_attr(
                     f"{ankle_ctrl}.{atr}",
                     f"piv_heel_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}.rx"
-                )
-            elif "Ankle_Roll" in atr:
-                # Ankle_Roll > grp_hdl_SC_quadLeg_calf_0_L.rx 
-                # Ankle_Roll > grp_hdl_SC_quadLeg_toe_0_L.rx
-                utils.connect_attr(
-                    f"{ankle_ctrl}.{atr}",
-                    f"grp_hdl_SC_{self.dm.mdl_nm}_calf_{self.dm.unique_id}_{self.dm.side}.rx"
-                )
-                utils.connect_attr(
-                    f"{ankle_ctrl}.{atr}",
-                    f"grp_hdl_SC_{self.dm.mdl_nm}_toe_{self.dm.unique_id}_{self.dm.side}.rx"
                 )
             elif "Heel_Twist" in atr:
                 # Heel_Twist > piv_heel_quadLeg_0_L.ry
@@ -670,153 +713,117 @@ class SystemQuadLeg:
                     f"piv_in_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
                     rz=(0, 0), erz=(1, 0))
             else:
-                break
+                continue
 
-    
-    '''def wire_ik_logic_elements(self, input_grp, ik_logic_jnt_list, ik_ctrl_list):
-        pass
-        # # add opm from ik wrist ctrl to the mm_pv_ik_hdl
-        # mm_pv_ik_hdl = f"MM_hdlPv_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # pm_pv_ik_hdl = f"PM_hdlPv_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # utils.cr_node_if_not_exists(1, 'multMatrix', mm_pv_ik_hdl)
-        # utils.cr_node_if_not_exists(1, 'pickMatrix', pm_pv_ik_hdl, {"useRotate":0, "useScale":0, "useShear":0})
 
-        # utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{mm_pv_ik_hdl}{utils.Plg.mtx_ins[1]}")
-        # utils.connect_attr(f"{mm_pv_ik_hdl}{utils.Plg.mtx_sum_plg}", f"{pm_pv_ik_hdl}{utils.Plg.inp_mtx_plg}")
-        # utils.connect_attr(f"{pm_pv_ik_hdl}{utils.Plg.out_mtx_plg}", f"{logic_hdl}{utils.Plg.opm_plg}")
-        #     # zero out the hdl attr
-        # for axis in ["X", "Y", "Z"]:
-        #     cmds.setAttr(f"{logic_hdl}.translate{axis}", 0, lock=1)
-        #     cmds.setAttr(f"{logic_hdl}.rotate{axis}", 0, lock=1)
+    def wedge_roller_group(self, object_dict):
+        '''
+        # Description: 
+            iterate through the list of items in the argument list, 
+            - store the obj's parent name
+            - cr a transform node, match it to the object
+            - parent the obj to transform node
+            - parent the transform the object's original parent.
+            - colour the tranform node in the outliner
+        # Arguments:
+            object_dict (dict): {keys="object_name":values="grp_name"}
+        '''
+        roller_grp_list = []
+        for obj, val in object_dict.items():
+            # get orig parent.
+            orig_parent = cmds.listRelatives(obj, parent=True, fullPath=True)
+            # cr new grp to wedge & match to obj
+            grp_name = f"grp_{val}_{obj}"
+            utils.cr_node_if_not_exists(0, "transform", grp_name)
+            cmds.matchTransform(grp_name, obj, pos=1, rot=1, scl=0)
+            roller_grp_list.append(grp_name)
+            # parent grp to orig object
+            cmds.parent(grp_name, orig_parent)
+            # parent obj to grp
+            cmds.parent(obj, grp_name)
+            
+            # cmds.setAttr(f"{grp_name}.overrideEnabled", 1)
+            # cmds.setAttr(f"{grp_name}.overrideRGBColors", 1)
+            # cmds.setAttr(f"{grp_name}.overrideColorRGB", 0.5, 0.7, 1.0)
 
-        # # Pin arm >drives> ik logic joints stretch. 
-        # # ik logic joints stretch >drives> Ik_handle.poleVector plug
-        # utils.add_locked_attrib(ik_ctrl_list[3], ["Attributes"])
-        # utils.add_float_attrib(ik_ctrl_list[3], ["Pin_Arm"], [0.0, 1.0], True)
+        return roller_grp_list
 
-        # db_shld_wrist = f"DB_ik_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # db_shld_elb = f"DB_ikUpper_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # db_elb_wrist = f"DB_ikLower_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_global = f"FM_byGlobal_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_max = f"FM_max_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_upPercent_div = f"FM_upPercentageDiv_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_upPercentTotal_mult = f"FM_upPercentageTotalMult_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_lowPercent_div = f"FM_lowPercentageDiv_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_lowPercentTotal_mult = f"FM_lowPercentageTotalMult_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # bc_pin_limb = f"BC_pin_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # for db_name in [db_shld_wrist, db_shld_elb, db_elb_wrist]:
-        #     utils.cr_node_if_not_exists(1, "distanceBetween", db_name)
-        # utils.cr_node_if_not_exists(1, "floatMath", fm_max, {"operation":5})
-        # for fm_div_name in [fm_upPercent_div, fm_lowPercent_div]:
-        #     utils.cr_node_if_not_exists(1, "floatMath", fm_div_name, {"operation":3})
-        # for fm_mult_name in [fm_global, fm_upPercentTotal_mult, fm_lowPercentTotal_mult]:
-        #     utils.cr_node_if_not_exists(1, "floatMath", fm_mult_name, {"operation":2})
-        # utils.cr_node_if_not_exists(1, "blendColors", bc_pin_limb)
+        
+    def wire_roller_foot_setup(self, ik_ctrl_list, ankle_grp, toe_grp, heel_grp ):
+        '''
+        # Description:            
+            Wire the roller attributes as the drivers to the 3 roller groups.
+        # Arguments:
+            ik_ctrl_list (list): ik control list.
+            foot_piv_atr_list (list). Pivot attribute names.
+        # Returns: N/A
+        '''
+        ankle_ctrl = ik_ctrl_list[-1]
+        print(f" -> ankle_ctrl = `{ankle_ctrl}`")
 
-        #     # db_shld_wrist > max
-        # utils.connect_attr(f"{ik_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{db_shld_wrist}{utils.Plg.inMatrixs[1]}")
-        # utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{db_shld_wrist}{utils.Plg.inMatrixs[2]}")
-        # utils.connect_attr(f"{db_shld_wrist}{utils.Plg.distance_plg}", f"{fm_max}{utils.Plg.flt_A}")
-        
-        #     # db_shld_elb > bc.color1R
-        # utils.connect_attr(f"{ik_ctrl_list[1]}{utils.Plg.wld_mtx_plg}", f"{db_shld_elb}{utils.Plg.inMatrixs[1]}")
-        # utils.connect_attr(f"{ik_ctrl_list[3]}{utils.Plg.wld_mtx_plg}", f"{db_shld_elb}{utils.Plg.inMatrixs[2]}")
-        # utils.connect_attr(f"{db_shld_elb}{utils.Plg.distance_plg}", f"{bc_pin_limb}{utils.Plg.color1_plg[0]}")
-        #     # db_elb_wrist > bc.color1G
-        # utils.connect_attr(f"{ik_ctrl_list[3]}{utils.Plg.wld_mtx_plg}", f"{db_elb_wrist}{utils.Plg.inMatrixs[1]}")
-        # utils.connect_attr(f"{ik_ctrl_list[-1]}{utils.Plg.wld_mtx_plg}", f"{db_elb_wrist}{utils.Plg.inMatrixs[2]}")
-        # utils.connect_attr(f"{db_elb_wrist}{utils.Plg.distance_plg}", f"{bc_pin_limb}{utils.Plg.color1_plg[1]}")
+        # wire the foot roll, start & end angles
+        atr_roll = "Roll"
+        atr_roll_start_angle = "Roll_Start_Angle"
+        atr_roll_end_angle = "Roll_End_Angle"
 
-        #     # > fm_global > fm_max.flt_B
-        # cmds.setAttr(f"{fm_global}{utils.Plg.flt_A}", self.dm.d_shld_wrist)
-        # utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{fm_global}{utils.Plg.flt_B}")
-        # utils.connect_attr(f"{fm_global}{utils.Plg.out_flt}", f"{fm_max}{utils.Plg.flt_B}")
+        # roller ankle setup
+        sr_roll_toes_1 = f"SR_ik_rollToes1_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}" # ".maxX" 1
+        sr_roll_toes_2 = f"SR_ik_rollToes2_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}" # ".maxX" 1
+        pma_roll_toes = f"PMA_ik_rollToes_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        md_roll_toes_1 = f"MD_ik_rollToes1_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        md_roll_toes_2 = f"MD_ik_rollToes2_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(1, 'setRange', sr_roll_toes_1, {"maxX":1})
+        utils.cr_node_if_not_exists(1, 'setRange', sr_roll_toes_2, {"maxX":1})
+        utils.cr_node_if_not_exists(1, 'plusMinusAverage', pma_roll_toes, {"operation":2, "input1D[0]":1})
+        utils.cr_node_if_not_exists(1, 'multiplyDivide', md_roll_toes_1)
+        utils.cr_node_if_not_exists(1, 'multiplyDivide', md_roll_toes_2)
+            # > setRange 1 node
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll}", f"{sr_roll_toes_1}.valueX")
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll_start_angle}", f"{sr_roll_toes_1}.oldMaxX")
+            # > setRange 2 node
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll}", f"{sr_roll_toes_2}.valueX")
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll_start_angle}", f"{sr_roll_toes_2}.oldMinX")
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll_end_angle}", f"{sr_roll_toes_2}.oldMaxX")
+            # > pma node
+        utils.connect_attr(f"{sr_roll_toes_2}.outValueX", f"{pma_roll_toes}.input1D[1]")
+            # > md 1 node
+        utils.connect_attr(f"{pma_roll_toes}.output1D", f"{md_roll_toes_1}{utils.Plg.input1_val[0]}")
+        utils.connect_attr(f"{sr_roll_toes_1}.outValueX", f"{md_roll_toes_1}{utils.Plg.input2_val[0]}")
+            # > md 2 node
+        utils.connect_attr(f"{md_roll_toes_1}{utils.Plg.out_axis[0]}", f"{md_roll_toes_2}{utils.Plg.input1_val[0]}")
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll}", f"{md_roll_toes_2}{utils.Plg.input2_val[0]}")
+            # md_roll_toes_2.outputX > grp_rollerAnkle_hdl_RP_quadLeg_0_L.rx
+        utils.connect_attr(f"{md_roll_toes_2}{utils.Plg.out_axis[0]}", f"{ankle_grp}.rx")
 
-        #     # fm_upPercent_div > fm_upPercentTotal_mult.flt_A
-        # cmds.setAttr(f"{fm_upPercent_div}{utils.Plg.flt_A}", self.dm.d_hip_kne)
-        # cmds.setAttr(f"{fm_upPercent_div}{utils.Plg.flt_B}", self.dm.d_shld_wrist)
-        # utils.connect_attr(f"{fm_upPercent_div}{utils.Plg.out_flt}", f"{fm_upPercentTotal_mult}{utils.Plg.flt_A}")
-        #     # fm_lowPercent_div > fm_lowPercentTotal_mult.flt_A
-        # cmds.setAttr(f"{fm_lowPercent_div}{utils.Plg.flt_A}", self.dm.db_kne_calf)
-        # cmds.setAttr(f"{fm_lowPercent_div}{utils.Plg.flt_B}", self.dm.d_shld_wrist)
-        # utils.connect_attr(f"{fm_lowPercent_div}{utils.Plg.out_flt}", f"{fm_lowPercentTotal_mult}{utils.Plg.flt_A}")
-        
-        #     # fm_upPercentTotal_mult > bc.color2R
-        # utils.connect_attr(f"{fm_max}{utils.Plg.out_flt}", f"{fm_upPercentTotal_mult}{utils.Plg.flt_B}")
-        # utils.connect_attr(f"{fm_upPercentTotal_mult}{utils.Plg.out_flt}", f"{bc_pin_limb}{utils.Plg.color2_plg[0]}")
-        #     # fm_lowPercentTotal_mult > bc.color2G
-        # utils.connect_attr(f"{fm_max}{utils.Plg.out_flt}", f"{fm_lowPercentTotal_mult}{utils.Plg.flt_B}")
-        # utils.connect_attr(f"{fm_lowPercentTotal_mult}{utils.Plg.out_flt}", f"{bc_pin_limb}{utils.Plg.color2_plg[1]}")
-        
-        #     # pv.Pin_Arm > bc.blender
-        # utils.connect_attr(f"{ik_ctrl_list[3]}.Pin_Arm", f"{bc_pin_limb}{utils.Plg.blndr_plg}")
+        # roller toes setup
+        sr_roll_toesEnd = f"SR_ik_rollToesEnd_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}" # ".maxX" 1
+        md_roll_toesEnd = f"MD_ik_rollToesEnd_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(1, 'setRange', sr_roll_toesEnd, {"maxX":1})
+        utils.cr_node_if_not_exists(1, 'multiplyDivide', md_roll_toesEnd)
+            # > setRnage node
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll}", f"{sr_roll_toesEnd}.valueX")
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll_start_angle}", f"{sr_roll_toesEnd}.oldMinX")
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll_end_angle}", f"{sr_roll_toesEnd}.oldMaxX")
+            # > md node
+        utils.connect_attr(f"{sr_roll_toesEnd}.outValueX", f"{md_roll_toesEnd}{utils.Plg.input1_val[0]}")
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll}", f"{md_roll_toesEnd}{utils.Plg.input2_val[0]}")
+            # md_roll_toesEnd.outputX > grp_rollerToeEnd_piv_toe_quadLeg_0_L.rx      
+        utils.connect_attr(f"{md_roll_toesEnd}{utils.Plg.out_axis[0]}", f"{toe_grp}.rx")
 
-        # # Initalise ik stretch logic
-        # fm_up_fkStretch = f"FM_upFkStretchMult_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_low_fkStretch = f"FM_lowFkStretchMult_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_up_fkStretchGlobal = f"FM_upFkStretchGlobalMult_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # fm_low_fkStretchGlobal = f"FM_lowFkStretchGlobalMult_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # bc_ikfk_stretch = f"BC_ikfkStretch_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # for fm_mult_nm in [fm_up_fkStretchGlobal, fm_low_fkStretchGlobal]:
-        #     utils.cr_node_if_not_exists(1, "floatMath", fm_mult_nm, {"operation":2})
-        # utils.cr_node_if_not_exists(1, "blendColors", bc_ikfk_stretch, {"blender":1})
-        
-        #     # fm_up/low_fkStretch.out_flt > fm_up/low_global.flt_A
-        # utils.connect_attr(f"{fm_up_fkStretch}{utils.Plg.out_flt}", f"{fm_up_fkStretchGlobal}{utils.Plg.flt_A}")
-        # utils.connect_attr(f"{fm_low_fkStretch}{utils.Plg.out_flt}", f"{fm_low_fkStretchGlobal}{utils.Plg.flt_A}")
-        
-        #     # input_grp.globalScale > fm_up/low_global.flt_B
-        # utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{fm_up_fkStretchGlobal}{utils.Plg.flt_B}")
-        # utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{fm_low_fkStretchGlobal}{utils.Plg.flt_B}")
-        
-        #     # bc_pin_arm > bc_ikfk_stretch.color2
-        # utils.connect_attr(f"{bc_pin_limb}{utils.Plg.out_letter[0]}", f"{bc_ikfk_stretch}{utils.Plg.color1_plg[0]}")
-        # utils.connect_attr(f"{bc_pin_limb}{utils.Plg.out_letter[1]}", f"{bc_ikfk_stretch}{utils.Plg.color1_plg[1]}")
-        
-        #     # fm_up/low_global > bc_ikfk_stretch.color1#
-        # utils.connect_attr(f"{fm_up_fkStretchGlobal}{utils.Plg.out_flt}", f"{bc_ikfk_stretch}{utils.Plg.color2_plg[0]}")
-        # utils.connect_attr(f"{fm_low_fkStretchGlobal}{utils.Plg.out_flt}", f"{bc_ikfk_stretch}{utils.Plg.color2_plg[1]}")
-        
-        # # Plug into the logic joints!
-        # md_ikfk_stretch = f"MD_ikfkStretch_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # utils.cr_node_if_not_exists(1, "multiplyDivide", md_ikfk_stretch, {"operation":2})
-        #     # bc_ikfk_stretch.outColor# > md_ikfk_stretch.input1#
-        # utils.connect_attr(f"{bc_ikfk_stretch}{utils.Plg.out_letter[0]}", f"{md_ikfk_stretch}{utils.Plg.input1_val[0]}")
-        # utils.connect_attr(f"{bc_ikfk_stretch}{utils.Plg.out_letter[1]}", f"{md_ikfk_stretch}{utils.Plg.input1_val[1]}")
-        #     # input_grp.globalScale > md_ikfk_stretch.input2#
-        # utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{md_ikfk_stretch}{utils.Plg.input2_val[0]}")
-        # utils.connect_attr(f"{input_grp}.{self.dm.global_scale_attr}", f"{md_ikfk_stretch}{utils.Plg.input2_val[1]}")
-        #     # md_ikfk_stretch.out# > logic_jnt.translate prim axis
-        # utils.connect_attr(f"{md_ikfk_stretch}{utils.Plg.out_axis[0]}", f"{ik_logic_jnt_list[1]}.translate{self.dm.prim_axis}")
-        # utils.connect_attr(f"{md_ikfk_stretch}{utils.Plg.out_axis[1]}", f"{ik_logic_jnt_list[2]}.translate{self.dm.prim_axis}")
+        # roller heel setup
+        clamp_roll_heel = f"CLAMP_ik_rollHeel_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}" # ".maxX" 1
+        utils.cr_node_if_not_exists(1, 'clamp', clamp_roll_heel)
+            # roll > inputR
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll}", f"{clamp_roll_heel}.inputR")
+            # roll > minR
+        utils.connect_attr(f"{ankle_ctrl}.{atr_roll}", f"{clamp_roll_heel}.minR")
+            # clamp_roll_heel.outputR > grp_rollerHeel_piv_heel_quadLeg_0_L.rx
+        utils.connect_attr(f"{clamp_roll_heel}.outputR", f"{heel_grp}.rx")
 
-        # # wire to the ikHandle.poleVector plug
-        # pMM_shld = f"PMM_shld_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # cM_shld = f"CM_shld_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # iM_shld = f"IM_shld_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # mm_pv = f"MM_poleVector_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # dm_pv = f"DM_poleVector_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
-        # utils.cr_node_if_not_exists(1, "pointMatrixMult", pMM_shld)
-        # utils.cr_node_if_not_exists(0, "composeMatrix", cM_shld)
-        # utils.cr_node_if_not_exists(1, "inverseMatrix", iM_shld)
-        # utils.cr_node_if_not_exists(1, "multMatrix", mm_pv)
-        # utils.cr_node_if_not_exists(0, "decomposeMatrix", dm_pv)
-        #     # > pMM_shld
-        # utils.connect_attr(f"{ik_logic_jnt_list[0]}{utils.Plg.prt_plg}", f"{pMM_shld}.inMatrix")
-        # utils.connect_attr(f"{ik_logic_jnt_list[0]}.translate", f"{pMM_shld}.inPoint")
-        #     # > compM_shld
-        # utils.connect_attr(f"{pMM_shld}{utils.Plg.output_plg}", f"{cM_shld}{utils.Plg.inputT_plug}")
-        #     # > iM_shld
-        # utils.connect_attr(f"{cM_shld}{utils.Plg.out_mtx_plg}", f"{iM_shld}{utils.Plg.inp_mtx_plg}")
-        #     # > mm_pv
-        # utils.connect_attr(f"{ik_ctrl_list[3]}{utils.Plg.wld_mtx_plg}", f"{mm_pv}{utils.Plg.mtx_ins[0]}")
-        # utils.connect_attr(f"{iM_shld}{utils.Plg.out_mtx_plg}", f"{mm_pv}{utils.Plg.mtx_ins[1]}")
-        #     # > mm_pv
-        # utils.connect_attr(f"{mm_pv}{utils.Plg.mtx_sum_plg}", f"{dm_pv}{utils.Plg.inp_mtx_plg}")
-        #     # > hdl.poleVector
-        # utils.connect_attr(f"{dm_pv}{utils.Plg.outT_plug}", f"{logic_hdl}.poleVector")
-        
-        # return bc_ikfk_stretch, logic_hdl'''
+        # Default roller attributes.
+        cmds.setAttr(f"{ankle_ctrl}.{atr_roll_start_angle}", 30)
+        cmds.setAttr(f"{ankle_ctrl}.{atr_roll_end_angle}", 60)
+
 
     def hide_data_in_scene(self, fk_ctrl_grp, ik_ctrl_grp, fk_jnt_list, ik_jnt_list, skn_jnt_list, aim_jnt_list):
         
@@ -1100,9 +1107,10 @@ class SystemQuadLeg:
         utils.cr_node_if_not_exists(1, 'reverse', rev_ikfk)
         # > skn_jnt_wrist.inputX
         utils.connect_attr(ikfk_plug, f"{rev_ikfk}.inputX")
-        # utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", skn_jnt_wrist_fk_plg)
-        # utils.connect_attr(ikfk_plug, skn_jnt_wrist_ik_plg)
+        utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", f"{fk_ctrl_grp}{utils.Plg.vis_plg}")
+        utils.connect_attr(ikfk_plug, f"{ik_ctrl_grp}{utils.Plg.vis_plg}")
 
+        ''' Do this function in a later function after the stretch setup. '''
         # # 'ikfk_plug' & 'stretch_state_plug' > bc_ikfkStretch.blender
         # cond_stretch_state = f"COND_stretchState_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
         # cond_ikfk = f"COND_ikfk_switch_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
@@ -1116,23 +1124,8 @@ class SystemQuadLeg:
         # utils.connect_attr(f"{cond_stretch_state}.outColorR", f"{cond_ikfk}.colorIfFalseR")
         #     # > bc_ikfkStretch.blender
         # utils.connect_attr(f"{cond_ikfk}.outColorR", f"{bc_ikfkStretch}{utils.Plg.blndr_plg}")
-        
-        # > hdl.ik_blend
-        # utils.connect_attr(ikfk_plug, f"{logic_hdl}.ikBlend")
 
-        # > ctrl ik/fk groups.visibility
-        utils.connect_attr(f"{rev_ikfk}{utils.Plg.out_axis[0]}", f"{fk_ctrl_grp}{utils.Plg.vis_plg}")
-        utils.connect_attr(ikfk_plug, f"{ik_ctrl_grp}{utils.Plg.vis_plg}")
-
-        # wire pickmatrix for `rump drive> limbRt` setup.
-        cond_limbRt = f"COND_rotate_switch_{ctrl_limbRt}"
-        utils.cr_node_if_not_exists(1, 'condition', cond_limbRt, {"secondTerm":1})
-        utils.connect_attr(ikfk_plug, f"{cond_limbRt}.firstTerm")
-        utils.connect_attr(f"{cond_limbRt}{utils.Plg.out_color_plg[0]}", f"PMtx_{ctrl_limbRt}.useRotate")
-
-
-
-        
+        return rev_ikfk
 
 
     def parent_ik_ctrls_out(self, ik_ctrl_list):
@@ -1144,7 +1137,7 @@ class SystemQuadLeg:
             ik_ctrl_list (list): Contains 4 ik control names.
         # Returns: N/A
         '''
-        cmds.parent(ik_ctrl_list[0], ik_ctrl_list[1], f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
+        cmds.parent(f"ofs_grp_{ik_ctrl_list[0]}", ik_ctrl_list[1], f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}")
         cmds.select(cl=1)
 
     
@@ -1203,7 +1196,7 @@ class SystemQuadLeg:
             cmds.setAttr(f"{ik_ctrl_list[3]}.t{axis}", lock=1, ch=0, k=0)
             cmds.setAttr(f"{ik_ctrl_list[3]}.s{axis}", lock=1, ch=0, k=0) 
             # ankle ik = lock() | hide(scale)
-            cmds.setAttr(f"{ik_ctrl_list[3]}.s{axis}", lock=1, ch=0, k=0)
+            cmds.setAttr(f"{ik_ctrl_list[4]}.s{axis}", lock=1, ch=0, k=0)
             # mdl_settings_ctrl = lock_hide(trnaslate, rotate, scale)
             cmds.setAttr(f"{mdl_settings_ctrl}.t{axis}", lock=1, ch=0, k=0)
             cmds.setAttr(f"{mdl_settings_ctrl}.r{axis}", lock=1, ch=0, k=0)

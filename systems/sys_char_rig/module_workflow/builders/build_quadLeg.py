@@ -87,7 +87,7 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         
         # #------
         # # ik setup
-        self.wire_ik_ctrl_end(input_grp, self.dm.ik_ctrl_list[1], self.dm.ik_ctrl_list)
+        self.wire_ik_ctrl_end_no_blend(input_grp, self.dm.ik_ctrl_list[1], self.dm.ik_ctrl_list)
 
         ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG) # f"ctrl_ik_spine_bottom_0_M"
         print(f"ctrl_extrenal = `{ctrl_extrenal}`")
@@ -96,10 +96,9 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
 
         jnt_aim_ls = self.cr_ik_aim_logic_joints(self.dm.ik_pos_dict, self.dm.ik_rot_dict, self.dm.ik_ctrl_list, ik_logic_jnt_ls)
         
-        
         self.wire_logic_ik_handles(input_grp, ik_logic_jnt_ls, self.dm.ik_ctrl_list, 
                                    self.dm.ik_pos_dict, self.dm.ik_rot_dict)
-            # limbRoot control drive ik hip joint. 
+        #     # limbRoot control drive ik hip joint. 
         self.wire_limbRt_ik_chain_root(self.dm.ik_ctrl_list, ik_logic_jnt_ls, self.dm.ik_pos_dict, self.dm.ik_rot_dict)
         temp_lion_foot_piv_dict = {
             "piv_out": [[14.085709571838375, 0.1273138374090239, -39.837726593017564],[0.0, 11.1360043694971, 0.0]],
@@ -107,8 +106,14 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
             "piv_toe": [[10.154307365417475, -0.0607974529266313, -34.73563385009764],[0.0, 11.136004369497106, 0.0]],
             "piv_heel": [[7.941305160522457, -0.008862497514643838, -44.297607421874986],[0.0, 11.136004369497092, 0.0]],
         }
+        temp_trex_foot_piv_dict = {
+            "piv_out": [[100.38125628190824, 0.0, -23.437266211204935], [0.0, 6.897799047713135, 0.0]],
+            "piv_in": [[24.759938989748164, 0.005085100521610402, -14.289028733356286],[0.0, 6.897799047713135, 0.0]],
+            "piv_toe": [[70.09476741199015, 0.0, 33.15645742422107],[0.0, 6.897799047713135, 0.0]],
+            "piv_heel": [[59.66413598122727, 0.0, -53.06540654795396],[0.0, 6.897799047713135, 0.0]],
+        }
         ik_ankle_trans_data = [list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1]]
-        grp_ori = self.wire_ik_logic_hierarchy(temp_lion_foot_piv_dict, ik_ankle_trans_data)
+        grp_ori, grp_hdl_calf = self.wire_ik_logic_hierarchy(temp_trex_foot_piv_dict, ik_ankle_trans_data)
         self.pv_ik_hdl_leg_setup(self.dm.ik_ctrl_list[2])
         self.position_ik_ctrl_calf(self.dm.ik_ctrl_list[3], list(self.dm.ik_pos_dict.values()), list(self.dm.ik_rot_dict.values()))
         grp_logic_aim_hdl = self.wire_calf_aim_setup(jnt_aim_ls, self.dm.ik_ctrl_list, ik_logic_jnt_ls )
@@ -117,11 +122,30 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         # ikfk switch
         mdl_settings_ctrl, ikfk_plug, stretch_state_plug, stretch_vol_plug, shaper_plug = self.wire_mdl_setting_ctrl(skin_jnt_ls[3])
         self.blend_ik_fk_states_to_skin_chain(ik_logic_jnt_ls, fk_logic_jnt_ls, skin_jnt_ls, mdl_settings_ctrl, ikfk_plug)
+        ikfk_rev = self.wire_IKFK_switch(mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp, self.dm.ik_ctrl_list[1])
         
         #------
+        # rump aim setup
+            # func: position & aim 2 rump locators 
+        loc_aim_on, loc_aim_off = self.cr_rump_aim_locators(self.dm.ik_ctrl_list)
+        self.wire_rump_aim_setup(self.dm.ik_ctrl_list, loc_aim_on, loc_aim_off, ikfk_plug, ikfk_rev)
+
+        #------
         # foot setup
-        # foot_piv_atr_list = self.cr_foot_atr(self.dm.ik_ctrl_list)
-        # self.wire_foot_atr(foot_piv_atr_list, self.dm.ik_ctrl_list)
+        foot_piv_atr_list = self.cr_foot_atr(self.dm.ik_ctrl_list)
+        self.wire_foot_atr(foot_piv_atr_list, self.dm.ik_ctrl_list)
+            # function to add roller ofs grp.
+        roller_grp_dict = {
+            grp_hdl_calf:"rollerAnkle",
+            f"piv_toe_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}":"rollerToeEnd", 
+            f"piv_heel_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}":"rollerHeel"
+            }
+        wedged_roller_groups = self.wedge_roller_group(roller_grp_dict)
+            # function to wire roller attrs
+        self.wire_roller_foot_setup(ik_ctrl_list=self.dm.ik_ctrl_list, 
+                                    ankle_grp=wedged_roller_groups[0], 
+                                    toe_grp=wedged_roller_groups[1], 
+                                    heel_grp=wedged_roller_groups[2])
         
         #------
         # twist limb setup
@@ -156,7 +180,6 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
 
         self.group_jnts_skn(joint_grp, [], [skin_jnt_ls, sknUpper_jnt_chain, sknLower_jnt_chain])
         self.group_quad_logic_elements(logic_grp, [fk_logic_jnt_ls, ik_logic_jnt_ls, jnt_aim_ls], [cv_upper, cv_lower], [grp_ori, grp_logic_aim_hdl])
-        self.wire_IKFK_switch(mdl_settings_ctrl, ikfk_plug, fk_ctrl_grp, ik_ctrl_grp, self.dm.ik_ctrl_list[1])
         self.parent_ik_ctrls_out(self.dm.ik_ctrl_list)
         self.lock_ctrl_attributes(self.dm.fk_ctrl_list, self.dm.ik_ctrl_list, mdl_settings_ctrl)
 

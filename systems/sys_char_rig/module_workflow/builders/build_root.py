@@ -51,13 +51,15 @@ class BuildRoot(module_blueprint.ModuleBP, system_root.SystemRoot):
         self.group_ctrls(self.dm.fk_ctrl_list, "fk")
 
         # Phase 2 - Module-specific
+        print(f" *-> self.dm.skel_pos_dict = `{self.dm.skel_pos_dict}`")
         self.wire_root_setup(root_input_grp, self.dm.fk_ctrl_list, self.dm.skel_pos_dict, self.dm.skel_rot_dict)
+        joint_grp = self.wire_skn_cog_joint(self.dm.fk_ctrl_list[-1])
         self.root_output_group_setup(self.dm.GLOBAL_SCALE_PLG, self.dm.fk_ctrl_list[0], self.dm.output_hook_mtx_list)
         
         # Phase 3 - Finalising
         self.group_module(module_name=self.dm.mdl_nm, unique_id=self.dm.unique_id, side=self.dm.side,
                            input_grp=root_input_grp, output_grp=root_output_grp,
                            ctrl_grp=f"grp_ctrls_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}", 
-                           joint_grp=None,
+                           joint_grp=joint_grp,
                            logic_grp=None)
 

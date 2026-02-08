@@ -74,6 +74,20 @@ class SystemRoot:
         utils.connect_attr(f"{MM_cog}{utils.Plg.mtx_sum_plg}", f"{cog_ctrl}{utils.Plg.opm_plg}")
 
 
+    def wire_skn_cog_joint(self, ctrl_cog): #, skel_pos, skel_rot
+        ''' cr cog joint & wire it up'''
+        jnt_cog = f"jnt_skn_{self.dm.mdl_nm}_COG_{self.dm.unique_id}_{self.dm.side}"
+        cmds.joint(n=jnt_cog)
+        
+        joints_grp = f"grp_joints_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(0, 'transform', joints_grp)
+        cmds.parent(jnt_cog, joints_grp)
+        
+        utils.connect_attr(f"{ctrl_cog}{utils.Plg.wld_mtx_plg}", f"{jnt_cog}{utils.Plg.opm_plg}")
+
+        return joints_grp
+
+
     def root_output_group_setup(self, global_scale_plg, glabal_scale_ctrl, output_hook_atr_list):
         '''
         # Description:
