@@ -114,6 +114,7 @@ class Plg():
     for x in range(3):
         input1_val.append(f".input1{axis[x]}")
         input2_val.append(f".input2{axis[x]}")
+    
 
     target_mtx = []
     for x in range(5):
@@ -1164,6 +1165,9 @@ def wire_ofs_mtxIn0_1_to_1(source_pos_rot_dicts_ls, target_pos_rot_dicts_ls,
     target_pos_dict_index = dict(list(target_pos_dict.items())[tgt_index[0]::])
     target_rot_dict_index = dict(list(target_rot_dict.items())[tgt_index[0]::])
 
+    print(f"source_pos_dict_index = {source_pos_dict_index}")
+    print(f"target_pos_dict_index = {target_pos_dict_index}")
+
     # build the temp locators
     src_tgt_temp_loc = []
     for (src_key, src_pos_val), (_, src_rot_val), (tgt_key, tgt_pos_val), (_, tgt_rot_val) in zip(
@@ -1198,6 +1202,91 @@ def wire_ofs_mtxIn0_1_to_1(source_pos_rot_dicts_ls, target_pos_rot_dicts_ls,
 
     return tgt_loc_matrix
 
+    ''' ------------------------------------------------------------------------------------------------------ '''
+def wire_TOE_ofs_mtxIn0_1_to_1(source_pos_rot_dicts_ls, target_pos_rot_dicts_ls, 
+                    src_index, tgt_index, target_mtx_name, set_matrix=True):
+    '''
+    # Description:
+        -Create 2 temporary locators, 1 each for source amd target transforms.
+        -Parents target to source (target becomes the child following). 
+        -Set's `Target Locator.matrix` to  `target_mtx_name.matrixIn[0]`
+        providing the transform offset so 'target' object us positioned 
+        where it should be. 
+    # Attributes:
+        source_pos_rot_dicts_ls (list): Contains two dictionaries for the source 'Pos' & 'Rot'
+        target_pos_rot_dicts_ls (list): Contains two dictionaries for the target 'Pos' & 'Rot'
+        src_index (list): Access specific source dict with Index (like `[-1]`).
+        tgt_index (list): Access specific target dict with Index.
+        target_mtx_name (string): Name of the MultMatrix to set matrixIn[0] to
+        set_matrix (bool): True = set the matrix on 'target_mtx_name' bode
+    # Returns:
+        tgt_loc_matrix (matrix list): 16 element matrix list. 
+    '''
+    # get the pos and rot dicts from arg list 'source_pos_rot_dicts_ls'
+    source_pos_dict = source_pos_rot_dicts_ls[0]
+    source_rot_dict = source_pos_rot_dicts_ls[-1]
+    # get the specific index with 'dict_index[0]'
+    source_pos_dict_index = dict(list(source_pos_dict.items())[src_index[0]::])
+    source_rot_dict_index = dict(list(source_rot_dict.items())[src_index[0]::])
+
+    target_pos_dict = target_pos_rot_dicts_ls[0]
+    target_rot_dict = target_pos_rot_dicts_ls[-1]
+    # get the specific index with 'dict_index'
+    target_pos_dict_index = dict(list(target_pos_dict.items())[tgt_index[0]::])
+    target_rot_dict_index = dict(list(target_rot_dict.items())[tgt_index[0]::])
+
+    # print(f"source_pos_dict_index = {source_pos_dict_index}")
+    # print(f"target_pos_dict_index = {target_pos_dict_index}")
+
+    # build the temp locators
+    src_temp_loc = []
+    tgt_temp_loc = []
+    for (src_key, src_pos_val), (_, src_rot_val), (tgt_key, tgt_pos_val), (_, tgt_rot_val) in zip(
+                                                                                            source_pos_dict_index.items(), 
+                                                                                            source_rot_dict_index.items(), 
+                                                                                            target_pos_dict_index.items(), 
+                                                                                            target_rot_dict_index.items()
+                                                                                            ):
+        # source locator
+        src_loc_nm = f"loc_temp_{src_key}"
+        src_temp_loc.append(src_loc_nm)
+        cmds.spaceLocator(n=src_loc_nm)
+        cmds.xform(src_loc_nm, t=src_pos_val, ws=1)
+        cmds.xform(src_loc_nm, rotation=src_rot_val, ws=1)
+
+        tgt_loc_nm = f"loc_temp_{tgt_key}"
+        tgt_temp_loc.append(tgt_loc_nm)
+        cmds.spaceLocator(n=tgt_loc_nm)
+        cmds.xform(tgt_loc_nm, t=tgt_pos_val, ws=1)
+        cmds.xform(tgt_loc_nm, rotation=tgt_rot_val, ws=1)
+        
+    # parent target to source
+    src_index_int = src_index[0]
+    tgt_index_int = tgt_index[0]
+    print(f" & src_index_int = {src_index_int}")
+    print(f" & tgt_index_int = {tgt_index_int}")
+    print(f" ")
+    print(f" & src_temp_loc = {src_temp_loc}")
+    print(f" & tgt_temp_loc = {tgt_temp_loc}")
+    print(f" ")
+    print(f" & src_temp_loc[src_index_int] = {src_temp_loc[src_index_int]}")
+    print(f" & tgt_temp_loc[src_index_int] = {tgt_temp_loc[tgt_index_int]}")
+    # cmds.parent(src_tgt_temp_loc[-1], src_tgt_temp_loc[0])
+    cmds.parent(tgt_temp_loc[tgt_index_int], src_temp_loc[src_index_int])
+    
+    # get matrix & set on the MM atr
+    tgt_loc_matrix = cmds.getAttr(f"{tgt_temp_loc[tgt_index_int]}.matrix")
+    if set_matrix:
+        cmds.setAttr(f"{target_mtx_name}{Plg.mtx_ins[0]}", *tgt_loc_matrix, type="matrix")
+    
+    # delete the temp locs
+    for tgt_loc, src_loc in zip(tgt_temp_loc, src_temp_loc):
+        cmds.delete(tgt_loc, src_loc)
+
+    return tgt_loc_matrix
+
+    ''' ------------------------------------------------------------------------------------------------------ '''
+
 
 def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, fk_local_object):
     '''
@@ -1216,6 +1305,8 @@ def matrix_control_FowardKinematic_setup(fk_source_ctrl, fk_target_ctrl, fk_loca
     cmds.setAttr(f"{MM_ctrl_fk}{Plg.mtx_ins[0]}", *get_matrix, type="matrix")    
     connect_attr(f"{fk_source_ctrl}{Plg.wld_mtx_plg}", f"{MM_ctrl_fk}{Plg.mtx_ins[1]}")
     connect_attr(f"{MM_ctrl_fk}{Plg.mtx_sum_plg}", f"{fk_target_ctrl}{Plg.opm_plg}")
+
+    
 
 
 
