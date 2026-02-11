@@ -61,10 +61,10 @@ class ToeBuilder():
         # foot setting control setup
             # positon control
             # add attributes to control.
-        if not cmds.objExists(f"MM_{foot_setting_ctrl}"):
-            self.wire_foot_setting_ctrl(input_grp, foot_setting_ctrl, foot_root_pos, foot_root_rot)
-            self.lock_ctrl_attributes(foot_setting_ctrl)
-        self.cr_foot_setting_ctrl_attr(foot_setting_ctrl)
+        # if not cmds.objExists(f"MM_{foot_setting_ctrl}"):
+        #     self.wire_foot_setting_ctrl(input_grp, foot_setting_ctrl, foot_root_pos, foot_root_rot)
+        #     self.lock_ctrl_attributes(foot_setting_ctrl)
+        # self.cr_foot_setting_ctrl_attr(foot_setting_ctrl)
 
         #------
         # fk prep
@@ -72,12 +72,12 @@ class ToeBuilder():
             # fk toe control list
         toe_fk_ctrl_list = self.get_fk_control_ls(self.skel_pos_dict.keys())
             # fk pad control list
-        pad_fk_ctrl_list = self.get_fk_control_ls(self.pad_pos_dict.keys())
+        # pad_fk_ctrl_list = self.get_fk_control_ls(self.pad_pos_dict.keys())
         
         # toe fk jnt list
         jnt_fk_toe_ls = self.cr_typ_jnt_chain("fk", self.skel_pos_dict, self.skel_rot_dict)
         # cr pad jnts & parent to toe jnts based off name match
-        jnt_fk_pad_ls = self.cr_pad_jnts("fk", self.pad_pos_dict, self.pad_rot_dict, jnt_fk_toe_ls)
+        # jnt_fk_pad_ls = self.cr_pad_jnts("fk", self.pad_pos_dict, self.pad_rot_dict, jnt_fk_toe_ls)
         
         #------
         # fk setup
@@ -87,28 +87,28 @@ class ToeBuilder():
 
         mm_toe_fk_root = self.wire_toe_fk_ctrl_setup(input_grp, grp_toe_fk_ctrl_list, toe_fk_ctrl_list, self.skel_pos_dict, self.skel_rot_dict)
         self.wire_fk_logic_joints(toe_fk_ctrl_list, jnt_fk_toe_ls, mm_toe_fk_root)
-            # pads
-        grp_pad_fk_ctrl_list = self.ofs_grp_to_zero(pad_fk_ctrl_list)
-        self.group_ctrls(grp_pad_fk_ctrl_list, "fk")
-        self.wire_fk_pad_ctrl(toe_fk_ctrl_list, grp_pad_fk_ctrl_list, self.skel_pos_dict, self.skel_rot_dict, self.pad_pos_dict, self.pad_rot_dict,)
-        self.wire_fk_pad_joints(pad_fk_ctrl_list, jnt_fk_pad_ls)
+        #     # pads
+        # grp_pad_fk_ctrl_list = self.ofs_grp_to_zero(pad_fk_ctrl_list)
+        # self.group_ctrls(grp_pad_fk_ctrl_list, "fk")
+        # self.wire_fk_pad_ctrl(toe_fk_ctrl_list, grp_pad_fk_ctrl_list, self.skel_pos_dict, self.skel_rot_dict, self.pad_pos_dict, self.pad_rot_dict,)
+        # self.wire_fk_pad_joints(pad_fk_ctrl_list, jnt_fk_pad_ls)
         
-        #------
-        # SDK setup
-        curl_driver_atr = f"{foot_setting_ctrl}.Toe_Curl_{self.unique_id}_{self.side}"
-        curl_value_pairs=[(-100, -100), (0, 0), (100, 100)]
-        for x in range(len(grp_toe_fk_ctrl_list)):
-            curl_driven_atr = f"{grp_toe_fk_ctrl_list[x]}.rz"
-            self.create_sdk(curl_driver_atr, curl_driven_atr, curl_value_pairs)
+        # #------
+        # # SDK setup
+        # curl_driver_atr = f"{foot_setting_ctrl}.Toe_Curl_{self.unique_id}_{self.side}"
+        # curl_value_pairs=[(-100, -100), (0, 0), (100, 100)]
+        # for x in range(len(grp_toe_fk_ctrl_list)):
+        #     curl_driven_atr = f"{grp_toe_fk_ctrl_list[x]}.rz"
+        #     self.create_sdk(curl_driver_atr, curl_driven_atr, curl_value_pairs)
 
-        squash_driver_atr = f"{foot_setting_ctrl}.Toe_Squash_{self.unique_id}_{self.side}"
-        squash_ty_vp =[(0, 0), (5, 2.5), (10, 5)]
-        squash_sz_vp =[(0, 1), (5, 1.25), (10, 1.5)]
-        for x in range(len(grp_pad_fk_ctrl_list)):
-            squash_driven_atr_ty = f"{grp_pad_fk_ctrl_list[x]}.ty"
-            squash_driven_atr_sz = f"{grp_pad_fk_ctrl_list[x]}.sz"
-            self.create_sdk(squash_driver_atr, squash_driven_atr_ty, squash_ty_vp)
-            self.create_sdk(squash_driver_atr, squash_driven_atr_sz, squash_sz_vp)
+        # squash_driver_atr = f"{foot_setting_ctrl}.Toe_Squash_{self.unique_id}_{self.side}"
+        # squash_ty_vp =[(0, 0), (5, 2.5), (10, 5)]
+        # squash_sz_vp =[(0, 1), (5, 1.25), (10, 1.5)]
+        # for x in range(len(grp_pad_fk_ctrl_list)):
+        #     squash_driven_atr_ty = f"{grp_pad_fk_ctrl_list[x]}.ty"
+        #     squash_driven_atr_sz = f"{grp_pad_fk_ctrl_list[x]}.sz"
+        #     self.create_sdk(squash_driver_atr, squash_driven_atr_ty, squash_ty_vp)
+        #     self.create_sdk(squash_driver_atr, squash_driven_atr_sz, squash_sz_vp)
         
     def cr_input_output_groups(self, output_global=False):
         '''
@@ -532,41 +532,54 @@ ext_hook_plg = 'grp_Outputs_quadLeg_0_L.mtx_quadLeg_jnt_skn_ankle'
 foot_root_L_pos_list = [60.374118804931655, 39.7957763671875, -47.196548461914055]
 foot_root_L_rot_list = [0.0, 5.8849799203652555, 0.0]
 
-# foot toes in
-foot_toe_0_L_skel_pos = {'toe0': [38.52313937538893, 23.179796247152833, -26.12790963669226], 'toe1': [28.90996344459881, 17.947179269556457, -4.076108075261505], 'toe2': [19.56852714730405, 17.2049007945554, 16.192893609089705]}
-foot_toe_0_L_skel_rot = {'toe0': [-25.992257492061636, -116.39668384115679, 28.560212745631713], 'toe1': [-4.125349164743576, -114.81231517092596, 4.543225413242678], 'toe2': [175.87465083525663, -65.18768482907404, -175.45677458675732]}
-foot_pad_0_L_skel_pos = {'pad0': [39.05141499018504, 10.570109358677179, -27.63910764873875], 'pad1': [20.915877304088923, 5.394577169888443, 13.269419988101548]}
-foot_pad_0_L_skel_rot = {'pad0': [0.0, -113.25911975198025, 0.0], 'pad1': [0.0, -114.81267635481203, 0.0]}
+# foot toes pinky
+foot_toe_3_L_skel_pos = {'pinky0': [39.523492046777676, 70.84546041151745, -77.60096634734663], 'pinky1': [37.196306963216074, 55.20615446861807, -78.42063262603551], 'pinky2': [36.23475151721631, 44.51993688959546, -80.18856807440943]}
+foot_toe_3_L_skel_rot = {'pinky0': [-146.0056387685509, 2.9675491102069964, -98.46371381454668], 'pinky1': [-145.85699928998503, 9.356834852818045, -95.14167884351608], 'pinky2': [-150.7299583534666, 9.356834852818038, -95.14167884351608]}
+foot_pad_3_L_skel_pos = {'pad0': [39.05141499018504, 10.570109358677179, -27.63910764873875], 'pad1': [20.915877304088923, 5.394577169888443, 13.269419988101548]}
+foot_pad_3_L_skel_rot = {'pad0': [0.0, -113.25911975198025, 0.0], 'pad1': [0.0, -114.81267635481203, 0.0]}
 ToeBuilder(
     foot_setting_ctrl,
     ext_base_plg, ext_hook_plg,
     foot_root_L_pos_list, foot_root_L_rot_list,
-    foot_toe_0_L_skel_pos, foot_toe_0_L_skel_rot,
-    foot_pad_0_L_skel_pos, foot_pad_0_L_skel_rot,
-    "foot", "0", "L")
+    foot_toe_3_L_skel_pos, foot_toe_3_L_skel_rot,
+    foot_pad_3_L_skel_pos, foot_pad_3_L_skel_rot,
+    "foot", "3", "L")
 
-# foot toes mid
-foot_toe_1_L_skel_pos = {'toe0': [64.20642783821552, 21.547578252255043, -16.32568133128053], 'toe1': [67.00249855107212, 18.619296715462912, 5.638887043633819], 'toe2': [70.37039207167653, 17.65831871120247, 35.420796775264094]}
-foot_toe_1_L_skel_rot = {'toe0': [42.517378195328334, -80.13504393193197, -42.94277714478456], 'toe1': [3.9690956665501105, -83.53252639740009, -3.9944349013386895], 'toe2': [15.821788445946044, -83.29290072690294, -15.925304205287562]}
-foot_pad_1_L_skel_pos = {'pad0': [63.64051953422487, 6.586856391784469, -24.090721385735307], 'pad1': [69.50943413660316, 4.621891422566739, 27.807441023897102]}
-foot_pad_1_L_skel_rot = {'pad0': [3.9690956665501105, -83.53252639740009, -3.9944349013386895], 'pad1': [3.9690956665501105, -83.53252639740009, -3.9944349013386895]}
-ToeBuilder(
-    foot_setting_ctrl,
-    ext_base_plg, ext_hook_plg,
-    foot_root_L_pos_list, foot_root_L_rot_list,
-    foot_toe_1_L_skel_pos, foot_toe_1_L_skel_rot,
-    foot_pad_1_L_skel_pos, foot_pad_1_L_skel_rot,
-    "foot", "1", "L")
+# # foot toes in
+# foot_toe_0_L_skel_pos = {'toe0': [38.52313937538893, 23.179796247152833, -26.12790963669226], 'toe1': [28.90996344459881, 17.947179269556457, -4.076108075261505], 'toe2': [19.56852714730405, 17.2049007945554, 16.192893609089705]}
+# foot_toe_0_L_skel_rot = {'toe0': [-25.992257492061636, -116.39668384115679, 28.560212745631713], 'toe1': [-4.125349164743576, -114.81231517092596, 4.543225413242678], 'toe2': [175.87465083525663, -65.18768482907404, -175.45677458675732]}
+# foot_pad_0_L_skel_pos = {'pad0': [39.05141499018504, 10.570109358677179, -27.63910764873875], 'pad1': [20.915877304088923, 5.394577169888443, 13.269419988101548]}
+# foot_pad_0_L_skel_rot = {'pad0': [0.0, -113.25911975198025, 0.0], 'pad1': [0.0, -114.81267635481203, 0.0]}
+# ToeBuilder(
+#     foot_setting_ctrl,
+#     ext_base_plg, ext_hook_plg,
+#     foot_root_L_pos_list, foot_root_L_rot_list,
+#     foot_toe_0_L_skel_pos, foot_toe_0_L_skel_rot,
+#     foot_pad_0_L_skel_pos, foot_pad_0_L_skel_rot,
+#     "foot", "0", "L")
 
-# foot toes out
-foot_toe_2_L_skel_pos = {'toe0': [88.28070315770096, 21.639157934872134, -30.09626053287009], 'toe1': [106.93765224055373, 19.050689236764498, -5.058754555427306], 'toe2': [119.95313713649034, 18.791900327935963, 11.431283233429738]}
-foot_toe_2_L_skel_rot = {'toe0': [7.377761952832005, -52.95074514068025, -9.215094165216458], 'toe1': [-2.872682158524188, -51.65926313510713, 3.660651021957857], 'toe2': [0.8940926366595577, -51.71067903998226, -1.1390707971041898]}
-foot_pad_2_L_skel_pos = {'pad0': [87.53832115746498, 8.82211984209089, -31.092532414511144], 'pad1': [116.02557126221843, 4.3525210127932645, 7.137118235833568]}
-foot_pad_2_L_skel_rot = {'pad0': [0.0, -53.30795242923451, 0.0], 'pad1': [0.0, -53.30795242923451, 0.0]}
-ToeBuilder(
-    foot_setting_ctrl,
-    ext_base_plg, ext_hook_plg,
-    foot_root_L_pos_list, foot_root_L_rot_list,
-    foot_toe_2_L_skel_pos, foot_toe_2_L_skel_rot,
-    foot_pad_2_L_skel_pos, foot_pad_2_L_skel_rot,
-    "foot", "2", "L")
+# # foot toes mid
+# foot_toe_1_L_skel_pos = {'toe0': [64.20642783821552, 21.547578252255043, -16.32568133128053], 'toe1': [67.00249855107212, 18.619296715462912, 5.638887043633819], 'toe2': [70.37039207167653, 17.65831871120247, 35.420796775264094]}
+# foot_toe_1_L_skel_rot = {'toe0': [42.517378195328334, -80.13504393193197, -42.94277714478456], 'toe1': [3.9690956665501105, -83.53252639740009, -3.9944349013386895], 'toe2': [15.821788445946044, -83.29290072690294, -15.925304205287562]}
+# foot_pad_1_L_skel_pos = {'pad0': [63.64051953422487, 6.586856391784469, -24.090721385735307], 'pad1': [69.50943413660316, 4.621891422566739, 27.807441023897102]}
+# foot_pad_1_L_skel_rot = {'pad0': [3.9690956665501105, -83.53252639740009, -3.9944349013386895], 'pad1': [3.9690956665501105, -83.53252639740009, -3.9944349013386895]}
+# ToeBuilder(
+#     foot_setting_ctrl,
+#     ext_base_plg, ext_hook_plg,
+#     foot_root_L_pos_list, foot_root_L_rot_list,
+#     foot_toe_1_L_skel_pos, foot_toe_1_L_skel_rot,
+#     foot_pad_1_L_skel_pos, foot_pad_1_L_skel_rot,
+#     "foot", "1", "L")
+
+# # foot toes out
+# foot_toe_2_L_skel_pos = {'toe0': [88.28070315770096, 21.639157934872134, -30.09626053287009], 'toe1': [106.93765224055373, 19.050689236764498, -5.058754555427306], 'toe2': [119.95313713649034, 18.791900327935963, 11.431283233429738]}
+# foot_toe_2_L_skel_rot = {'toe0': [7.377761952832005, -52.95074514068025, -9.215094165216458], 'toe1': [-2.872682158524188, -51.65926313510713, 3.660651021957857], 'toe2': [0.8940926366595577, -51.71067903998226, -1.1390707971041898]}
+# foot_pad_2_L_skel_pos = {'pad0': [87.53832115746498, 8.82211984209089, -31.092532414511144], 'pad1': [116.02557126221843, 4.3525210127932645, 7.137118235833568]}
+# foot_pad_2_L_skel_rot = {'pad0': [0.0, -53.30795242923451, 0.0], 'pad1': [0.0, -53.30795242923451, 0.0]}
+# ToeBuilder(
+#     foot_setting_ctrl,
+#     ext_base_plg, ext_hook_plg,
+#     foot_root_L_pos_list, foot_root_L_rot_list,
+#     foot_toe_2_L_skel_pos, foot_toe_2_L_skel_rot,
+#     foot_pad_2_L_skel_pos, foot_pad_2_L_skel_rot,
+#     "foot", "2", "L")
