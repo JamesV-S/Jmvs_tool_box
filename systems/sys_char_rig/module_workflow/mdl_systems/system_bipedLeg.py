@@ -339,8 +339,8 @@ class SystemBipedLeg:
 
         # Add follow attr to ik shoulder ctrl
         utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
-        utils.add_float_attrib(ik_ctrl_target, ["Follow_Arm"], [0.0, 1.0], True)
-        cmds.setAttr(f"{ik_ctrl_target}.Follow_Arm", 1)
+        utils.add_float_attrib(ik_ctrl_target, ["follow_Leg"], [0.0, 1.0], True)
+        cmds.setAttr(f"{ik_ctrl_target}.follow_Leg", 1)
         # cr blendMatrix seyup to feed to fk ctrl/rigJnt shoulder. 
         MM_ankleBase = f"MM_{self.dm.mdl_nm}_iAnkle_limbRootBase_{self.dm.unique_id}_{self.dm.side}"
         MM_limbRootIk = f"MM_{self.dm.mdl_nm}_ikAnkle_limbRootCtrl_{self.dm.unique_id}_{self.dm.side}"
@@ -370,12 +370,12 @@ class SystemBipedLeg:
         # BM_ankleIK
         utils.connect_attr(f"{MM_ankleBase}{utils.Plg.mtx_sum_plg}", f"{BM_ankleIk}{utils.Plg.inp_mtx_plg}")
         utils.connect_attr(f"{MM_limbRootIk}{utils.Plg.mtx_sum_plg}", f"{BM_ankleIk}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Arm", f"{BM_ankleIk}.target[0].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.Follow_Arm", f"{BM_ankleIk}.target[0].rotateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.follow_Leg", f"{BM_ankleIk}.target[0].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.follow_Leg", f"{BM_ankleIk}.target[0].rotateWeight")
         utils.connect_attr(f"{BM_ankleIk}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
         
 
-    # wire_ik_ctrl_pv() is called.
+    ## wire_ik_ctrl_pv() is called.
   
   
     def wire_ik_logic_elements(self, input_grp, logic_jnt_list, ik_ctrl_list, d_shld_wrist, d_shld_elb, d_elb_wrist):

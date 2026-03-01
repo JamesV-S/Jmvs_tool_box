@@ -85,12 +85,12 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         BM_limbRt_node = self.wire_fk_ctrl_setup(input_grp, self.dm.ik_ctrl_list[1], self.dm.fk_ctrl_list, self.dm.fk_pos_dict, self.dm.fk_rot_dict)
         self.wire_fk_logic_joints(self.dm.fk_ctrl_list, fk_logic_jnt_ls, BM_limbRt_node)
         
-        # #------
-        # # ik setup
-        self.wire_ik_ctrl_end_no_blend(input_grp, self.dm.ik_ctrl_list[1], self.dm.ik_ctrl_list)
-
+        #------
+        # ik setup
         ctrl_extrenal = self.return_external_ik_control(self.dm.HOOK_MTX_PLG) # f"ctrl_ik_spine_bottom_0_M"
         print(f"ctrl_extrenal = `{ctrl_extrenal}`")
+            # ik control pos & spaceswap. 
+        self.wire_ik_ctrl_ankle(input_grp, self.dm.ik_ctrl_list, ctrl_extrenal)
         self.wire_ik_ctrl_pv(input_grp, 2, self.dm.ik_ctrl_list, ctrl_extrenal)
         self.wire_pv_reference_curve(self.dm.ik_ctrl_list[2], ik_logic_jnt_ls[1], ik_ctrl_grp)
 
@@ -171,13 +171,11 @@ class BuildQuadLeg(module_blueprint.ModuleBP, system_quadLeg.SystemQuadLeg):
         self.wire_skn_twist_joints_volume(input_grp, sknUpper_jnt_chain, sknLower_jnt_chain, cv_upper, cv_lower, stretch_vol_plug, fm_upp_global, fm_low_global, db_hip_kne, db_kne_clf)
         self.wire_rotations_on_twist_joints(self.dm.ik_ctrl_list[1], skin_jnt_ls[0], skin_jnt_ls[1], skin_jnt_ls[2], hdl_upper, hdl_lower)
 
-
         # temp hide data
         self.hide_data_in_scene(fk_ctrl_grp, ik_ctrl_grp, fk_logic_jnt_ls, ik_logic_jnt_ls, skin_jnt_ls, jnt_aim_ls)
         
         # - - - - - - -
         # Phase 3 - finalising
-
         self.group_jnts_skn(joint_grp, [], [skin_jnt_ls, sknUpper_jnt_chain, sknLower_jnt_chain])
         self.group_quad_logic_elements(logic_grp, [fk_logic_jnt_ls, ik_logic_jnt_ls, jnt_aim_ls], [cv_upper, cv_lower], [grp_ori, grp_logic_aim_hdl])
         self.parent_ik_ctrls_out(self.dm.ik_ctrl_list)

@@ -110,29 +110,57 @@ class SystemQuadLeg:
         utils.connect_attr(f"{mm_ctrl_limbRt}{utils.Plg.mtx_sum_plg}", f"{ctrl_limbRt}{utils.Plg.opm_plg}")
 
 
-    def wire_ik_ctrl_end_no_blend(self, inputs_grp, limbRt_ctrl, ik_ctrl_list):
+    def wire_ik_ctrl_ankle(self, inputs_grp, ik_ctrl_list, ctrl_external_fol):
         '''
         # Description:
-            Drive the end ik control of the module with the 'inputs_grp.base_mtx' (no blending).
+            Drive the end ik control of the module. Blending bewteen the 
+            'inputs_grp.base_mtx' & 'inputs_grp.hook_mtx'.
         # Attributes:
             inputs_grp (string): Group for input data for this module.
             limbRt_ctrl (string): Limb Root control. 
             ik_ctrl_list (list): Contains ik control names.
+            ctrl_external_fol (string): Name of External modules top ik control.
         # Returns: N/A 
         '''
         ik_ctrl_target = ik_ctrl_list[-1]
         ik_tgt_nm = ik_ctrl_target.split('_')[-3]
-        # print(f"ik_ctrl_target = `{ik_ctrl_target}`")
-        # print(f"limbRt_ctrl = `{limbRt_ctrl}`")
-        # print(f"ik_tgt_nm = `{ik_tgt_nm}`")        
 
+        # Add follow attr to ik shoulder ctrl
+        utils.add_locked_attrib(ik_ctrl_target, ["Follows"])
+        if ctrl_external_fol is not None:
+            ext_fol_split = ctrl_external_fol.split('_')[2:-2]
+            ext_fol_nm = "_".join(ext_fol_split)
+            ext_fol_atr = f"Follow_{ext_fol_nm}"
+        else:
+            ext_fol_atr = f"Follow_Hook"
+
+        utils.add_float_attrib(ik_ctrl_target, [ext_fol_atr], [0.0, 1.0], True)
+        cmds.setAttr(f"{ik_ctrl_target}.{ext_fol_atr}", 1)
+        
+        # cr utility nodes
         MM_ikBase = f"MM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtBase_{self.dm.unique_id}_{self.dm.side}"
+        MM_ikHook = f"MM_{self.dm.mdl_nm}_{ik_tgt_nm}Ik_limbRtHook_{self.dm.unique_id}_{self.dm.side}"
+        BM_ankleIk = f"BM_{self.dm.mdl_nm}_ikAnkle_BaseHook_{self.dm.unique_id}_{self.dm.side}"
         utils.cr_node_if_not_exists(1, 'multMatrix', MM_ikBase)
+        utils.cr_node_if_not_exists(1, 'multMatrix', MM_ikHook)
+        utils.cr_node_if_not_exists(1, 'blendMatrix', BM_ankleIk, 
+                                    {"target[0].rotateWeight":0,
+                                    "target[0].translateWeight":0,
+                                    "target[0].scaleWeight":0, 
+                                    "target[0].shearWeight":0})
         # MM_Base
         utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1], f"{MM_ikBase}{utils.Plg.mtx_ins[0]}")         
-        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_ikBase}{utils.Plg.mtx_ins[1]}")        
-
-        utils.connect_attr(f"{MM_ikBase}{utils.Plg.mtx_sum_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
+        utils.connect_attr(f"{inputs_grp}.base_mtx", f"{MM_ikBase}{utils.Plg.mtx_ins[1]}")       
+        # MM_Hook
+        utils.set_transformation_matrix(list(self.dm.ik_pos_dict.values())[-1], list(self.dm.ik_rot_dict.values())[-1], f"{MM_ikHook}{utils.Plg.mtx_ins[0]}")         
+        utils.connect_attr(f"{inputs_grp}.hook_mtx", f"{MM_ikHook}{utils.Plg.mtx_ins[1]}") 
+        
+        # BM
+        utils.connect_attr(f"{MM_ikBase}{utils.Plg.mtx_sum_plg}", f"{BM_ankleIk}{utils.Plg.inp_mtx_plg}")
+        utils.connect_attr(f"{MM_ikHook}{utils.Plg.mtx_sum_plg}", f"{BM_ankleIk}{utils.Plg.target_mtx[0]}")
+        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].translateWeight")
+        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].rotateWeight")
+        utils.connect_attr(f"{BM_ankleIk}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
 
 
     def wire_fk_logic_joints(self, fk_ctrl_list, fk_jnt_chain, bm_limbRt):
@@ -206,6 +234,9 @@ class SystemQuadLeg:
         cmds.select(cl=1)
 
         return [jnt_aim_base, jnt_aim_tip]
+
+    
+    
 
     # ik rp hdl on hip to calf. 
     def wire_logic_ik_handles(self, input_grp, ik_logic_jnt_list, ik_ctrl_list, ik_pos_dict, ik_rot_dict):
