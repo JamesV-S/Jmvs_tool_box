@@ -408,14 +408,7 @@ class RetrievePlacementData(DatabaseSchema):
                 self.existing_rot_dict = self.component_rot_dict_from_table(conn)
                 self.existing_plane_dict = self.component_ori_plane_dict_from_table(conn)
                 self.controls_dict = self.controls_dict_from_table(conn)
-
-                self.mdl_component_dict = {
-                    "module_name":self.module_name, 
-                    "unique_id":int(self.unique_id),
-                    "side":self.side,
-                    "component_pos": self.existing_pos_dict,
-                    "controls": self.controls_dict
-                    }
+                self.mdl_component_dict = self.write_module_component_dict()
                 
         except sqlite3.Error as e:
             print(f"module component retrieval sqlite3.Error: {e}")
@@ -491,6 +484,25 @@ class RetrievePlacementData(DatabaseSchema):
             print(f"controls sqlite3.Error: {e}")
             return {}
 
+
+    def write_module_component_dict(self):
+        '''
+        # Description:
+            Create a dictionary variable containing module name, 
+            unique id, side, component positional data, and control dict 
+        # Attributes: N/A
+        # Returns: mdl_component_dict (dict)
+        '''
+        mdl_component_dict = {
+                    "module_name":self.module_name, 
+                    "unique_id":int(self.unique_id),
+                    "side":self.side,
+                    "component_pos": self.existing_pos_dict,
+                    "controls": self.controls_dict
+                    }
+        
+        return mdl_component_dict
+        
 
     def return_existing_pos_dict(self):
         return self.existing_pos_dict

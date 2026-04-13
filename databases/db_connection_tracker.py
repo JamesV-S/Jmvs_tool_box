@@ -81,7 +81,7 @@ class DBConnectionTracker():
         print("All databases connections forced closed.")
 
 
-class DeleteDB:
+class DeleteDB: # Temp Example
     def __init__(self):
         self.delete_database_callback()
     
