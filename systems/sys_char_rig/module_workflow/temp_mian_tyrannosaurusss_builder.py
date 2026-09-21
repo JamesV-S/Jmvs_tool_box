@@ -2,8 +2,14 @@
 ''' Without the Registry (single module build at a time)'''
 '''
 import importlib
-from Jmvs_tool_box.systems.sys_char_rig.module_workflow import temp_mian_tyrannosaurusss_builder
+from Jmvs_tool_box import main
+importlib.reload(main)
+main.run_tool_box()
+window_name = "JmvsToolBoxView_MVC"
+if cmds.window(window_name, query=True, exists=True):
+    cmds.deleteUI(window_name, window=True)
 
+from Jmvs_tool_box.systems.sys_char_rig.module_workflow import temp_mian_tyrannosaurusss_builder
 importlib.reload(temp_mian_tyrannosaurusss_builder)
 '''
 
