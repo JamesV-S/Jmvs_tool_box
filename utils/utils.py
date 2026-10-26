@@ -71,6 +71,13 @@ def keyframeSelectedControls(startFrame=0, endFrame=400, interval=10):
 
 #---------------------------- CONNECTIONS -------------------------------------
 def cr_node_if_not_exists(util_type, node_type, node_name, set_attrs=None):
+    # use this dict to swap the attribute the BM is using!
+    blend_matrix_attr_dict = {
+        "translateWeight":"useTranslate", 
+        "rotateWeight": "useRotate",
+        "scaleWeight": "useScale",
+        "shearWeight": "useShear"
+        }
     if not cmds.objExists(node_name):
         if util_type:
             cmds.shadingNode(node_type, au=1, n=node_name)
@@ -78,9 +85,15 @@ def cr_node_if_not_exists(util_type, node_type, node_name, set_attrs=None):
             cmds.createNode(node_type, n=node_name)
         if set_attrs:
             for attr, value in set_attrs.items():
-                cmds.setAttr(f"{node_name}.{attr}", value)
-
-
+                try:
+                    cmds.setAttr(f"{node_name}.{attr}", value)
+                except RuntimeError:
+                    bm_split = attr.split(".") # `target[0].useScale`
+                    print(f"Set the attribute with: {bm_split[0]}.{blend_matrix_attr_dict[bm_split[-1]]}")
+                    swapped_bm_atr = f"{bm_split[0]}.{blend_matrix_attr_dict[bm_split[-1]]}"
+                    cmds.setAttr(f"{node_name}.{swapped_bm_atr}", value)
+                                             
+                                
 def connect_attr(source_attr, target_attr):
     connections = cmds.listConnections(target_attr, destination=False ,source=True)
     #print(f"here is the listed connection: {connections}")

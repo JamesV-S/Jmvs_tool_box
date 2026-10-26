@@ -28,7 +28,7 @@ class ModuleBP:
             Creates the 'Input' & 'Output' groups for this module. These are 
             specialised nodes that store custom matrix data to allow the module 
             to be driven(Input) or be the driver(Output) for other modules, etc. 
-        # Attributes:
+        # Args:
             output_global (boolean): If True, add globalScale attr to the output group.
         # Returns:
             input_grp (string): Group for input data for this module.
@@ -61,8 +61,8 @@ class ModuleBP:
     def add_outputs_matrix_attr(self, outputs_grp, output_hook_atr_list):
         '''
         # Description:
-            Add custom matrix to ouptut group -> this matrix lets other modules follow.
-        # Attributes:
+            Add custom matrix attribute to ouptut group -> this matrix lets other modules follow.
+        # Args:
             outputs_grp (string): Outputgrpup for this module. 
             output_hook_atr_list (list): List of names for matrix attr.
         # Returns: N/A
@@ -77,9 +77,9 @@ class ModuleBP:
         '''
         # Description:
             Connect the 'global_scale', 'base_mtx', and 'hook_mtx' plugs (retrieved 
-            from 'external_plg_dict' and plug into the corresponding plug in the 
+            from 'external_plg_dict' and connect into the corresponding plug in the 
             Input grp!)
-        # Attributes:
+        # Args:
             input_grp (string): Outputgrpup for this module.
             global_scale_plg (plug): External glabal scale attr plug
             base_mtx_plg (plug): External base matrix attr plug
@@ -98,7 +98,7 @@ class ModuleBP:
         '''
         # Description:
             Creates control group for a list of ctrls.
-        # Attributes:
+        # Args:
             ctrl_ls (list): list of given controls.
             ctrl_type (string): Name for the ctrl_grp.
         # Returns:
@@ -129,6 +129,11 @@ class ModuleBP:
         logic_grp = f"grp_joints_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
         utils.cr_node_if_not_exists(0, "transform", logic_grp)
         return logic_grp
+    
+    def cr_type_group(self, _type):
+        grp = f"grp_{_type}_{self.dm.mdl_nm}_{self.dm.unique_id}_{self.dm.side}"
+        utils.cr_node_if_not_exists(0, "transform", grp)
+        return grp
 
     # Phase 2 - Module operations shared by multiple modules but not all
     def cr_typ_jnt_chain(self, pref, skeleton_pos_dict, skeleton_rot_dict, reverse_direction=False):
@@ -136,7 +141,7 @@ class ModuleBP:
         # Description:
            Creates a basic desired joint chain, naming, position and direction all 
            taken care of. 
-        # Attributes:
+        # Args:
             pref (string): name of the joint chain type.
             skeleton_pos_dict (dict): key = name of Ext iteration (Ext#), value = positonal data.
             skeleton_rot_dict (dict): key = name of Ext iteration (Ext#), value = rotational data.
@@ -179,7 +184,7 @@ class ModuleBP:
             Need to store the distances of the the limb, (to be used for PINNING! & More).
             Stored in a dictionary with each item being the distance going through the list of skel positions.
             Last item in dict is 'start to end' distance
-        # Attributes:
+        # Args:
             skel_num (int): number of joints in the module's skeleton.
             skel_pos_dict (dict): key=Name skel pos component, value=Positional data.
         # Returns:
@@ -223,7 +228,7 @@ class ModuleBP:
                 Temporary locators are used to position the fk control's with 
                 rotation data, using the locators local space matrix as an offset.
                 After the data is passed to the control correctly, temp locs r deleted.  
-        # Attributes:
+        # Args:
             input_grp (string): Group for input data for this module.
             fk_ctrl_list (list): Contains 3 fk control names.
             fk_pos_dict (dict): key=Name of fk controls, value=Positional data.
@@ -255,7 +260,11 @@ class ModuleBP:
             # BM_limb
         utils.connect_attr(f"{MM_limbBase}{utils.Plg.mtx_sum_plg}", f"{BM_limb}{utils.Plg.inp_mtx_plg}")
         utils.connect_attr(f"{MM_limbRtCtrl}{utils.Plg.mtx_sum_plg}", f"{BM_limb}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{fk_ctrl_list[0]}.{follow_attr}", f"{BM_limb}.target[0].rotateWeight")
+        try: # Maya 2025> 
+            utils.connect_attr(f"{fk_ctrl_list[0]}.{follow_attr}", f"{BM_limb}.target[0].rotateWeight")
+        except ValueError: # Maya 2022
+            utils.connect_attr(f"{fk_ctrl_list[0]}.{follow_attr}", f"{BM_limb}.target[0].useRotate")
+            
         utils.connect_attr(f"{BM_limb}{utils.Plg.out_mtx_plg}", f"{fk_ctrl_list[0]}{utils.Plg.opm_plg}")
         # create temp locators
         temp_loc_ls = []
@@ -288,7 +297,7 @@ class ModuleBP:
         # Description:
             Drive the end ik control of the module, bledning between the 'limbRt_ctrl' 
             and the 'inputs_grp.base_mtx'.
-        # Attributes:
+        # Args:
             inputs_grp (string): Group for input data for this module.
             limbRt_ctrl (string): Limb Root control. 
             ik_ctrl_list (list): Contains ik control names.
@@ -369,7 +378,7 @@ class ModuleBP:
         '''
         # Description:
             Positions & wires the follow swapping of the pv ctrl too
-        # Attributes:
+        # Args:
             inputs_grp (string): Group for input data for this module.
             ik_ctrl_list (list): Contains 4 ik control names.
             ctrl_external_fol (string): Name of Ext modules top ik control.
@@ -491,7 +500,7 @@ class ModuleBP:
         '''
         # Description:
             Create and wire a reference curve to from the jnt_elbow to the ctrl_elbow 
-        # Attributes:
+        # Args:
         # Returns: N/A
         '''
         # build control
@@ -956,7 +965,7 @@ class ModuleBP:
                 Connects the object to attributes on this module's output group 
                 so another module's inpout group can have incoming plugs to allow
                 it to follow!
-        # Attributes:
+        # Args:
             mdl_output_grp (str): Name of this module's output group
             object_name_ls (list): Name of object that is what matrix data is 
                                     coming from for this attribute on the output 
@@ -1009,7 +1018,7 @@ class ModuleBP:
             # Description: 
                 Coordinates the hierarchy of all elements included in a module 
                 and setup the hierarchy into a single grp node. 
-            # Attributes: N/A
+            # Args: N/A
             # Returns: N/A
             '''
             grp_module_name = f"grp_mdl_{module_name}_{unique_id}_{side}"

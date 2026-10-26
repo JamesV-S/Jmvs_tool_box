@@ -591,13 +591,14 @@ class CharLayoutView(QtWidgets.QWidget):
             widget.style().unpolish(widget)
             widget.style().polish(widget)
             widget.update()
-
+        
+        ''' ~ This causses RuntimeError: `Internal C++ object (PySide2.QtWidgets.QProxyStyle) already deleted.`
         for widget in self.style_tab_1_ui:
             widget.setProperty("style_tab_1_ui", True)
             widget.style().unpolish(widget)
             widget.style().polish(widget)
             widget.update()
-
+        '''
 
     def cr_container_funcUI(self, label_name, widget_to_add, layout=None, child=None, checkbox=None):
         container = QtWidgets.QWidget()

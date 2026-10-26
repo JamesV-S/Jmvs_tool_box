@@ -1,6 +1,8 @@
 
 ''' Without the Registry (single module build at a time)'''
 '''
+cmds.loadPlugin('lookdevKit.mll')
+cmds.jointDisplayScale(6)
 import importlib
 from Jmvs_tool_box import main
 importlib.reload(main)
@@ -190,23 +192,23 @@ quadLeg_data = {
             'ctrl_fk_quadLeg_ball_0_L': [63.94602438148762, -74.13106225371192, -64.81393854025784]
             }
         }, 
-        'ik_dict': {
-            'ik_pos': {
-                'ctrl_ik_quadLeg_rump_0_L': [32.986259492592744, 399.71815364196743, -80.06218600181712], 
-                'ctrl_ik_quadLeg_hip_0_L': [60.347192939725524, 399.71815364196794, -80.06611904469996], 
-                'ctrl_ik_quadLeg_knee_0_L': [92.179, 233.115, 132.004],
-                'ctrl_ik_quadLeg_calf_0_L': [57.30248846343446, 109.95786388537925, -72.58729766070104], 
-                'ctrl_ik_quadLeg_ankle_0_L': [60.37411697460796, 39.79577535000606, -47.19654951468622]
-                }, 
-            'ik_rot': {
-                'ctrl_ik_quadLeg_rump_0_L': [0.0, 0.0, 0.0], 
-                'ctrl_ik_quadLeg_hip_0_L': [0.0, 0.0, 0.0], 
-                'ctrl_ik_quadLeg_knee_0_L': [80.81405482844525, -80.69924690793599, 8.465179288412154], 
-                'ctrl_ik_quadLeg_calf_0_L': [0.0, 6.897799061450713, 0.0], 
-                'ctrl_ik_quadLeg_ankle_0_L': [0.0, 6.897799061450715, 0.0]
-                }
+    'ik_dict': {
+        'ik_pos': {
+            'ctrl_ik_quadLeg_rump_0_L': [32.986259492592744, 399.71815364196743, -80.06218600181712], 
+            'ctrl_ik_quadLeg_hip_0_L': [60.347192939725524, 399.71815364196794, -80.06611904469996], 
+            'ctrl_ik_quadLeg_knee_0_L': [92.179, 233.115, 132.004],
+            'ctrl_ik_quadLeg_calf_0_L': [57.30248846343446, 109.95786388537925, -72.58729766070104], 
+            'ctrl_ik_quadLeg_ankle_0_L': [60.37411697460796, 39.79577535000606, -47.19654951468622]
             }, 
-            'axis_dict': {'prim': 'X', 'scnd': 'Y', 'wld': 'Z'}
+        'ik_rot': {
+            'ctrl_ik_quadLeg_rump_0_L': [0.0, 0.0, 0.0], 
+            'ctrl_ik_quadLeg_hip_0_L': [0.0, 0.0, 0.0], 
+            'ctrl_ik_quadLeg_knee_0_L': [80.81405482844525, -80.69924690793599, 8.465179288412154], 
+            'ctrl_ik_quadLeg_calf_0_L': [0.0, 6.897799061450713, 0.0], 
+            'ctrl_ik_quadLeg_ankle_0_L': [0.0, 6.897799061450715, 0.0]
+            }
+        }, 
+        'axis_dict': {'prim': 'X', 'scnd': 'Y', 'wld': 'Z'}
     }
 
 # Isolated module-specific data flow

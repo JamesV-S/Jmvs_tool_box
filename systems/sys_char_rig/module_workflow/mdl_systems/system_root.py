@@ -36,6 +36,16 @@ class SystemRoot:
 
     # Phase 2 - Module-specific class functions in 'System[ModuleName]'
     def wire_root_setup(self, input_grp , fk_ctrl_ls, skeleton_pos_dict, skeleton_rot_dict):
+        '''
+        # Description:
+            Wire up the rigging logic for the root module's controls. 
+        # Args:
+            input_grp (string): Input group for this module. 
+            fk_ctrl_ls (list): Contains 3 fk control names.
+            skeleton_pos_dict: (dict): key=Name of joints, value=Positional data.
+            skeleton_rot_dict: (dict): key=Name of joints, value=Rotational data.
+        # Returns: N/A
+        '''
         root_ctrl, centre_ctrl, cog_ctrl = fk_ctrl_ls
         
         # add custom attr scale
@@ -75,7 +85,14 @@ class SystemRoot:
 
 
     def wire_skn_cog_joint(self, ctrl_cog): #, skel_pos, skel_rot
-        ''' cr cog joint & wire it up'''
+        '''
+        # Description:
+            Cr a single COG joint & wire it up so the control drives it. 
+        # Args:
+            ctrl_cog (string): Name of the COG control. 
+        # Returns: 
+            joints_grp (grp): Joint grp node. 
+        '''
         jnt_cog = f"jnt_skn_{self.dm.mdl_nm}_COG_{self.dm.unique_id}_{self.dm.side}"
         cmds.joint(n=jnt_cog)
         
@@ -91,7 +108,7 @@ class SystemRoot:
     def root_output_group_setup(self, global_scale_plg, glabal_scale_ctrl, output_hook_atr_list):
         '''
         # Description:
-            A uniqye funtion for the root module, since it's the root!
+            A unique funtion for the root module; cus it's the root!
             Connects the base and hook attributes on this module's output group 
             so another module's input group can have incoming plugs to allow it to follow!
         # Arguments:

@@ -158,8 +158,12 @@ class SystemQuadLeg:
         # BM
         utils.connect_attr(f"{MM_ikBase}{utils.Plg.mtx_sum_plg}", f"{BM_ankleIk}{utils.Plg.inp_mtx_plg}")
         utils.connect_attr(f"{MM_ikHook}{utils.Plg.mtx_sum_plg}", f"{BM_ankleIk}{utils.Plg.target_mtx[0]}")
-        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].translateWeight")
-        utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].rotateWeight")
+        try:
+            utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].translateWeight")
+            utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].rotateWeight")
+        except ValueError: # Maya 2022
+            utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].useTranslate")
+            utils.connect_attr(f"{ik_ctrl_target}.{ext_fol_atr}", f"{BM_ankleIk}.target[0].useRotate")
         utils.connect_attr(f"{BM_ankleIk}{utils.Plg.out_mtx_plg}", f"{ik_ctrl_target}{utils.Plg.opm_plg}")
 
 

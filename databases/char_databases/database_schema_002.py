@@ -424,8 +424,12 @@ class RetrievePlacementData(DatabaseSchema):
                 component_pos_json = row[0]
                 # use Python's 'json module' to load json dict into python dictionary's
                 component_pos_dict = json.loads(component_pos_json)
-            return component_pos_dict
-
+                return component_pos_dict
+            else:
+                print(f"row unfound: {self.module_name}")
+                return {}
+                
+                
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")
             return {}
@@ -441,7 +445,10 @@ class RetrievePlacementData(DatabaseSchema):
                 component_rot_json = row[0]
                 # use Python's 'json module' to load json dict into python dictionary's
                 component_rot_dict = json.loads(component_rot_json)
-            return component_rot_dict
+                return component_rot_dict
+            else:
+                print(f"row unfound: {self.module_name}")
+                return {}
 
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")
@@ -457,8 +464,11 @@ class RetrievePlacementData(DatabaseSchema):
             if row:
                 comp_plane_json = row[0]
                 comp_plane_dict = json.loads(comp_plane_json)
-            return comp_plane_dict
-
+                return comp_plane_dict
+            else:
+                print(f"row unfound: {self.module_name}")
+                return {}
+            
         except sqlite3.Error as e:
             print(f"placement sqlite3.Error: {e}")
             return {}
@@ -478,7 +488,10 @@ class RetrievePlacementData(DatabaseSchema):
                     # use Python's 'json module' to load json dict into python dictionary's
                     controls_dict["FK_ctrls"] = json.loads(fk_ctrls_sjon)
                     controls_dict["IK_ctrls"] = json.loads(ik_ctrl_json)
-            return controls_dict
+                return controls_dict
+            else:
+                print(f"row unfound: {self.module_name}")
+                return {}            
 
         except sqlite3.Error as e:
             print(f"controls sqlite3.Error: {e}")
@@ -671,6 +684,7 @@ class RetrieveSpecificData(DatabaseSchema):
         except sqlite3.Error as e:
             print(f"controls table sqlite3.Error: {e}")
             return None
+
 
     def return_inp_hk_mtx(self):
         return self.inp_hk_mtx
